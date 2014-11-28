@@ -115,7 +115,7 @@ public class ChoiceListFlexi implements Choice
 	/**
 	 * Modify this choice, constructing product of it with another.
 	 */
-	public void productWith(ChoiceListFlexi ch)
+	public void productWith(ChoiceListFlexi ch) throws PrismLangException
 	{
 		List<Update> list;
 		int i, j, n, n2;
@@ -130,22 +130,43 @@ public class ChoiceListFlexi implements Choice
 			for (j = 0; j < n2; j++) {
 				// Create new element (i,j) of product 
 				list = new ArrayList<Update>(updates.get(j).size() + ch.updates.get(i).size());
-				for (Update u : updates.get(j)) {
-					list.add(u);
+				final BitSet variables = new BitSet();
+				for (Update update : updates.get(j)) {
+					list.add(update);
+					variables.or(update.getAffectedVariables());
 				}
-				for (Update u : ch.updates.get(i)) {
-					list.add(u);
+				for (Update update : ch.updates.get(i)) {
+					list.add(update);
+					detectVariableConflicts(update, variables);
 				}
 				add(pi * getProbability(j), list);
 			}
 		}
 		// Modify elements of current choice to get (0,j) elements of product
+		final BitSet variables = new BitSet();
+		for (Update update : ch.updates.get(0)) {
+			variables.or(update.getAffectedVariables());
+		}
 		pi = ch.getProbability(0);
 		for (j = 0; j < n2; j++) {
+			for (Update update : updates.get(j)) {
+				detectVariableConflicts(update, variables);
+			}
 			for (Update u : ch.updates.get(0)) {
 				updates.get(j).add(u);
 			}
 			probability.set(j, pi * probability.get(j));
+		}
+	}
+
+	private void detectVariableConflicts(final Update update, final BitSet variables) throws PrismLangException
+	{
+		final BitSet variableConflicts = update.getAffectedVariables();
+		variableConflicts.and(variables);
+		if(variableConflicts.cardinality() != 0) {
+			final ExpressionIdent variableIdent = update.getVarIdent(variableConflicts.nextSetBit(0));
+			final String message = "conflicting updates on shared variable in synchronous transition " + this.getModuleOrAction();
+			throw new PrismLangException(message, variableIdent);
 		}
 	}
 

@@ -393,6 +393,13 @@ public class Updater extends PrismComponent
 		// Create new choice (action index is 0 - not needed)
 		ChoiceListFlexi chNew = processUpdatesAndCreateNewChoice(0, ups, state);
 		// Build product with existing
-		ch.productWith(chNew);
+		try {
+			ch.productWith(chNew);
+		} catch(PrismLangException e) {
+			mainLog.println("Error: " + e.getMessage());
+			mainLog.println(ch.getModuleOrAction() + " " + ch);
+			mainLog.println(chNew.getModuleOrAction() + " " + chNew);
+			throw e;
+		}
 	}
 }

@@ -342,6 +342,17 @@ public class Update extends ASTElement
 		result = prime * result + ((vars == null) ? 0 : vars.hashCode());
 		return result;
 	}
+	
+	/**
+	 * @return The set of variables touched by this update.
+	 */
+	public BitSet getAffectedVariables() {
+		final BitSet variables = new BitSet();
+		for (int variable=0; variable<getNumElements(); variable++) {
+			variables.set(getVarIndex(variable));
+		}
+		return variables;
+	}
 }
 
 //------------------------------------------------------------------------------
