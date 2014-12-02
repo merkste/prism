@@ -344,14 +344,29 @@ public class Update extends ASTElement
 	}
 	
 	/**
-	 * @return The set of variables touched by this update.
+	 * @return The set of variables written by this update.
 	 */
-	public BitSet getAffectedVariables() {
+	public BitSet getWrittenVariables() {
 		final BitSet variables = new BitSet();
 		for (int variable=0; variable<getNumElements(); variable++) {
 			variables.set(getVarIndex(variable));
 		}
 		return variables;
+	}
+
+
+	/**
+	 * @param index of a variable in the model
+	 * @return the variable's ExpressionIdent or null if this update does not write the variable
+	 */
+	public ExpressionIdent getVarIdentFromIndex(int index)
+	{
+		for (int i = indices.size() - 1; i >= 0; i--) {
+			if (indices.get(i) == index) {
+				return getVarIdent(i);
+			}
+		}
+		return null;
 	}
 }
 

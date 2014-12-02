@@ -115,59 +115,54 @@ public class ChoiceListFlexi implements Choice
 	/**
 	 * Modify this choice, constructing product of it with another.
 	 */
-	public void productWith(ChoiceListFlexi ch) throws PrismLangException
+	public void productWith(ChoiceListFlexi other) throws PrismLangException
 	{
-		List<Update> list;
-		int i, j, n, n2;
-		double pi;
-
-		n = ch.size();
-		n2 = size();
-		// Loop through each (ith) element of new choice (skipping first)
-		for (i = 1; i < n; i++) {
-			pi = ch.getProbability(i);
-			// Loop through each (jth) element of existing choice
-			for (j = 0; j < n2; j++) {
-				// Create new element (i,j) of product 
-				list = new ArrayList<Update>(updates.get(j).size() + ch.updates.get(i).size());
-				final BitSet variables = new BitSet();
-				for (Update update : updates.get(j)) {
-					list.add(update);
-					variables.or(update.getAffectedVariables());
+		final List<List<Update>> oldUpdates = updates;
+		final List<Double> oldProbability = probability;
+		updates = new ArrayList<List<Update>>(updates.size() * other.updates.size());
+		probability = new ArrayList<Double>(updates.size() * other.updates.size());
+		
+		for (int i = oldUpdates.size() - 1; i >= 0; i--) {
+			for (int j = other.updates.size() - 1; j >= 0; j--) {
+				try {
+					final ArrayList<Update> joined = joinUpdates(oldUpdates.get(i), other.updates.get(j));
+					add(oldProbability.get(i) * other.probability.get(j), joined);
+				} catch (PrismLangException e) {
+					updates = oldUpdates;
+					probability = oldProbability;
+					throw e;
 				}
-				for (Update update : ch.updates.get(i)) {
-					list.add(update);
-					detectVariableConflicts(update, variables);
-				}
-				add(pi * getProbability(j), list);
 			}
-		}
-		// Modify elements of current choice to get (0,j) elements of product
-		final BitSet variables = new BitSet();
-		for (Update update : ch.updates.get(0)) {
-			variables.or(update.getAffectedVariables());
-		}
-		pi = ch.getProbability(0);
-		for (j = 0; j < n2; j++) {
-			for (Update update : updates.get(j)) {
-				detectVariableConflicts(update, variables);
-			}
-			for (Update u : ch.updates.get(0)) {
-				updates.get(j).add(u);
-			}
-			probability.set(j, pi * probability.get(j));
 		}
 	}
 
-	private void detectVariableConflicts(final Update update, final BitSet variables) throws PrismLangException
+	private ArrayList<Update> joinUpdates(List<Update> updatesA, List<Update> updatesB)
+			throws PrismLangException
 	{
-		final BitSet variableConflicts = update.getAffectedVariables();
-		variableConflicts.and(variables);
-		if(variableConflicts.cardinality() != 0) {
-			final ExpressionIdent variableIdent = update.getVarIdent(variableConflicts.nextSetBit(0));
-			final String message = "conflicting updates on shared variable in synchronous transition " + this.getModuleOrAction();
-			throw new PrismLangException(message, variableIdent);
+		final ArrayList<Update> joined = new ArrayList<Update>(updatesA.size() + updatesB.size());
+		joined.addAll(updatesA);
+		joined.addAll(updatesB);
+
+		final BitSet written = new BitSet();
+		for (Update update : joined) {
+			final BitSet writtenByUpdate = update.getWrittenVariables();
+			final BitSet conflicts = (BitSet) writtenByUpdate.clone();
+			conflicts.and(written);
+			if (! conflicts.isEmpty()) {
+				raiseConflictError(update, conflicts);
+			}
+			written.or(writtenByUpdate);
 		}
+		return joined;
+	}
+
+	private void raiseConflictError(final Update update, final BitSet conflicts) throws PrismLangException
+	{
+		final ExpressionIdent varIdent = update.getVarIdentFromIndex(conflicts.nextSetBit(0));
+		final String message = "conflicting updates on shared variable in synchronous transition";
+		String action = update.getParent().getParent().getSynch();
+		action = "".equals(action) ? "" : " [" + action + "]";
+		throw new PrismLangException(message + action, varIdent);
 	}
 
 	// Get methods
