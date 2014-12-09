@@ -27,6 +27,8 @@
 package parser.ast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
 
 import parser.*;
 import parser.type.*;
@@ -348,7 +350,7 @@ public class Update extends ASTElement
 	 */
 	public BitSet getWrittenVariables() {
 		final BitSet variables = new BitSet();
-		for (int variable=0; variable<getNumElements(); variable++) {
+		for (int variable = getNumElements() - 1; variable >= 0; variable--) {
 			variables.set(getVarIndex(variable));
 		}
 		return variables;
@@ -359,14 +361,163 @@ public class Update extends ASTElement
 	 * @param index of a variable in the model
 	 * @return the variable's ExpressionIdent or null if this update does not write the variable
 	 */
-	public ExpressionIdent getVarIdentFromIndex(int index)
+	public ExpressionIdent getVarIdentFromIndex(final int index)
 	{
-		for (int i = indices.size() - 1; i >= 0; i--) {
-			if (indices.get(i) == index) {
-				return getVarIdent(i);
+		int variable = getLocalVarIndex(index);
+
+		return variable < 0 ? null : getVarIdent(variable);
+	}
+
+	/**
+	 * @param index of a variable in the model
+	 * @return local index of the variable of -1 if this update does not write the variable
+	 */
+	public int getLocalVarIndex(final int index) {
+		for (int variable = indices.size() - 1; variable >= 0; variable--) {
+			if (getVarIndex(variable) == index) {
+				return variable;
 			}
 		}
-		return null;
+		return -1;
+	}
+
+	public Update split(final int index) {
+		int variable = getLocalVarIndex(index);
+
+		if (variable < 0) {
+			return null;
+		}
+		final Update update = new Update();
+		update.setPosition(this);
+		// copy assignment to new update
+		update.addElement((ExpressionIdent) getVarIdent(variable).deepCopy(), getExpression(variable).deepCopy());
+		update.setType(0, getType(variable));
+		update.setVarIndex(0, getVarIndex(variable));
+		update.setParent(parent);
+		// remove assignment from this update
+		vars.remove(variable);
+		exprs.remove(variable);
+		types.remove(variable);
+		varIdents.remove(variable);
+		indices.remove(variable);
+		return update;
+	}
+
+	public Update cummulateUpdatesForVariable(final Update other, final int index) throws PrismLangException
+	{
+		assert this.getNumElements() == 1 : "one and only one variable update expected";
+		assert other.getNumElements() == 1 : "one and only one variable update expected";
+		assert this.getVarIndex(0) == index : "update expected to write variable #" + index;
+		assert other.getVarIndex(0) == index : "update expected to write variable #" + index;
+
+		ExpressionBinaryOp expression;
+		ExpressionBinaryOp otherExpression;
+		if ((exprs.get(0) instanceof ExpressionBinaryOp) && (other.exprs.get(0) instanceof ExpressionBinaryOp)) {
+			expression = (ExpressionBinaryOp) exprs.get(0);
+			otherExpression = (ExpressionBinaryOp) other.exprs.get(0);
+		} else {
+			throw new PrismLangException("updates do not use binary operators");
+		}
+
+		final Integer[] supported = new Integer[] {ExpressionBinaryOp.PLUS, ExpressionBinaryOp.MINUS, ExpressionBinaryOp.TIMES};
+		int operator = expression.getOperator();
+		if (! Arrays.asList(supported).contains(operator)) {
+			throw new PrismLangException("unsupported operator " + expression.getOperatorSymbol());
+		}
+		if (operator == ExpressionBinaryOp.MINUS) {
+			operator = ExpressionBinaryOp.PLUS;
+			expression = convertMinusToPlus(expression, index);
+		}
+		if (otherExpression.getOperator() == ExpressionBinaryOp.MINUS) {
+			otherExpression = convertMinusToPlus(otherExpression, index);
+		}
+		if (operator != otherExpression.getOperator()) {
+			throw new PrismLangException("incompatible top level opertors " + expression.getOperatorSymbol() + " and " + otherExpression.getOperatorSymbol());
+		}
+
+		final Tuple<ExpressionVar, Expression> thisSplit = splitExpression(expression, index);
+		final Tuple<ExpressionVar, Expression> otherSplit = splitExpression(otherExpression, index);
+
+		final ExpressionBinaryOp joined = new ExpressionBinaryOp(operator, thisSplit.first, new ExpressionBinaryOp(operator, thisSplit.second, otherSplit.second));
+		final Update update = (Update) this.deepCopy();
+		update.exprs.set(0, joined);
+		update.setParent(parent);
+		return update;
+	}
+
+	private ExpressionBinaryOp convertMinusToPlus(ExpressionBinaryOp expression, final int index) throws PrismLangException
+	{
+		if(!isVariable(expression.getOperand1(), index)) {
+			throw new PrismLangException("variable has to be the minuend", expression);
+		}
+		return (ExpressionBinaryOp) Expression.Plus(expression.getOperand1(), new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, expression.getOperand2()));
+	}
+
+	private Tuple<ExpressionVar, Expression> splitExpression(final ExpressionBinaryOp expression, final int index) throws PrismLangException
+	{
+		assert index >= 0 : "variable index has to be be positive";
+
+		final Tuple<ExpressionVar, Expression> result;
+
+		if (isVariable(expression.getOperand1(), index)) {
+			result = new Tuple<ExpressionVar, Expression>((ExpressionVar) expression.getOperand1(), expression.getOperand2());
+		} else if (isVariable(expression.getOperand2(), index)) {
+			result = new Tuple<ExpressionVar, Expression>((ExpressionVar) expression.getOperand2(), expression.getOperand1());
+		} else {
+			throw new PrismLangException("variable #" + index + " does not occur as top level operand", expression);
+		}
+		SearchVariable search = new SearchVariable(index);
+		result.second.accept(search);
+		if (search.isSuccessful()) {
+			throw new PrismLangException("both operands depend on variable #" + index, expression);
+		}
+		return result;
+	}
+
+	private boolean isVariable(final Expression expression, final int index) {
+		assert index >= 0 : "variable index has to be be positive";
+
+		if (!(expression instanceof ExpressionVar)) {
+			return false;
+		}
+		return ((ExpressionVar) expression).getIndex() == index;
+	}
+
+
+	public class SearchVariable extends ASTTraverse
+	{
+		final private int variable;
+		private boolean successful = false;
+
+		public SearchVariable(final int index) {
+			this.variable = index;
+		}
+
+		public boolean isSuccessful()
+		{
+			return successful;
+		}
+
+		public void visitPost(final ExpressionVar e) throws PrismLangException
+		{
+			int index = e.getIndex();
+			if (index < 0) {
+				throw new PrismLangException("Index of variable not yet set.", e);
+			}
+			successful = successful || (index == variable);
+		}
+	}
+
+	private class Tuple<S, T>
+	{
+		public final S first;
+		public final T second;
+
+		public Tuple(S first, T second)
+		{
+			this.first = first;
+			this.second = second;
+		}
 	}
 }
 

@@ -115,7 +115,7 @@ public class ChoiceListFlexi implements Choice
 	/**
 	 * Modify this choice, constructing product of it with another.
 	 */
-	public void productWith(ChoiceListFlexi other) throws PrismLangException
+	public void productWith(final ChoiceListFlexi other) throws PrismLangException
 	{
 		final List<List<Update>> oldUpdates = updates;
 		final List<Double> oldProbability = probability;
@@ -125,7 +125,7 @@ public class ChoiceListFlexi implements Choice
 		for (int i = oldUpdates.size() - 1; i >= 0; i--) {
 			for (int j = other.updates.size() - 1; j >= 0; j--) {
 				try {
-					final ArrayList<Update> joined = joinUpdates(oldUpdates.get(i), other.updates.get(j));
+					final List<Update> joined = joinUpdates(oldUpdates.get(i), other.updates.get(j));
 					add(oldProbability.get(i) * other.probability.get(j), joined);
 				} catch (PrismLangException e) {
 					updates = oldUpdates;
@@ -136,33 +136,82 @@ public class ChoiceListFlexi implements Choice
 		}
 	}
 
-	private ArrayList<Update> joinUpdates(List<Update> updatesA, List<Update> updatesB)
+	private List<Update> joinUpdates(final List<Update> updatesA, final List<Update> updatesB)
 			throws PrismLangException
 	{
 		final ArrayList<Update> joined = new ArrayList<Update>(updatesA.size() + updatesB.size());
 		joined.addAll(updatesA);
 		joined.addAll(updatesB);
 
-		final BitSet written = new BitSet();
-		for (Update update : joined) {
-			final BitSet writtenByUpdate = update.getWrittenVariables();
-			final BitSet conflicts = (BitSet) writtenByUpdate.clone();
-			conflicts.and(written);
-			if (! conflicts.isEmpty()) {
-				raiseConflictError(update, conflicts);
-			}
-			written.or(writtenByUpdate);
-		}
-		return joined;
+		return resolveConflicts(joined);
 	}
 
-	private void raiseConflictError(final Update update, final BitSet conflicts) throws PrismLangException
+	private BitSet getWriteConflicts(final List<Update> joined)
 	{
-		final ExpressionIdent varIdent = update.getVarIdentFromIndex(conflicts.nextSetBit(0));
-		final String message = "conflicting updates on shared variable in synchronous transition";
-		String action = update.getParent().getParent().getSynch();
-		action = "".equals(action) ? "" : " [" + action + "]";
-		throw new PrismLangException(message + action, varIdent);
+		final BitSet written = new BitSet();
+		final BitSet conflicts = new BitSet();
+		for (Update update : joined) {
+			final BitSet writtenByUpdate = update.getWrittenVariables();
+			written.or(writtenByUpdate);
+			writtenByUpdate.and(written);
+			conflicts.or(writtenByUpdate);
+		}
+		return conflicts;
+	}
+
+	private List<Update> resolveConflicts(final List<Update> updates) throws PrismLangException {
+		final BitSet conflicts = getWriteConflicts(updates);
+
+		List<Update> currentUpdates = updates;
+		for (int variable = conflicts.nextSetBit(0); variable >= 0; variable = conflicts.nextSetBit(variable + 1)) {
+			final List<Update> resolvedUpdates = new ArrayList<Update>();
+			final List<Update> variableUpdates = new ArrayList<Update>();
+
+			for (Update update : currentUpdates) {
+				if (update.getWrittenVariables().get(variable)) {
+					final Update variableUpdate;
+					if (update.getNumElements() > 1) {
+						final Update modifiedUpdate = (Update) update.deepCopy();
+						modifiedUpdate.setParent(update.getParent());
+						variableUpdate = modifiedUpdate.split(variable);
+						resolvedUpdates.add(modifiedUpdate);
+					} else {
+						variableUpdate = update;
+					}
+					variableUpdates.add(variableUpdate);
+				} else {
+					resolvedUpdates.add(update);
+				}
+			}
+			resolvedUpdates.add(cumulateUpdatesForVariable(variableUpdates, variable));
+			currentUpdates = resolvedUpdates;
+		}
+		return currentUpdates;
+	}
+
+	private Update cumulateUpdatesForVariable(final List<Update> updates, final int variable) throws PrismLangException
+	{
+		assert updates.size() > 0 : "at least one update expected";
+
+		Update joinedUpdate = null;
+		for (Update update : updates) {
+			try {
+				joinedUpdate = cumulateUpdatesForVariable(joinedUpdate, update, variable);
+			} catch (PrismLangException e) {
+				e.printStackTrace();
+				final ExpressionIdent varIdent = update.getVarIdentFromIndex(variable);
+				final String message = "non-cumulative conflicting updates on shared variable in synchronous transition";
+				String action = update.getParent().getParent().getSynch();
+				action = "".equals(action) ? "" : " [" + action + "]";
+				throw new PrismLangException(message + action, varIdent);
+			}
+		}
+		return joinedUpdate;
+	}
+
+	private Update cumulateUpdatesForVariable(final Update updateA, final Update updateB, final int variable) throws PrismLangException
+	{
+		return updateA == null ? updateB : updateA.cummulateUpdatesForVariable(updateB, variable);
 	}
 
 	// Get methods
