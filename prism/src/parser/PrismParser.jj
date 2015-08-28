@@ -1457,6 +1457,9 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) :
 		ret = ExpressionParenth(prop, pathprop)
 	|
 		// Remaining options are only applicable for properties
+		LOOKAHEAD(ExpressionConditional(prop, pathprop))
+		ret = ExpressionConditional(prop, pathprop)
+	| 
 		ret = ExpressionProb(prop, pathprop)
 	|
 		ret = ExpressionSS(prop, pathprop)
@@ -1591,6 +1594,49 @@ Expression ExpressionParenth(boolean prop, boolean pathprop) :
 //-----------------------------------------------------------------------------------
 // Property stuff
 //-----------------------------------------------------------------------------------
+
+// (Property) expression: conditional property
+
+Expression ExpressionConditional(boolean prop, boolean pathprop) :
+{
+	Expression objective;
+	Expression condition;
+}
+{
+	// This production is only allowed in expressions if the "prop" parameter is true
+	{ if (!prop) throw generateParseException(); }
+	(
+		objective = ExpressionReward(prop, pathprop)
+	|
+		objective = ExpressionProb(prop, pathprop)
+	|
+		objective = ExpressionSS(prop, pathprop)
+	)
+	<LBRACKET>
+		condition = Expression(prop, true)
+	<RBRACKET>
+	{
+		ExpressionFilter filter = null;
+		if (objective instanceof ExpressionFilter) {
+			// separate objective and old-style filter
+			filter = (ExpressionFilter) objective;
+			objective = filter.getOperand();
+		}
+		ExpressionConditional exprCond = new ExpressionConditional(objective, condition);
+		// set position
+		exprCond.setBeginLine(objective.getBeginLine());
+		exprCond.setBeginColumn(objective.getBeginColumn());
+		exprCond.setEndLine(getToken(0).endLine);
+		exprCond.setEndColumn(getToken(0).endColumn);
+		if (filter != null) {
+			// apply old-style filter to conditional expression
+			filter.setOperand(exprCond);
+			return filter;
+		} else {
+			return exprCond;
+		}
+	}
+}
 
 // (Property) expression: probabilistic operator P
 
