@@ -454,6 +454,12 @@ public class TypeCheck extends ASTTraverse
 		// Type already known
 	}
 
+	public void visitPost(ExpressionConditional e) throws PrismLangException
+	{
+		// Set type
+		e.setType(e.getObjective().getType());
+	}
+
 	public void visitPost(ExpressionProb e) throws PrismLangException
 	{
 		// Check prob bound

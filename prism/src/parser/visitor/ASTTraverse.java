@@ -517,6 +517,16 @@ public class ASTTraverse implements ASTVisitor
 		return null;
 	}
 	public void visitPost(ExpressionViewVar e) throws PrismLangException { defaultVisitPost(e); }
+	public void visitPre(ExpressionConditional e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionConditional e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getObjective() != null) e.getObjective().accept(this);
+		if (e.getCondition() != null) e.getCondition().accept(this);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionConditional e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionProb e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionProb e) throws PrismLangException

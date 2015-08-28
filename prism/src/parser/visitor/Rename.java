@@ -113,6 +113,13 @@ public class Rename extends ASTTraverseModify
 		if (s != null) e.setName(s);
 	}
 
+	public void visitPost(ExpressionConditional e) throws PrismLangException
+	{
+		// This renaming is only designed to be applied
+		// at the level of an individual module (and below)
+		throw new PrismLangException("Conditional expression should never be renamed");
+	}
+
 	public void visitPost(ExpressionProb e) throws PrismLangException
 	{
 		// This renaming is only designed to be applied

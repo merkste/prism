@@ -721,6 +721,9 @@ public abstract class Expression extends ASTElement
 		else if (expr instanceof ExpressionSS) {
 			return ((ExpressionSS) expr).getProb() == null;
 		}
+		else if (expr instanceof ExpressionConditional) {
+			return ((ExpressionConditional) expr).isQuantitative();
+		}
 		return false;
 	}
 
