@@ -35,6 +35,8 @@ import java.awt.*;
 import javax.swing.*;
 
 import explicit.QuantAbstractRefine;
+import explicit.conditional.DtmcTransformerType;
+import explicit.conditional.MdpTransformerType;
 
 import java.util.regex.*;
 
@@ -142,6 +144,13 @@ public class PrismSettings implements Observer
 	public static final String PRISM_FAU_INITIVAL					= "prism.fau.initival";
 	public static final String PRISM_FAU_ARRAYTHRESHOLD				= "prism.fau.arraythreshold";
 
+	//Conditional Model Checking
+	public static final String CONDITIONAL_USE_VIRTUAL_MODELS           = "conditional.useVirtualModels";
+	public static final String CONDITIONAL_USE_LEGACY_TRANSFORMATIONS   = "conditional.useLegacyTransformations";
+	public static final String CONDITIONAL_MC                           = "conditional.dtmc";
+	public static final String CONDITIONAL_MDP                          = "conditional.mdp";
+	public static final String CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS = "conditional.usMDPTransformationsForMCs";
+
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
 	public static final String SIMULATOR_DEFAULT_CONFIDENCE			= "simulator.defaultConfidence";
@@ -199,6 +208,7 @@ public class PrismSettings implements Observer
 	public static final String[] propertyOwnerNames =
 	{
 		"PRISM",
+		"Conditional",
 		"Simulator",
 		"Model",
 		"Properties",
@@ -207,6 +217,7 @@ public class PrismSettings implements Observer
 	public static final int[] propertyOwnerIDs =
 	{
 		PropertyConstants.PRISM,
+		PropertyConstants.CONDITIONAL,
 		PropertyConstants.SIMULATOR,
 		PropertyConstants.MODEL,
 		PropertyConstants.PROPERTIES,
@@ -381,6 +392,20 @@ public class PrismSettings implements Observer
 																			"For fast adaptive uniformisation (FAU), the time period is split into this number of of intervals." },
 			{ DOUBLE_TYPE,      PRISM_FAU_INITIVAL,						"FAU initial time interval",			"4.1",   	 	new Double(1.0),     														"",	
 																			"For fast adaptive uniformisation (FAU), the length of initial time interval to analyse." },
+		},
+		{
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,			"Use virtual models for computation",	"4.2",			new Boolean(false),		"",
+																			"Compute properties in virtual models" },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_LEGACY_TRANSFORMATIONS,	"Use legacy transformations",	"4.2",					new Boolean(false),		"",
+																			"Use legacy prototypye implementation of model transformations" },
+			{ BOOLEAN_TYPE,		CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS,	"DTMC: Use MDP transformations",	"4.2",			new Boolean(false),		"",
+																			"Treat DTMCs as MDPs and use MDP transformations." },
+			// FIXME ALG: add description
+			{ STRING_TYPE,		CONDITIONAL_MC,							"MC: Enabled DTMC transformations",	"4.2",			"all",		"",
+																			"<add description>" },
+			// FIXME ALG: add description
+			{ STRING_TYPE,		CONDITIONAL_MDP,						"MDP: Enabled MDP transformations",	"4.2",			"all",		"",
+																			"<add description>" },
 		},
 		{
 			{ INTEGER_TYPE,		SIMULATOR_DEFAULT_NUM_SAMPLES,			"Default number of samples",			"4.0",		new Integer(1000),			"1,",
@@ -1630,6 +1655,46 @@ public class PrismSettings implements Observer
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
 		}
+		// Switches for conditional model checking
+		else if (sw.equals("usevirtualmodels")) {
+			set(CONDITIONAL_USE_VIRTUAL_MODELS, true);
+		}
+		else if (sw.equals("uselegacytransformations")) {
+			set(CONDITIONAL_USE_LEGACY_TRANSFORMATIONS, true);
+		}
+		else if (sw.equals("mcusemdptransformations")) {
+			set(CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS, true);
+		}
+		else if (sw.equals("conditionalmc")) {
+			if (i < args.length - 1) {
+				String spec = args[++i];
+				try {
+					// check for syntactic correctness
+					DtmcTransformerType.getValuesOf(spec);
+					set(PrismSettings.CONDITIONAL_MC, spec);
+				} catch (PrismException e) {
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + DtmcTransformerType.getSpecificationHelp() + ")");
+				}
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+		}
+		else if (sw.equals("conditionalmdp")) {
+			if (i < args.length - 1) {
+				String spec = args[++i];
+				try {
+					MdpTransformerType.getValuesOf(spec);
+					// check for syntactic correctness
+					MdpTransformerType.getValuesOf(spec);
+					set(PrismSettings.CONDITIONAL_MDP, spec);
+				} catch (PrismException e) {
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + MdpTransformerType.getSpecificationHelp() + ")");
+				}
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+		}
+
 
 		// HIDDEN OPTIONS
 		
@@ -1800,6 +1865,13 @@ public class PrismSettings implements Observer
 		mainLog.println("-paramrandompoints <n> ......... Set number of random points to evaluate per region [default: 5]");
 		mainLog.println("-paramsubsumeregions <b> ....... Subsume adjacent regions during analysis [default: true]");
 		mainLog.println("-paramdagmaxerror <b> .......... Maximal error probability allowed for DAG function representation [default: 1E-100]");
+		mainLog.println();
+		mainLog.println("CONDITIONAL MODEL CHECKING OPTIONS:");
+		mainLog.println("-usevirtualmodels .............. Enable computation of properties in virtual models.");
+		mainLog.println("-uselegacytransformations ...... Use legacy prototypye implementation of model transformations.");
+		mainLog.println("-mcusemdptransformations ....... Treat DTMCs as MDPs and use MDP transformations.");
+		mainLog.println("-conditionalmc ................. <add description>.");
+		mainLog.println("-conditionalmdp ................ <add description>.");
 		mainLog.println();
 		mainLog.println("FAST ADAPTIVE UNIFORMISATION (FAU) OPTIONS:");
 		mainLog.println("-fauepsilon <x> ................ Set probability threshold of birth process in FAU [default: 1e-6]");

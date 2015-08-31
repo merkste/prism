@@ -49,4 +49,5 @@ public final class PropertyConstants
 	public static final int FILESYSTEM = 17;
 	public static final int NETWORK_PROFILE = 18;
 	public static final int GRAPH_DISPLAY = 19;
+	public static final int CONDITIONAL = 20;
 }
