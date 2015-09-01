@@ -36,6 +36,7 @@ import parser.VarList;
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
+import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
 import prism.Prism;
@@ -49,6 +50,7 @@ import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.iterable.IterableBitSet;
+import explicit.conditional.ConditionalMDPModelChecker;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MCRewardsFromMDPRewards;
 import explicit.rewards.MDPRewards;
@@ -246,6 +248,13 @@ public class MDPModelChecker extends ProbModelChecker
 	}
 	
 	// Numerical computation functions
+
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
+		if (!(model instanceof MDP)) {
+			throw new PrismException("Cannot model check model type " + model.getModelType());
+		}
+		return new ConditionalMDPModelChecker(this).checkExpression((MDP)model, expression, statesOfInterest);
+	}
 
 	/**
 	 * Compute next=state probabilities.

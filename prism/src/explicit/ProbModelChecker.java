@@ -32,6 +32,7 @@ import java.util.List;
 
 import parser.ast.Coalition;
 import parser.ast.Expression;
+import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
@@ -469,8 +470,12 @@ public class ProbModelChecker extends NonProbModelChecker
 	{
 		StateValues res;
 
+		// Conditional expression
+		if (expr instanceof ExpressionConditional) {
+			res = checkExpressionConditional(model, (ExpressionConditional) expr, statesOfInterest);
+		}
 		// <<>> or [[]] operator
-		if (expr instanceof ExpressionStrategy) {
+		else if (expr instanceof ExpressionStrategy) {
 			res = checkExpressionStrategy(model, (ExpressionStrategy) expr, statesOfInterest);
 		}
 		// P operator
@@ -536,6 +541,14 @@ public class ProbModelChecker extends NonProbModelChecker
 		else {
 			throw new PrismException("Unexpected operators in " + expr.getOperatorString() + " operator");
 		}
+	}
+
+	/**
+	 * Model check a conditional expression and return the values for all states.
+	 */
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expr, BitSet statesOfInterest) throws PrismException {
+		// functionality is provided by derived model checkers
+		throw new PrismException("Missing support for conditional expressions.");
 	}
 
 	/**
@@ -638,7 +651,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			}
 		}
 
-		// Negation		
+		// Negation
 		if (expr instanceof ExpressionUnaryOp &&
 		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {
 			negated = true;

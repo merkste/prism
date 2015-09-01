@@ -36,6 +36,8 @@ import parser.VarList;
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
+import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
 import prism.Prism;
@@ -43,10 +45,13 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
+import prism.PrismSettings;
 import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.iterable.IterableBitSet;
+import explicit.conditional.ConditionalDTMCModelChecker;
+import explicit.modelviews.MDPFromDTMC;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -64,6 +69,23 @@ public class DTMCModelChecker extends ProbModelChecker
 	}
 
 	// Model checking functions
+
+	@Override
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
+		if (!(model instanceof DTMC)) {
+			throw new PrismException("Cannot model check model type " + model.getModelType());
+		}
+		final DTMC dtmc = (DTMC) model;
+		if (!(dtmc instanceof CTMC)
+			&& (expression.getObjective() instanceof ExpressionProb)
+			&& settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)) {
+			final MDP mdp = new MDPFromDTMC(dtmc);
+			// FIXME ALG: convert expression to Pmax/Pmin/...
+			final MDPModelChecker mc = new MDPModelChecker(this);
+			return mc.checkExpression(mdp, expression, statesOfInterest);
+		}
+		return new ConditionalDTMCModelChecker(this).checkExpression(dtmc, expression, statesOfInterest);
+	}
 
 	@Override
 	protected StateValues checkProbPathFormulaSimple(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
