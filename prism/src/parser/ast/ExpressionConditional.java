@@ -97,4 +97,50 @@ public class ExpressionConditional extends Expression {
 	public boolean isMatchingElement(ASTElement other) {
 		return other instanceof ExpressionConditional;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((condition == null) ? 0 : condition.hashCode());
+		result = prime * result + ((objective == null) ? 0 : objective.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof ExpressionConditional)) {
+			return false;
+		}
+		ExpressionConditional other = (ExpressionConditional) obj;
+		if (condition == null) {
+			if (other.condition != null) {
+				return false;
+			}
+		} else if (!condition.equals(other.condition)) {
+			return false;
+		}
+		if (objective == null) {
+			if (other.objective != null) {
+				return false;
+			}
+		} else if (!objective.equals(other.objective)) {
+			return false;
+		}
+		return true;
+	}
 }
