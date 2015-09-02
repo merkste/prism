@@ -80,9 +80,11 @@ public class DTMCModelChecker extends ProbModelChecker
 			&& (expression.getObjective() instanceof ExpressionProb)
 			&& settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)) {
 			final MDP mdp = new MDPFromDTMC(dtmc);
-			// FIXME ALG: convert expression to Pmax/Pmin/...
+			final ExpressionProb objective = (ExpressionProb) expression.getObjective();
+			final ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
 			final MDPModelChecker mc = new MDPModelChecker(this);
-			return mc.checkExpression(mdp, expression, statesOfInterest);
+			mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
+			return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
 		}
 		return new ConditionalDTMCModelChecker(this).checkExpression(dtmc, expression, statesOfInterest);
 	}
