@@ -72,16 +72,19 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		// 1. create mode 1 == conditional part
 		// FIXME ALG: how to handle initial states ?
 		final ConditionalTerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
-		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
+		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create transformed model
+		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
 		final DTMCView transformedModel;
 		if (absorbing) {
+			getLog().println("Mode 2 has " + 0 + " states");
 			// make terminal states absorbing
 			transformedModel = DTMCAlteredDistributions.addSelfLoops(mode1.getTransformedModel(), BitSetTools.asBitSet(terminalLookup.keySet()));
 		} else {
 			// mode 2 == submodel reachable from terminal states
 			final DTMCRestricted mode2 = new DTMCRestricted(model, terminalLookup.values());
+			getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 
 			// union of mode1 and mode2
 			// FIXME ALG: code duplication, building identify map

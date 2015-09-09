@@ -73,10 +73,12 @@ public class MCNextTransformer extends MCConditionalTransformer
 		final boolean negated = Expression.isNot(condition);
 		final BitSet goal = getGoalStates(model, condition);
 		final ConditionalTerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, goal, negated, statesOfInterest);
+		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create mode 2 == submodel reachable from terminal states
 		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
 		final DTMCRestricted mode2 = new DTMCRestricted(model, terminalLookup.values());
+		getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 
 		// 3. create union model
 		// FIXME ALG: code duplication, building identify map
