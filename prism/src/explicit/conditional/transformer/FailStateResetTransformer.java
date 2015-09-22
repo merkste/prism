@@ -64,7 +64,7 @@ public class FailStateResetTransformer extends ResetTransformer
 		final MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getChoices(resetStates, failState, targetState);
 		final MDPAdditionalChoices resetModel = new MDPAdditionalChoices(model, choices, actions);
 
-		final ArrayMapping<Integer> mapping = ArrayMapping.identity(model.getNumStates() - 1);
+		final ArrayMapping<Integer> mapping = ArrayMapping.identity(model.getNumStates());
 		return new BasicModelTransformation<MDP, MDP>(model, resetModel, mapping.getElements());
 	}
 
