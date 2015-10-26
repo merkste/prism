@@ -11,7 +11,6 @@ import common.PrimitiveArrayConverter;
 import explicit.ModelCheckerResult;
 import explicit.quantile.QuantileUtilities;
 import explicit.quantile.context.Context;
-import explicit.quantile.context.Context4ExpressionQuantileExp;
 import explicit.quantile.context.Context4ExpressionQuantileProb;
 import explicit.quantile.context.Context4ExpressionQuantileProbLowerRewardBound;
 import explicit.quantile.context.Context4ExpressionQuantileProbUpperRewardBound;
@@ -57,16 +56,6 @@ public class LinearProgramComputer
 		}
 	}
 
-	private static double getLpSolveInfinity(final LpSolve solver)
-	{
-		return Math.nextDown(solver.getInfinite());
-	}
-
-	private static boolean isLpSolveInfinity(final LpSolve solver, final double value)
-	{
-		return solver.isInfinite(Math.nextUp(value));
-	}
-
 	public static Pair<double[], Map<Integer, Integer>> lpSolver(Context context, CalculatedValues values, Set<Integer> set, int rewardStep, int debugLevel) throws PrismException
 	{
 		assert (set != null);
@@ -97,9 +86,6 @@ public class LinearProgramComputer
 					if (context.getModel().getTransitionReward(state, choice) > 0){
 						double valueForPositiveRewardTransition = context.calculatePositiveRewardTransitionForZeroRewardState(state, choice, values, rewardStep);
 						int operator = determineLpOperator(context.getModel().getModelType(), context.pickMaximum());
-						if (valueForPositiveRewardTransition == Double.POSITIVE_INFINITY){
-							valueForPositiveRewardTransition = getLpSolveInfinity(solver);
-						}
 						solver.addConstraintex(1, new double[] { 1.0 }, new int[] { stateToLpIndex.get(state) }, operator, valueForPositiveRewardTransition);
 					} else {
 						assert (context.getModel().getTransitionReward(state, choice) == 0): "negative transition rewards are NOT supported!";
@@ -118,11 +104,6 @@ public class LinearProgramComputer
 				solver.writeLp("outputLpSolve.lp");
 			solver.solve();
 			result = solver.getPtrVariables();
-			for (index = 0; index < result.length; index++){
-				if (isLpSolveInfinity(solver, result[index])){
-					result[index] = Double.POSITIVE_INFINITY;
-				}
-			}
 		} catch (LpSolveException e) {
 			throw new PrismException(e.getMessage());
 		} finally {
@@ -141,21 +122,9 @@ public class LinearProgramComputer
 		List<Integer> successors = new ArrayList<Integer>();
 		List<Double> probabilities = new ArrayList<Double>();
 		double currentValue = calculateSuccessorProbabilities(successors, probabilities, context.getModel(), values, state, choice, stateToLpIndex);
-		if (context instanceof Context4ExpressionQuantileExp) {
-			RewardWrapper valueAddition = ((Context4ExpressionQuantileExp) context).getValueModel();
-			currentValue -= valueAddition.getStateReward(state);
-			currentValue -= valueAddition.getTransitionReward(state, choice);
-		}
 		int[] indizes = PrimitiveArrayConverter.convertToIntegerArray(successors);
 		double[] probs = PrimitiveArrayConverter.convertToDoubleArray(probabilities);
-		final int operator;
-		if (currentValue == Double.POSITIVE_INFINITY){
-			currentValue = getLpSolveInfinity(solver);
-			//the variable only depends on the constant infinity, therefore the variable stays as it is (without any subtraction)
-			operator = determineLpOperator(context.getModel().getModelType(), context.pickMaximum());
-		} else {
-			operator = determineLpOperator(context.getModel().getModelType(), context.pickMinimum());
-		}
+		final int operator = determineLpOperator(context.getModel().getModelType(), context.pickMinimum());
 		solver.addConstraintex(indizes.length, probs, indizes, operator, currentValue);
 	}
 
@@ -167,13 +136,7 @@ public class LinearProgramComputer
 		int[] indizes = PrimitiveArrayConverter.convertToIntegerArray(successors);
 		double[] probs = PrimitiveArrayConverter.convertToDoubleArray(probabilities);
 		int operator = determineLpOperator(context.getModel().getModelType(), context.pickMinimum());
-		int additionalSum = 0;
-		if (context instanceof Context4ExpressionQuantileExp) {
-			RewardWrapper valueAddition = ((Context4ExpressionQuantileExp) context).getValueModel();
-			additionalSum -= valueAddition.getStateReward(state);
-			additionalSum -= valueAddition.getTransitionReward(state, choice);
-		}
-		solver.addConstraintex(indizes.length, probs, indizes, operator, additionalSum);
+		solver.addConstraintex(indizes.length, probs, indizes, operator, 0);
 	}
 
 	public static ModelCheckerResult lpSolverExclusively(Context4ExpressionQuantileProb context, int rewardBound,

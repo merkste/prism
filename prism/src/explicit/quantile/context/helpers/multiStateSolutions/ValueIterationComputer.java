@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import explicit.quantile.context.Context;
-import explicit.quantile.context.Context4ExpressionQuantileExp;
 import explicit.quantile.context.Context4ExpressionQuantileProb;
 import explicit.quantile.context.helpers.QuantitativeCalculationHelper;
 import explicit.quantile.dataStructure.CalculatedValues;
@@ -26,7 +25,6 @@ public class ValueIterationComputer extends IterationComputer
 			}
 			return 1;
 		}
-		assert (context instanceof Context4ExpressionQuantileExp) : "Incompatible Context type!!";
 		return values.getMinimalValue();
 	}
 
@@ -59,9 +57,6 @@ public class ValueIterationComputer extends IterationComputer
 		if (debugLevel >= 3)
 			log.println("Starting value iteration ...");
 		RewardWrapper model = context.getModel();
-		RewardWrapper valueAddition = null;
-		if (context instanceof Context4ExpressionQuantileExp)
-			valueAddition = ((Context4ExpressionQuantileExp) context).getValueModel();
 		final Map<Integer, Double> positiveRewardChoiceValues = getValuesForPositiveRewardTransitions(context, getStatesWithPositiveRewardTransitions(set, statesWithMixedTransitionRewards), values, rewardStep);
 		Pair<double[], Map<Integer, Integer>> initialised = initialiseValueVectorAndStateToArrayMapping(values, set, context, positiveRewardChoiceValues);
 		double[] lastIteration = initialised.getFirst();
@@ -78,9 +73,6 @@ public class ValueIterationComputer extends IterationComputer
 				for (int choice = 0, numChoices = model.getNumChoices(state); choice < numChoices; choice++){
 					if (model.getTransitionReward(state, choice) == 0){
 						double valueForChoice = valueSumZeroRewardTransition(model.getDistributionIterable(state, choice), lastIteration, values, stateToArrayIndex);
-						if (valueAddition != null){
-							valueForChoice += valueAddition.getStateReward(state) + valueAddition.getTransitionReward(state, choice);
-						}
 						if (thisIsTheFirstChoice){
 							thisIsTheFirstChoice = false;
 							if (debugLevel >= 5){

@@ -39,7 +39,6 @@ import parser.ast.Coalition;
 import parser.ast.Expression;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuantileProb;
-import parser.ast.ExpressionQuantileExpNormalForm;
 import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
@@ -520,10 +519,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionQuantileProb) {
 			res = checkExpressionQuantile(model, (ExpressionQuantileProb) expr, statesOfInterest);
 		}
-		// Expectation-Quantile Operator
-		else if (expr instanceof ExpressionQuantileExpNormalForm) {
-			res = checkExpressionQuantile(model, (ExpressionQuantileExpNormalForm) expr, statesOfInterest);
-		}
 		// Otherwise, use the superclass
 		else {
 			res = super.checkExpression(model, expr, statesOfInterest);
@@ -735,12 +730,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		return result;
-	}
-
-	protected StateValues checkExpressionQuantile(final Model model, final ExpressionQuantileExpNormalForm expressionQuantileExpectation,
-			final BitSet statesOfInterest) throws PrismException
-	{
-		return new QuantileUtilities(this).checkExpressionQuantile(model, expressionQuantileExpectation, statesOfInterest);
 	}
 
 	/**

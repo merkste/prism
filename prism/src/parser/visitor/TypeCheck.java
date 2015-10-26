@@ -709,8 +709,4 @@ public class TypeCheck extends ASTTraverse
 	public void visitPost(ExpressionQuantileProb e){
 		e.setType(TypeDouble.getInstance());
 	}
-
-	public void visitPost(ExpressionQuantileExpNormalForm e){
-		e.setType(TypeDouble.getInstance());
-	}
 }

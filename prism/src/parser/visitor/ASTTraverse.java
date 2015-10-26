@@ -679,15 +679,6 @@ public class ASTTraverse implements ASTVisitor
 	}
 	public void visitPost(ExpressionQuantileProb e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
-	public void visitPre(ExpressionQuantileExpNormalForm e) throws PrismLangException { defaultVisitPre(e); }
-	public Object visit(ExpressionQuantileExpNormalForm e) throws PrismLangException {
-		visitPre(e);
-		//XXX: weitermachen
-		visitPost(e);
-		return e;
-	}
-	public void visitPost(ExpressionQuantileExpNormalForm e) throws PrismLangException { defaultVisitPost(e); }
-	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionMultipleThresholds e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionMultipleThresholds e) throws PrismLangException {
 		visitPre(e);

@@ -5,7 +5,6 @@ import java.util.Set;
 
 import explicit.quantile.QuantileUtilities;
 import explicit.quantile.context.Context;
-import explicit.quantile.context.Context4ExpressionQuantileExp;
 import explicit.quantile.context.Context4ExpressionQuantileProb;
 import explicit.quantile.dataStructure.CalculatedValues;
 import explicit.quantile.dataStructure.Pair;
@@ -24,9 +23,6 @@ public enum MultiStateSolutionMethod
 		@Override
 		public Pair<double[], Map<Integer, Integer>> solveMultipleStates(final Context context, final CalculatedValues values, final Set<Integer> states, final Set<Integer> statesWithPositiveRewardTransition, final int rewardStep, final QuantileUtilities quantileUtilities) throws PrismException
 		{
-			if (context instanceof Context4ExpressionQuantileExp){
-				throw new PrismException("interval iteration is not supported for expectation quantiles");
-			}
 			return IntervalIterationComputer.intervalIteration((Context4ExpressionQuantileProb) context, values, states, rewardStep, statesWithPositiveRewardTransition, quantileUtilities.getMaxIters(), quantileUtilities.getTermCritParam(), quantileUtilities.getTermCritAbsolute(), quantileUtilities.getLog(), quantileUtilities.getDebugLevel());
 		}
 	},

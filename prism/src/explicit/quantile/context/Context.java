@@ -175,7 +175,7 @@ public abstract class Context
 		//the best order for calculating the Z-values will be generated in the very first iteration
 		//but be aware, the very first iteration when using lower reward bounds is 1, and 0 for upper reward bounds
 		int veryFirstIteration = 0;
-		if (this instanceof Context4ExpressionQuantileExpLowerRewardBound || this instanceof Context4ExpressionQuantileProbLowerRewardBound)
+		if (this instanceof Context4ExpressionQuantileProbLowerRewardBound)
 			veryFirstIteration = 1;
 		if (rewardStep == veryFirstIteration) {
 			Set<Integer> statesWaitingForCalculation = values.getUndefinedStates();

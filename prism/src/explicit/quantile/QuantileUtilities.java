@@ -16,7 +16,6 @@ import common.iterable.Support;
 import common.iterable.collections.SetFactory;
 import parser.ast.Expression;
 import parser.ast.ExpressionProb;
-import parser.ast.ExpressionQuantileExpNormalForm;
 import parser.ast.ExpressionQuantileHelpers;
 import parser.ast.ExpressionQuantileProb;
 import parser.ast.ExpressionQuantileProbNormalForm;
@@ -48,15 +47,9 @@ import explicit.ProbModelChecker;
 import explicit.StateValues;
 import explicit.ProbModelChecker.TermCrit;
 import explicit.quantile.context.Context;
-import explicit.quantile.context.Context4ExpressionQuantileExp;
-import explicit.quantile.context.Context4ExpressionQuantileExpLowerRewardBound;
-import explicit.quantile.context.Context4ExpressionQuantileExpUpperRewardBound;
 import explicit.quantile.context.Context4ExpressionQuantileProb;
 import explicit.quantile.context.Context4ExpressionQuantileProbLowerRewardBound;
 import explicit.quantile.context.Context4ExpressionQuantileProbUpperRewardBound;
-import explicit.quantile.context.helpers.BsccStates;
-import explicit.quantile.context.helpers.EcStates;
-import explicit.quantile.context.helpers.MecStates;
 import explicit.quantile.context.helpers.PrecomputationHelper;
 import explicit.quantile.context.helpers.multiStateSolutions.LinearProgramComputer;
 import explicit.quantile.context.helpers.multiStateSolutions.MultiStateSolutionMethod;
@@ -337,25 +330,9 @@ public class QuantileUtilities
 		return zeroRewardStates;
 	}
 
-	private Set<Integer> zeroRewardStatesWithPositiveValue(Context4ExpressionQuantileExp context)
-	{
-		Set<Integer> zeroRewardStates = setFactory.getSet();
-		zeroRewardStates.addAll(context.getZeroStateRewardStatesWithZeroRewardTransition());
-		zeroRewardStates.removeAll(context.getZeroValueStates());
-		if (context instanceof Context4ExpressionQuantileExpUpperRewardBound)
-			zeroRewardStates.removeAll(((Context4ExpressionQuantileExpUpperRewardBound) context).getInfinityValueStates());
-		return zeroRewardStates;
-	}
-
 	private void doTopologicalSorting(Context context)
 	{
-		Set<Integer> zeroRewardStates;
-		if (context instanceof Context4ExpressionQuantileProb)
-			zeroRewardStates = zeroRewardStatesWithPositiveProbability((Context4ExpressionQuantileProb) context);
-		else {
-			assert (context instanceof Context4ExpressionQuantileExp) : "unknown context";
-			zeroRewardStates = zeroRewardStatesWithPositiveValue((Context4ExpressionQuantileExp) context);
-		}
+		Set<Integer> zeroRewardStates = zeroRewardStatesWithPositiveProbability((Context4ExpressionQuantileProb) context);
 		final int numZeroRewardStates = zeroRewardStates.size();
 		assert (numZeroRewardStates + context.getNumberOfDerivableStates() == context.getModel().getNumStates()) : "You are trying to topologically sort the wrong states.";
 		getLog().print("Using " + getSccMethod() + " for topological SCC-sorting of " + numZeroRewardStates + " zero-reward states ... ");
@@ -478,10 +455,6 @@ public class QuantileUtilities
 	{
 		if (context instanceof Context4ExpressionQuantileProbLowerRewardBound) {
 			values.replaceCurrentValues(((Context4ExpressionQuantileProbLowerRewardBound) context).getExtremalProbabilities());
-			return;
-		}
-		if (context instanceof Context4ExpressionQuantileExpLowerRewardBound) {
-			values.replaceCurrentValues(((Context4ExpressionQuantileExpLowerRewardBound) context).getExtremalValues());
 			return;
 		}
 		//the quantile is upper reward bounded
@@ -643,51 +616,6 @@ public class QuantileUtilities
 				statesOfInterest, this, expressionQuantile);
 	}
 
-	private Context4ExpressionQuantileExp generateSuitableContext(RewardWrapper costModel, RewardWrapper valueModel,
-			ExpressionQuantileExpNormalForm expressionQuantile, BitSet statesOfInterest) throws PrismException
-	{
-		BitSet zeroStateRewardStates = costModel.getZeroStateRewardStates();
-
-		BitSet zeroRewardForAtLeastOneChoiceStates = costModel.getZeroRewardForAtLeastOneChoiceStates();
-		zeroRewardForAtLeastOneChoiceStates.and(zeroStateRewardStates);
-
-		BitSet mixedChoicesRewardStates = costModel.getMixedChoicesRewardStates();
-		mixedChoicesRewardStates.and(zeroStateRewardStates);
-
-		BitSet positiveValueStates = valueModel.getPositiveStateRewardStates();
-		if (expressionQuantile.isExistential())
-			positiveValueStates.or(valueModel.getPositiveRewardForAtLeastOneChoiceStates());
-		else
-			positiveValueStates.or(valueModel.getPositiveRewardForAllChoicesStates());
-
-		getLog().print("Starting end-component analysis ... ");
-		final long timer = System.currentTimeMillis();
-		final EcStates endComponentStates = EcStates.computeEcStates(costModel, valueModel, expressionQuantile.isUniversal());
-		getLog().println("done in " + (System.currentTimeMillis() - timer)/1000.0 + " secs");
-		final BitSet zeroValueStates;
-		switch (valueModel.getModelType()) {
-		case DTMC:
-			zeroValueStates = ((DTMCModelChecker) probModelChecker).prob0((DTMC) valueModel.getModel(), null, positiveValueStates);
-			//in DTMCs a BSCC can not be left, that is why we can do this
-			zeroValueStates.or(((BsccStates) endComponentStates).getZeroValueBsccStates());
-			break;
-		case MDP:
-			zeroValueStates = ((MDPModelChecker) probModelChecker).prob0((MDP) valueModel.getModel(), null, positiveValueStates, false, null);
-			//in MDPs end components can be left, that is why we cannot do a similar thing like for DTMCs in each case ...
-			if (expressionQuantile.isUniversal()){
-				//... but if a scheduler tries to act as an adversary (which is the case for the worst-case), we can do it
-				zeroValueStates.or(BitSetTools.union(((MecStates) endComponentStates).getZeroValueMecStates()));
-			}
-			break;
-		default:
-			throw new PrismException("The model type " + valueModel.getModelType() + " is not yet supported");
-		}
-
-		return new Context4ExpressionQuantileExpUpperRewardBound(costModel, valueModel,
-				zeroRewardForAtLeastOneChoiceStates, mixedChoicesRewardStates, zeroValueStates,
-				endComponentStates, statesOfInterest, this, expressionQuantile);
-	}
-
 	private StateValues solveQuantitativeQuantile(RewardWrapper model, ExpressionQuantileProbNormalForm expressionQuantile, BitSet statesOfInterest) throws PrismException
 	{
 		getLog().println("Solving quantile using algorithm for quantitative probability thresholds.");
@@ -723,27 +651,6 @@ public class QuantileUtilities
 		}
 		logQuantileValues(model.getModel(), transformation);
 		return getTransformedValues(StateValues.createFromDoubleArray(res.soln, model.getModel()), transformation);
-	}
-
-	private StateValues solveExpectationQuantile(RewardWrapper energyReward, RewardWrapper utilityReward, ExpressionQuantileExpNormalForm expressionQuantile, BitSet statesOfInterest)
-			throws PrismException
-	{
-		getLog().println("Solving expectation quantile.");
-		long timer = System.currentTimeMillis();
-		Context4ExpressionQuantileExp context = generateSuitableContext(energyReward, utilityReward, expressionQuantile, statesOfInterest);
-		getLog().println("\nTime for context generation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.");
-		timer = System.currentTimeMillis();
-		finiteQuantileStates = context.determineFiniteQuantileStates();
-		restrictToStatesOfInterest(context.getStatesOfInterest());
-		getLog().println("Time for precomputation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.\n");
-		buildQuantileValuesMap(context.getStatesOfInterest());
-		ModelCheckerResult res;
-		if (finiteQuantileStatesAreDetermined())
-			res = prepareResults(context.getModel().getNumStates(), timer, 0);
-		else
-			res = computeQuantileValues(context);
-		logQuantileValues(energyReward.getModel(), null);
-		return StateValues.createFromDoubleArray(res.soln, energyReward.getModel());
 	}
 
 	private static void verifyQuantileValue(final ProbModelChecker pmc, final Model model, final ExpressionQuantileProb expression, final double quantileValue, final int stateOfInterest)
@@ -840,23 +747,6 @@ public class QuantileUtilities
 			return result;
 		}
 		throw new PrismException("The inner formula of a Quantile should be of a boolean type");
-	}
-
-	public StateValues checkExpressionQuantile(final Model model, final ExpressionQuantileExpNormalForm expressionQuantile, BitSet statesOfInterest)
-			throws PrismException
-	{
-		thresholds = expressionQuantile.getThresholds(probModelChecker.getConstantValues());
-
-		setFactory = new SetFactory(probModelChecker.getSetFactory(), probModelChecker.getAdaptiveSetThreshold());
-
-		if (statesOfInterest == null){
-			statesOfInterest = BitSetTools.asBitSet(model.getInitialStates());
-		}
-		final RewardWrapper costModel = RewardWrapper.wrapModelAndReward(probModelChecker, model, expressionQuantile.buildCostRewardStructure(model, probModelChecker.getModulesFile(), probModelChecker.getConstantValues(), getLog()));
-		final RewardWrapper valueModel = RewardWrapper.wrapModelAndReward(probModelChecker, model, expressionQuantile.buildValueRewardStructure(model, probModelChecker.getModulesFile(), probModelChecker.getConstantValues(), getLog()));
-		StateValues result = solveExpectationQuantile(costModel, valueModel, expressionQuantile, statesOfInterest);
-		shutdownWorkerPool();
-		return result;
 	}
 
 	public StateValues checkExpressionProbPathFormulaSimple(final Model model, final ExpressionTemporal expressionTemporal, final MinMax minMax, final boolean negateResult, BitSet statesOfInterest)

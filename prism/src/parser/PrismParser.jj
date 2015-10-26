@@ -464,8 +464,6 @@ TOKEN :
 |	< P:				"P" >
 |	< QUANTILE_NF:		"Quantile" >
 |	< QUANTILE:			"quantile" >
-|	< EXP_QUANTILE:		"expQuantile" >
-|	< EXP_UTIL:			"ExpUtil" >
 |	< EXISTENTIAL:		"Ex" >
 |	< UNIVERSAL:		"Un" >
 |	< PROBABILISTIC:	"probabilistic" >
@@ -1471,8 +1469,6 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) :
 	|
 		ret = ExpressionQuantileProb(prop, pathprop)
 	|
-		ret = ExpressionQuantileExpNormalForm(prop, pathprop)
-	|
 		ret = ExpressionReward(prop, pathprop)
 	|
 		ret = ExpressionExists(prop, pathprop)
@@ -1827,49 +1823,6 @@ Expression ExpressionQuantileProb(boolean prop, boolean pathprop) :
 
        ret.setQuantileVariable(quantileVariable);
        ret.setInnerFormula(innerFormula);
-       return ret;
-    }
-}
-
-// (Property) expression: operator Quantile (expectation quantile)
-
-Expression ExpressionQuantileExpNormalForm(boolean prop, boolean pathprop) :
-{
-    Token begin;
-    ExpressionQuantileExpNormalForm ret = new ExpressionQuantileExpNormalForm();
-    Object costRewardIndex;
-    Object valueRewardIndex;
-    Expression threshold;
-}
-{
-    // This production is only allowed in expressions if the "prop" parameter is true
-    { if (!prop) throw generateParseException(); }
-    begin = <EXP_QUANTILE>
-       <LPARENTH>
-         (
-           <EXISTENTIAL> { ret.setExistential(); }
-          |
-           <UNIVERSAL> { ret.setUniversal(); }
-         )
-         <COMMA>
-         <EXP_UTIL>
-         <R>
-         valueRewardIndex = RewardIndex()
-         <GT>
-         threshold = ExpressionThreshold()
-         <LPARENTH>
-           <R>
-           costRewardIndex = RewardIndex()
-           <LE>
-           <QMARK>
-         <RPARENTH>
-       <RPARENTH>
-    {
-       ret.setPosition(begin, getToken(0));
-
-       ret.setValueRewardStructIndex(valueRewardIndex);
-       ret.setThresholdExpression(threshold);
-       ret.setCostRewardStructIndex(costRewardIndex);
        return ret;
     }
 }
