@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.function.IntPredicate;
 import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.functions.Mapping;
 import common.functions.Predicate;
-import common.functions.Relation;
 import common.functions.primitive.MappingInt;
 import common.functions.primitive.PredicateInt;
 import common.iterable.FilteringIterator;
@@ -25,6 +25,7 @@ import prism.PrismException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
+import explicit.PredecessorRelation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 
@@ -59,12 +60,16 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 			final BitSet statesOfInterest, final boolean collapse) throws PrismException
 	{
 		// 1. compute probabilities of constraint reachability
-		final double[] probabilities = computeProbabilities(model, remain, goal, negated);
+		// FIXME ALG: move exact results to ModelCheckerResults
+		final PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
+		final BitSet prob0 = modelChecker.prob0(model, remain, goal, pre);
+		final BitSet prob1 = modelChecker.prob1(model, remain, goal, pre);
+		final double[] probabilities = computeProbabilities(model, remain, goal, prob0, prob1, negated);
 
 		// 2. identify terminal states
 		final BitSet terminal;
 		if (collapse) {
-			terminal = new Support(probabilities, Relation.GEQ, 1.0).asBitSet();
+			terminal = negated ? prob0 : prob1;
 		} else {
 			terminal = getTerminal(model, remain, goal, negated);
 		}
@@ -87,9 +92,14 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		return new ConditionalTerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
 	}
 
-	private double[] computeProbabilities(final DTMC model, final BitSet remain, final BitSet target, final boolean negated) throws PrismException
+	private double[] computeProbabilities(final DTMC model, final BitSet remain, final BitSet target, final BitSet prob0, final BitSet prob1, final boolean negated) throws PrismException
 	{
-		final double[] probabilities = modelChecker.computeUntilProbs(model, remain, target).soln;
+		final double[] init = new double[model.getNumStates()]; // initialized with 0.0's
+		for (OfInt iter = new IterableBitSet(prob1).iterator(); iter.hasNext();) {
+			init[iter.nextInt()] = 1.0;
+		}
+		final BitSet known = BitSetTools.union(prob0, prob1);
+		final double[] probabilities = modelChecker.computeReachProbs(model, remain, target, init, known).soln;
 		return negated ? negateProbabilities(probabilities) : probabilities;
 	}
 
