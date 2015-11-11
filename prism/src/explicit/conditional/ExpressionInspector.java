@@ -9,25 +9,26 @@ import prism.PrismLangException;
 //FIXME ALG: add comment
 public class ExpressionInspector
 {
-	// (expr = remain U goal) without bounds
+	// either (expr = F goal) or (expr = remain U goal), both variants without bounds
 	public static boolean isSimpleUntilFormula(final Expression expression)
 	{
+		if (!(expression instanceof ExpressionTemporal)) {
+			return false;
+		}
+		final ExpressionTemporal temporal = (ExpressionTemporal) expression;
 		try {
-			if (!(expression instanceof ExpressionTemporal && expression.isSimplePathFormula())) {
-				// can handle simple path conditions only
+			if (!expression.isSimplePathFormula()) {
 				return false;
 			}
 		} catch (PrismLangException e) {
 			// expression cannot be checked whether it is a simple formula
 			return false;
 		}
-		final ExpressionTemporal temporal = (ExpressionTemporal) expression;
-		if (!(temporal.getOperator() == ExpressionTemporal.P_U)) {
-			// can handle until conditions only
+		final int operator = temporal.getOperator();
+		if (!(operator == ExpressionTemporal.P_F || operator == ExpressionTemporal.P_U)) {
 			return false;
 		}
 		if (temporal.hasBounds()) {
-			// can handle unbounded conditions only
 			return false;
 		}
 
@@ -37,7 +38,7 @@ public class ExpressionInspector
 	// either (expr = F goal) or (expr = true U goal) 
 	public static boolean isSimpleFinallyFormula(final Expression expression)
 	{
-		if (!(expression instanceof ExpressionTemporal)) {
+		if (!isSimpleUntilFormula(expression)) {
 			return false;
 		}
 		final Expression until;
@@ -45,10 +46,6 @@ public class ExpressionInspector
 			until = ((ExpressionTemporal) expression).convertToUntilForm();
 		} catch (PrismLangException e) {
 			// cannot convert expression to until form
-			return false;
-		}
-		if (!isSimpleUntilFormula(until)) {
-			// expression is not a simple until formula
 			return false;
 		}
 		return Expression.isTrue(((ExpressionTemporal) until).getOperand1());
@@ -59,7 +56,8 @@ public class ExpressionInspector
 		if (expression instanceof ExpressionReward) {
 			final Expression subexpression = ((ExpressionReward) expression).getExpression();
 			if (subexpression instanceof ExpressionTemporal) {
-				return ((ExpressionTemporal) subexpression).getOperator() == ExpressionTemporal.R_F;
+				final int operator = ((ExpressionTemporal) subexpression).getOperator();
+				return operator == ExpressionTemporal.P_F || operator == ExpressionTemporal.R_F;
 			}
 		}
 		return false;
