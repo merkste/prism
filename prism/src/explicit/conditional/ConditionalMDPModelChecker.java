@@ -48,8 +48,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 		OpRelOpBound oprel = objective.getRelopBoundInfo(null);
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
-
-			//		if (objective.getRelOp().isMin() || objective.getRelOp().isLowerBound()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
 		}
 		StateValues result = checkExpressionMax(model, expression, statesOfInterest);
