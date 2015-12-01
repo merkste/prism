@@ -37,8 +37,10 @@ import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
+import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismDevNullLog;
@@ -51,6 +53,8 @@ import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.iterable.IterableBitSet;
 import explicit.conditional.ConditionalMDPModelChecker;
+import explicit.conditional.MDPConditionalMinMaxFilterTransformer;
+import explicit.conditional.MDPMinMaxFilterTransformer.MDPMinMaxTransformation;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MCRewardsFromMDPRewards;
 import explicit.rewards.MDPRewards;
@@ -247,6 +251,37 @@ public class MDPModelChecker extends ProbModelChecker
 		return rewards;
 	}
 	
+	protected StateValues checkExpressionFilter(Model model, ExpressionFilter expression, BitSet statesOfInterest) throws PrismException
+	{
+		if (model.getModelType() == ModelType.MDP) {
+			final MDPConditionalMinMaxFilterTransformer transformer = new MDPConditionalMinMaxFilterTransformer(this);
+			if (transformer.canHandle(model, expression)) {
+				mainLog.println("Transforming model to compute min/max filter (using " + transformer.getClass().getSimpleName() + ")");
+				final MDPMinMaxTransformation transformation = transformer.transform((MDP) model, expression, statesOfInterest);
+
+				final StateValues stateValues = this.checkExpression(transformation.getTransformedModel(), transformation.getTransformedExpression(), transformation.getTransformedStatesOfInterest());
+				final Object resultValue = stateValues.getValue(transformation.getTransformedStatesOfInterest().nextSetBit(0));
+
+				final String explanation = transformation.getExplanation();
+				mainLog.println("\n" + explanation + ": " + resultValue);
+				if (expression.getExplanationEnabled() && explanation != null) {
+					result.setExplanation(explanation.toLowerCase());
+				} else {
+					result.setExplanation(null);
+				}
+
+				if (storeVector) {
+					result.setVector(transformation.projectToOriginalModel(stateValues));
+				}
+
+				result.setResult(resultValue);
+
+				return new StateValues(expression.getType(), resultValue, model);
+			}
+		}
+		return super.checkExpressionFilter(model, expression, statesOfInterest);
+	}
+
 	// Numerical computation functions
 
 	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
