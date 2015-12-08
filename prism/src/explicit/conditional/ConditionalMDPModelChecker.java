@@ -46,7 +46,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 
-		OpRelOpBound oprel = objective.getRelopBoundInfo(null);
+		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
 		}
@@ -87,7 +87,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		//					Pmax=?[!prop]	< 1-x
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 
-		OpRelOpBound oprel = objective.getRelopBoundInfo(null);
+		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMin() : "Pmin expected: " + expression;
 
 		//		final RelOp relop = objective.getRelOp();
