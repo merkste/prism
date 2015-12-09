@@ -15,13 +15,12 @@ import common.iterable.collections.MappingList;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
-import explicit.MDPSimple;
 import explicit.MinMax;
 import explicit.Model;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
 import explicit.modelviews.MDPAdditionalChoices;
-import explicit.modelviews.MDPDisjointUnion;
+import explicit.modelviews.MDPAdditionalStates;
 import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionFilter;
@@ -143,14 +142,13 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 
 	protected MDP transformModel(final MDP model, final BitSet filterStates)
 	{
-		final MDPSimple init = new MDPSimple();
-		init.addState();
+		final MDPAdditionalStates nextModel;
 		final List<State> statesList = model.getStatesList();
-		if (statesList != null) {
-			init.setStatesList(Arrays.asList(statesList.get(0)));
+		if (statesList == null) {
+			nextModel = new MDPAdditionalStates(model, 1);
+		} else {
+			nextModel = new MDPAdditionalStates(model, statesList.get(0));
 		}
-
-		final MDPDisjointUnion union = new MDPDisjointUnion(model, init);
 
 		final int numberOfFilterStates = (filterStates == null) ? model.getNumStates() : filterStates.cardinality();
 		final List<Distribution> distributions = new ArrayList<>(numberOfFilterStates);
@@ -160,19 +158,12 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 			distributions.add(distribution);
 		}
 
-		final MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = new MappingInt<List<Iterator<Entry<Integer,Double>>>>() {
-			final int initialState = model.getNumStates();
-
-			@Override
-			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
-			{
-				if (state == initialState) {
-					return new MappingList<>(distributions, Iterable::iterator);
-				}
-				return Collections.emptyList();
-			}
-		};
-		return new MDPAdditionalChoices(union, choices, null);
+		int initialState = nextModel.getAdditionalStateIndices().iterator().next();
+		MappingInt<List<Iterator<Entry<Integer, Double>>>> choices =
+				state -> (state == initialState)
+							? new MappingList<>(distributions, Iterable::iterator)
+							: Collections.emptyList();
+		return new MDPAdditionalChoices(nextModel, choices, null);
 	}
 
 	protected Expression transformExpression(final ExpressionFilter expressionFilter)
