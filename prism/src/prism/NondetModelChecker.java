@@ -47,6 +47,7 @@ import odd.ODDUtils;
 import parser.BooleanUtils;
 import parser.ast.Coalition;
 import parser.ast.Expression;
+import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
@@ -73,6 +74,8 @@ import automata.LTL2DA;
 import dv.DoubleVector;
 import dv.IntegerVector;
 import explicit.MinMax;
+import prism.conditional.ConditionalDTMCModelChecker;
+import prism.conditional.ConditionalMDPModelChecker;
 
 /*
  * Model checker for MDPs
@@ -148,6 +151,14 @@ public class NondetModelChecker extends NonProbModelChecker
 
 	// Model checking functions
 
+	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
+		if (model.getModelType() != ModelType.MDP) {
+			throw new PrismException("Cannot model check model type " + model.getModelType());
+		}
+
+		return new ConditionalMDPModelChecker(this, prism).checkExpression(model, expression, statesOfInterest);
+	}
+
 	@Override
 	public StateValues checkExpression(Expression expr, JDDNode statesOfInterest) throws PrismException
 	{
@@ -175,6 +186,9 @@ public class NondetModelChecker extends NonProbModelChecker
 			else {
 				res = super.checkExpression(expr, statesOfInterest);
 			}
+		}
+		else if (expr instanceof ExpressionConditional) {
+			res = checkExpressionConditional((ExpressionConditional)expr, statesOfInterest);
 		}
 		// Otherwise, use the superclass
 		else {

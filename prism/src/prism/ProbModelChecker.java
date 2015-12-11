@@ -46,6 +46,7 @@ import jdd.JDDNode;
 import jdd.JDDVars;
 import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
+import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
@@ -60,6 +61,7 @@ import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
 import sparse.PrismSparse;
 import dv.DoubleVector;
+import prism.conditional.ConditionalDTMCModelChecker;
 
 /*
  * Model checker for DTMCs.
@@ -141,6 +143,10 @@ public class ProbModelChecker extends NonProbModelChecker
 		// S operator
 		else if (expr instanceof ExpressionSS) {
 			res = checkExpressionSteadyState((ExpressionSS) expr, statesOfInterest);
+		}
+		// Conditional operator
+		else if (expr instanceof ExpressionConditional) {
+			res = checkExpressionConditional((ExpressionConditional) expr, statesOfInterest);
 		}
 		// Otherwise, use the superclass
 		else {
@@ -439,6 +445,15 @@ public class ProbModelChecker extends NonProbModelChecker
 			totalProbs.clear();
 			return new StateValuesMTBDD(sol, model);
 		}
+	}
+	
+	// Model checking functions
+	
+	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
+		if (model.getModelType() != ModelType.DTMC) {
+			throw new PrismException("Cannot model check model type " + model.getModelType());
+		}
+		return new ConditionalDTMCModelChecker(this, prism).checkExpression((ProbModel) model, expression, statesOfInterest);
 	}
 
 	// Contents of a P operator
