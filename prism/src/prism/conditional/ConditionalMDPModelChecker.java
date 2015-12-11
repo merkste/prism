@@ -1,6 +1,9 @@
 package prism.conditional;
 
 import explicit.MinMax;
+import java.util.SortedSet;
+
+import explicit.conditional.transformer.MdpTransformerType;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
@@ -15,6 +18,7 @@ import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.StateValues;
@@ -43,11 +47,16 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	public StateValues checkExpressionMax(final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		double n = JDD.GetNumMinterms(statesOfInterest, model.getNumDDRowVars());
 		if (n != 1) {
+			JDD.Deref(statesOfInterest);
 			throw new PrismException("Currently, only a single state of interest is supported for MDP conditionals, got "+n);
 		}
 
 		try {
 			final ConditionalTransformer<NondetModelChecker, NondetModel> transformer = selectModelTransformer(model, expression);
+			if (transformer == null) {
+				JDD.Deref(statesOfInterest);
+				throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
+			}
 			final ModelExpressionTransformation<NondetModel, NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
 			final StateValues resultTransformed = checkExpressionTransformedModel(transformation);
 
@@ -108,18 +117,22 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	}
 
 	private ConditionalTransformer<NondetModelChecker, NondetModel> selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
-		boolean forceLtlCondition = prism.getSettings().getBoolean(PrismSettings.PRISM_ALL_PATHFORMULAS_VIA_LTL);
+		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MDP);
+		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
-		if (!forceLtlCondition && 
-			new MDPFinallyTransformer(mc, prism).canHandle(model, expression)) {
-			return new MDPFinallyTransformer(mc, prism);
+		if (types.contains(MdpTransformerType.FinallyFinally)) {
+			if (new MDPFinallyTransformer(mc, prism).canHandle(model, expression)) {
+				return new MDPFinallyTransformer(mc, prism);
+			}
 		}
 
-		if(new MDPLTLTransformer(mc, prism).canHandle(model, expression)) {
-			return new MDPLTLTransformer(mc, prism);
+		if (types.contains(MdpTransformerType.LtlLtl)) {
+			if(new MDPLTLTransformer(mc, prism).canHandle(model, expression)) {
+				return new MDPLTLTransformer(mc, prism);
+			}
 		}
 
-		throw new PrismException("Cannot model check " + expression);
+		return null;
 	}
 
 	private StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, NondetModel> transformation) throws PrismException {
