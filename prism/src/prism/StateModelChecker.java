@@ -69,7 +69,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 	protected Filter currentFilter;
 
 	// The result of model checking will be stored here
-	protected Result result;
+	protected Result result = new Result();
 
 	// Options:
 
@@ -1429,8 +1429,25 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 		return resVals;
 	}
 
+	/**
+	 * Compute the result of a model expression transformation.
+	 * The transformation is cleared.
+	 */
+	protected StateValues computeViaModelExpressionTransformation(ModelExpressionTransformation<?,?> transform) throws PrismException
+	{
+		mainLog.println("Computing values for transformed expression: "+transform.getTransformedExpression());
+		ModelChecker mc = createModelChecker(transform.getTransformedModel());
+		Expression transformedExpression = transform.getTransformedExpression();
+		transformedExpression.typeCheck(propertiesFile);
+		StateValues svTransformedModel = mc.checkExpression(transformedExpression, transform.getTransformedStatesOfInterest());
+		StateValues sv = transform.projectToOriginalModel(svTransformedModel);
+
+		transform.clear();
+		return sv;
+	}
+
 	// Utility functions for symbolic model checkers 
-	
+
 	/**
 	 * Get the state rewards (from a model) corresponding to the index of this R operator.
 	 * Throws an exception (with explanatory message) if it cannot be found.

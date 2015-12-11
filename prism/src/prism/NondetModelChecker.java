@@ -48,7 +48,9 @@ import parser.BooleanUtils;
 import parser.ast.Coalition;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionFunc;
+import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
 import parser.ast.ExpressionReward;
@@ -58,6 +60,7 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
+import parser.ast.ExpressionFilter.FilterOperator;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -76,6 +79,8 @@ import dv.IntegerVector;
 import explicit.MinMax;
 import prism.conditional.ConditionalDTMCModelChecker;
 import prism.conditional.ConditionalMDPModelChecker;
+import prism.conditional.MDPConditionalMinMaxFilterTransformer;
+import prism.conditional.MDPMinMaxFilterTransformer.MDPMinMaxTransformation;
 
 /*
  * Model checker for MDPs
@@ -203,6 +208,41 @@ public class NondetModelChecker extends NonProbModelChecker
 		return res;
 	}
 
+	@Override
+	public StateValues checkExpressionFilter(ExpressionFilter expression, JDDNode statesOfInterest) throws PrismException
+	{
+		if (model.getModelType() == ModelType.MDP) {
+			final MDPConditionalMinMaxFilterTransformer transformer = new MDPConditionalMinMaxFilterTransformer(this);
+			if (transformer.canHandle(model, expression)) {
+				mainLog.println("Transforming model to compute min/max filter (using " + transformer.getClass().getSimpleName() + ")");
+				final StateValues vals =
+						computeViaModelExpressionTransformation(transformer.transform(model, expression, statesOfInterest));
+
+				final double resultValue = vals.firstFromBDD(statesOfInterest);
+
+				final String explanation = transformer.getExplanation();
+				if (expression.getExplanationEnabled() && explanation != null) {
+					result.setExplanation(explanation.toLowerCase());
+				} else {
+					result.setExplanation(null);
+				}
+
+				// Store vector if requested (and if not, clear it)
+				if (storeVector) {
+					result.setVector(vals);
+				} else if (vals != null) {
+					vals.clear();
+				}
+
+				result.setResult(resultValue);
+
+				return new StateValuesMTBDD(JDD.Constant(resultValue), model);
+			}
+		}
+
+		return super.checkExpressionFilter(expression, statesOfInterest);
+	}
+
 	/**
 	 * Model check a <<>> or [[]] operator expression and return the values for all states.
 	 */
@@ -297,6 +337,7 @@ public class NondetModelChecker extends NonProbModelChecker
 			return new StateValuesMTBDD(sol, model);
 		}
 	}
+
 
 	/**
 	 * Model check n R operator expression and return the values for all states.
