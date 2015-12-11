@@ -1,5 +1,8 @@
 package prism.conditional;
 
+import java.util.SortedSet;
+
+import explicit.conditional.transformer.DtmcTransformerType;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
@@ -10,7 +13,6 @@ import parser.ast.RelOp;
 import prism.ModelChecker;
 import prism.ModelTransformation;
 import prism.Prism;
-import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
@@ -32,12 +34,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		final ConditionalTransformer<ProbModelChecker, ProbModel> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			// try quotient as last resort
-			Expression quotientExpression = transformForQuotient(expression);
-			if (quotientExpression != null) {
-				prism.getLog().println("Checking quotient expression: "+quotientExpression);
-				return mc.checkExpression(quotientExpression, statesOfInterest);
-			} else {
-				throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
+			try {
+				Expression quotientExpression = transformForQuotient(expression);
+				if (quotientExpression != null) {
+					prism.getLog().println("Checking quotient expression: "+quotientExpression);
+					return mc.checkExpression(quotientExpression, statesOfInterest.copy());
+				} else {
+					throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
+				}
+			} finally {
+				JDD.Deref(statesOfInterest);
 			}
 		}
 
@@ -66,19 +72,15 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 	}
 
 	private ConditionalTransformer<ProbModelChecker, ProbModel> selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
-		boolean forceLtlCondition = prism.getSettings().getBoolean(PrismSettings.PRISM_ALL_CONDITIONS_VIA_LTL);
-		/*
- 			if(!forceLtlCondition) {
+		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MC);
+		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 
-			if (new MCFinallyTransformer(mc).canHandle(model, expression)) {
-				return new MCFinallyTransformer(mc);
+		// System.out.println(types);
+
+		if (types.contains(DtmcTransformerType.Ltl)) {
+			if(new MCLTLTransformer(mc, prism).canHandle(model, expression)) {
+				return new MCLTLTransformer(mc, prism);
 			}
-		}
-
-*/
-		
-		if(new MCLTLTransformer(mc, prism).canHandle(model, expression)) {
-			return new MCLTLTransformer(mc, prism);
 		}
 
 		return null;
@@ -103,6 +105,13 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 	private Expression transformForQuotient(ExpressionConditional expr) throws PrismException {
 		if (!(expr.getObjective() instanceof ExpressionProb)) {
 			throw new PrismNotSupportedException("Can not transform expression with quotient method: "+expr);
+		}
+
+		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MC);
+		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
+
+		if (!types.contains(DtmcTransformerType.Quotient)) {
+			return null;
 		}
 
 		ExpressionProb top = (ExpressionProb) expr.getObjective().deepCopy();
