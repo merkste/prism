@@ -111,7 +111,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		if (top.getBound() != null) {
 			// P bowtie bound
 			top.setBound(null);
-			top.setRelOp(RelOp.EQ);
+			top.setRelOp(RelOp.COMPUTE_VALUES);
 		}
 		ExpressionProb bottom = (ExpressionProb) top.deepCopy();
 		bottom.setExpression(expr.getCondition().deepCopy());

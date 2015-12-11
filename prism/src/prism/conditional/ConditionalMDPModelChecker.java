@@ -1,5 +1,6 @@
 package prism.conditional;
 
+import explicit.MinMax;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
@@ -10,6 +11,7 @@ import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
+import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -29,7 +31,8 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	
 	public StateValues checkExpression(final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		if (objective.getRelOp().isMin() || objective.getRelOp().isLowerBound()) {
+		OpRelOpBound oprel = objective.getRelopBoundInfo(mc.getConstantValues());
+		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
 		}
 		StateValues result = checkExpressionMax(model, expression, statesOfInterest);
@@ -70,14 +73,14 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		//					1-Pmax=?[!prop]	> x
 		//					Pmax=?[!prop]	< 1-x
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		final RelOp relop = objective.getRelOp();
-		assert relop.isMin() || relop.isLowerBound() : "lower bound RelOp expected: " + relop;
+		OpRelOpBound oprel = objective.getRelopBoundInfo(mc.getConstantValues());
+		assert oprel.getMinMax(model.getModelType()).isMin(): "Pmin expected: " + expression;
 		final Expression inverseExpression;
-		if (relop.isMin()) {
-			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), RelOp.MAX.toString(), null);
+		if (oprel.isNumeric()) {
+			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), MinMax.max(), RelOp.COMPUTE_VALUES.toString(), null);
 			inverseExpression = Expression.Minus(Expression.Literal(1), new ExpressionConditional(inverseObjective, expression.getCondition()));
 		} else {
-			final RelOp inverseRelop = relop.isStrict() ? RelOp.LT : RelOp.LEQ;
+			final RelOp inverseRelop = oprel.getRelOp().negate(true);  // negate but keep strictness
 			final Expression inverseProb = Expression.Minus(Expression.Literal(1), objective.getProb());
 			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), inverseRelop.toString(), inverseProb);
 			inverseExpression = new ExpressionConditional(inverseObjective, expression.getCondition());
