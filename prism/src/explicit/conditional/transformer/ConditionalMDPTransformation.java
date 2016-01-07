@@ -5,8 +5,10 @@ import java.util.BitSet;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.ModelTransformation;
+import explicit.conditional.ReachabilityTransformation;
 
-public class ConditionalMDPTransformation extends BasicModelTransformation<MDP, MDP>
+//FIXME ALG: add comment
+public class ConditionalMDPTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>
 {
 	private final BitSet goalStates;
 
@@ -22,6 +24,7 @@ public class ConditionalMDPTransformation extends BasicModelTransformation<MDP, 
 		this.goalStates = goalStates;
 	}
 
+	@Override
 	public BitSet getGoalStates()
 	{
 		return goalStates;
