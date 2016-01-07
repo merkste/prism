@@ -9,6 +9,7 @@ import explicit.BasicModelExpressionTransformation;
 import explicit.DTMC;
 import explicit.ModelTransformation;
 
+//FIXME ALG: add comment
 public class ConditionalQuotientTransformation extends BasicModelExpressionTransformation<DTMC, DTMC>
 {
 	private final double[] probabilities;

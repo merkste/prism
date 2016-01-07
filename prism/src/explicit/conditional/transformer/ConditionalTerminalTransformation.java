@@ -5,6 +5,7 @@ import java.util.Map;
 import explicit.BasicModelTransformation;
 import explicit.Model;
 
+// FIXME ALG: add comment
 public class ConditionalTerminalTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM>
 {
 	private final Map<Integer, Integer> terminalMapping;
