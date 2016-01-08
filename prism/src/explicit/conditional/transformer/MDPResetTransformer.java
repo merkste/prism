@@ -40,7 +40,7 @@ public class MDPResetTransformer extends PrismComponent
 
 	public MappingInt<List<Iterator<Entry<Integer, Double>>>> getResetChoices(final BitSet resetStates, final int initialState)
 	{
-		Entry<Integer, Double> resetTransition = new AbstractMap.SimpleImmutableEntry<Integer, Double>(initialState, 1.0);
+		Entry<Integer, Double> resetTransition = new AbstractMap.SimpleImmutableEntry<>(initialState, 1.0);
 		List<Iterator<Entry<Integer, Double>>> resetTransitions = Collections.singletonList(Collections.singleton(resetTransition).iterator());
 		List<Iterator<Entry<Integer, Double>>> noTransitions = Collections.emptyList();
 

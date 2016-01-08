@@ -174,6 +174,9 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 			// apply conditional probability
 			final double stateProbability = probabilities[state];
 			assert stateProbability > 0 : "expected non-zero probability";
+			if (stateProbability == 1.0) {
+				return null;
+			}
 
 			final Predicate<Entry<Integer, Double>> inSupport = support.compose((ToIntFunction<Entry<Integer, Double>>) Entry::getKey);
 

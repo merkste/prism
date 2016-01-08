@@ -133,6 +133,9 @@ public class ConditionalNextTransformer extends PrismComponent
 			// apply conditional probability & redirect to second part of the model
 			final double stateProbability = probabilities[state];
 			assert stateProbability > 0 : "expected non-zero probability";
+			if (stateProbability == 1.0) {
+				return null;
+			}
 
 			final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> conditionalProbability = new Mapping<Entry<Integer, Double>, Entry<Integer, Double>>()
 			{
