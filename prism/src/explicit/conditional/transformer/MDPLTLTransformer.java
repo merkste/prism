@@ -12,10 +12,10 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import prism.PrismException;
 import prism.PrismLangException;
+import explicit.BasicModelTransformation;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
-import explicit.ModelTransformation;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.LTLProductTransformer;
 import explicit.conditional.UndefinedTransformationException;
@@ -100,8 +100,8 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		final BitSet objectiveAndConditionStatesOfInterest = BitSetTools.asBitSet(objectiveAndConditionModel.getInitialStates());
 		assert objectiveAndConditionStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
 		final int targetState = objectiveAndConditionStatesOfInterest.nextSetBit(0);
-		final ResetTransformer resetTransformer = new ResetTransformer(modelChecker);
-		final ModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(objectiveAndConditionModel, badStates, targetState);
+		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
+		final BasicModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(objectiveAndConditionModel, badStates, targetState);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest
 

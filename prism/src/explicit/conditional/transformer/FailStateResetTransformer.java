@@ -13,14 +13,13 @@ import common.functions.primitive.MappingInt;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPSimple;
-import explicit.ModelTransformation;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPDisjointUnion;
 import parser.State;
 import prism.PrismComponent;
 import prism.PrismException;
 
-public class FailStateResetTransformer extends ResetTransformer
+public class FailStateResetTransformer extends MDPResetTransformer
 {
 	public static final int FAIL = 0;
 
@@ -48,7 +47,7 @@ public class FailStateResetTransformer extends ResetTransformer
 		return Arrays.asList(states);
 	}
 
-	public ModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
+	public BasicModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
 	{
 		final MDP failStateModel = buildTrapStatesModel(model, FAIL);
 		final int failState = model.getNumStates();
@@ -57,7 +56,7 @@ public class FailStateResetTransformer extends ResetTransformer
 		return transformModel(unionModel, resetStates, targetState, failState);
 	}
 
-	public ModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState, final int failState)
+	public BasicModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState, final int failState)
 			throws PrismException
 	{
 		final MappingInt<List<Object>> actions = getActions(resetStates, failState);

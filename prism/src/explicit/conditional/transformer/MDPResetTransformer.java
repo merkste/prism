@@ -10,19 +10,18 @@ import java.util.Map.Entry;
 import common.functions.primitive.MappingInt;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
-import explicit.ModelTransformation;
 import explicit.modelviews.MDPAdditionalChoices;
 import prism.PrismComponent;
 import prism.PrismException;
 
-public class ResetTransformer extends PrismComponent
+public class MDPResetTransformer extends PrismComponent
 {
-	public ResetTransformer(PrismComponent parent)
+	public MDPResetTransformer(PrismComponent parent)
 	{
 		super(parent);
 	}
 
-	public ModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
+	public BasicModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
 	{
 		MappingInt<List<Object>> actions = getResetActions(resetStates, "reset");
 		MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getResetChoices(resetStates, targetState);
