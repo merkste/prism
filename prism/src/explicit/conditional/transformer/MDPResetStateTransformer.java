@@ -19,11 +19,11 @@ import parser.State;
 import prism.PrismComponent;
 import prism.PrismException;
 
-public class FailStateResetTransformer extends MDPResetTransformer
+public class MDPResetStateTransformer extends MDPResetTransformer
 {
 	public static final int FAIL = 0;
 
-	public FailStateResetTransformer(final PrismComponent parent)
+	public MDPResetStateTransformer(final PrismComponent parent)
 	{
 		super(parent);
 	}

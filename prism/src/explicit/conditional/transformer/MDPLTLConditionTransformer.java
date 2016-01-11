@@ -13,6 +13,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
+import explicit.BasicModelTransformation;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
@@ -108,8 +109,8 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		assert normalFormStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
 		final int targetState = normalFormStatesOfInterest.nextSetBit(0);
 		final int failState = conditionModel.getNumStates() + GoalFailTransformer.FAIL;
-		final FailStateResetTransformer resetTransformer = new FailStateResetTransformer(modelChecker);
-		final ModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
+		final MDPResetStateTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
+		final BasicModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
 				badStates, targetState, failState);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest

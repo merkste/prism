@@ -3,6 +3,7 @@ package explicit.conditional.transformer;
 import java.util.BitSet;
 
 import common.BitSetTools;
+import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.ModelTransformation;
@@ -100,8 +101,8 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		assert normalFormStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
 		final int targetState = normalFormStatesOfInterest.nextSetBit(0);
 		final int failState = model.getNumStates() + GoalFailStopTransformer.FAIL;
-		final FailStateResetTransformer resetTransformer = new FailStateResetTransformer(modelChecker);
-		final ModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
+		final MDPResetStateTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
+		final BasicModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
 				badStates, targetState, failState);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest
