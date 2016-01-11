@@ -53,7 +53,7 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
 				final List<Iterator<Entry<Integer, Double>>> distribution = conditionRedistribution.apply(state);
-				return (distribution == ProbabilisticRedistribution.EMPTY_DISTRIBUTION) ? objectiveRedistribution.apply(state) : distribution;
+				return (distribution == null) ? objectiveRedistribution.apply(state) : distribution;
 			}
 		};
 	}

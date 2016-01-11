@@ -3,7 +3,6 @@ package explicit.conditional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -162,7 +161,7 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		MappingInt<List<Iterator<Entry<Integer, Double>>>> choices =
 				state -> (state == initialState)
 							? new MappingList<>(distributions, Iterable::iterator)
-							: Collections.emptyList();
+							: null;
 		return new MDPAdditionalChoices(nextModel, choices, null);
 	}
 

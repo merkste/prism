@@ -12,8 +12,6 @@ import common.functions.primitive.MappingInt;
 
 public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Entry<Integer, Double>>>>
 {
-	static final List<Iterator<Entry<Integer, Double>>> EMPTY_DISTRIBUTION = Collections.emptyList();
-
 	private final double[] probabilitiesA;
 	private final BitSet states;
 	private final int stateA;
@@ -33,7 +31,7 @@ public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Ent
 		if (states.get(state)) {
 			return Collections.singletonList(probabilisticChoice(probabilitiesA[state]));
 		}
-		return EMPTY_DISTRIBUTION;
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")

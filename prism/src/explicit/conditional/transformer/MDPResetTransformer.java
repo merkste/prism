@@ -23,8 +23,8 @@ public class MDPResetTransformer extends PrismComponent
 
 	public BasicModelTransformation<MDP, MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
 	{
-		MappingInt<List<Object>> actions = getResetActions(resetStates, "reset");
 		MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getResetChoices(resetStates, targetState);
+		MappingInt<List<Object>> actions = getResetActions(resetStates, "reset");
 		MDPAdditionalChoices resetModel = new MDPAdditionalChoices(model, choices, actions);
 
 		return new BasicModelTransformation<MDP, MDP>(model, resetModel);
@@ -38,12 +38,11 @@ public class MDPResetTransformer extends PrismComponent
 		return state -> resetStates.get(state) ? resetActions : noActions;
 	}
 
-	public MappingInt<List<Iterator<Entry<Integer, Double>>>> getResetChoices(final BitSet resetStates, final int initialState)
+	public MappingInt<List<Iterator<Entry<Integer, Double>>>> getResetChoices(final BitSet resetStates, final int targetState)
 	{
-		Entry<Integer, Double> resetTransition = new AbstractMap.SimpleImmutableEntry<>(initialState, 1.0);
+		Entry<Integer, Double> resetTransition = new AbstractMap.SimpleImmutableEntry<>(targetState, 1.0);
 		List<Iterator<Entry<Integer, Double>>> resetTransitions = Collections.singletonList(Collections.singleton(resetTransition).iterator());
-		List<Iterator<Entry<Integer, Double>>> noTransitions = Collections.emptyList();
 
-		return state -> resetStates.get(state) ? resetTransitions : noTransitions;
+		return state -> resetStates.get(state) ? resetTransitions : null;
 	}
 }
