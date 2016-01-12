@@ -1,7 +1,6 @@
 package explicit.conditional.transformer;
 
-import java.util.AbstractMap;
-import java.util.Arrays;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,6 +8,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import common.functions.primitive.MappingInt;
+import common.iterable.IterableArray;
+import explicit.DiracDistribution;
 
 public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Entry<Integer, Double>>>>
 {
@@ -34,17 +35,16 @@ public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Ent
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	public Iterator<Entry<Integer, Double>> probabilisticChoice(final double probabilityA)
 	{
-		Entry<Integer, Double>[] transitions;
 		if (probabilityA == 1.0) {
-			transitions = (Entry<Integer, Double>[]) new Entry[] {new AbstractMap.SimpleImmutableEntry<>(stateA, 1.0)};
-		} else if (probabilityA == 0.0) {
-			transitions = (Entry<Integer, Double>[]) new Entry[] {new AbstractMap.SimpleImmutableEntry<>(stateB, 1.0)};
-		} else {
-			transitions = (Entry<Integer, Double>[]) new Entry[] {new AbstractMap.SimpleImmutableEntry<>(stateA, probabilityA), new AbstractMap.SimpleImmutableEntry<>(stateB, 1.0 - probabilityA)};
+			return DiracDistribution.iterator(stateA);
 		}
-		return Arrays.stream(transitions).iterator();
+		if (probabilityA == 0.0) {
+			return DiracDistribution.iterator(stateB);
+		}
+		final Entry<Integer, Double> transitionA = new SimpleImmutableEntry<>(stateA, probabilityA);
+		final Entry<Integer, Double> transitionB = new SimpleImmutableEntry<>(stateB, 1.0 - probabilityA);
+		return new IterableArray.Of<>(transitionA, transitionB).iterator();
 	}
 }

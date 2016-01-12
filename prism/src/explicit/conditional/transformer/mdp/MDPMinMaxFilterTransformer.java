@@ -11,7 +11,7 @@ import common.BitSetTools;
 import common.functions.primitive.MappingInt;
 import common.iterable.IterableStateSet;
 import common.iterable.collections.MappingList;
-import explicit.Distribution;
+import explicit.DiracDistribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MinMax;
@@ -144,11 +144,9 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		final MDPAdditionalStates nextModel = new MDPAdditionalStates(model, 1);
 
 		final int numberOfFilterStates = (filterStates == null) ? model.getNumStates() : filterStates.cardinality();
-		final List<Distribution> distributions = new ArrayList<>(numberOfFilterStates);
+		final List<DiracDistribution> distributions = new ArrayList<>(numberOfFilterStates);
 		for (int target : new IterableStateSet(filterStates, model.getNumStates())) {
-			final Distribution distribution = new Distribution();
-			distribution.add(target, 1.0);
-			distributions.add(distribution);
+			distributions.add(new DiracDistribution(target));
 		}
 
 		int initialState = nextModel.getAdditionalStateIndices().iterator().next();

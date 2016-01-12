@@ -1,6 +1,5 @@
 package explicit.conditional.transformer.mdp;
 
-import java.util.AbstractMap;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,6 +8,7 @@ import java.util.Map.Entry;
 
 import common.functions.primitive.MappingInt;
 import common.iterable.collections.MappingList;
+import explicit.DiracDistribution;
 import explicit.MDP;
 import explicit.Model;
 import explicit.modelviews.MDPAdditionalChoices;
@@ -38,9 +38,9 @@ public class MDPResetStateTransformer extends MDPResetTransformer
 
 	public MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final BitSet resetStates, final int resetState, final int targetState)
 	{
-		Iterable<Entry<Integer, Double>> resetTransitions = Collections.singleton(new AbstractMap.SimpleImmutableEntry<>(targetState, 1.0));
-		List<Iterable<Entry<Integer, Double>>> resetChoices = Collections.singletonList(resetTransitions);
-		MappingList<Iterable<Entry<Integer,Double>>,Iterator<Entry<Integer,Double>>> resetChoicesToIterators = new MappingList<>(resetChoices, Iterable::iterator);
+		DiracDistribution reset = new DiracDistribution(targetState);
+		List<DiracDistribution> resetChoices = Collections.singletonList(reset);
+		MappingList<DiracDistribution, Iterator<Entry<Integer,Double>>> resetChoicesToIterators = new MappingList<>(resetChoices, Iterable::iterator);
 		MappingInt<List<Iterator<Entry<Integer, Double>>>> redirectChoices = getResetChoices(resetStates, resetState);
 
 		return state -> (state == resetState)

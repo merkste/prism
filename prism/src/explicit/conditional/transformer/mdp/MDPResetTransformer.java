@@ -1,6 +1,5 @@
 package explicit.conditional.transformer.mdp;
 
-import java.util.AbstractMap;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
@@ -10,6 +9,7 @@ import java.util.Map.Entry;
 import common.functions.primitive.MappingInt;
 import common.iterable.collections.MappingList;
 import explicit.BasicModelTransformation;
+import explicit.DiracDistribution;
 import explicit.MDP;
 import explicit.Model;
 import explicit.modelviews.MDPAdditionalChoices;
@@ -34,11 +34,11 @@ public class MDPResetTransformer extends PrismComponent
 
 	public MappingInt<List<Iterator<Entry<Integer, Double>>>> getResetChoices(final BitSet resetStates, final int targetState)
 	{
-		Iterable<Entry<Integer, Double>> resetTransitions = Collections.singleton(new AbstractMap.SimpleImmutableEntry<>(targetState, 1.0));
-		List<Iterable<Entry<Integer, Double>>> resetChoices = Collections.singletonList(resetTransitions);
-		MappingList<Iterable<Entry<Integer,Double>>,Iterator<Entry<Integer,Double>>> resetChoicesToIterators = new MappingList<>(resetChoices, Iterable::iterator);
+		DiracDistribution reset = new DiracDistribution(targetState);
+		List<DiracDistribution> resetChoices = Collections.singletonList(reset);
+		MappingList<DiracDistribution, Iterator<Entry<Integer,Double>>> resetIterators = new MappingList<>(resetChoices, Iterable::iterator);
 
-		return state -> resetStates.get(state) ? resetChoicesToIterators : null;
+		return state -> resetStates.get(state) ? resetIterators : null;
 	}
 
 	public MappingInt<List<Object>> getResetActions(final BitSet resetStates, final Object action)

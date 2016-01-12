@@ -1,6 +1,5 @@
 package explicit.conditional.transformer.mdp;
 
-import java.util.AbstractMap;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
@@ -9,6 +8,7 @@ import java.util.Map.Entry;
 
 import common.BitSetTools;
 import common.functions.primitive.MappingInt;
+import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
@@ -60,8 +60,7 @@ public class GoalFailTransformer extends ConditionalNormalFormTransformer
 				}
 				if (state >= offset) {
 					// trap state
-					final Entry<Integer, Double> loop = (Entry<Integer, Double>) new AbstractMap.SimpleImmutableEntry<Integer, Double>(state, 1.0);
-					return Collections.singletonList(Collections.singleton(loop).iterator());
+					return Collections.singletonList(DiracDistribution.iterator(state));
 				}
 				// other model state
 				return null;
