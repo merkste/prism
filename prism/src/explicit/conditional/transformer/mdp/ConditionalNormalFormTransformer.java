@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 import java.util.Collections;

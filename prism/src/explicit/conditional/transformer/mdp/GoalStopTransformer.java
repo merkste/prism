@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.AbstractMap;
 import java.util.BitSet;
@@ -14,27 +14,27 @@ import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.conditional.transformer.ProbabilisticRedistribution;
 
-public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
+public class GoalStopTransformer extends ConditionalNormalFormTransformer
 {
-	public static final int FAIL = 1;
-	public static final int STOP = 2;
+	public static final int STOP = 1;
 
-	public GoalFailStopTransformer(final MDPModelChecker modelChecker)
+	public GoalStopTransformer(final MDPModelChecker modelChecker)
 	{
-		super(modelChecker, 3);
+		super(modelChecker, 2);
 	}
 
 	@Override
-	public GoalFailStopTransformation transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	public GoalStopTransformation transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
 	{
-		return new GoalFailStopTransformation(super.transformModel(model, objectiveStates, conditionStates));
+		return new GoalStopTransformation(super.transformModel(model, objectiveStates, conditionStates));
 	}
 
 	@Override
 	protected BitSet getTerminalStates(final BitSet objectiveStates, final BitSet conditionStates)
 	{
-		return BitSetTools.union(objectiveStates, conditionStates);
+		return conditionStates;
 	}
 
 	@Override
@@ -43,33 +43,23 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 	{
 		// compute Pmax(<> Objective)
 		final double[] objectiveMaxProbs = modelChecker.computeReachProbs(model, objectiveStates, false).soln;
-		// compute Pmax(<> Condition)
-		final double[] conditionMaxProbs = modelChecker.computeReachProbs(model, conditionStates, false).soln;
 
 		return new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			final int offset = model.getNumStates();
-			private final ProbabilisticRedistribution conditionRedistribution = new ProbabilisticRedistribution(conditionStates, offset + GOAL, offset + STOP,
-					objectiveMaxProbs);
-			private final ProbabilisticRedistribution objectiveRedistribution = new ProbabilisticRedistribution(objectiveStates, offset + GOAL, offset + FAIL,
-					conditionMaxProbs);
+			private final ProbabilisticRedistribution conditionRedistribution = new ProbabilisticRedistribution(conditionStates, offset + GOAL, offset + STOP, objectiveMaxProbs);
 
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
-				List<Iterator<Entry<Integer, Double>>> distribution = conditionRedistribution.apply(state);
+				final List<Iterator<Entry<Integer, Double>>> distribution = conditionRedistribution.apply(state);
 				if (distribution != null) {
 					// condition state
 					return distribution;
 				}
-				distribution = objectiveRedistribution.apply(state);
-				if (distribution != null) {
-					// objective state
-					return distribution;
-				}
 				if (state >= offset) {
 					// trap state
-					Entry<Integer, Double> loop = (Entry<Integer, Double>) new AbstractMap.SimpleImmutableEntry<Integer, Double>(state, 1.0);
+					final Entry<Integer, Double> loop = (Entry<Integer, Double>) new AbstractMap.SimpleImmutableEntry<Integer, Double>(state, 1.0);
 					return Collections.singletonList(Collections.singleton(loop).iterator());
 				}
 				// other model state
@@ -106,10 +96,9 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 		System.out.println("Initials:    " + BitSetTools.asBitSet(original.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(original.getDeadlockStates()));
 		System.out.println(original);
-
 		System.out.println();
 
-		final GoalFailStopTransformer transformer = new GoalFailStopTransformer(new MDPModelChecker(null));
+		final GoalStopTransformer transformer = new GoalStopTransformer(new MDPModelChecker(null));
 		final BitSet objectiveStates = BitSetTools.asBitSet(1);
 		final BitSet conditionStates = BitSetTools.asBitSet(2);
 		final BitSet statesOfInterest = BitSetTools.asBitSet(1);
@@ -127,21 +116,16 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 
 
 
-	public static class GoalFailStopTransformation extends NormalFormTransformation
+	public static class GoalStopTransformation extends NormalFormTransformation
 	{
-		public GoalFailStopTransformation(final MDP originalModel, final MDP transformedModel)
+		public GoalStopTransformation(final MDP originalModel, final MDP transformedModel)
 		{
 			super(originalModel, transformedModel);
 		}
 
-		public GoalFailStopTransformation(final NormalFormTransformation transformation)
+		public GoalStopTransformation(final NormalFormTransformation transformation)
 		{
 			super(transformation);
-		}
-
-		public int getFailState()
-		{
-			return numberOfStates + FAIL;
 		}
 
 		public int getStopState()

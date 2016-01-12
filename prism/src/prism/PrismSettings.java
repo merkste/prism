@@ -35,8 +35,8 @@ import java.awt.*;
 import javax.swing.*;
 
 import explicit.QuantAbstractRefine;
-import explicit.conditional.DtmcTransformerType;
-import explicit.conditional.MdpTransformerType;
+import explicit.conditional.transformer.DtmcTransformerType;
+import explicit.conditional.transformer.MdpTransformerType;
 
 import java.util.regex.*;
 

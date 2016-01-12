@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
@@ -18,10 +18,10 @@ import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.LTLProductTransformer;
-import explicit.conditional.UndefinedTransformationException;
-import explicit.conditional.transformer.GoalFailTransformer.GoalFailTransformation;
-import explicit.conditional.transformer.MDPResetTransformer.ResetTransformation;
+import explicit.conditional.transformer.LTLProductTransformer;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.GoalFailTransformer.GoalFailTransformation;
+import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 
 public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 {

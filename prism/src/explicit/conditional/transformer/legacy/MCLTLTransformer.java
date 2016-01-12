@@ -10,12 +10,11 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
-import explicit.ModelTransformation;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.LTLProductTransformer;
+import explicit.conditional.transformer.LTLProductTransformer;
 
 @Deprecated
-public class MCLTLTransformer extends explicit.conditional.transformer.MCConditionalTransformer
+public class MCLTLTransformer extends explicit.conditional.transformer.mc.MCConditionalTransformer
 {
 	protected LTLProductTransformer<DTMC> ltlTransformer;
 	protected MCUntilTransformer untilTransformer;
@@ -57,7 +56,7 @@ public class MCLTLTransformer extends explicit.conditional.transformer.MCConditi
 		}
 
 		final BitSet goal = ltlTransformer.getGoalStates(ltlTransformation);
-		final ModelTransformation<DTMC, DTMC> untilTransformation = untilTransformer.transformModel(ltlTransformation.getProductModel(), goal);
+		final BasicModelTransformation<DTMC, DTMC> untilTransformation = untilTransformer.transformModel(ltlTransformation.getProductModel(), goal);
 
 		final Integer[] mapping = new Integer[model.getNumStates()];
 		for (int state = 0; state < mapping.length; state++) {

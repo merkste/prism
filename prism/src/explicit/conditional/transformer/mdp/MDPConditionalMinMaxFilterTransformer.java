@@ -1,8 +1,9 @@
-package explicit.conditional;
+package explicit.conditional.transformer.mdp;
 
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.Model;
+import explicit.conditional.ExpressionInspector;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionFilter;

@@ -1,4 +1,4 @@
-package explicit.conditional;
+package explicit.conditional.transformer.mdp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +18,7 @@ import explicit.MinMax;
 import explicit.Model;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
+import explicit.conditional.ExpressionInspector;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPAdditionalStates;
 import parser.ast.Expression;

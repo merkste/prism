@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mc;
 
 import java.util.AbstractMap;
 import java.util.BitSet;
@@ -22,6 +22,7 @@ import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.ModelTransformation;
+import explicit.conditional.transformer.ConditionalTerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;

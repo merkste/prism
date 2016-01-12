@@ -20,12 +20,14 @@ import explicit.MinMax;
 import explicit.ModelCheckerResult;
 import explicit.ModelTransformation;
 import explicit.StateValues;
-import explicit.conditional.transformer.ConditionalMDPTransformation;
-import explicit.conditional.transformer.MDPConditionalTransformer;
-import explicit.conditional.transformer.MDPFinallyTransformer;
-import explicit.conditional.transformer.MDPLTLConditionTransformer;
-import explicit.conditional.transformer.MDPLTLObjectiveTransformer;
-import explicit.conditional.transformer.MDPLTLTransformer;
+import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
+import explicit.conditional.transformer.mdp.MDPConditionalTransformer;
+import explicit.conditional.transformer.mdp.MDPFinallyTransformer;
+import explicit.conditional.transformer.mdp.MDPLTLConditionTransformer;
+import explicit.conditional.transformer.mdp.MDPLTLObjectiveTransformer;
+import explicit.conditional.transformer.mdp.MDPLTLTransformer;
 import explicit.modelviews.ModelView;
 
 //FIXME ALG: add comment

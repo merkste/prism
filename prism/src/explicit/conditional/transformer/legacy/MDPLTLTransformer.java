@@ -19,12 +19,12 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.ModelCheckerResult;
 import explicit.LTLModelChecker.LTLProduct;
-import explicit.conditional.LTLProductTransformer;
-import explicit.conditional.UndefinedTransformationException;
-import explicit.conditional.transformer.ConditionalMDPTransformation;
+import explicit.conditional.transformer.LTLProductTransformer;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
 
 @Deprecated
-public class MDPLTLTransformer extends explicit.conditional.transformer.MDPConditionalTransformer
+public class MDPLTLTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
 {
 	private LTLProductTransformer<MDP> ltlTransformer;
 	private LTLModelChecker ltlModelChecker;

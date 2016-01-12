@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
@@ -12,7 +12,7 @@ import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.conditional.ConditionalTransformer;
+import explicit.conditional.transformer.ConditionalTransformer;
 
 public abstract class MCConditionalTransformer extends ConditionalTransformer<DTMCModelChecker, DTMC>
 {

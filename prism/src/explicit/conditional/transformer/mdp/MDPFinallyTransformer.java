@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
@@ -6,9 +6,9 @@ import common.BitSetTools;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.UndefinedTransformationException;
-import explicit.conditional.transformer.GoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.transformer.MDPResetTransformer.ResetTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;

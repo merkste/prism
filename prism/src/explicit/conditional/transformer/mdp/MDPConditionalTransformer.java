@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
@@ -13,7 +13,7 @@ import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
-import explicit.conditional.ConditionalTransformer;
+import explicit.conditional.transformer.ConditionalTransformer;
 
 public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
 {

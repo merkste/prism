@@ -1,4 +1,4 @@
-package explicit.conditional;
+package explicit.conditional.transformer;
 
 import prism.PrismException;
 

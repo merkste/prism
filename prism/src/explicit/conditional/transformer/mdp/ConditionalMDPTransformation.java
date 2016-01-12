@@ -1,11 +1,11 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.ModelTransformation;
-import explicit.conditional.ReachabilityTransformation;
+import explicit.conditional.transformer.ReachabilityTransformation;
 
 //FIXME ALG: add comment
 public class ConditionalMDPTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>

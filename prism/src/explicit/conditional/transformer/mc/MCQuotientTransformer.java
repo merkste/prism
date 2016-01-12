@@ -1,4 +1,4 @@
-package explicit.conditional;
+package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
@@ -13,7 +13,6 @@ import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
 import explicit.ModelTransformation;
-import explicit.conditional.transformer.MCConditionalTransformer;
 
 // FIXME ALG: add comment
 public class MCQuotientTransformer extends MCConditionalTransformer
@@ -53,7 +52,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		}
 
 		final Expression transformedExpression = transformExpression(expression);
-		final ModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(model, model, mapping);
+		final BasicModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(model, model, mapping);
 		return new ConditionalQuotientTransformation(transformation, expression, transformedExpression, statesOfInterest, probabilities);
 	}
 

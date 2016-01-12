@@ -15,10 +15,12 @@ import explicit.DTMCSparse;
 import explicit.ModelExpressionTransformation;
 import explicit.ModelTransformation;
 import explicit.StateValues;
-import explicit.conditional.transformer.MCConditionalTransformer;
-import explicit.conditional.transformer.MCLTLTransformer;
-import explicit.conditional.transformer.MCNextTransformer;
-import explicit.conditional.transformer.MCUntilTransformer;
+import explicit.conditional.transformer.DtmcTransformerType;
+import explicit.conditional.transformer.mc.MCConditionalTransformer;
+import explicit.conditional.transformer.mc.MCLTLTransformer;
+import explicit.conditional.transformer.mc.MCNextTransformer;
+import explicit.conditional.transformer.mc.MCQuotientTransformer;
+import explicit.conditional.transformer.mc.MCUntilTransformer;
 import explicit.modelviews.DTMCView;
 
 // FIXME ALG: add comment

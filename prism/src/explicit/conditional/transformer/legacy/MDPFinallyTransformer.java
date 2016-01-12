@@ -8,8 +8,8 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.ModelCheckerResult;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.UndefinedTransformationException;
-import explicit.conditional.transformer.ConditionalMDPTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
 import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -31,7 +31,7 @@ import prism.PrismLangException;
  * @return true iff instances of this transformation can handle {@code expression}
  */
 @Deprecated
-public class MDPFinallyTransformer extends explicit.conditional.transformer.MDPConditionalTransformer
+public class MDPFinallyTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
 {
 	public MDPFinallyTransformer(final MDPModelChecker modelChecker)
 	{

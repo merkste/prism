@@ -21,7 +21,7 @@ import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
 
 @Deprecated
-public abstract class MCTwoModeTransformer extends explicit.conditional.transformer.MCConditionalTransformer
+public abstract class MCTwoModeTransformer extends explicit.conditional.transformer.mc.MCConditionalTransformer
 {
 	protected Integer[] mappingToModeOne;
 	protected Integer[] mappingToModeTwo;

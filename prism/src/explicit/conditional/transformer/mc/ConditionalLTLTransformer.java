@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 import java.util.HashMap;
@@ -14,7 +14,8 @@ import prism.PrismLangException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
-import explicit.conditional.LTLProductTransformer;
+import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.LTLProductTransformer;
 
 public class ConditionalLTLTransformer extends PrismComponent
 {
