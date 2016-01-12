@@ -1,11 +1,12 @@
 package explicit.conditional.transformer;
 
+import java.util.AbstractMap;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import parser.State;
 import prism.PrismException;
 import common.BitSetTools;
 import common.functions.primitive.MappingInt;
@@ -20,7 +21,13 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 
 	public GoalStopTransformer(final MDPModelChecker modelChecker)
 	{
-		super(modelChecker);
+		super(modelChecker, 2);
+	}
+
+	@Override
+	public GoalStopTransformation transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	{
+		return new GoalStopTransformation(super.transformModel(model, objectiveStates, conditionStates));
 	}
 
 	@Override
@@ -33,19 +40,31 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 	protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final MDP model, final BitSet objectiveStates, final BitSet conditionStates)
 			throws PrismException
 	{
-		final int offset = model.getNumStates();
 		// compute Pmax(<> Objective)
 		final double[] objectiveMaxProbs = modelChecker.computeReachProbs(model, objectiveStates, false).soln;
 
-		return new ProbabilisticRedistribution(conditionStates, offset + GOAL, offset + STOP, objectiveMaxProbs);
-	}
+		return new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
+		{
+			final int offset = model.getNumStates();
+			private final ProbabilisticRedistribution conditionRedistribution = new ProbabilisticRedistribution(conditionStates, offset + GOAL, offset + STOP, objectiveMaxProbs);
 
-	@Override
-	protected MDPSimple buildTrapStatesModel(final MDP model, final State prototype)
-	{
-		final MDPSimple trapStatesModel = super.buildTrapStatesModel(model, prototype);
-		addTrapState(trapStatesModel, prototype, true, "stop-loop");
-		return trapStatesModel;
+			@Override
+			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
+			{
+				final List<Iterator<Entry<Integer, Double>>> distribution = conditionRedistribution.apply(state);
+				if (distribution != null) {
+					// condition state
+					return distribution;
+				}
+				if (state >= offset) {
+					// trap state
+					final Entry<Integer, Double> loop = (Entry<Integer, Double>) new AbstractMap.SimpleImmutableEntry<Integer, Double>(state, 1.0);
+					return Collections.singletonList(Collections.singleton(loop).iterator());
+				}
+				// other model state
+				return null;
+			}
+		};
 	}
 
 	public static void main(final String[] args) throws PrismException
@@ -92,5 +111,25 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));
 		System.out.println(transformed);
+	}
+
+
+
+	public static class GoalStopTransformation extends NormalFormTransformation
+	{
+		public GoalStopTransformation(final MDP originalModel, final MDP transformedModel)
+		{
+			super(originalModel, transformedModel);
+		}
+
+		public GoalStopTransformation(final NormalFormTransformation transformation)
+		{
+			super(transformation);
+		}
+
+		public int getStopState()
+		{
+			return numberOfStates + STOP;
+		}
 	}
 }

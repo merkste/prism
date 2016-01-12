@@ -12,13 +12,13 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import prism.PrismException;
 import prism.PrismLangException;
-import explicit.BasicModelTransformation;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.LTLProductTransformer;
 import explicit.conditional.UndefinedTransformationException;
+import explicit.conditional.transformer.MDPResetTransformer.ResetTransformation;
 
 public class MDPLTLTransformer extends MDPConditionalTransformer
 {
@@ -101,7 +101,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		assert objectiveAndConditionStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
 		final int targetState = objectiveAndConditionStatesOfInterest.nextSetBit(0);
 		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
-		final BasicModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(objectiveAndConditionModel, badStates, targetState);
+		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(objectiveAndConditionModel, badStates, targetState);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest
 

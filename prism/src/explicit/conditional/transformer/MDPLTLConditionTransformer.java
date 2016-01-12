@@ -13,15 +13,15 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
-import explicit.BasicModelTransformation;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
-import explicit.ModelTransformation;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.LTLProductTransformer;
 import explicit.conditional.UndefinedTransformationException;
+import explicit.conditional.transformer.GoalFailTransformer.GoalFailTransformation;
+import explicit.conditional.transformer.MDPResetTransformer.ResetTransformation;
 
 public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 {
@@ -96,22 +96,22 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		// 3) Normal Form Transformation
 		final GoalFailTransformer normalFormTransformer = new GoalFailTransformer(modelChecker);
-		final ModelTransformation<MDP, MDP> normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStatesLifted,
+		final GoalFailTransformation normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStatesLifted,
 				conditionGoalStates);
 
 		//    compute "bad states"
 		final BitSet badStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance.complementToRabin());
 		final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
 		badStates.and(rStates);
+		badStates.set(normalFormTransformation.getFailState());
 
 		//    reset transformation
 		final BitSet normalFormStatesOfInterest = normalFormTransformation.mapToTransformedModel(conditionStatesOfInterest);
 		assert normalFormStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
 		final int targetState = normalFormStatesOfInterest.nextSetBit(0);
-		final int failState = conditionModel.getNumStates() + GoalFailTransformer.FAIL;
-		final MDPResetStateTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
-		final BasicModelTransformation<MDP, MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
-				badStates, targetState, failState);
+		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
+		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
+				badStates, targetState);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest
 
@@ -129,10 +129,9 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 			mapping[modelState] = resetState;
 		}
 
-		final int goalState = conditionModel.getNumStates() + GoalFailTransformer.GOAL;
+		final int goalState = normalFormTransformation.getGoalState();
 		final BitSet goalStates = BitSetTools.asBitSet(goalState);
 
 		return new ConditionalMDPTransformation(model, resetTransformation.getTransformedModel(), mapping, goalStates);
 	}
-
 }

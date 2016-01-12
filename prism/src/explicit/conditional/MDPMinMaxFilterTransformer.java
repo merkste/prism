@@ -20,7 +20,6 @@ import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPAdditionalStates;
-import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionFilter.FilterOperator;
@@ -141,13 +140,7 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 
 	protected MDP transformModel(final MDP model, final BitSet filterStates)
 	{
-		final MDPAdditionalStates nextModel;
-		final List<State> statesList = model.getStatesList();
-		if (statesList == null) {
-			nextModel = new MDPAdditionalStates(model, 1);
-		} else {
-			nextModel = new MDPAdditionalStates(model, statesList.get(0));
-		}
+		final MDPAdditionalStates nextModel = new MDPAdditionalStates(model, 1);
 
 		final int numberOfFilterStates = (filterStates == null) ? model.getNumStates() : filterStates.cardinality();
 		final List<Distribution> distributions = new ArrayList<>(numberOfFilterStates);
