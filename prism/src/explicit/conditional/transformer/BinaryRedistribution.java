@@ -2,23 +2,21 @@ package explicit.conditional.transformer;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import common.functions.primitive.MappingInt;
 import common.iterable.IterableArray;
 import explicit.DiracDistribution;
 
-public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Entry<Integer, Double>>>>
+public class BinaryRedistribution implements MappingInt<Iterator<Entry<Integer, Double>>>
 {
 	private final double[] probabilitiesA;
 	private final BitSet states;
 	private final int stateA;
 	private final int stateB;
 
-	public ProbabilisticRedistribution(final BitSet states, final int stateA, final int stateB, final double[] probabilitiesA)
+	public BinaryRedistribution(final BitSet states, final int stateA, final int stateB, final double[] probabilitiesA)
 	{
 		this.states = states;
 		this.probabilitiesA = probabilitiesA;
@@ -27,16 +25,12 @@ public class ProbabilisticRedistribution implements MappingInt<List<Iterator<Ent
 	}
 
 	@Override
-	public List<Iterator<Entry<Integer, Double>>> apply(final int state)
+	public Iterator<Entry<Integer, Double>> apply(int state)
 	{
-		if (states.get(state)) {
-			return Collections.singletonList(probabilisticChoice(probabilitiesA[state]));
+		if (!states.get(state)) {
+			return null;
 		}
-		return null;
-	}
-
-	public Iterator<Entry<Integer, Double>> probabilisticChoice(final double probabilityA)
-	{
+		final double probabilityA = probabilitiesA[state];
 		if (probabilityA == 1.0) {
 			return DiracDistribution.iterator(stateA);
 		}

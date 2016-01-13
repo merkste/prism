@@ -1,9 +1,7 @@
 package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
 
 import prism.PrismException;
@@ -14,7 +12,7 @@ import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
-import explicit.conditional.transformer.ProbabilisticRedistribution;
+import explicit.conditional.transformer.BinaryRedistribution;
 
 public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 {
@@ -39,26 +37,25 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 	}
 
 	@Override
-	protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final MDP model, final BitSet objectiveStates, final BitSet conditionStates)
-			throws PrismException
+	protected MappingInt<Iterator<Entry<Integer, Double>>> getDistributions(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
 	{
 		// compute Pmax(<> Objective)
 		final double[] objectiveMaxProbs = modelChecker.computeReachProbs(model, objectiveStates, false).soln;
 		// compute Pmax(<> Condition)
 		final double[] conditionMaxProbs = modelChecker.computeReachProbs(model, conditionStates, false).soln;
 
-		return new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
+		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
-			private final ProbabilisticRedistribution conditionRedistribution = new ProbabilisticRedistribution(conditionStates, offset + GOAL, offset + STOP,
+			private final BinaryRedistribution conditionRedistribution = new BinaryRedistribution(conditionStates, offset + GOAL, offset + STOP,
 					objectiveMaxProbs);
-			private final ProbabilisticRedistribution objectiveRedistribution = new ProbabilisticRedistribution(objectiveStates, offset + GOAL, offset + FAIL,
+			private final BinaryRedistribution objectiveRedistribution = new BinaryRedistribution(objectiveStates, offset + GOAL, offset + FAIL,
 					conditionMaxProbs);
 
 			@Override
-			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
+			public Iterator<Entry<Integer, Double>> apply( int state)
 			{
-				List<Iterator<Entry<Integer, Double>>> distribution = conditionRedistribution.apply(state);
+				Iterator<Entry<Integer, Double>> distribution = conditionRedistribution.apply(state);
 				if (distribution != null) {
 					// condition state
 					return distribution;
@@ -70,7 +67,7 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 				}
 				if (state >= offset) {
 					// trap state
-					return Collections.singletonList(DiracDistribution.iterator(state));
+					return DiracDistribution.iterator(state);
 				}
 				// other model state
 				return null;

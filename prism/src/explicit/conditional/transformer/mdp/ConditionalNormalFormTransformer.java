@@ -43,8 +43,23 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 		return new NormalFormTransformation(model, normalFormModel);
 	}
 
-	protected abstract MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final MDP model, final BitSet objectiveStates,
-			final BitSet conditionStates) throws PrismException;
+	protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final MDP model, final BitSet objectiveStates,
+			final BitSet conditionStates) throws PrismException
+	{
+		final MappingInt<Iterator<Entry<Integer, Double>>> distributions = getDistributions(model, objectiveStates, conditionStates);
+
+		return new MappingInt<List<Iterator<Entry<Integer,Double>>>>()
+		{
+			@Override
+			public List<Iterator<Entry<Integer, Double>>> apply(int state)
+			{
+				final Iterator<Entry<Integer, Double>> distribution = distributions.apply(state);
+				return (distribution == null) ? null : Collections.singletonList(distribution);
+			}
+		};
+	}
+
+	protected abstract MappingInt<Iterator<Entry<Integer, Double>>> getDistributions(MDP model, BitSet objectiveStates, BitSet conditionStates) throws PrismException;
 
 	protected MappingInt<List<Object>> getActions(final MDP model)
 	{
