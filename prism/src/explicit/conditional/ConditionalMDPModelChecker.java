@@ -92,19 +92,13 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMin() : "Pmin expected: " + expression;
 
-		//		final RelOp relop = objective.getRelOp();
-		//		assert relop.isMin() || relop.isLowerBound() : "lower bound RelOp expected: " + relop;
 		final Expression inverseExpression;
 
 		if (oprel.isNumeric()) {
 			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), MinMax.max(), RelOp.COMPUTE_VALUES.toString(),
 					null);
-
-			//		if (relop.isMin()) {
-			//			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), RelOp.MAX.toString(), null);
 			inverseExpression = Expression.Minus(Expression.Literal(1), new ExpressionConditional(inverseObjective, expression.getCondition()));
 		} else {
-			//			final RelOp inverseRelop = relop.isStrict() ? RelOp.LT : RelOp.LEQ;
 			final RelOp inverseRelop = oprel.getRelOp().negate(true); // negate but keep strictness
 
 			final Expression inverseProb = Expression.Minus(Expression.Literal(1), objective.getProb());
@@ -214,7 +208,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 				if (transformer.canHandle(model, expression)) {
 					return transformer;
 				}
-				;
 			}
 		}
 

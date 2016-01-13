@@ -56,16 +56,6 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		return transform(model, objective, conditionGoalStates, statesOfInterest);
 	}
 
-	public ConditionalMDPTransformation transform(final MDP model, final BitSet objectiveGoalStates, final Expression condition, final BitSet statesOfInterest)
-			throws PrismException
-	{
-		// 1) Condition: compute "condition goal states"
-		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(condition)).getOperand2();
-		final BitSet conditionGoalStates = modelChecker.checkExpression(model, conditionGoal, null).getBitSet();
-
-		return transform(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
-	}
-
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionProb objective, final BitSet conditionGoalStates,
 			final BitSet statesOfInterest) throws PrismException
 	{
