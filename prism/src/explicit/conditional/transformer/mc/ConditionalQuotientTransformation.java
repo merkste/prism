@@ -2,32 +2,19 @@ package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
-import common.iterable.Support;
-import parser.ast.Expression;
-import parser.ast.ExpressionConditional;
 import explicit.BasicModelExpressionTransformation;
 import explicit.DTMC;
-import explicit.ModelTransformation;
+import explicit.ModelExpressionTransformation;
 
 //FIXME ALG: add comment
 public class ConditionalQuotientTransformation extends BasicModelExpressionTransformation<DTMC, DTMC>
 {
 	private final double[] probabilities;
 
-	public ConditionalQuotientTransformation(final ModelTransformation<DTMC, DTMC> transformation, final ExpressionConditional originalExpression,
-			final Expression transformedExpression, final BitSet statesOfInterest, final double[] probabilities)
+	public ConditionalQuotientTransformation(final ModelExpressionTransformation<DTMC, DTMC> transformation, final double[] probabilities)
 	{
-		super(transformation, originalExpression, transformedExpression, statesOfInterest);
-
+		super(transformation);
 		this.probabilities = probabilities;
-	}
-
-	@Override
-	public BitSet getTransformedStatesOfInterest()
-	{
-		final BitSet result = new Support(probabilities).asBitSet();
-		result.and(super.getTransformedStatesOfInterest());
-		return result;
 	}
 
 	@Override
@@ -43,7 +30,7 @@ public class ConditionalQuotientTransformation extends BasicModelExpressionTrans
 
 		for (int i = 0; i < values.length; i++) {
 			final double probability = probabilities[i];
-			result[i] = probability == 0 ? DEFAULT_DOUBLE : values[i] / probability;
+			result[i] = probability > 0 ? values[i] / probability : DEFAULT_DOUBLE ;
 		}
 
 		return result;

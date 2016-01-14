@@ -2,17 +2,20 @@ package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
+import common.iterable.IterableBitSet;
+import common.iterable.Support;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
+import parser.ast.RelOp;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
+import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
-import explicit.ModelTransformation;
 
 // FIXME ALG: add comment
 public class MCQuotientTransformer extends MCConditionalTransformer
@@ -25,7 +28,6 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	@Override
 	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression) throws PrismLangException
 	{
-		// arbitrary path formulae
 		return LTLModelChecker.isSupportedLTLFormula(ModelType.DTMC, expression.getCondition());
 	}
 
@@ -36,36 +38,30 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;
 		}
-		return ((ExpressionProb) expression.getObjective()).getProb() == null;
+		return ((ExpressionProb) expression.getObjective()).getRelOp() == RelOp.COMPUTE_VALUES;
 	}
 
 	@Override
 	public ConditionalQuotientTransformation transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		if (! canHandle(model, expression)) {
-			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
-		}
-
-		// FIXME ALG: cleanup
 		final double[] probabilities = computeProbability(model, expression.getCondition());
+		final BitSet support = new Support(probabilities).asBitSet();
+		support.and(statesOfInterest);
 
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = probabilities[state] > 0 ? state : null;
-		}
-
-		final Expression transformedExpression = transformExpression(expression);
-		final BasicModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(model, model, mapping);
-		return new ConditionalQuotientTransformation(transformation, expression, transformedExpression, statesOfInterest, probabilities);
+		final BasicModelExpressionTransformation<DTMC, DTMC> transformation = super.transform(model, expression, support);
+		return new ConditionalQuotientTransformation(transformation, probabilities);
 	}
 
 	@Override
-	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		// FIXME ALG: cleanup
-		return null;
+		final Integer[] mapping = new Integer[model.getNumStates()];
+		for (Integer state : new IterableBitSet(statesOfInterest)) {
+			mapping[state] = state;
+		}
+		return new BasicModelTransformation<DTMC, DTMC>(model, model, mapping);
 	}
 
 	@Override
@@ -74,7 +70,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		final Expression condition = expression.getCondition();
 
-		return new ExpressionProb(Expression.And(objective.getExpression(), condition), "=", null);
+		return new ExpressionProb(Expression.And(objective.getExpression(), condition), RelOp.COMPUTE_VALUES.toString(), null);
 	}
 
 	@Override
