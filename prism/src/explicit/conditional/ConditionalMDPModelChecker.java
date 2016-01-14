@@ -110,7 +110,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return modelChecker.checkExpression(model, inverseExpression, statesOfInterest);
 	}
 
-	private ConditionalMDPTransformation transformModel(final MDPConditionalTransformer transformer, final MDP model, final ExpressionConditional expression,
+	public ConditionalMDPTransformation transformModel(final MDPConditionalTransformer transformer, final MDP model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException
 	{
 		mainLog.println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
@@ -142,12 +142,12 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return transformation;
 	}
 
-	private boolean isVirtualModel(final MDP model)
+	public boolean isVirtualModel(final MDP model)
 	{
 		return (model instanceof ModelView) && ((ModelView) model).isVirtual();
 	}
 
-	private StateValues checkExpressionTransformedModel(final ConditionalMDPTransformation transformation, final BitSet statesOfInterest) throws PrismException
+	public StateValues checkExpressionTransformedModel(final ConditionalMDPTransformation transformation, final BitSet statesOfInterest) throws PrismException
 	{
 		final MDP transformedModel = transformation.getTransformedModel();
 		final BitSet goalStates = transformation.getGoalStates();
@@ -161,7 +161,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return StateValues.createFromDoubleArray(result.soln, transformedModel);
 	}
 
-	private MDPConditionalTransformer selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
+	public MDPConditionalTransformer selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
 	{
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_MDP);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);

@@ -52,6 +52,9 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkStatesOfInterest(statesOfInterest);
+		if (! canHandle(model, expression)) {
+			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
 
 		// 1) Condition: LTL Product Transformation
 		final Expression condition = expression.getCondition();

@@ -66,7 +66,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1. create mode 1 == conditional part

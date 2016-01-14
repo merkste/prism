@@ -56,6 +56,9 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkStatesOfInterest(statesOfInterest);
+		if (! canHandle(model, expression)) {
+			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
 
 		// 1) Condition: compute "condition goal states"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
@@ -67,7 +70,7 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 		return transform(model, objective, conditionGoalStates, statesOfInterest);
 	}
 
-	public ConditionalMDPTransformation transform(final MDP model, final ExpressionProb objective, final BitSet conditionGoalStates,
+	protected ConditionalMDPTransformation transform(final MDP model, final ExpressionProb objective, final BitSet conditionGoalStates,
 			final BitSet statesOfInterest) throws PrismException
 	{
 		// FIXME consider moving checks outwards and inserting an assertion

@@ -41,6 +41,10 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer<DT
 	public BasicModelExpressionTransformation<DTMC, DTMC> transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
+		if (! canHandle(model, expression)) {
+			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
+
 		final ModelTransformation<DTMC, DTMC> transformation = transformModel(model, expression, statesOfInterest);
 		final Expression transformedExpression = transformExpression(expression);
 

@@ -43,6 +43,10 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	public ConditionalQuotientTransformation transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
+		if (! canHandle(model, expression)) {
+			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
+
 		// FIXME ALG: cleanup
 		final double[] probabilities = computeProbability(model, expression.getCondition());
 
@@ -64,6 +68,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		return null;
 	}
 
+	@Override
 	protected ExpressionProb transformExpression(final ExpressionConditional expression)
 	{
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();

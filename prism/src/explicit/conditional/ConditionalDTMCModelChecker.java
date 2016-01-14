@@ -43,7 +43,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		return transformation.projectToOriginalModel(result);
 	}
 
-	private ModelExpressionTransformation<DTMC, DTMC> transformModel(final MCConditionalTransformer transformer, final DTMC model,
+	public BasicModelExpressionTransformation<DTMC, DTMC> transformModel(final MCConditionalTransformer transformer, final DTMC model,
 			final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		mainLog.println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
@@ -75,12 +75,12 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		return transformation;
 	}
 
-	private boolean isVirtualModel(final DTMC model)
+	public boolean isVirtualModel(final DTMC model)
 	{
 		return (model instanceof DTMCView) && ((DTMCView) model).isVirtual();
 	}
 
-	private MCConditionalTransformer selectModelTransformer(final DTMC model, final ExpressionConditional expression) throws PrismException
+	public MCConditionalTransformer selectModelTransformer(final DTMC model, final ExpressionConditional expression) throws PrismException
 	{
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_MC);
 		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
@@ -137,7 +137,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		throw new PrismException("Cannot model check " + expression);
 	}
 
-	private StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<DTMC, DTMC> transformation) throws PrismException
+	public StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<DTMC, DTMC> transformation) throws PrismException
 	{
 		final DTMC transformedModel = transformation.getTransformedModel();
 		final Expression transformedExpression = transformation.getTransformedExpression();

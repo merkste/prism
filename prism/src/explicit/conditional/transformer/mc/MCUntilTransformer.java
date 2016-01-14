@@ -57,7 +57,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return transformModel(model, expression, statesOfInterest, !requiresSecondMode(expression));
 	}
 
-	private BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest,
+	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest,
 			final boolean absorbing) throws PrismException
 	{
 		if (absorbing && requiresSecondMode(expression)) {
@@ -129,7 +129,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return expression;
 	}
 
-	private boolean requiresSecondMode(final ExpressionConditional expression)
+	protected boolean requiresSecondMode(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
 		if (!ExpressionInspector.isSimpleUntilFormula(condition)) {
@@ -152,13 +152,13 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return true;
 	}
 
-	private Expression getConditionGoal(final ExpressionConditional expression)
+	protected Expression getConditionGoal(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		return ((ExpressionTemporal) removeNegation(condition)).getOperand2();
 	}
 
-	private Expression getObjectiveGoal(final ExpressionConditional expression)
+	protected Expression getObjectiveGoal(final ExpressionConditional expression)
 	{
 		final Expression objective = expression.getObjective();
 		Expression objectiveExpression = null;
