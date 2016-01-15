@@ -6,7 +6,6 @@ import common.BitSetTools;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.GoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 import parser.ast.Expression;
@@ -44,10 +43,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	@Override
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		checkStatesOfInterest(statesOfInterest);
-		if (! canHandle(model, expression)) {
-			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
-		}
+		checkCanHandle(model, expression);
 
 		// 1) Condition: compute "condition goal states"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
@@ -72,13 +68,8 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	protected ConditionalMDPTransformation transform(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates,
 			final BitSet statesOfInterest) throws PrismException
 	{
-		// FIXME consider moving checks outwards and inserting an assertion
-		checkStatesOfInterest(statesOfInterest);
-		//    check whether the condition is satisfiable in the state of interest
-		final BitSet noPathToCondition = modelChecker.prob0(model, null, conditionGoalStates, false, null);
-		if (!BitSetTools.areDisjoint(noPathToCondition, statesOfInterest)) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
-		}
+		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
+		checkSatisfiability(model, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal Form Transformation
 		final GoalFailStopTransformer normalFormTransformer = new GoalFailStopTransformer(modelChecker);
@@ -92,11 +83,10 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		//    reset transformation
 		final BitSet normalFormStatesOfInterest = normalFormTransformation.mapToTransformedModel(statesOfInterest);
-		assert normalFormStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
-		final int targetState = normalFormStatesOfInterest.nextSetBit(0);
 		final MDPResetTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
 		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
-				badStates, targetState);
+				badStates, normalFormStatesOfInterest);
+
 		// FIXME ALG: consider restriction to part reachable from states of interest
 
 		// 2) Create Mapping

@@ -2,6 +2,7 @@ package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
+import common.BitSetTools;
 import common.iterable.IterableBitSet;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -14,6 +15,7 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 import explicit.conditional.transformer.ConditionalTransformer;
+import explicit.conditional.transformer.UndefinedTransformationException;
 
 public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
 {
@@ -49,14 +51,6 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 	public abstract ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException;
 
-	public void checkStatesOfInterest(final BitSet statesOfInterest) throws PrismException
-	{
-		if (statesOfInterest.cardinality() != 1) {
-			// FIXME ALG: remove after implementing successive model checking for multiple states
-			throw new PrismException("statesOfInterest exptected to be a singleton set");
-		}
-	}
-
 	@Deprecated
 	protected void redirectChoices(final MDPSimple model, final BitSet states, final int target1, final int target2, final double[] probabilities)
 	{
@@ -71,6 +65,14 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 			}
 			model.clearState(state);
 			model.addChoice(state, distribution);
+		}
+	}
+
+	protected void checkSatisfiability(final MDP model, final BitSet goalStates, final BitSet statesOfInterest) throws UndefinedTransformationException
+	{
+		final BitSet unsatisfiable = modelChecker.prob0(model, null, goalStates, false, null);
+		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 	}
 

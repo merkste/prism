@@ -19,7 +19,6 @@ import explicit.MDPModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
-import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.GoalFailTransformer.GoalFailTransformation;
 import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 
@@ -55,10 +54,8 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	@Override
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		checkStatesOfInterest(statesOfInterest);
-		if (! canHandle(model, expression)) {
-			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
-		}
+		checkCanHandle(model, expression);
+		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
 		// 1) Objective: compute "objective goal states"
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -74,9 +71,6 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	protected ConditionalMDPTransformation transform(final MDP model, final BitSet objectiveGoalStates, final Expression condition, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		// FIXME consider moving checks outwards and inserting an assertion
-		checkStatesOfInterest(statesOfInterest);
-
 		// 1) Condition: LTL Product Transformation
 		final LTLProduct<MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
 		final MDP conditionModel = conditionProduct.getProductModel();
@@ -85,14 +79,9 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		// FIXME ALG: LTLModelChecker>>findAcceptingECStates should take the product as argument
 		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
 		final BitSet conditionGoalStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance);
-
-		//    check whether the condition is satisfiable in the state of interest
 		final BitSet conditionStatesOfInterest = BitSetTools.asBitSet(conditionModel.getInitialStates());
-		assert conditionStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
-		final BitSet noPathToCondition = modelChecker.prob0(conditionModel, null, conditionGoalStates, false, null);
-		if (!BitSetTools.areDisjoint(noPathToCondition, conditionStatesOfInterest)) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
-		}
+
+		checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
 
 		// 2) Objective: lift "condition goal states"
 		final BitSet objectiveGoalStatesLifted = conditionProduct.liftFromModel(objectiveGoalStates);
@@ -110,11 +99,9 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		//    reset transformation
 		final BitSet normalFormStatesOfInterest = normalFormTransformation.mapToTransformedModel(conditionStatesOfInterest);
-		assert normalFormStatesOfInterest.cardinality() == 1 : "expected one and only one state of interest";
-		final int targetState = normalFormStatesOfInterest.nextSetBit(0);
 		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
 		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
-				badStates, targetState);
+				badStates, normalFormStatesOfInterest);
 
 		// FIXME ALG: consider restriction to part reachable from states of interest
 

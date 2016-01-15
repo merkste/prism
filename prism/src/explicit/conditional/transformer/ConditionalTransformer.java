@@ -22,9 +22,8 @@ public abstract class ConditionalTransformer<MC extends ProbModelChecker, M exte
 	}
 
 	/**
-	 * Test whether the transformer can handle a given conditional expression or not.
+	 * Test whether the transformer can handle a  model and conditional expression.
 	 * 
-	 * @param expression
 	 * @return True iff this transformation type can handle the expression.
 	 * @throws PrismLangException if the expression is broken
 	 */
@@ -32,4 +31,14 @@ public abstract class ConditionalTransformer<MC extends ProbModelChecker, M exte
 
 	public abstract ModelTransformation<M, M> transform(final M model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException;
+
+	/**
+	 * Throw an exception, iff the transformation cannot handle the model and expression.
+	 */
+	public void checkCanHandle(final Model model, final ExpressionConditional expression) throws PrismException
+	{
+		if (! canHandle(model, expression)) {
+			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
+	}
 }

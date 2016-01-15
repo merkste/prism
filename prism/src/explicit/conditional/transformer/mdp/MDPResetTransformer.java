@@ -18,9 +18,17 @@ import prism.PrismException;
 
 public class MDPResetTransformer extends PrismComponent
 {
+	public static final String SINGLE_STATE_OF_INTEREST = "expected a single state of interest";
+
 	public MDPResetTransformer(PrismComponent parent)
 	{
 		super(parent);
+	}
+
+	public ResetTransformation<MDP> transformModel(final MDP model, final BitSet resetStates, final BitSet statesOfInterest) throws PrismException
+	{
+		checkStatesOfInterest(statesOfInterest);
+		return this.transformModel(model, resetStates, statesOfInterest.nextSetBit(0));
 	}
 
 	public ResetTransformation<MDP> transformModel(final MDP model, final BitSet resetStates, final int targetState) throws PrismException
@@ -47,6 +55,13 @@ public class MDPResetTransformer extends PrismComponent
 		List<Object> noActions = Collections.emptyList();
 
 		return state -> resetStates.get(state) ? resetActions : noActions;
+	}
+
+	public static void checkStatesOfInterest(final BitSet statesOfInterest) throws PrismException
+	{
+		if(statesOfInterest.cardinality() != 1) {
+			throw new PrismException(SINGLE_STATE_OF_INTEREST);
+		}
 	}
 
 

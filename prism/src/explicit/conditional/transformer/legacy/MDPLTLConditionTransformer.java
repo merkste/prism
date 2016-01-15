@@ -23,6 +23,7 @@ import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
+import explicit.conditional.transformer.mdp.MDPResetTransformer;
 
 @Deprecated
 public class MDPLTLConditionTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
@@ -55,7 +56,7 @@ public class MDPLTLConditionTransformer extends explicit.conditional.transformer
 	@Override
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		checkStatesOfInterest(statesOfInterest);
+		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
 		// 1. Product Transformation
 		final Expression condition = expression.getCondition();

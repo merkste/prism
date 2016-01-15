@@ -10,6 +10,7 @@ import explicit.ModelCheckerResult;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
+import explicit.conditional.transformer.mdp.MDPResetTransformer;
 import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -43,7 +44,7 @@ public class MDPFinallyTransformer extends explicit.conditional.transformer.mdp.
 	@Override
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		checkStatesOfInterest(statesOfInterest);
+		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
 		// compute C aka "condition goalState"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
