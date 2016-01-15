@@ -19,6 +19,8 @@ import explicit.conditional.transformer.LTLProductTransformer;
 
 public class ConditionalLTLTransformer extends PrismComponent
 {
+	private static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.STREETT, AcceptanceType.GENERIC};
+
 	private final LTLProductTransformer<DTMC> ltlTransformer;
 	private final ConditionalReachabilityTransformer reachabilityTransformer;
 
@@ -38,8 +40,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 			throws PrismException
 	{
 		// 1. create LTL product
-		// FIXME ALG: other acceptance types? Generic, Streett
-		final LTLProduct<DTMC> ltlProduct = ltlTransformer.transform(model, ltlFormula, statesOfInterest, AcceptanceType.RABIN, AcceptanceType.REACH);
+		final LTLProduct<DTMC> ltlProduct = ltlTransformer.transform(model, ltlFormula, statesOfInterest, ACCEPTANCE_TYPES);
 		final BitSet goal = ltlTransformer.getGoalStates(ltlProduct);
 
 		// 2. create reachability transformation
