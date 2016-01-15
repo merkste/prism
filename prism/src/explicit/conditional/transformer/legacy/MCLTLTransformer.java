@@ -12,9 +12,10 @@ import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
+import explicit.conditional.transformer.mc.MCConditionalTransformer;
 
 @Deprecated
-public class MCLTLTransformer extends explicit.conditional.transformer.mc.MCConditionalTransformer
+public class MCLTLTransformer extends MCConditionalTransformer
 {
 	protected LTLProductTransformer<DTMC> ltlTransformer;
 	protected MCUntilTransformer untilTransformer;

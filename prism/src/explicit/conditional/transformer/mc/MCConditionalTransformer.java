@@ -4,7 +4,6 @@ import java.util.BitSet;
 
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
-import parser.ast.ExpressionProb;
 import prism.PrismException;
 import prism.PrismLangException;
 import explicit.BasicModelExpressionTransformation;
@@ -56,12 +55,4 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer<DT
 
 	protected abstract ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException;
-
-	@Deprecated
-	protected double[] computeProbability(final DTMC model, final Expression pathFormula) throws PrismException
-	{
-		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
-
-		return modelChecker.checkExpression(model, expression, null).getDoubleArray();
-	}
 }

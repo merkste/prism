@@ -10,6 +10,7 @@ import common.iterable.Support;
 import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionProb;
 import prism.PrismException;
 import explicit.BasicModelTransformation;
 import explicit.CTMC;
@@ -19,9 +20,10 @@ import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.mc.MCConditionalTransformer;
 
 @Deprecated
-public abstract class MCTwoModeTransformer extends explicit.conditional.transformer.mc.MCConditionalTransformer
+public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 {
 	protected Integer[] mappingToModeOne;
 	protected Integer[] mappingToModeTwo;
@@ -157,6 +159,13 @@ public abstract class MCTwoModeTransformer extends explicit.conditional.transfor
 	protected abstract BitSet getTargetStates(final Expression condition) throws PrismException;
 
 	protected abstract void transformTransitionsModeOne(final double[] probabilities, final int state);
+
+	protected double[] computeProbability(final DTMC model, final Expression pathFormula) throws PrismException
+	{
+		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
+
+		return modelChecker.checkExpression(model, expression, null).getDoubleArray();
+	}
 
 	protected abstract double[] computeProbabilities(final BitSet target) throws PrismException;
 

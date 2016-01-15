@@ -32,7 +32,7 @@ import prism.PrismLangException;
  * @return true iff instances of this transformation can handle {@code expression}
  */
 @Deprecated
-public class MDPFinallyTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
+public class MDPFinallyTransformer extends MDPConditionalTransformer
 {
 	public MDPFinallyTransformer(final MDPModelChecker modelChecker)
 	{

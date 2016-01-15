@@ -25,7 +25,7 @@ import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
 import explicit.conditional.transformer.mdp.MDPResetTransformer;
 
 @Deprecated
-public class MDPLTLTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
+public class MDPLTLTransformer extends MDPConditionalTransformer
 {
 	private LTLProductTransformer<MDP> ltlTransformer;
 	private LTLModelChecker ltlModelChecker;

@@ -73,7 +73,6 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		return new ExpressionProb(Expression.And(objective.getExpression(), condition), RelOp.COMPUTE_VALUES.toString(), null);
 	}
 
-	@Override
 	protected double[] computeProbability(final DTMC model, final Expression pathFormula) throws PrismException
 	{
 		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
