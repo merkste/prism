@@ -2,12 +2,13 @@ package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
 
-import common.BitSetTools;
+import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.ModelTransformation;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.ReachabilityTransformation;
 import explicit.conditional.transformer.mdp.GoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -45,63 +46,66 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	{
 		checkCanHandle(model, expression);
 
-		// 1) Condition: compute "condition goal states"
-		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
-		final BitSet conditionGoalStates = modelChecker.checkExpression(model, conditionGoal, null).getBitSet();
-
-		// 2) Objective: extract objective
+		// 1) Objective: extract objective
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-
-		return transform(model, objective, conditionGoalStates, statesOfInterest);
-	}
-
-	protected ConditionalMDPTransformation transform(final MDP model, final ExpressionProb objective, final BitSet conditionGoalStates,
-			final BitSet statesOfInterest) throws PrismException
-	{
-		// 1) Objective: compute "objective goal states"
 		final Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objective.getExpression())).getOperand2();
 		final BitSet objectiveGoalStates = modelChecker.checkExpression(model, objectiveGoal, null).getBitSet();
 
-		return transform(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		// 2) Condition: compute "condition goal states"
+		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
+		final BitSet conditionGoalStates = modelChecker.checkExpression(model, conditionGoal, null).getBitSet();
+
+		// 3) Bad States Transformation
+		final BadStatesTransformation transformation = transformBadStates(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+
+		// 4) Reset Transformation
+		return transformReset(transformation, statesOfInterest);
 	}
 
-	protected ConditionalMDPTransformation transform(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates,
+	protected BadStatesTransformation transformBadStates(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates,
 			final BitSet statesOfInterest) throws PrismException
 	{
-		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 		checkSatisfiability(model, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal Form Transformation
 		final GoalFailStopTransformer normalFormTransformer = new GoalFailStopTransformer(modelChecker);
-		final GoalFailStopTransformation normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates,
-				conditionGoalStates);
+		final GoalFailStopTransformation normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
 
-		//    compute "bad states" == {s | Pmin=0[<> (Obj or Cond)]}
-		// FIXME ALG: prove simplification: bad states == {s | Pmin=0[<> (Cond)]}
+		// 2) Bad States Transformation
+		//    bad states == {s | Pmin=0[<> Condition]}
 		final BitSet badStates = modelChecker.prob0(model, null, conditionGoalStates, true, null);
+		// reset from fail state as well
 		badStates.set(normalFormTransformation.getFailState());
 
-		//    reset transformation
-		final BitSet normalFormStatesOfInterest = normalFormTransformation.mapToTransformedModel(statesOfInterest);
-		final MDPResetTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
-		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
-				badStates, normalFormStatesOfInterest);
+		return new BadStatesTransformation(normalFormTransformation, badStates);
+	}
 
-		// FIXME ALG: consider restriction to part reachable from states of interest
+	public static class BadStatesTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>
+	{
+		private final BitSet badStates;
+		private final BitSet goalStates;
 
-		// 2) Create Mapping
-		// FIXME ALG: consider ModelExpressionTransformationNested
-		// FIXME ALG: refactor to remove tedious code duplication
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			final Integer normalFormState = normalFormTransformation.mapToTransformedModel(state);
-			final Integer resetState = resetTransformation.mapToTransformedModel(normalFormState);
-			mapping[state] = resetState;
+		public BadStatesTransformation(final ReachabilityTransformation<MDP, MDP> transformation, final BitSet badStates)
+		{
+			this(transformation, transformation.getGoalStates(), badStates);
 		}
 
-		final int goalState = normalFormTransformation.getGoalState();
-		final BitSet goalStates = BitSetTools.asBitSet(goalState);
+		public BadStatesTransformation(final ModelTransformation<MDP, MDP> transformation, final BitSet goalStates, final BitSet badStates)
+		{
+			super(transformation);
+			this.goalStates = goalStates;
+			this.badStates = badStates;
+		}
 
-		return new ConditionalMDPTransformation(model, resetTransformation.getTransformedModel(), mapping, goalStates);
+		public BitSet getBadStates()
+		{
+			return badStates;
+		}
+
+		@Override
+		public BitSet getGoalStates()
+		{
+			return goalStates;
+		}
 	}
 }

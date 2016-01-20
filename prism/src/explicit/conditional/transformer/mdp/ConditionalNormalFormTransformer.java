@@ -6,10 +6,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import common.BitSetTools;
 import common.functions.primitive.MappingInt;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.conditional.transformer.ReachabilityTransformation;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPAdditionalStates;
 import explicit.modelviews.MDPDroppedAllChoices;
@@ -73,7 +75,7 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 
 
 
-	public static class NormalFormTransformation extends BasicModelTransformation<MDP, MDP>
+	public static class NormalFormTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>
 	{
 		public NormalFormTransformation(final MDP originalModel, final MDP transformedModel)
 		{
@@ -85,9 +87,23 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 			super(transformation);
 		}
 
+		@Override
+		public BitSet getGoalStates()
+		{
+			return BitSetTools.asBitSet(getGoalState());
+		}
+
 		public int getGoalState()
 		{
 			return numberOfStates + GOAL;
+		}
+
+		@Override
+		public BitSet getTransformedStatesOfInterest()
+		{
+			final BitSet result = new BitSet(numberOfStates);
+			result.set(0, numberOfStates);
+			return result;
 		}
 	}
 }

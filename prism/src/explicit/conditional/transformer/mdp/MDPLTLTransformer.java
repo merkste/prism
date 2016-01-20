@@ -15,12 +15,18 @@ import prism.PrismLangException;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.transformer.LTLProductTransformer;
-import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
+import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 
 public class MDPLTLTransformer extends MDPConditionalTransformer
 {
+	private static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
+
 	private final LTLProductTransformer<MDP> ltlTransformer;
 	private LTLModelChecker ltlModelChecker;
 
@@ -51,66 +57,103 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkCanHandle(model, expression);
-		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
-		// 1) Condition: LTL Product Transformation
-		final Expression condition = expression.getCondition();
-		final LTLProduct<MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
-		final MDP conditionModel = conditionProduct.getProductModel();
-
-		//    compute Pmax(<>E | C)
-		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
-		final BitSet conditionGoalStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance);
-		final BitSet conditionStatesOfInterest = BitSetTools.asBitSet(conditionModel.getInitialStates());
-
-		checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
-
-		// 2) Objective: LTL Product Transformation
+		// 1) Objective: build omega automaton
 		final Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();
-		final LTLProduct<MDP> objectiveAndConditionProduct = ltlTransformer.transform(conditionModel, objective, conditionStatesOfInterest,
-				AcceptanceType.STREETT);
+		final LabeledDA objectiveDA = ltlTransformer.constructDA(model, objective, ACCEPTANCE_TYPES);
 
-		//    phi & psi Street acceptance
-		final AcceptanceStreett conditionAcceptanceLifted = new AcceptanceStreett();
-		for (StreettPair streettPair : conditionAcceptance) {
-			BitSet R = objectiveAndConditionProduct.liftFromModel(streettPair.getR());
-			BitSet G = objectiveAndConditionProduct.liftFromModel(streettPair.getG());
-			conditionAcceptanceLifted.add(new StreettPair(R, G));
+		// 2) Condition: build omega automaton
+		final Expression condition = expression.getCondition();
+		final LabeledDA conditionDA = ltlTransformer.constructDA(model, condition, ACCEPTANCE_TYPES);
+
+		// 3) Bad States Transformation
+		final BadStatesTransformation transformation = transform(model, objectiveDA, conditionDA, statesOfInterest);
+
+		// 4) Reset Transformation
+		return transformReset(transformation, statesOfInterest);
+	}
+
+	protected BadStatesTransformation transform(final MDP model, final LabeledDA objectiveDA, final LabeledDA conditionDA, final BitSet statesOfInterest)
+			throws PrismException, UndefinedTransformationException
+	{
+		final BadStatesTransformation badStatesTransformation;
+		final AcceptanceType objectiveAcceptanceType = objectiveDA.getAutomaton().getAcceptance().getType();
+		final AcceptanceType conditionAcceptanceType = conditionDA.getAutomaton().getAcceptance().getType();
+		final ModelTransformation<MDP, MDP> product;
+		if (objectiveAcceptanceType == AcceptanceType.REACH) {
+			// 1) LTL Product Transformation for Objective
+			final LTLProduct<MDP> objectiveProduct = ltlTransformer.constructProduct(model, objectiveDA, statesOfInterest);
+			product = objectiveProduct;
+			final MDP objectiveModel = objectiveProduct.getTransformedModel();
+			final BitSet objectiveGoalStates = ltlTransformer.getGoalStates(objectiveProduct);
+			final BitSet transformedStatesOfInterest = objectiveProduct.getTransformedStatesOfInterest();
+
+			// 2) Bad States Transformation
+			final MDPLTLConditionTransformer ltlConditionTransformer = new MDPLTLConditionTransformer(modelChecker);
+			badStatesTransformation = ltlConditionTransformer.transformBadStates(objectiveModel, objectiveGoalStates, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
+		} else if (conditionAcceptanceType  == AcceptanceType.REACH) {
+			// 1) LTL Product Transformation for Condition
+			final LTLProduct<MDP> conditionProduct = ltlTransformer.constructProduct(model, conditionDA, statesOfInterest);
+			product = conditionProduct;
+			final MDP conditionModel = conditionProduct.getTransformedModel();
+			final BitSet conditionGoalStates = ltlTransformer.getGoalStates(conditionProduct);
+			final BitSet transformedStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
+
+			// 2) Bad States Transformation
+			final MDPLTLObjectiveTransformer ltlObjectiveTransformer = new MDPLTLObjectiveTransformer(modelChecker);
+			badStatesTransformation = ltlObjectiveTransformer.transformBadStates(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionGoalStates, transformedStatesOfInterest);
+		} else {
+			checkAcceptanceType(objectiveAcceptanceType);
+			checkAcceptanceType(conditionAcceptanceType);
+
+			// 1) LTL Product Transformation for Condition
+			final LTLProduct<MDP> conditionProduct = ltlTransformer.constructProduct(model, conditionDA, statesOfInterest);
+			product = conditionProduct;
+			final MDP conditionModel = conditionProduct.getProductModel();
+			final BitSet conditionGoalStates = ltlTransformer.getGoalStates(conditionProduct);
+			final BitSet conditionStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
+
+			checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
+
+			// 2) LTL Product Transformation for Objective
+			final LTLProduct<MDP> objectiveAndConditionProduct = ltlTransformer.constructProduct(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionStatesOfInterest);
+			final MDP objectiveAndConditionModel = objectiveAndConditionProduct.getProductModel();
+
+			// 3) Lift Condition Acceptance
+			final AcceptanceStreett conditionAcceptanceLifted = new AcceptanceStreett();
+			for (StreettPair streettPair : (AcceptanceStreett) conditionProduct.getAcceptance()) {
+				BitSet R = objectiveAndConditionProduct.liftFromModel(streettPair.getR());
+				BitSet G = objectiveAndConditionProduct.liftFromModel(streettPair.getG());
+				conditionAcceptanceLifted.add(new StreettPair(R, G));
+			}
+
+			// 4) Conjunction of Objective and Condition Acceptance
+			final AcceptanceStreett objectiveAndConditionAcceptance = new AcceptanceStreett();
+			objectiveAndConditionAcceptance.addAll((AcceptanceStreett) objectiveAndConditionProduct.getAcceptance());
+			objectiveAndConditionAcceptance.addAll(conditionAcceptanceLifted);
+
+			// 5) Objective & Condition Goal States
+			final BitSet objectiveAndConditionGoalStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
+
+			// 5) BadStates Transformation
+			//    bad states == {s | Pmin=0[<> Condition]}
+			final BitSet badStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, conditionAcceptanceLifted.complementToRabin());
+			// reset only from r-states of streett acceptance to reduce number of transitions 
+			final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptanceLifted, StreettPair::getR));
+			badStates.and(rStates);
+
+			badStatesTransformation = new BadStatesTransformation(objectiveAndConditionProduct, objectiveAndConditionGoalStates, badStates);
 		}
-		final AcceptanceStreett objectiveAndConditionAcceptance = new AcceptanceStreett();
-		objectiveAndConditionAcceptance.addAll((AcceptanceStreett) objectiveAndConditionProduct.getAcceptance());
-		objectiveAndConditionAcceptance.addAll(conditionAcceptanceLifted);
 
-		//    compute "objective and condition goal states"
-		final MDP objectiveAndConditionModel = objectiveAndConditionProduct.getProductModel();
-		final BitSet objectiveAndConditionGoalStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
+		// 3) Compose Transformations
+		final ModelTransformationNested<MDP, MDP, MDP> transformation = new ModelTransformationNested<>(product, badStatesTransformation);
+		return new BadStatesTransformation(transformation, badStatesTransformation.getGoalStates(), badStatesTransformation.getBadStates());
+	}
 
-		// 3) Normal Form Transformation
-		//    compute "bad states"
-		final BitSet badStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, conditionAcceptanceLifted.complementToRabin());
-		final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptanceLifted, StreettPair::getR));
-		badStates.and(rStates);
-
-		//    reset transformation
-		final BitSet objectiveAndConditionStatesOfInterest = BitSetTools.asBitSet(objectiveAndConditionModel.getInitialStates());
-		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
-		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(objectiveAndConditionModel, badStates, objectiveAndConditionStatesOfInterest);
-
-		// FIXME ALG: consider restriction to part reachable from states of interest
-
-		// 4) Create Mapping
-		// FIXME ALG: consider ModelExpressionTransformationNested
-		// FIXME ALG: refactor to remove tedious code duplication
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (Integer productState : objectiveAndConditionModel.getInitialStates()) {
-			// get the state index of the corresponding state in the original model
-			final Integer modelState = conditionProduct.getModelState(objectiveAndConditionProduct.getModelState(productState));
-			assert modelState != null : "first state should be set";
-			assert mapping[modelState] == null : "do not map state twice";
-			final Integer transformedState = resetTransformation.mapToTransformedModel(productState);
-			mapping[modelState] = transformedState;
+	protected void checkAcceptanceType(final AcceptanceType objectiveAcceptanceType) throws PrismException
+	{
+		if (objectiveAcceptanceType != AcceptanceType.STREETT) {
+			throw new PrismException("unsupported acceptance type: " + objectiveAcceptanceType);
 		}
-
-		return new ConditionalMDPTransformation(model, resetTransformation.getTransformedModel(), mapping, objectiveAndConditionGoalStates);
 	}
 }

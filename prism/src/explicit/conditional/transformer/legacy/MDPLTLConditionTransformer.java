@@ -12,6 +12,7 @@ import prism.PrismLangException;
 import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceStreett.StreettPair;
 import acceptance.AcceptanceType;
+import common.BitSetTools;
 import common.iterable.IterableBitSet;
 import explicit.LTLModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
@@ -103,8 +104,8 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		// insert states: goalState, failState
 		assert productModel.getNumInitialStates() == 1 : "exactly one inital state expected";
-		final int stateOfInterest = productModel.getFirstInitialState();
-		final State init = transformedModel.getStatesList().get(stateOfInterest);
+		final int resetState = productModel.getFirstInitialState();
+		final State init = transformedModel.getStatesList().get(resetState);
 		final int goalState = transformedModel.addState();
 		transformedModel.getStatesList().add(init);
 		final int failState = transformedModel.addState();
@@ -119,7 +120,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		}
 
 		// add reset choice from failState state to state of interest
-		addDiracChoice(transformedModel, failState, stateOfInterest, "reset");
+		addDiracChoice(transformedModel, failState, resetState, "reset");
 
 		// add self-loop to goalState,
 		addDiracChoice(transformedModel, goalState, goalState, "goal_loop");
@@ -136,6 +137,6 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		final BitSet goalStates = new BitSet();
 		goalStates.set(goalState);
 
-		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates);
+		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
 	}
 }

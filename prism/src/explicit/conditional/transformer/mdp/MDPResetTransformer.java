@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import common.BitSetTools;
 import common.functions.primitive.MappingInt;
 import common.iterable.collections.MappingList;
 import explicit.BasicModelTransformation;
@@ -85,6 +86,12 @@ public class MDPResetTransformer extends PrismComponent
 		public int getTargetState()
 		{
 			return targetState;
+		}
+
+		@Override
+		public BitSet getTransformedStatesOfInterest()
+		{
+			return BitSetTools.asBitSet(targetState);
 		}
 	}
 }

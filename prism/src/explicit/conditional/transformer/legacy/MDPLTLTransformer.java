@@ -151,7 +151,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		final BitSet goalStates = new BitSet();
 		goalStates.set(goalState);
 
-		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates);
+		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
 
 	}
 }

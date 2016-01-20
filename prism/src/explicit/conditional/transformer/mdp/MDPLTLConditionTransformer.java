@@ -16,14 +16,18 @@ import prism.PrismLangException;
 import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.ModelTransformationNested;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
+import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import explicit.conditional.transformer.mdp.GoalFailTransformer.GoalFailTransformation;
-import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
+import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 
 public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 {
+	private static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
+
 	private final LTLProductTransformer<MDP> ltlTransformer;
 	private LTLModelChecker ltlModelChecker;
 
@@ -55,73 +59,70 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkCanHandle(model, expression);
-		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
 		// 1) Objective: compute "objective goal states"
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		final Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objective.getExpression())).getOperand2();
 		final BitSet objectiveGoalStates = modelChecker.checkExpression(model, objectiveGoal, null).getBitSet();
 
-		// 2) Condition: extract ltl path formula
+		// 2) Condition: build omega automaton
 		final Expression condition = expression.getCondition();
+		final LabeledDA conditionDA = ltlTransformer.constructDA(model, condition, ACCEPTANCE_TYPES);
 
-		return transform(model, objectiveGoalStates, condition, statesOfInterest);
+		// 3) Bad States Transformation
+		final BadStatesTransformation transformation = transformBadStates(model, objectiveGoalStates, conditionDA, statesOfInterest);
+
+		// 4) Reset Transformation
+		return transformReset(transformation, statesOfInterest);
 	}
 
-	protected ConditionalMDPTransformation transform(final MDP model, final BitSet objectiveGoalStates, final Expression condition, final BitSet statesOfInterest)
-			throws PrismException
+	protected BadStatesTransformation transformBadStates(final MDP model, final BitSet objectiveGoalStates, final LabeledDA conditionDA,
+			final BitSet statesOfInterest) throws PrismException
 	{
-		// 1) Condition: LTL Product Transformation
-		final LTLProduct<MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
-		final MDP conditionModel = conditionProduct.getProductModel();
+		// 1) LTL Product Transformation for Condition
+		final LTLProduct<MDP> product = ltlTransformer.constructProduct(model, conditionDA, statesOfInterest);
+		final BitSet conditionGoalStates = ltlTransformer.getGoalStates(product);
+		final MDP conditionModel = product.getProductModel();
+		final BitSet objectiveGoalStatesLifted = product.liftFromModel(objectiveGoalStates);
 
-		//    compute "condition goal states"
-		// FIXME ALG: LTLModelChecker>>findAcceptingECStates should take the product as argument
-		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
-		final BitSet conditionGoalStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance);
-		final BitSet conditionStatesOfInterest = BitSetTools.asBitSet(conditionModel.getInitialStates());
-
-		checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
-
-		// 2) Objective: lift "condition goal states"
-		final BitSet objectiveGoalStatesLifted = conditionProduct.liftFromModel(objectiveGoalStates);
-
-		// 3) Normal Form Transformation
-		final GoalFailTransformer normalFormTransformer = new GoalFailTransformer(modelChecker);
-		final GoalFailTransformation normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStatesLifted,
-				conditionGoalStates);
-
-		//    compute "bad states"
-		final BitSet badStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance.complementToRabin());
-		final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
-		badStates.and(rStates);
-		badStates.set(normalFormTransformation.getFailState());
-
-		//    reset transformation
-		final BitSet normalFormStatesOfInterest = normalFormTransformation.mapToTransformedModel(conditionStatesOfInterest);
-		final MDPResetTransformer resetTransformer = new MDPResetTransformer(modelChecker);
-		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(normalFormTransformation.getTransformedModel(),
-				badStates, normalFormStatesOfInterest);
-
-		// FIXME ALG: consider restriction to part reachable from states of interest
-
-		// 4) Create Mapping
-		// FIXME ALG: consider ModelExpressionTransformationNested
-		// FIXME ALG: refactor to remove tedious code duplication
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (Integer productState : conditionModel.getInitialStates()) {
-			// get the state index of the corresponding state in the original model
-			final Integer modelState = conditionProduct.getModelState(productState);
-			assert modelState != null : "first state should be set";
-			assert mapping[modelState] == null : "do not map state twice";
-			final Integer normalFormState = normalFormTransformation.mapToTransformedModel(productState);
-			final Integer resetState = resetTransformation.mapToTransformedModel(normalFormState);
-			mapping[modelState] = resetState;
+		// 2) Bad States Transformation
+		final BadStatesTransformation badStatesTransformation;
+		switch (product.getAcceptance().getType()) {
+		case REACH:
+			final BitSet transformedStatesOfInterest = product.getTransformedStatesOfInterest();
+			final MDPFinallyTransformer finallyTransformer = new MDPFinallyTransformer(modelChecker);
+			badStatesTransformation = finallyTransformer.transformBadStates(conditionModel, objectiveGoalStatesLifted, conditionGoalStates, transformedStatesOfInterest);
+			break;
+		case STREETT:
+			checkSatisfiability(model, conditionGoalStates, statesOfInterest);
+			badStatesTransformation = transformBadStates(product, objectiveGoalStatesLifted, conditionGoalStates);
+			break;
+		default:
+			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
 		}
 
-		final int goalState = normalFormTransformation.getGoalState();
-		final BitSet goalStates = BitSetTools.asBitSet(goalState);
+		final ModelTransformationNested<MDP, MDP, MDP> transformation = new ModelTransformationNested<>(product, badStatesTransformation);
+		return new BadStatesTransformation(transformation, badStatesTransformation.getGoalStates(), badStatesTransformation.getBadStates());
+	}
 
-		return new ConditionalMDPTransformation(model, resetTransformation.getTransformedModel(), mapping, goalStates);
+	protected BadStatesTransformation transformBadStates(final LTLProduct<MDP> product, final BitSet objectiveGoalStates, final BitSet conditionGoalStates) throws PrismException
+	{
+		final MDP model = product.getTransformedModel();
+
+		// 1) Normal Form Transformation
+		final GoalFailTransformer normalFormTransformer = new GoalFailTransformer(modelChecker);
+		final GoalFailTransformation normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
+
+		// 2) Bad States Transformation
+		//    bad states == {s | Pmin=0[<> Condition]}
+		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) product.getAcceptance();
+		final BitSet badStates = ltlModelChecker.findAcceptingECStates(model, conditionAcceptance.complementToRabin());
+		// reset only from r-states of streett acceptance to reduce number of transitions 
+		final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
+		badStates.and(rStates);
+		// reset from fail state as well
+		badStates.set(normalFormTransformation.getFailState());
+
+		return new BadStatesTransformation(normalFormTransformation, badStates);
 	}
 }

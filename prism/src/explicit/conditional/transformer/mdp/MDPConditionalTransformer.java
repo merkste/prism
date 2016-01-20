@@ -11,8 +11,11 @@ import prism.PrismLangException;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.Model;
+import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.ConditionalTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
+import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 
 public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
 {
@@ -54,5 +57,18 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
+	}
+
+	public ConditionalMDPTransformation transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
+	{
+		// FIXME ALG: consider restriction to part reachable from states of interest
+		final BitSet transformedStatesOfInterest = badStatesTransformation.mapToTransformedModel(statesOfInterest);
+		final MDPResetTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
+		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(badStatesTransformation.getTransformedModel(),
+				badStatesTransformation.getBadStates(), transformedStatesOfInterest);
+
+		// flatten nested transformation
+		final ModelTransformationNested<MDP, MDP, MDP> transformation = new ModelTransformationNested<>(badStatesTransformation, resetTransformation);
+		return new ConditionalMDPTransformation(transformation, badStatesTransformation.getGoalStates());
 	}
 }

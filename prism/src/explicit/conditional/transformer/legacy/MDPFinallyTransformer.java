@@ -2,6 +2,7 @@ package explicit.conditional.transformer.legacy;
 
 import java.util.BitSet;
 
+import common.BitSetTools;
 import common.iterable.IterableBitSet;
 import explicit.MDP;
 import explicit.MDPModelChecker;
@@ -51,9 +52,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		final BitSet conditionStates = modelChecker.checkExpression(model, conditionGoal, null).getBitSet();
 
 		// check whether the condition is satisfiable in the state of interest
-		final int stateOfInterest = statesOfInterest.nextSetBit(0);
+		final int resetState = statesOfInterest.nextSetBit(0);
 		final BitSet noPathToCondition = modelChecker.prob0(model, null, conditionStates, false, null);
-		if (noPathToCondition.get(stateOfInterest)) {
+		if (noPathToCondition.get(resetState)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 
@@ -80,10 +81,10 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		// make stateOfInterst sole initial state
 		transformedModel.clearInitialStates();
-		transformedModel.addInitialState(stateOfInterest);
+		transformedModel.addInitialState(resetState);
 
 		// insert states: goalState, failState, stopState
-		final State init = transformedModel.getStatesList().get(stateOfInterest);
+		final State init = transformedModel.getStatesList().get(resetState);
 		final int goalState = transformedModel.addState();
 		transformedModel.getStatesList().add(init);
 		final int failState = transformedModel.addState();
@@ -102,7 +103,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		}
 
 		// add reset choice from failState state to state of interest
-		addDiracChoice(transformedModel, failState, stateOfInterest, "reset");
+		addDiracChoice(transformedModel, failState, resetState, "reset");
 
 		// add self-loops to goalState, stopState
 		addDiracChoice(transformedModel, goalState, goalState, "goal loop");
@@ -116,7 +117,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		final BitSet goalStates = new BitSet();
 		goalStates.set(goalState);
 
-		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates);
+		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
 	}
 
 	@Override
