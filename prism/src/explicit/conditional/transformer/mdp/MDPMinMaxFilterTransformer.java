@@ -178,6 +178,9 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		public MDPMinMaxTransformation(MDP model, MDP transformedModel, ExpressionFilter expression,
 				Expression transformedExpression, BitSet transformedStatesOfInterest, String descriptionOfFilterStates) throws PrismException
 		{
+			if (transformedStatesOfInterest.cardinality() != 1) {
+				throw new PrismException("expected a single state of interest");
+			}
 			this.model = model;
 			this.transformedModel = transformedModel;
 			this.expression = expression;
@@ -273,17 +276,15 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		}
 
 		@Override
-		public Integer mapToTransformedModel(int state)
+		public Integer mapToTransformedModel(final int state)
 		{
-			// TODO Auto-generated method stub
-			return null;
+			return state;
 		}
 
 		@Override
-		public BitSet mapToTransformedModel(BitSet states)
+		public BitSet mapToTransformedModel(final BitSet states)
 		{
-			// TODO Auto-generated method stub
-			return null;
+			return states == null ? null : (BitSet) states.clone();
 		}
 	}
 }
