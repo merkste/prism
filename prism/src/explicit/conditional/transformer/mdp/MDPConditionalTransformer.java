@@ -8,14 +8,15 @@ import parser.ast.ExpressionProb;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
+import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.Model;
-import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.ConditionalTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
+import explicit.modelviews.MDPRestricted;
 
 public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
 {
@@ -51,24 +52,29 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 	public abstract ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException;
 
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
+	{
+		// 1) Restriction to States Reachable form States of Interest
+		final BasicModelTransformation<MDP,MDPRestricted> restriction = MDPRestricted.transform(badStatesTransformation.getTransformedModel(), badStatesTransformation.mapToTransformedModel(statesOfInterest));
+
+		// 2) Reset Transformation
+		final MDPRestricted restrictedModel = restriction.getTransformedModel();
+		final BitSet restrictedBadStates = restriction.mapToTransformedModel(badStatesTransformation.getBadStates());
+		final BitSet restrictedStatesOfInterest = restriction.mapToTransformedModel(badStatesTransformation.mapToTransformedModel(statesOfInterest));
+		final MDPResetTransformer reset = new MDPResetStateTransformer(modelChecker);
+		final ResetTransformation<MDP> resetTransformation = reset.transformModel(restrictedModel, restrictedBadStates, restrictedStatesOfInterest);
+
+		// 3) Flatten Nested Transformation
+		final BitSet restrictedGoalStates = restriction.mapToTransformedModel(badStatesTransformation.getGoalStates());
+		final BasicModelTransformation<MDP, MDP> composed = resetTransformation.compose(restriction.compose(badStatesTransformation));
+		return new ConditionalReachabilitiyTransformation<>(composed, resetTransformation.mapToTransformedModel(restrictedGoalStates));
+	}
+
 	protected void checkSatisfiability(final MDP model, final BitSet goalStates, final BitSet statesOfInterest) throws UndefinedTransformationException
 	{
 		final BitSet unsatisfiable = modelChecker.prob0(model, null, goalStates, false, null);
 		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-	}
-
-	public ConditionalReachabilitiyTransformation<MDP, MDP> transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
-	{
-		// FIXME ALG: consider restriction to part reachable from states of interest
-		final BitSet transformedStatesOfInterest = badStatesTransformation.mapToTransformedModel(statesOfInterest);
-		final MDPResetTransformer resetTransformer = new MDPResetStateTransformer(modelChecker);
-		final ResetTransformation<MDP> resetTransformation = resetTransformer.transformModel(badStatesTransformation.getTransformedModel(),
-				badStatesTransformation.getBadStates(), transformedStatesOfInterest);
-
-		// flatten nested transformation
-		final ModelTransformationNested<MDP, MDP, MDP> transformation = new ModelTransformationNested<>(badStatesTransformation, resetTransformation);
-		return new ConditionalReachabilitiyTransformation<>(transformation, badStatesTransformation.getGoalStates());
 	}
 }
