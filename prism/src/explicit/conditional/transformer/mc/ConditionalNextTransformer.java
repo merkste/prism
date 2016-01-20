@@ -94,6 +94,7 @@ public class ConditionalNextTransformer extends PrismComponent
 		return mapping;
 	}
 
+	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalLTLTransformer
 	public Map<Integer, Integer> buildTerminalLookup(final DTMCDisjointUnion model, final BitSet terminal, final DTMCRestricted restrictedModel)
 	{
 		final int offset = model.offset;
