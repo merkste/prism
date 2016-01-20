@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import common.BitSetTools;
 import acceptance.AcceptanceType;
 import parser.ast.Expression;
 import prism.PrismComponent;
@@ -44,9 +43,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 		final BitSet goal = ltlTransformer.getGoalStates(ltlProduct);
 
 		// 2. create reachability transformation
-		// FIXME ALG: how to handle initial states ?
-		// FIXME ALG: assumes initial states == states of interest
-		final BitSet ltlStatesOfInterest = BitSetTools.asBitSet(ltlProduct.getProductModel().getInitialStates());
+		final BitSet ltlStatesOfInterest = ltlProduct.getTransformedStatesOfInterest();
 		final ConditionalTerminalTransformation<DTMC, DTMC> reachabilityTransformation = reachabilityTransformer.transformModel(ltlProduct.getProductModel(),
 				null, goal, ltlStatesOfInterest);
 
