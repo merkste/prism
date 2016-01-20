@@ -11,6 +11,7 @@ import common.functions.primitive.MappingInt;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.Model;
 import explicit.conditional.transformer.ReachabilityTransformation;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPAdditionalStates;
@@ -32,7 +33,7 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 		this.numTrapStates = numTrapStates;
 	}
 
-	public NormalFormTransformation transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	public NormalFormTransformation<MDP> transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
 	{
 		final BitSet terminalStates = getTerminalStates(objectiveStates, conditionStates);
 		final MDPDroppedAllChoices terminalModel = new MDPDroppedAllChoices(model, terminalStates);
@@ -42,7 +43,7 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 		final MappingInt<List<Object>> actions = getActions(model);
 		final MDPAdditionalChoices normalFormModel = new MDPAdditionalChoices(trapModel, choices, actions);
 
-		return new NormalFormTransformation(model, normalFormModel);
+		return new NormalFormTransformation<>(model, normalFormModel);
 	}
 
 	protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(final MDP model, final BitSet objectiveStates,
@@ -75,14 +76,14 @@ public abstract class ConditionalNormalFormTransformer extends PrismComponent
 
 
 
-	public static class NormalFormTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>
+	public static class NormalFormTransformation<M extends Model> extends BasicModelTransformation<M, M> implements ReachabilityTransformation<M, M>
 	{
-		public NormalFormTransformation(final MDP originalModel, final MDP transformedModel)
+		public NormalFormTransformation(final M originalModel, final M transformedModel)
 		{
 			super(originalModel, transformedModel);
 		}
 
-		public NormalFormTransformation(final NormalFormTransformation transformation)
+		public NormalFormTransformation(final NormalFormTransformation<M> transformation)
 		{
 			super(transformation);
 		}

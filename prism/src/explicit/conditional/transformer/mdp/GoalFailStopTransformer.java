@@ -12,6 +12,7 @@ import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.Model;
 import explicit.conditional.transformer.BinaryRedistribution;
 
 public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
@@ -25,9 +26,9 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 	}
 
 	@Override
-	public GoalFailStopTransformation transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	public GoalFailStopTransformation<MDP> transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
 	{
-		return new GoalFailStopTransformation(super.transformModel(model, objectiveStates, conditionStates));
+		return new GoalFailStopTransformation<>(super.transformModel(model, objectiveStates, conditionStates));
 	}
 
 	@Override
@@ -124,14 +125,14 @@ public class GoalFailStopTransformer extends ConditionalNormalFormTransformer
 
 
 
-	public static class GoalFailStopTransformation extends NormalFormTransformation
+	public static class GoalFailStopTransformation<M extends Model> extends NormalFormTransformation<M>
 	{
-		public GoalFailStopTransformation(final MDP originalModel, final MDP transformedModel)
+		public GoalFailStopTransformation(final M originalModel, final M transformedModel)
 		{
 			super(originalModel, transformedModel);
 		}
 
-		public GoalFailStopTransformation(final NormalFormTransformation transformation)
+		public GoalFailStopTransformation(final NormalFormTransformation<M> transformation)
 		{
 			super(transformation);
 		}

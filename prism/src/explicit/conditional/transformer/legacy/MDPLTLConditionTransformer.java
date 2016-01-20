@@ -23,7 +23,7 @@ import explicit.ModelCheckerResult;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.conditional.transformer.mdp.ConditionalMDPTransformation;
+import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 import explicit.conditional.transformer.mdp.MDPResetTransformer;
 
 @Deprecated
@@ -55,7 +55,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		MDPResetTransformer.checkStatesOfInterest(statesOfInterest);
 
@@ -137,6 +137,6 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		final BitSet goalStates = new BitSet();
 		goalStates.set(goalState);
 
-		return new ConditionalMDPTransformation(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
+		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
 	}
 }

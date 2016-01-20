@@ -48,7 +48,7 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 	}
 
 	@Override
-	public abstract ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public abstract ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException;
 
 	protected void checkSatisfiability(final MDP model, final BitSet goalStates, final BitSet statesOfInterest) throws UndefinedTransformationException
@@ -59,7 +59,7 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 		}
 	}
 
-	public ConditionalMDPTransformation transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
 	{
 		// FIXME ALG: consider restriction to part reachable from states of interest
 		final BitSet transformedStatesOfInterest = badStatesTransformation.mapToTransformedModel(statesOfInterest);
@@ -69,6 +69,6 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 
 		// flatten nested transformation
 		final ModelTransformationNested<MDP, MDP, MDP> transformation = new ModelTransformationNested<>(badStatesTransformation, resetTransformation);
-		return new ConditionalMDPTransformation(transformation, badStatesTransformation.getGoalStates());
+		return new ConditionalReachabilitiyTransformation<>(transformation, badStatesTransformation.getGoalStates());
 	}
 }

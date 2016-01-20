@@ -3,31 +3,31 @@ package explicit.conditional.transformer.mdp;
 import java.util.BitSet;
 
 import explicit.BasicModelTransformation;
-import explicit.MDP;
+import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.conditional.transformer.ReachabilityTransformation;
 
 //FIXME ALG: add comment
-public class ConditionalMDPTransformation extends BasicModelTransformation<MDP, MDP> implements ReachabilityTransformation<MDP, MDP>
+public class ConditionalReachabilitiyTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM> implements ReachabilityTransformation<OM, TM>
 {
-	private final BitSet goalStates;
-	private final BitSet transformedStatesOfInterest;
+	protected final BitSet goalStates;
+	protected final BitSet transformedStatesOfInterest;
 
-	public ConditionalMDPTransformation(final MDP originalModel, final MDP transformedModel, final Integer[] mapping, final BitSet goalStates, final BitSet transformedStatesOfInterest)
+	public ConditionalReachabilitiyTransformation(final OM originalModel, final TM transformedModel, final Integer[] mapping, final BitSet goalStates, final BitSet transformedStatesOfInterest)
 	{
 		super(originalModel, transformedModel, mapping);
 		this.goalStates = goalStates;
 		this.transformedStatesOfInterest = transformedStatesOfInterest;
 	}
 
-	public ConditionalMDPTransformation(final ConditionalMDPTransformation transformation)
+	public ConditionalReachabilitiyTransformation(final ConditionalReachabilitiyTransformation<OM, TM> transformation)
 	{
 		super(transformation);
 		this.goalStates = transformation.goalStates;
 		this.transformedStatesOfInterest = transformation.transformedStatesOfInterest;
 	}
 
-	public ConditionalMDPTransformation(final ModelTransformation<MDP, MDP> transformation, final BitSet goalStates)
+	public ConditionalReachabilitiyTransformation(final ModelTransformation<OM, TM> transformation, final BitSet goalStates)
 	{
 		super(transformation);
 		this.goalStates = goalStates;

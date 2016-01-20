@@ -42,7 +42,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkCanHandle(model, expression);
 
@@ -69,7 +69,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		// 1) Normal Form Transformation
 		final GoalFailStopTransformer normalFormTransformer = new GoalFailStopTransformer(modelChecker);
-		final GoalFailStopTransformation normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
+		final GoalFailStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
 
 		// 2) Bad States Transformation
 		//    bad states == {s | Pmin=0[<> Condition]}

@@ -54,7 +54,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	public ConditionalMDPTransformation transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		checkCanHandle(model, expression);
 
