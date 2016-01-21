@@ -21,8 +21,7 @@ import prism.PrismException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
-import explicit.ModelTransformation;
-import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;
@@ -36,12 +35,12 @@ public class ConditionalNextTransformer extends PrismComponent
 		this.modelChecker = modelChecker;
 	}
 
-	public ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet goal, final BitSet statesOfInterest) throws PrismException
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet goal, final BitSet statesOfInterest) throws PrismException
 	{
 		return transformModel(model, goal, false, statesOfInterest);
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet goal, final boolean negated,
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet goal, final boolean negated,
 			final BitSet statesOfInterest) throws PrismException
 	{
 		final double[] probabilities = computeProbabilities(model, goal, negated);
@@ -65,7 +64,7 @@ public class ConditionalNextTransformer extends PrismComponent
 		// 5. create mapping of terminals from restricted model to original model
 		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(unionModel, terminal, restrictedModel);
 
-		return new ConditionalTerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
+		return new TerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
 	}
 
 	private double[] computeProbabilities(final DTMC model, final BitSet target, final boolean negated) throws PrismException

@@ -206,7 +206,7 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		}
 
 		@Override
-		// FIXME ALG: code duplication in ConditionalTransformation
+		// FIXME ALG: code duplication in BasicModelTransformation
 		public StateValues projectToOriginalModel(final StateValues sv) throws PrismException
 		{
 			if (sv.getType() instanceof TypeBool) {

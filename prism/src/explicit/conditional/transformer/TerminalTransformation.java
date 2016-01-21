@@ -6,11 +6,11 @@ import explicit.BasicModelTransformation;
 import explicit.Model;
 
 // FIXME ALG: add comment
-public class ConditionalTerminalTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM>
+public class TerminalTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM>
 {
 	private final Map<Integer, Integer> terminalMapping;
 
-	public ConditionalTerminalTransformation(final OM originalModel, final TM transformedModel, final Integer[] mapping,
+	public TerminalTransformation(final OM originalModel, final TM transformedModel, final Integer[] mapping,
 			final Map<Integer, Integer> terminalMapping)
 	{
 		super(originalModel, transformedModel, mapping);

@@ -18,7 +18,7 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;
@@ -72,7 +72,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 
 		// 1. create mode 1 == conditional part
 		// FIXME ALG: how to handle initial states ?
-		final ConditionalTerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
+		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create transformed model

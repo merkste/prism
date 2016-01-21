@@ -55,7 +55,7 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 	public ConditionalReachabilitiyTransformation<MDP, MDP> transformReset(final BadStatesTransformation badStatesTransformation, final BitSet statesOfInterest) throws PrismException
 	{
 		// 1) Restriction to States Reachable form States of Interest
-		final BasicModelTransformation<MDP,MDPRestricted> restriction = MDPRestricted.transform(badStatesTransformation.getTransformedModel(), badStatesTransformation.mapToTransformedModel(statesOfInterest));
+		final BasicModelTransformation<MDP, MDPRestricted> restriction = MDPRestricted.transform(badStatesTransformation.getTransformedModel(), badStatesTransformation.mapToTransformedModel(statesOfInterest));
 
 		// 2) Reset Transformation
 		final MDPRestricted restrictedModel = restriction.getTransformedModel();

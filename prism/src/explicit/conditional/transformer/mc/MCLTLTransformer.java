@@ -12,7 +12,7 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;
 
@@ -44,7 +44,7 @@ public class MCLTLTransformer extends MCConditionalTransformer
 			throws PrismException
 	{
 		// 1. create mode 1 == conditional part
-		final ConditionalTerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, expression.getCondition(), statesOfInterest);
+		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, expression.getCondition(), statesOfInterest);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create mode 2 == submodel reachable from terminal states

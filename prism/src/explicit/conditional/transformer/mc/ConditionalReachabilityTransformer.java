@@ -26,7 +26,7 @@ import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.PredecessorRelation;
-import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 
@@ -39,25 +39,25 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		this.modelChecker = modelChecker;
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final BitSet statesOfInterest)
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		return transformModel(model, remain, goal, false, statesOfInterest);
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final BitSet statesOfInterest,
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final BitSet statesOfInterest,
 			final boolean collapse) throws PrismException
 	{
 		return this.transformModel(model, remain, goal, false, statesOfInterest, collapse);
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated,
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated,
 			final BitSet statesOfInterest) throws PrismException
 	{
 		return transformModel(model, remain, goal, negated, statesOfInterest, true);
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated,
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated,
 			final BitSet statesOfInterest, final boolean collapse) throws PrismException
 	{
 		// 1. compute probabilities of constraint reachability
@@ -90,7 +90,7 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		// 4. create mapping of terminals from restricted model to original model
 		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(terminal, restrictedModel);
 
-		return new ConditionalTerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
+		return new TerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
 	}
 
 	private double[] computeProbabilities(final DTMC model, final BitSet remain, final BitSet target, final BitSet prob0, final BitSet prob1, final boolean negated) throws PrismException
@@ -233,7 +233,7 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		final BitSet statesOfInterest = BitSetTools.asBitSet(0, 1);
 
 		final ConditionalReachabilityTransformer transformer = new ConditionalReachabilityTransformer(new DTMCModelChecker(null));
-		ConditionalTerminalTransformation<DTMC, DTMC> transformation;
+		TerminalTransformation<DTMC, DTMC> transformation;
 		DTMC transformedModel;
 
 		System.out.println();

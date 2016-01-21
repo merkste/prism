@@ -13,7 +13,7 @@ import prism.PrismLangException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
-import explicit.conditional.transformer.ConditionalTerminalTransformation;
+import explicit.conditional.transformer.TerminalTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
 
 public class ConditionalLTLTransformer extends PrismComponent
@@ -35,7 +35,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 		return ltlTransformer.canHandle(model, expression);
 	}
 
-	public ConditionalTerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression ltlFormula, final BitSet statesOfInterest)
+	public TerminalTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression ltlFormula, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1. create LTL product
@@ -44,7 +44,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 
 		// 2. create reachability transformation
 		final BitSet ltlStatesOfInterest = ltlProduct.getTransformedStatesOfInterest();
-		final ConditionalTerminalTransformation<DTMC, DTMC> reachabilityTransformation = reachabilityTransformer.transformModel(ltlProduct.getProductModel(),
+		final TerminalTransformation<DTMC, DTMC> reachabilityTransformation = reachabilityTransformer.transformModel(ltlProduct.getProductModel(),
 				null, goal, ltlStatesOfInterest);
 
 		// 3. create mapping from original to reachability model
@@ -53,10 +53,10 @@ public class ConditionalLTLTransformer extends PrismComponent
 		// 4. create mapping of terminals from reachability model to original model
 		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(ltlProduct, reachabilityTransformation);
 
-		return new ConditionalTerminalTransformation<DTMC, DTMC>(model, reachabilityTransformation.getTransformedModel(), mapping, terminalLookup);
+		return new TerminalTransformation<DTMC, DTMC>(model, reachabilityTransformation.getTransformedModel(), mapping, terminalLookup);
 	}
 
-	public Integer[] buildMapping(final LTLProduct<DTMC> ltlProduct, final ConditionalTerminalTransformation<DTMC, DTMC> terminalTransformation)
+	public Integer[] buildMapping(final LTLProduct<DTMC> ltlProduct, final TerminalTransformation<DTMC, DTMC> terminalTransformation)
 	{
 		final Integer[] ltlMapping = buildLTLMapping(ltlProduct);
 
@@ -85,7 +85,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 	}
 
 	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalNextTransformer
-	public Map<Integer, Integer> buildTerminalLookup(final LTLProduct<DTMC> product, final ConditionalTerminalTransformation<DTMC, DTMC> terminalTransformation)
+	public Map<Integer, Integer> buildTerminalLookup(final LTLProduct<DTMC> product, final TerminalTransformation<DTMC, DTMC> terminalTransformation)
 	{
 		final Map<Integer, Integer> reachabilityTerminalLookup = terminalTransformation.getTerminalMapping();
 

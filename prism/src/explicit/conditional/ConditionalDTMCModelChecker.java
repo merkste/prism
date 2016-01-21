@@ -38,7 +38,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 	public StateValues checkExpression(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		final MCConditionalTransformer transformer = selectModelTransformer(model, expression);
-		final ModelExpressionTransformation<DTMC, DTMC> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		final BasicModelExpressionTransformation<DTMC, DTMC> transformation = transformModel(transformer, model, expression, statesOfInterest);
 		final StateValues result = checkExpressionTransformedModel(transformation);
 		return transformation.projectToOriginalModel(result);
 	}
