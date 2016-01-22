@@ -3,21 +3,23 @@ package common;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.stream.IntStream;
 
-import common.functions.Shift;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
-import common.iterable.MappingIterable;
-import common.iterable.primitive.ArrayIteratorInteger;
 
 public class BitSetTools
 {
 	public static BitSet asBitSet(final int... indices)
 	{
-		return asBitSet(new ArrayIteratorInteger(indices));
+		return asBitSet(Arrays.stream(indices));
 	}
 
 	public static BitSet asBitSet(final Iterable<Integer> indices)
+	{
+		return asBitSet(indices.iterator());
+	}
+
+	public static BitSet asBitSet(final IntStream indices)
 	{
 		return asBitSet(indices.iterator());
 	}
@@ -40,8 +42,7 @@ public class BitSetTools
 	public static BitSet shiftUp(final BitSet indices, final int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
-		// FIXME ALG: check performance
-		return asBitSet(new MappingIterable<>(new IterableBitSet(indices), new Shift(offset)));
+		return asBitSet(indices.stream().map(i -> i + offset));
 	}
 
 	public static boolean areDisjoint(final BitSet... sets)
