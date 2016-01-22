@@ -32,12 +32,6 @@ public class CallCollection
 	public static final class Contains<T> extends AbstractPairPredicate<Collection<T>, T> implements UnaryMethod<Collection<T>, T, Boolean>
 	{
 		@Override
-		public Predicate<T> on(final Collection<T> collection)
-		{
-			return curry(collection);
-		}
-
-		@Override
 		public Predicate<T> curry(final Collection<T> collection)
 		{
 			return new AbstractPredicate<T>()
@@ -59,12 +53,6 @@ public class CallCollection
 
 	public static final class Size extends AbstractMapping<Collection<?>, Integer> implements Method<Collection<?>, Integer>
 	{
-		@Override
-		public Integer on(final Collection<?> collection)
-		{
-			return collection.size();
-		}
-
 		@Override
 		public Integer get(final Collection<?> collection)
 		{

@@ -3,7 +3,6 @@ package explicit.modelviews.methods;
 import java.util.Map.Entry;
 
 import common.functions.AbstractPairMapping;
-import common.functions.Mapping;
 import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
@@ -35,12 +34,6 @@ public class CallMDPRestricted
 			implements UnaryMethod<MDPRestricted, Integer, Integer>
 	{
 		@Override
-		public MappingFromInteger<Integer> on(final MDPRestricted model)
-		{
-			return curry(model);
-		}
-
-		@Override
 		public MappingFromInteger<Integer> curry(final MDPRestricted model)
 		{
 			return new AbstractMappingFromInteger<Integer>()
@@ -65,12 +58,6 @@ public class CallMDPRestricted
 			implements UnaryMethod<MDPRestricted, Integer, Integer>
 	{
 		@Override
-		public MappingFromInteger<Integer> on(final MDPRestricted model)
-		{
-			return curry(model);
-		}
-
-		@Override
 		public MappingFromInteger<Integer> curry(final MDPRestricted model)
 		{
 			return new AbstractMappingFromInteger<Integer>()
@@ -94,12 +81,6 @@ public class CallMDPRestricted
 			extends AbstractPairMapping<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 			implements UnaryMethod<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
-		@Override
-		public Mapping<Entry<Integer, Double>, Entry<Integer, Double>> on(final MDPRestricted model)
-		{
-			return this.curry(model);
-		}
-
 		@Override
 		public Entry<Integer, Double> get(final MDPRestricted model, final Entry<Integer, Double> transition)
 		{

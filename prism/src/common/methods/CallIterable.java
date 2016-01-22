@@ -23,12 +23,6 @@ public class CallIterable
 	public static final class Iterator extends AbstractMapping<Iterable, java.util.Iterator> implements Method<Iterable, java.util.Iterator>
 	{
 		@Override
-		public java.util.Iterator on(final Iterable iterable)
-		{
-			return iterable.iterator();
-		}
-
-		@Override
 		public java.util.Iterator get(final Iterable iterable)
 		{
 			return iterable.iterator();

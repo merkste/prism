@@ -23,12 +23,6 @@ public class CallDTMC
 			implements UnaryMethod<DTMC, Integer, Iterator<Entry<Integer, Double>>>
 	{
 		@Override
-		public MappingFromInteger<Iterator<Entry<Integer, Double>>> on(final DTMC model)
-		{
-			return curry(model);
-		}
-
-		@Override
 		public MappingFromInteger<Iterator<Entry<Integer, Double>>> curry(final DTMC model)
 		{
 			return new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
