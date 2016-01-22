@@ -3,6 +3,9 @@ package common.iterable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
@@ -10,18 +13,33 @@ import common.functions.Mapping;
 public class MappingIterable<S, T> implements Iterable<T>
 {
 	private final Iterable<? extends S> iterable;
-	private final Mapping<S, ? extends T> mapping;
+	private final Function<S, ? extends T> function;
 
+	/**
+	 * @deprecated
+	 * Use J8 Functions instead.
+	 */
+	@Deprecated
 	public MappingIterable(final Iterable<? extends S> iterable, final Mapping<S, ? extends T> mapping)
 	{
+		this(iterable, mapping::get);
+	}
+
+	public MappingIterable(final Iterable<? extends S> iterable, final Function<S, ? extends T> function)
+	{
 		this.iterable = iterable;
-		this.mapping = mapping;
+		this.function = function;
 	}
 
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new MappingIterator<>(iterable.iterator(), mapping);
+		return new MappingIterator<>(iterable.iterator(), function);
+	}
+
+	public Stream<T> stream()
+	{
+		return StreamSupport.stream(spliterator(), false);
 	}
 
 	public static void main(String[] args)

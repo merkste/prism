@@ -4,9 +4,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import common.functions.AbstractPredicate;
-import common.functions.Predicate;
+import java.util.function.Predicate;
 
 public class FilteringIterator<T> implements Iterator<T>
 {
@@ -14,6 +12,26 @@ public class FilteringIterator<T> implements Iterator<T>
 	private final Predicate<T> predicate;
 	private boolean hasNext;
 	private T next;
+
+	/**
+	 * @deprecated
+	 * Use J8 Functions instead.
+	 */
+	@Deprecated
+	public FilteringIterator(final Iterable<? extends T> iterable, final common.functions.Predicate<T> predicate)
+	{
+		this(iterable.iterator(), predicate);
+	}
+
+	/**
+	 * @deprecated
+	 * Use J8 Functions instead.
+	 */
+	@Deprecated
+	public FilteringIterator(final Iterator<? extends T> iter, final common.functions.Predicate<T> predicate)
+	{
+		this(iter, predicate::getBoolean);
+	}
 
 	public FilteringIterator(final Iterable<? extends T> iterable, final Predicate<T> predicate)
 	{
@@ -44,17 +62,11 @@ public class FilteringIterator<T> implements Iterator<T>
 		return current;
 	}
 
-	@Override
-	public void remove()
-	{
-		throw new UnsupportedOperationException("removing not supported");
-	}
-
 	private void seekNext()
 	{
 		while (iter.hasNext()) {
 			next = iter.next();
-			if (predicate.getBoolean(next)) {
+			if (predicate.test(next)) {
 				hasNext = true;
 				return;
 			}
@@ -63,19 +75,9 @@ public class FilteringIterator<T> implements Iterator<T>
 		next = null;
 	}
 
-	public static <T> FilteringIterator<T> dedupe(final Iterator<T> iter)
-	{
-		return new FilteringIterator<>(iter, new NoDupes<T>());
-	}
-
-	public static class NoDupes<T> extends AbstractPredicate<T>
+	public static <T> Iterator<T> dedupe(final Iterator<T> iter)
 	{
 		final Set<T> elements = new HashSet<>();
-
-		@Override
-		public boolean getBoolean(T element)
-		{
-			return elements.add(element);
-		}
+		return new FilteringIterator<>(iter, elements::add);
 	}
 }

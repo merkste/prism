@@ -2,6 +2,10 @@ package common.iterable;
 
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.function.DoublePredicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import common.BitSetTools;
 import common.IteratorTools;
@@ -17,7 +21,7 @@ import common.functions.primitive.PredicateDouble;
 public class Support extends AbstractPredicateInteger implements Iterable<Integer>
 {
 	private final double[] values;
-	private final PredicateDouble predicate;
+	private final DoublePredicate predicate;
 
 	// FIXME ALG: check common mathematical definition/terminology
 	public Support(final double[] values)
@@ -37,6 +41,11 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 
 	public Support(final double[] values, final PredicateDouble predicate)
 	{
+		this(values, predicate::getBoolean);
+	}
+
+	public Support(final double[] values, final DoublePredicate predicate)
+	{
 		this.values = values;
 		this.predicate = predicate;
 	}
@@ -44,7 +53,7 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 	@Override
 	public final boolean getBoolean(final int index)
 	{
-		return 0 <= index && index <= values.length && predicate.get(values[index]);
+		return 0 <= index && index <= values.length && predicate.test(values[index]);
 	}
 
 	public BitSet asBitSet()
@@ -52,9 +61,15 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 		return BitSetTools.asBitSet(this);
 	}
 
+	@Override
 	public Iterator<Integer> iterator()
 	{
-		return new FilteringIterator<>(new Interval(values.length), this);
+		return IntStream.range(0, values.length).filter(this::getBoolean).iterator();
+	}
+
+	public Stream<Integer> stream()
+	{
+		return StreamSupport.stream(spliterator(), false);
 	}
 
 	public static void main(final String[] args)

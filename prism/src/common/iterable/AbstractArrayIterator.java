@@ -2,26 +2,29 @@ package common.iterable;
 
 import java.util.Iterator;
 
+/**
+ * @deprecated
+ * Use J8: Arrays::stream
+ */
+@Deprecated
 public abstract class AbstractArrayIterator<T> implements Iterator<T>
 {
-	protected int toIndex;
-	protected int next;
+	protected final Iterator<T> iterator;
 
-	public AbstractArrayIterator(final int fromIndex, final int toIndex)
+	public AbstractArrayIterator(final Iterator<T> iterator)
 	{
-		this.toIndex = toIndex;
-		this.next = fromIndex;
+		this.iterator = iterator;
 	}
 
 	@Override
 	public boolean hasNext()
 	{
-		return next < toIndex;
+		return iterator.hasNext();
 	}
 
 	@Override
-	public void remove()
+	public T next()
 	{
-		throw new UnsupportedOperationException("remove");
+		return iterator.next();
 	}
 }

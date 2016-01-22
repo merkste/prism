@@ -1,6 +1,7 @@
 package common.iterable;
 
-import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator.OfInt;
+import java.util.stream.IntStream;
 
 import common.iterable.primitive.IterableInteger;
 import common.iterable.primitive.IteratorInteger;
@@ -34,37 +35,33 @@ public class Interval implements IterableInteger
 	{
 		return new IteratorInteger()
 		{
-			private int next = lowerBound;
+			final OfInt iterator = stream().iterator();
 
 			@Override
 			public boolean hasNext()
 			{
-				return next < upperBound;
+				return iterator.hasNext();
 			}
 
 			@Override
 			public Integer next()
 			{
-				return nextInteger();
+				return iterator.next();
 			}
 
 			@Override
 			public int nextInteger()
 			{
-				if (!hasNext()) {
-					throw new NoSuchElementException();
-				}
-				final int current = next;
-				next += step;
-				return current;
-			}
-
-			@Override
-			public void remove()
-			{
-				throw new UnsupportedOperationException("removing not supported");
+				return iterator.nextInt();
 			}
 		};
+	}
+
+	public IntStream stream()
+	{
+		final int width = upperBound-lowerBound;
+		final IntStream range = IntStream.range(0, (int) Math.ceil((double) width / step));
+		return range.map(x -> step * x + lowerBound);
 	}
 
 	public String toString()
@@ -75,6 +72,13 @@ public class Interval implements IterableInteger
 	public static void main(final String[] args)
 	{
 		Interval interval = new Interval(-3, 5);
+		System.out.print(interval + "  = [");
+		for (int i : interval) {
+			System.out.print(i + ",");
+		}
+		System.out.println("]");
+
+		interval = new Interval(-3, 3, 2);
 		System.out.print(interval + "  = [");
 		for (int i : interval) {
 			System.out.print(i + ",");

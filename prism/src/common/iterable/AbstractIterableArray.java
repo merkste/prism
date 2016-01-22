@@ -1,5 +1,7 @@
 package common.iterable;
 
+import java.util.stream.Stream;
+
 public abstract class AbstractIterableArray<T> implements Iterable<T>
 {
 	protected final int fromIndex;
@@ -15,4 +17,6 @@ public abstract class AbstractIterableArray<T> implements Iterable<T>
 	{
 		return Math.max(0, toIndex - fromIndex);
 	}
+
+	public abstract Stream<T> stream();
 }
