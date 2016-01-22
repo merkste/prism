@@ -37,7 +37,6 @@ import java.util.Map.Entry;
 
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
-import common.functions.AbstractMapping;
 import explicit.rewards.MCRewards;
 import prism.ModelType;
 import prism.Pair;
@@ -144,8 +143,7 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		final Object defaultAction = null;
-		return new MappingIterator<>(transitions, new AttachAction(defaultAction));
+		return new MappingIterator<>(transitions, transition -> attachAction(transition, null));
 	}
 
 	@Override
@@ -186,21 +184,14 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 		}
 	}
 
-	public static final class AttachAction extends AbstractMapping<Entry<Integer, Double>, Entry<Integer, Pair<Double, Object>>>
+
+
+	//--- static methods ---
+
+	public static Entry<Integer, Pair<Double, Object>> attachAction(final Entry<Integer, Double> transition, final Object action)
 	{
-		private final Object action;
-
-		public AttachAction(final Object action)
-		{
-			this.action = action;
-		}
-
-		@Override
-		public Entry<Integer, Pair<Double, Object>> get(Entry<Integer, Double> element)
-		{
-			final Integer state = element.getKey();
-			final Double probability = element.getValue();
-			return new AbstractMap.SimpleImmutableEntry<>(state, new Pair<>(probability, action));
-		}
+		final Integer state = transition.getKey();
+		final Double probability = transition.getValue();
+		return new AbstractMap.SimpleImmutableEntry<>(state, new Pair<>(probability, action));
 	}
 }

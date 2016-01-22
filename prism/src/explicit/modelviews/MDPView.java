@@ -15,7 +15,6 @@ import common.iterable.ChainedIterator;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
-import common.methods.CallEntry;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLog;

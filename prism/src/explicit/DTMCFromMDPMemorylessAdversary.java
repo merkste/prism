@@ -203,7 +203,7 @@ public class DTMCFromMDPMemorylessAdversary extends DTMCExplicit
 			final int choice = adv[s];
 			final Iterator<Entry<Integer, Double>> transitions = mdp.getTransitionsIterator(s, choice);
 			final Object action = mdp.getAction(s, choice);
-			return new MappingIterator<>(transitions, new DTMCExplicit.AttachAction(action));
+			return new MappingIterator<>(transitions, transition -> DTMCExplicit.attachAction(transition, action));
 		} else {
 			return Collections.emptyIterator(); 
 		}

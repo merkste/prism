@@ -15,8 +15,8 @@ import common.functions.primitive.MappingFromInteger;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import explicit.DTMC;
+import explicit.DTMCExplicit;
 import explicit.Distribution;
-import explicit.DTMCExplicit.AttachAction;
 import explicit.rewards.MCRewards;
 import prism.ModelType;
 import prism.Pair;
@@ -181,8 +181,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(final int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		final Object defaultAction = null;
-		return new MappingIterator<>(transitions, new AttachAction(defaultAction));
+		return new MappingIterator<>(transitions, transition -> DTMCExplicit.attachAction(transition, null));
 	}
 
 	@Override
