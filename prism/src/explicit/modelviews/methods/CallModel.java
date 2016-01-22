@@ -18,12 +18,6 @@ public class CallModel
 	public static final class ModelIsDeadlockState extends AbstractPairPredicate<Model, Integer>implements UnaryMethod<Model, Integer, Boolean>
 	{
 		@Override
-		public PredicateInteger on(final Model model)
-		{
-			return curry(model);
-		}
-
-		@Override
 		public PredicateInteger curry(final Model model)
 		{
 			return new AbstractPredicateInteger()

@@ -37,12 +37,6 @@ public class CallBitSet
 	public static final class NextSetBit extends AbstractPairMapping<BitSet, Integer, Integer>implements UnaryMethod<BitSet, Integer, Integer>
 	{
 		@Override
-		public MappingFromInteger<Integer> on(final BitSet indices)
-		{
-			return curry(indices);
-		}
-
-		@Override
 		public MappingFromInteger<Integer> curry(final BitSet indices)
 		{
 			return new AbstractMappingFromInteger<Integer>()
