@@ -270,7 +270,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	public Iterator<Integer> getSuccessorsIterator(final int state, final int choice)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state, choice);
-		return new MappingIterator<>(transitions, CallEntry.<Integer, Double> getKey());
+		return new MappingIterator<>(transitions, Entry::getKey);
 	}
 
 	@Override

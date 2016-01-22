@@ -15,7 +15,6 @@ import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
-import common.methods.CallEntry;
 import explicit.DTMC;
 import explicit.Distribution;
 import explicit.DTMCExplicit.AttachAction;
@@ -93,7 +92,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		return new MappingIterator<>(transitions, CallEntry.<Integer, Double> getKey());
+		return new MappingIterator<>(transitions, Entry::getKey);
 	}
 
 	@Override
