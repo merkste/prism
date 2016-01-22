@@ -6,6 +6,10 @@ import common.functions.primitive.PredicateInteger;
 import common.methods.UnaryMethod;
 import explicit.Model;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
 public class CallModel
 {
 	private static final ModelIsDeadlockState IS_DEADLOCK_STATE = new ModelIsDeadlockState();

@@ -9,6 +9,10 @@ import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
 import explicit.DTMC;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
 public class CallDTMC
 {
 	private static final DTMCGetTransitionsIterator GET_TRANSITIONS_ITERATOR = new DTMCGetTransitionsIterator();

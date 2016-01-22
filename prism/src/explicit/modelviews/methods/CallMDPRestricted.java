@@ -8,6 +8,10 @@ import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
 import explicit.modelviews.MDPRestricted;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
 public class CallMDPRestricted
 {
 	private static final MapStateToOriginalModel MAP_STATE_TO_ORIGINAL_MODEL = new MapStateToOriginalModel();

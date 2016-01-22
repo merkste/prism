@@ -11,6 +11,10 @@ import common.methods.BinaryMethod;
 import common.methods.UnaryMethod;
 import explicit.MDP;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
 public class CallMDP
 {
 	private static final MDPGetNumChoices GET_NUM_CHOICES = new MDPGetNumChoices();

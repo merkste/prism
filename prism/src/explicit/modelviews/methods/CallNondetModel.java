@@ -4,6 +4,10 @@ import common.functions.AbstractTripleMapping;
 import common.methods.BinaryMethod;
 import explicit.NondetModel;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
 public class CallNondetModel
 {
 	private static final NondetModelGetAction GET_ACTION = new NondetModelGetAction();
