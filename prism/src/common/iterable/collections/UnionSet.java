@@ -3,12 +3,9 @@ package common.iterable.collections;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import common.IteratorTools;
-import common.functions.AbstractPredicate;
-import common.functions.Predicate;
-import common.iterable.ChainedIterator;
-import common.iterable.FilteringIterator;
 
 public class UnionSet<T> extends AbstractSet<T>
 {
@@ -21,7 +18,7 @@ public class UnionSet<T> extends AbstractSet<T>
 	{
 		this.set1 = set1;
 		this.set2 = set2;
-		notInSet1 = new Excludes<T>(set1);
+		notInSet1 = ((Predicate<T>) set1::contains).negate();
 	}
 
 	@Override
@@ -33,31 +30,23 @@ public class UnionSet<T> extends AbstractSet<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new ChainedIterator<T>(set1.iterator(), new FilteringIterator<T>(set2.iterator(), notInSet1));
+		return stream().iterator();
+	}
+
+	@Override
+	public Stream<T> stream()
+	{
+		Stream<T> stream1 = set1.stream();
+		Stream<T> stream2 = set2.stream().filter(notInSet1);
+		return Stream.concat(stream1, stream2);
 	}
 
 	@Override
 	public int size()
 	{
 		if (size < 0) {
-			size = IteratorTools.count(this);
+			size = Math.toIntExact(stream().count());
 		}
 		return size;
-	}
-
-	private final class Excludes<E> extends AbstractPredicate<E>
-	{
-		private final Set<E> elements;
-
-		public Excludes(final Set<E> elements)
-		{
-			this.elements = elements;
-		}
-
-		@Override
-		public final boolean getBoolean(final E element)
-		{
-			return !elements.contains(element);
-		}
 	}
 }

@@ -4,32 +4,49 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
-import common.iterable.MappingIterator;
 
 public class MappingList<S, T> extends AbstractList<T>
 {
 	private final List<? extends S> list;
-	private final Mapping<S, ? extends T> mapping;
+	private final Function<S, ? extends T> function;
 
+	/**
+	 * @deprecated
+	 * Use J8 Functions instead.
+	 */
+	@Deprecated
 	public MappingList(final List<? extends S> list, final Mapping<S, ? extends T> mapping)
 	{
+		this(list, mapping::get);
+	}
+
+	public MappingList(final List<? extends S> list, final Function<S, ? extends T> function)
+	{
 		this.list = list;
-		this.mapping = mapping;
+		this.function = function;
 	}
 
 	@Override
 	public T get(int index)
 	{
-		return mapping.get(list.get(index));
+		return function.apply(list.get(index));
 	}
 
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new MappingIterator<>(list.iterator(), mapping);
+		return stream().iterator();
+	}
+
+	@Override
+	public Stream<T> stream()
+	{
+		return list.stream().map(function);
 	}
 
 	@Override

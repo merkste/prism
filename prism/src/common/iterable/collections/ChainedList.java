@@ -3,15 +3,17 @@ package common.iterable.collections;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import common.IteratorTools;
-import common.iterable.MappingIterator;
-import common.methods.CallCollection;
 
 public class ChainedList<T> extends AbstractList<T>
 {
 	private final List<List<? extends T>> lists;
+	private int size = -1;
 
 	@SafeVarargs
 	public ChainedList(final List<? extends T>... lists)
@@ -21,19 +23,8 @@ public class ChainedList<T> extends AbstractList<T>
 
 	public ChainedList(final Iterable<? extends List<? extends T>> lists)
 	{
-		this.lists = new ArrayList<>();
-		for (List<? extends T> list : lists) {
-			if (list == null || list.isEmpty()) {
-				continue;
-			}
-			this.lists.add(list);
-		}
-	}
-
-	@Override
-	public int size()
-	{
-		return IteratorTools.sumInteger(new MappingIterator<>(lists, CallCollection.size()));
+		final Stream<? extends List<? extends T>> streamOfLists = StreamSupport.stream(lists.spliterator(), false);
+		this.lists = streamOfLists.filter(l -> !(l == null || l.isEmpty())).collect(Collectors.toList());
 	}
 
 	@Override
@@ -47,6 +38,27 @@ public class ChainedList<T> extends AbstractList<T>
 			localIndex -= list.size();
 		}
 		throw new IndexOutOfBoundsException();
+	}
+
+	@Override
+	public Iterator<T> iterator()
+	{
+		return stream().iterator();
+	}
+
+	@Override
+	public Stream<T> stream()
+	{
+		return lists.stream().flatMap(List::stream);
+	}
+
+	@Override
+	public int size()
+	{
+		if (size < 0) {
+			size = Math.toIntExact(lists.stream().mapToInt(List::size).sum());
+		}
+		return size;
 	}
 
 	public static void main(final String[] args)
