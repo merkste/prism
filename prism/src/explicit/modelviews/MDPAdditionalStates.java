@@ -11,7 +11,6 @@ import java.util.Set;
 import common.BitSetTools;
 import common.iterable.Interval;
 import common.iterable.collections.ChainedList;
-import common.iterable.collections.MonotonousList;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -42,7 +41,7 @@ public class MDPAdditionalStates extends MDPView
 		if (fill) {
 			final List<State> statesList = model.getStatesList();
 			if (statesList != null && !statesList.isEmpty()) {
-				states = new MonotonousList<State>(statesList.get(0), numStates);
+				states = Collections.nCopies(numStates, statesList.get(0));
 				return;
 			}
 		}
