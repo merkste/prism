@@ -7,7 +7,9 @@ import java.util.AbstractList;
  *
  * @author Steffen
  * @param <T>
+ * @deprecated Use: Collections::nCopies
  */
+@Deprecated
 public class MonotonousList<T> extends AbstractList<T>
 {
 	private final T element;
