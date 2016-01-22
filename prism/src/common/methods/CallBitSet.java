@@ -8,6 +8,11 @@ import common.functions.Mapping;
 import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallBitSet
 {
 	private static final NextSetBit NEXT_SET_BIT = new NextSetBit();

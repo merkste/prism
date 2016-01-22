@@ -6,6 +6,11 @@ import common.functions.primitive.AbstractTriplePredicateDoubleDoubleDouble;
 import common.functions.primitive.PairPredicateDoubleDouble;
 import common.functions.primitive.TriplePredicateDoubleDoubleDouble;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallPrismUtils
 {
 	public static class Static

@@ -5,6 +5,11 @@ import java.util.Arrays;
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallArrays
 {
 	public static final class Static

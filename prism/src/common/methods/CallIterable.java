@@ -3,6 +3,11 @@ package common.methods;
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallIterable
 {
 	@SuppressWarnings("rawtypes")

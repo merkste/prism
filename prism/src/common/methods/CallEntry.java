@@ -5,6 +5,11 @@ import java.util.Map.Entry;
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallEntry
 {
 	@SuppressWarnings("rawtypes")

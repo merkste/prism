@@ -7,6 +7,11 @@ import common.functions.AbstractPairPredicate;
 import common.functions.AbstractPredicate;
 import common.functions.Predicate;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallCollection
 {
 	@SuppressWarnings("rawtypes")
