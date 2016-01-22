@@ -2,7 +2,11 @@ package common.functions;
 
 import common.functions.primitive.AbstractMappingFromInteger;
 
-// FIXME ALG: consider sum operator abstraction
+/**
+ * @deprecated
+ * Use J8: x -> x + offset
+ */
+@Deprecated
 public class Shift extends AbstractMappingFromInteger<Integer>
 {
 	private final int offset;
