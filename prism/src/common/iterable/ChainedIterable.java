@@ -3,12 +3,13 @@ package common.iterable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import common.methods.CallIterable;
 
 public class ChainedIterable<T> implements Iterable<T>
 {
-	private final Iterable<? extends Iterable<? extends T>> iterables;
+	private final Iterable<Iterable<T>> iterables;
 
 	@SafeVarargs
 	public ChainedIterable(final Iterable<? extends T>... iterables)
@@ -16,15 +17,21 @@ public class ChainedIterable<T> implements Iterable<T>
 		this(Arrays.asList(iterables));
 	}
 
+	@SuppressWarnings("unchecked")
 	public ChainedIterable(final Iterable<? extends Iterable<? extends T>> iterables)
 	{
-		this.iterables = iterables;
+		this.iterables = (Iterable<Iterable<T>>) iterables;
 	}
 
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new ChainedIterator<>(new MappingIterator<>(iterables, CallIterable.<T> iterator()));
+		return new ChainedIterator<>(new MappingIterator<>(iterables, Iterable::iterator));
+	}
+
+	public Stream<T> stream()
+	{
+		return StreamSupport.stream(spliterator(), false);
 	}
 
 	public static void main(final String[] args)

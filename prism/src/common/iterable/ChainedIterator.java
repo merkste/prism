@@ -113,10 +113,4 @@ public class ChainedIterator<T> implements Iterator<T>
 		// return the next element
 		return current.next();
 	}
-
-	@Override
-	public void remove()
-	{
-		throw new UnsupportedOperationException();
-	}
 }

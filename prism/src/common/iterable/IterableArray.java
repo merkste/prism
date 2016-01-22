@@ -1,10 +1,12 @@
 package common.iterable;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 public class IterableArray<T> extends AbstractIterableArray<T>implements Iterable<T>
 {
-	private final T[] elements;
+	protected final T[] elements;
 
 	@SafeVarargs
 	public IterableArray(final T... elements)
@@ -22,6 +24,12 @@ public class IterableArray<T> extends AbstractIterableArray<T>implements Iterabl
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new ArrayIterator<T>(fromIndex, toIndex, elements);
+		return stream().iterator();
+	}
+
+	@Override
+	public Stream<T> stream()
+	{
+		return Arrays.stream(elements, fromIndex, toIndex);
 	}
 }
