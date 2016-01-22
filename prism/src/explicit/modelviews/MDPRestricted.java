@@ -21,7 +21,6 @@ import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
-import explicit.modelviews.methods.CallMDPRestricted;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -107,7 +106,7 @@ public class MDPRestricted extends MDPView
 	public Iterable<Integer> getInitialStates()
 	{
 		final FilteringIterable<Integer> initialStates = new FilteringIterable<>(model.getInitialStates(), isStateIncluded);
-		return new MappingIterable<>(initialStates, CallMDPRestricted.mapStateToRestrictedModel().on(this));
+		return new MappingIterable<>(initialStates, this::mapStateToRestrictedModel);
 	}
 
 	@Override
@@ -246,7 +245,7 @@ public class MDPRestricted extends MDPView
 		}
 		final int originalState = mapStateToOriginalModel(state);
 		final Iterator<Integer> successors = model.getSuccessorsIterator(originalState, choice);
-		return new MappingIterator<>(successors, CallMDPRestricted.mapStateToRestrictedModel().on(this));
+		return new MappingIterator<>(successors, this::mapStateToRestrictedModel);
 	}
 
 
@@ -259,7 +258,7 @@ public class MDPRestricted extends MDPView
 		final int originalState = mapStateToOriginalModel(state);
 		final int originalChoice = mapChoiceToOriginalModel(state, choice);
 		final Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState, originalChoice);
-		return new MappingIterator<>(transitions, CallMDPRestricted.mapTransitionToRestrictedModel().on(this));
+		return new MappingIterator<>(transitions, this::mapTransitionToRestrictedModel);
 	}
 
 
