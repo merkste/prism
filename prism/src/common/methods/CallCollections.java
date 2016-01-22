@@ -6,6 +6,11 @@ import java.util.List;
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
+/**
+ * @deprecated
+ * Use J8 Functions instead.
+ */
+@Deprecated
 public class CallCollections
 {
 	public static final class Static
