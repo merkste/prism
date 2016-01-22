@@ -12,9 +12,7 @@ import java.util.Set;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.BitSetPredicate;
-import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.AbstractPredicateInteger;
-import common.functions.primitive.MappingFromInteger;
 import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
@@ -26,7 +24,6 @@ import parser.VarList;
 import prism.PrismException;
 import explicit.DTMC;
 import explicit.DTMCSimple;
-import explicit.modelviews.methods.CallDTMCRestricted;
 
 public class DTMCRestricted extends DTMCView
 {
@@ -126,15 +123,7 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public Iterable<Integer> getInitialStates()
 	{
-		final MappingFromInteger<Integer> mapToRestrictedModel = new AbstractMappingFromInteger<Integer>()
-		{
-			@Override
-			public Integer get(final int element)
-			{
-				return mapStateToRestrictedModel(element);
-			}
-		};
-		return new MappingIterable<>(new FilteringIterable<>(model.getInitialStates(), isStateIncluded), mapToRestrictedModel);
+		return new MappingIterable<>(new FilteringIterable<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
 	}
 
 	@Override
@@ -205,7 +194,7 @@ public class DTMCRestricted extends DTMCView
 		if (restriction == Restriction.STRICT && ! allSuccessorsIncluded(originalState)) {
 			return Collections.emptyIterator();
 		}
-		return new MappingIterator<>(model.getTransitionsIterator(originalState), CallDTMCRestricted.mapTransitionToRestrictedModel().on(this));
+		return new MappingIterator<>(model.getTransitionsIterator(originalState), this::mapTransitionToRestrictedModel);
 	}
 
 	private boolean allSuccessorsIncluded(final int originalState)
