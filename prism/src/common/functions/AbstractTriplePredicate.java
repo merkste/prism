@@ -3,7 +3,7 @@ package common.functions;
 public abstract class AbstractTriplePredicate<Q, R, S> implements TriplePredicate<Q, R, S>
 {
 	@Override
-	public Boolean get(final Q element1, final R element2, final S element3)
+	public Boolean apply(final Q element1, final R element2, final S element3)
 	{
 		return getBoolean(element1, element2, element3);
 	}

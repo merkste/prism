@@ -22,7 +22,7 @@ public class CallNondetModel
 			implements BinaryMethod<NondetModel, Integer, Integer, Object>
 	{
 		@Override
-		public Object get(final NondetModel model, final Integer state, final Integer choice)
+		public Object apply(final NondetModel model, final Integer state, final Integer choice)
 		{
 			return model.getAction(state, choice);
 		}

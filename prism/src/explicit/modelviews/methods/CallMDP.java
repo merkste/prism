@@ -59,7 +59,7 @@ public class CallMDP
 			implements BinaryMethod<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
 	{
 		@Override
-		public Iterator<Entry<Integer, Double>> get(final MDP model, final Integer state, final Integer choice)
+		public Iterator<Entry<Integer, Double>> apply(final MDP model, final Integer state, final Integer choice)
 		{
 			return model.getTransitionsIterator(state, choice);
 		}

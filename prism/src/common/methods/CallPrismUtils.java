@@ -51,7 +51,7 @@ public class CallPrismUtils
 				@Override
 				public final boolean getBoolean(final double d1, final double d2)
 				{
-					return DOUBLES_ARE_CLOSE_ABS.get(d1, d2, epsilon);
+					return DOUBLES_ARE_CLOSE_ABS.apply(d1, d2, epsilon);
 				}
 			};
 		}
@@ -63,7 +63,7 @@ public class CallPrismUtils
 				@Override
 				public final boolean getBoolean(final double d1, final double d2)
 				{
-					return DOUBLES_ARE_CLOSE_REL.get(d1, d2, epsilon);
+					return DOUBLES_ARE_CLOSE_REL.apply(d1, d2, epsilon);
 				}
 			};
 		}
