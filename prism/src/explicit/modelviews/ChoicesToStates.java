@@ -34,7 +34,7 @@ public class ChoicesToStates
 		}
 
 		@Override
-		public boolean getBoolean(final int state, final int choice)
+		public boolean test(final int state, final int choice)
 		{
 			return choice != preserve;
 		}
@@ -112,7 +112,7 @@ public class ChoicesToStates
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
-				if (state >= offset || choices.getBoolean(state, choice))
+				if (state >= offset || choices.test(state, choice))
 					return choicesToStates.getTransitionsIterator(state, choice);
 				return mdp.getTransitionsIterator(state, choice);
 			}

@@ -5,7 +5,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 	@Override
 	public Boolean apply(final R element1, final S element2)
 	{
-		return getBoolean(element1, element2);
+		return test(element1, element2);
 	}
 
 	@Override
@@ -16,7 +16,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 			@Override
 			public boolean test(final S element2)
 			{
-				return AbstractPairPredicate.this.getBoolean(element1, element2);
+				return AbstractPairPredicate.this.test(element1, element2);
 			}
 		};
 	}
@@ -27,9 +27,9 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPairPredicate<R, S>()
 		{
 			@Override
-			public final boolean getBoolean(final R element1, final S element2)
+			public final boolean test(final R element1, final S element2)
 			{
-				return !AbstractPairPredicate.this.getBoolean(element1, element2);
+				return !AbstractPairPredicate.this.test(element1, element2);
 			}
 
 			@Override
@@ -46,9 +46,9 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPairPredicate<R, S>()
 		{
 			@Override
-			public final boolean getBoolean(final R element1, final S element2)
+			public final boolean test(final R element1, final S element2)
 			{
-				return AbstractPairPredicate.this.getBoolean(element1, element2) && predicate.getBoolean(element1, element2);
+				return AbstractPairPredicate.this.test(element1, element2) && predicate.test(element1, element2);
 			}
 		};
 	}
@@ -59,9 +59,9 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPairPredicate<R, S>()
 		{
 			@Override
-			public final boolean getBoolean(final R element1, final S element2)
+			public final boolean test(final R element1, final S element2)
 			{
-				return AbstractPairPredicate.this.getBoolean(element1, element2) || predicate.getBoolean(element1, element2);
+				return AbstractPairPredicate.this.test(element1, element2) || predicate.test(element1, element2);
 			}
 		};
 	}
@@ -72,9 +72,9 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPairPredicate<R, S>()
 		{
 			@Override
-			public final boolean getBoolean(final R element1, final S element2)
+			public final boolean test(final R element1, final S element2)
 			{
-				return (!AbstractPairPredicate.this.getBoolean(element1, element2)) || predicate.getBoolean(element1, element2);
+				return (!AbstractPairPredicate.this.test(element1, element2)) || predicate.test(element1, element2);
 			}
 		};
 	}
@@ -85,9 +85,9 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPairPredicate<S, R>()
 		{
 			@Override
-			public final boolean getBoolean(final S element1, final R element2)
+			public final boolean test(final S element1, final R element2)
 			{
-				return AbstractPairPredicate.this.getBoolean(element2, element1);
+				return AbstractPairPredicate.this.test(element2, element1);
 			}
 		};
 	}

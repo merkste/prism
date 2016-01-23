@@ -33,7 +33,7 @@ public class EquivalenceRelationInteger extends AbstractPairPredicateIntegerInte
 	}
 
 	@Override
-	public boolean getBoolean(final int i, final int j)
+	public boolean test(final int i, final int j)
 	{
 		final BitSet equivalenceClass = classes.get(i);
 		return equivalenceClass != null && equivalenceClass.get(j);

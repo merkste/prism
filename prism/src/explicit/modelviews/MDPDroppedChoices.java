@@ -174,7 +174,7 @@ public class MDPDroppedChoices extends MDPView
 		preserved = new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public boolean getBoolean(int element1, int element2)
+			public boolean test(int element1, int element2)
 			{
 				return true;
 			}
@@ -190,7 +190,7 @@ public class MDPDroppedChoices extends MDPView
 		final PairPredicateIntegerInteger denormalizedChoices = new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public boolean getBoolean(int state, int choice)
+			public boolean test(int state, int choice)
 			{
 				final Distribution distribution = new Distribution(model.getTransitionsIterator(state, choice));
 				return distribution.sum() < 1;
@@ -204,7 +204,7 @@ public class MDPDroppedChoices extends MDPView
 	{
 		int countChoices = 0;
 		for (int originalChoice = 0, numOriginalChoices = model.getNumChoices(state); originalChoice < numOriginalChoices; originalChoice++) {
-			if (preserved.getBoolean(state, originalChoice)) {
+			if (preserved.test(state, originalChoice)) {
 				if (countChoices == choice) {
 					return originalChoice;
 				}
@@ -249,7 +249,7 @@ public class MDPDroppedChoices extends MDPView
 		final PairPredicateIntegerInteger dropped = new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public boolean getBoolean(final int state, final int choice)
+			public boolean test(final int state, final int choice)
 			{
 				switch (state) {
 				case 0:

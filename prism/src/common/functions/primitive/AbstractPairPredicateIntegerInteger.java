@@ -5,12 +5,12 @@ import common.functions.AbstractPairPredicate;
 public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPredicate<Integer, Integer>implements PairPredicateIntegerInteger
 {
 	@Override
-	public boolean getBoolean(final Integer element1, final Integer element2)
+	public boolean test(final Integer element1, final Integer element2)
 	{
-		return getBoolean(element1.intValue(), element2.intValue());
+		return test(element1.intValue(), element2.intValue());
 	}
 
-	public abstract boolean getBoolean(final int element1, final int element2);
+	public abstract boolean test(final int element1, final int element2);
 
 	@Override
 	public PredicateInteger curry(final Integer element1)
@@ -25,7 +25,7 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 			@Override
 			public boolean test(final int element2)
 			{
-				return AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2);
+				return AbstractPairPredicateIntegerInteger.this.test(element1, element2);
 			}
 		};
 	}
@@ -36,9 +36,9 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 		return new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element1, final int element2)
+			public final boolean test(final int element1, final int element2)
 			{
-				return !AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2);
+				return !AbstractPairPredicateIntegerInteger.this.test(element1, element2);
 			}
 
 			@Override
@@ -54,9 +54,9 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 		return new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element1, final int element2)
+			public final boolean test(final int element1, final int element2)
 			{
-				return AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2) && predicate.getBoolean(element1, element2);
+				return AbstractPairPredicateIntegerInteger.this.test(element1, element2) && predicate.test(element1, element2);
 			}
 		};
 	}
@@ -66,9 +66,9 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 		return new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element1, final int element2)
+			public final boolean test(final int element1, final int element2)
 			{
-				return AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2) || predicate.getBoolean(element1, element2);
+				return AbstractPairPredicateIntegerInteger.this.test(element1, element2) || predicate.test(element1, element2);
 			}
 		};
 	}
@@ -78,9 +78,9 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 		return new AbstractPairPredicateIntegerInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element1, final int element2)
+			public final boolean test(final int element1, final int element2)
 			{
-				return (!AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2)) || predicate.getBoolean(element1, element2);
+				return (!AbstractPairPredicateIntegerInteger.this.test(element1, element2)) || predicate.test(element1, element2);
 			}
 		};
 	}

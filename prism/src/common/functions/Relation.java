@@ -9,7 +9,7 @@ public enum Relation implements PairPredicateDoubleDouble
 {
 	GT(">") {
 		@Override
-		public boolean getBoolean(final double x, final double y)
+		public boolean test(final double x, final double y)
 		{
 			return x > y;
 		}
@@ -27,7 +27,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	},
 	GEQ(">=") {
 		@Override
-		public boolean getBoolean(final double x, final double y)
+		public boolean test(final double x, final double y)
 		{
 			return x >= y;
 		}
@@ -45,7 +45,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	},
 	LT("<") {
 		@Override
-		public boolean getBoolean(final double x, final double y)
+		public boolean test(final double x, final double y)
 		{
 			return x < y;
 		}
@@ -63,7 +63,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	},
 	LEQ("<=") {
 		@Override
-		public boolean getBoolean(final double x, final double y)
+		public boolean test(final double x, final double y)
 		{
 			return x <= y;
 		}
@@ -81,7 +81,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	},
 	EQ("==") {
 		@Override
-		public boolean getBoolean(double x, double y)
+		public boolean test(double x, double y)
 		{
 			return x == y;
 		}
@@ -99,7 +99,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	},
 	NEQ("!=") {
 		@Override
-		public boolean getBoolean(double x, double y)
+		public boolean test(double x, double y)
 		{
 			return x != y;
 		}
@@ -132,17 +132,17 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public Boolean apply(final Double x, final Double y)
 	{
-		return getBoolean(x.doubleValue(), y.doubleValue());
+		return test(x.doubleValue(), y.doubleValue());
 	}
 
 	@Override
-	public boolean getBoolean(final Double x, final Double y)
+	public boolean test(final Double x, final Double y)
 	{
-		return getBoolean(x.doubleValue(), y.doubleValue());
+		return test(x.doubleValue(), y.doubleValue());
 	}
 
 	@Override
-	public abstract boolean getBoolean(final double x, final double y);
+	public abstract boolean test(final double x, final double y);
 
 	@Override
 	public PredicateDouble curry(final Double x)
@@ -158,7 +158,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			@Override
 			public boolean test(final double y)
 			{
-				return Relation.this.getBoolean(x, y);
+				return Relation.this.test(x, y);
 			}
 
 			@Override
@@ -175,9 +175,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return Relation.this.getBoolean(x, y) && predicate.getBoolean(x, y);
+				return Relation.this.test(x, y) && predicate.test(x, y);
 			}
 		};
 	}
@@ -188,9 +188,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return Relation.this.getBoolean(x, y) && predicate.getBoolean(x, y);
+				return Relation.this.test(x, y) && predicate.test(x, y);
 			}
 		};
 	}
@@ -201,9 +201,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return Relation.this.getBoolean(x, y) || predicate.getBoolean(x, y);
+				return Relation.this.test(x, y) || predicate.test(x, y);
 			}
 		};
 	}
@@ -214,9 +214,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return Relation.this.getBoolean(x, y) || predicate.getBoolean(x, y);
+				return Relation.this.test(x, y) || predicate.test(x, y);
 			}
 		};
 	}
@@ -227,9 +227,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return (!Relation.this.getBoolean(x, y)) || predicate.getBoolean(x, y);
+				return (!Relation.this.test(x, y)) || predicate.test(x, y);
 			}
 		};
 	}
@@ -240,9 +240,9 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double x, final double y)
+			public final boolean test(final double x, final double y)
 			{
-				return (!Relation.this.getBoolean(x, y)) || predicate.getBoolean(x, y);
+				return (!Relation.this.test(x, y)) || predicate.test(x, y);
 			}
 		};
 	}
@@ -322,32 +322,32 @@ public enum Relation implements PairPredicateDoubleDouble
 
 		x = 1;
 		y = 2;
-		System.out.println(x + " " + GT + "  " + y + " = " + GT.getBoolean(x, y));
-		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.getBoolean(x, y));
-		System.out.println(x + " " + LT + "  " + y + " = " + LT.getBoolean(x, y));
-		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.getBoolean(x, y));
-		System.out.println(x + " " + EQ + " " + y + " = " + EQ.getBoolean(x, y));
-		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.getBoolean(x, y));
+		System.out.println(x + " " + GT + "  " + y + " = " + GT.test(x, y));
+		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.test(x, y));
+		System.out.println(x + " " + LT + "  " + y + " = " + LT.test(x, y));
+		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.test(x, y));
+		System.out.println(x + " " + EQ + " " + y + " = " + EQ.test(x, y));
+		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.test(x, y));
 		System.out.println();
 
 		x = 3;
 		y = 0;
-		System.out.println(x + " " + GT + "  " + y + " = " + GT.getBoolean(x, y));
-		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.getBoolean(x, y));
-		System.out.println(x + " " + LT + "  " + y + " = " + LT.getBoolean(x, y));
-		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.getBoolean(x, y));
-		System.out.println(x + " " + EQ + " " + y + " = " + EQ.getBoolean(x, y));
-		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.getBoolean(x, y));
+		System.out.println(x + " " + GT + "  " + y + " = " + GT.test(x, y));
+		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.test(x, y));
+		System.out.println(x + " " + LT + "  " + y + " = " + LT.test(x, y));
+		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.test(x, y));
+		System.out.println(x + " " + EQ + " " + y + " = " + EQ.test(x, y));
+		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.test(x, y));
 		System.out.println();
 
 		x = 4;
 		y = 4;
-		System.out.println(x + " " + GT + "  " + y + " = " + GT.getBoolean(x, y));
-		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.getBoolean(x, y));
-		System.out.println(x + " " + LT + "  " + y + " = " + LT.getBoolean(x, y));
-		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.getBoolean(x, y));
-		System.out.println(x + " " + EQ + " " + y + " = " + EQ.getBoolean(x, y));
-		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.getBoolean(x, y));
+		System.out.println(x + " " + GT + "  " + y + " = " + GT.test(x, y));
+		System.out.println(x + " " + GEQ + " " + y + " = " + GEQ.test(x, y));
+		System.out.println(x + " " + LT + "  " + y + " = " + LT.test(x, y));
+		System.out.println(x + " " + LEQ + " " + y + " = " + LEQ.test(x, y));
+		System.out.println(x + " " + EQ + " " + y + " = " + EQ.test(x, y));
+		System.out.println(x + " " + NEQ + " " + y + " = " + NEQ.test(x, y));
 		System.out.println();
 	}
 }
