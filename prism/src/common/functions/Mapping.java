@@ -1,6 +1,8 @@
 package common.functions;
 
-public interface Mapping<S, T>
+import java.util.function.Function;
+
+public interface Mapping<S, T> extends Function<S, T>
 {
 	public T apply(S element);
 
