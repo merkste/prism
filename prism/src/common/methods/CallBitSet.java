@@ -27,7 +27,7 @@ public class CallBitSet
 		return new AbstractMapping<BitSet, Integer>()
 		{
 			@Override
-			public Integer get(final BitSet indices)
+			public Integer apply(final BitSet indices)
 			{
 				return indices.nextSetBit(fromIndex);
 			}
@@ -42,7 +42,7 @@ public class CallBitSet
 			return new AbstractMappingFromInteger<Integer>()
 			{
 				@Override
-				public Integer get(final int fromIndex)
+				public Integer apply(final int fromIndex)
 				{
 					return indices.nextSetBit(fromIndex);
 				}

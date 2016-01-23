@@ -8,7 +8,7 @@ public abstract class AbstractPairMapping<R, S, T> implements PairMapping<R, S, 
 		return new AbstractMapping<S, T>()
 		{
 			@Override
-			public T get(final S element2)
+			public T apply(final S element2)
 			{
 				return AbstractPairMapping.this.get(element1, element2);
 			}

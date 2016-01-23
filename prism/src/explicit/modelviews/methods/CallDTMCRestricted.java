@@ -43,7 +43,7 @@ public class CallDTMCRestricted
 			return new AbstractMappingFromInteger<Integer>()
 			{
 				@Override
-				public Integer get(final int state)
+				public Integer apply(final int state)
 				{
 					return model.mapStateToOriginalModel(state);
 				}
@@ -67,7 +67,7 @@ public class CallDTMCRestricted
 			return new AbstractMappingFromInteger<Integer>()
 			{
 				@Override
-				public Integer get(final int state)
+				public Integer apply(final int state)
 				{
 					return model.mapStateToRestrictedModel(state);
 				}

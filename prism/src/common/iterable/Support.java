@@ -79,8 +79,8 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 
 		final Support support1 = new Support(new double[] { 1, 0, 1 });
 		final Support support2 = new Support(new double[] { 0, 1, 1 });
-		System.out.println(support1.and(support2).get(0));
-		System.out.println(support1.and(support2).get(1));
-		System.out.println(support1.and(support2).get(2));
+		System.out.println(support1.and(support2).apply(0));
+		System.out.println(support1.and(support2).apply(1));
+		System.out.println(support1.and(support2).apply(2));
 	}
 }

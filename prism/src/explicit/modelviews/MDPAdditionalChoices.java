@@ -155,7 +155,7 @@ public class MDPAdditionalChoices extends MDPView
 			throw new IndexOutOfBoundsException("choice index out of bounds");
 		}
 		
-		final List<Object> additional = actions.get(state);
+		final List<Object> additional = actions.apply(state);
 		return (additional == null) ?  null : additional.get(choice - numOriginalChoices);
 	}
 
@@ -177,7 +177,7 @@ public class MDPAdditionalChoices extends MDPView
 			return model.getTransitionsIterator(state, choice);
 		}
 		try {
-			return choices.get(state).get(choice - numOriginalChoices);
+			return choices.apply(state).get(choice - numOriginalChoices);
 		} catch (NullPointerException | IndexOutOfBoundsException e)
 		{
 			// alter message of exception
@@ -196,7 +196,7 @@ public class MDPAdditionalChoices extends MDPView
 		choices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
-			public List<Iterator<Entry<Integer, Double>>> get(int element)
+			public List<Iterator<Entry<Integer, Double>>> apply(int element)
 			{
 				return null;
 			}
@@ -210,7 +210,7 @@ public class MDPAdditionalChoices extends MDPView
 
 	private int getNumAdditionalChoices(final int state)
 	{
-		final List<Iterator<Entry<Integer, Double>>> additional = choices.get(state);
+		final List<Iterator<Entry<Integer, Double>>> additional = choices.apply(state);
 		return (additional == null) ? 0 : additional.size();
 	}
 
@@ -232,7 +232,7 @@ public class MDPAdditionalChoices extends MDPView
 		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
-			public List<Iterator<Entry<Integer, Double>>> get(final int state)
+			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
 				if (states.get(state)) {
 					return Collections.singletonList(DiracDistribution.iterator(state));
@@ -278,7 +278,7 @@ public class MDPAdditionalChoices extends MDPView
 		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
-			public List<Iterator<Entry<Integer, Double>>> get(final int state)
+			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
 				final Distribution distribution = new Distribution();
 				switch (state) {
@@ -300,7 +300,7 @@ public class MDPAdditionalChoices extends MDPView
 		final MappingFromInteger<List<Object>> actions = new AbstractMappingFromInteger<List<Object>>()
 		{
 			@Override
-			public List<Object> get(final int state)
+			public List<Object> apply(final int state)
 			{
 				final Object action;
 				switch (state) {

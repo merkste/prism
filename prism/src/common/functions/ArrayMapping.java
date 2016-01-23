@@ -13,7 +13,7 @@ public class ArrayMapping<T> extends AbstractMappingFromInteger<T>
 	}
 
 	@Override
-	public T get(final int index)
+	public T apply(final int index)
 	{
 		return elements[index];
 	}

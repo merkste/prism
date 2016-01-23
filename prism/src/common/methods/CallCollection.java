@@ -54,7 +54,7 @@ public class CallCollection
 	public static final class Size extends AbstractMapping<Collection<?>, Integer> implements Method<Collection<?>, Integer>
 	{
 		@Override
-		public Integer get(final Collection<?> collection)
+		public Integer apply(final Collection<?> collection)
 		{
 			return collection.size();
 		}

@@ -21,7 +21,7 @@ public abstract class AbstractTripleMapping<Q, R, S, T> implements TripleMapping
 		return new AbstractMapping<S, T>()
 		{
 			@Override
-			public T get(final S element3)
+			public T apply(final S element3)
 			{
 				return AbstractTripleMapping.this.get(element1, element2, element3);
 			}

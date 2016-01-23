@@ -22,7 +22,7 @@ public class MappingIterable<S, T> implements Iterable<T>
 	@Deprecated
 	public MappingIterable(final Iterable<S> iterable, final Mapping<? super S, T> mapping)
 	{
-		this(iterable, mapping::get);
+		this(iterable, mapping::apply);
 	}
 
 	public MappingIterable(final Iterable<S> iterable, final Function<? super S, T> function)
@@ -48,7 +48,7 @@ public class MappingIterable<S, T> implements Iterable<T>
 		final Mapping<Integer, Integer> successor = new AbstractMapping<Integer, Integer>()
 		{
 			@Override
-			public final Integer get(final Integer i)
+			public final Integer apply(final Integer i)
 			{
 				return i + 1;
 			}

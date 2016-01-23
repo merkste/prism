@@ -33,7 +33,7 @@ public class CallEntry
 	public static final class GetKey extends AbstractMapping<Entry<Object, ?>, Object>implements Method<Entry<Object, ?>, Object>
 	{
 		@Override
-		public Object get(final Entry<Object, ?> entry)
+		public Object apply(final Entry<Object, ?> entry)
 		{
 			return entry.getKey();
 		}
@@ -42,7 +42,7 @@ public class CallEntry
 	public static final class GetValue extends AbstractMapping<Entry<?, Object>, Object>implements Method<Entry<?, Object>, Object>
 	{
 		@Override
-		public Object get(final Entry<?, Object> entry)
+		public Object apply(final Entry<?, Object> entry)
 		{
 			return entry.getValue();
 		}

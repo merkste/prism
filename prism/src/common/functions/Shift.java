@@ -17,7 +17,7 @@ public class Shift extends AbstractMappingFromInteger<Integer>
 	}
 
 	@Override
-	public final Integer get(final int i)
+	public final Integer apply(final int i)
 	{
 		return offset + i;
 	}
