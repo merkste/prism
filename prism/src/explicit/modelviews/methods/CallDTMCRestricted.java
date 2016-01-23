@@ -51,7 +51,7 @@ public class CallDTMCRestricted
 		}
 
 		@Override
-		public Integer get(final DTMCRestricted model, final Integer state)
+		public Integer apply(final DTMCRestricted model, final Integer state)
 		{
 			return model.mapStateToOriginalModel(state);
 		}
@@ -75,7 +75,7 @@ public class CallDTMCRestricted
 		}
 
 		@Override
-		public Integer get(final DTMCRestricted model, final Integer state)
+		public Integer apply(final DTMCRestricted model, final Integer state)
 		{
 			return model.mapStateToRestrictedModel(state);
 		}
@@ -86,7 +86,7 @@ public class CallDTMCRestricted
 			implements UnaryMethod<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
 		@Override
-		public Entry<Integer, Double> get(final DTMCRestricted model, final Entry<Integer, Double> transition)
+		public Entry<Integer, Double> apply(final DTMCRestricted model, final Entry<Integer, Double> transition)
 		{
 			return model.mapTransitionToRestrictedModel(transition);
 		}

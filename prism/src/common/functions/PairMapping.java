@@ -2,7 +2,7 @@ package common.functions;
 
 public interface PairMapping<R, S, T>
 {
-	public T get(final R element1, final S element2);
+	public T apply(R element1, S element2);
 
-	public Mapping<S, T> curry(final R element1);
+	public Mapping<S, T> curry(R element1);
 }

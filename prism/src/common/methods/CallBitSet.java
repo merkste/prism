@@ -50,7 +50,7 @@ public class CallBitSet
 		}
 
 		@Override
-		public Integer get(final BitSet indices, final Integer fromIndex)
+		public Integer apply(final BitSet indices, final Integer fromIndex)
 		{
 			return indices.nextSetBit(fromIndex);
 		}

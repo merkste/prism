@@ -55,7 +55,7 @@ public class ChoicesToStates
 			final int offset = mdp.getNumStates();
 
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				if (state < offset) {
 					// redirect to choice replica
@@ -89,7 +89,7 @@ public class ChoicesToStates
 			final int offset = mdp.getNumStates();
 
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				if (state > offset || (choices.containsKey(state) && choices.get(state).contains(choice)))
 					return choicesToStates.getTransitionsIterator(state, choice);
@@ -110,7 +110,7 @@ public class ChoicesToStates
 			final int offset = mdp.getNumStates();
 
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				if (state >= offset || choices.getBoolean(state, choice))
 					return choicesToStates.getTransitionsIterator(state, choice);

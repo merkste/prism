@@ -34,7 +34,7 @@ public class CallMDP
 			implements UnaryMethod<MDP, Integer, Integer>
 	{
 		@Override
-		public Integer get(final MDP model, final Integer state)
+		public Integer apply(final MDP model, final Integer state)
 		{
 			return model.getNumChoices(state);
 		}

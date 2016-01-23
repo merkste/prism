@@ -40,7 +40,7 @@ public class CallDTMC
 		}
 
 		@Override
-		public Iterator<Entry<Integer, Double>> get(final DTMC model, final Integer state)
+		public Iterator<Entry<Integer, Double>> apply(final DTMC model, final Integer state)
 		{
 			return model.getTransitionsIterator(state);
 		}

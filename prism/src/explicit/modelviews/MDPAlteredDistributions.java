@@ -164,7 +164,7 @@ public class MDPAlteredDistributions extends MDPView
 	@Override
 	public Object getAction(final int state, final int choice)
 	{
-		return actions == null ? model.getAction(state, choice) : actions.get(state, choice);
+		return actions == null ? model.getAction(state, choice) : actions.apply(state, choice);
 	}
 
 
@@ -174,7 +174,7 @@ public class MDPAlteredDistributions extends MDPView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
-		final Iterator<Entry<Integer, Double>> transitions = choices.get(state, choice);
+		final Iterator<Entry<Integer, Double>> transitions = choices.apply(state, choice);
 		if (transitions == null) {
 			return model.getTransitionsIterator(state, choice);
 		}
@@ -204,7 +204,7 @@ public class MDPAlteredDistributions extends MDPView
 		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> normalize = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				final Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(state, choice);
 				if (!transitions.hasNext()) {
@@ -315,7 +315,7 @@ public class MDPAlteredDistributions extends MDPView
 		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> redirectChoice = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				if (reattached.allSuccessorsInSet(state, representatives)) {
 					return null;
@@ -365,7 +365,7 @@ public class MDPAlteredDistributions extends MDPView
 		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> transitions = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
+			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
 			{
 				final Distribution distribution = new Distribution();
 				if (state == 1 && choice == 1) {
@@ -386,7 +386,7 @@ public class MDPAlteredDistributions extends MDPView
 		final PairMapping<Integer, Integer, Object> actions = new AbstractPairMapping<Integer, Integer, Object>()
 		{
 			@Override
-			public Object get(final Integer state, final Integer choice)
+			public Object apply(final Integer state, final Integer choice)
 			{
 				Object action = original.getAction(state, choice);
 				if (action instanceof String) {

@@ -51,7 +51,7 @@ public class CallMDPRestricted
 		}
 
 		@Override
-		public Integer get(final MDPRestricted model, final Integer state)
+		public Integer apply(final MDPRestricted model, final Integer state)
 		{
 			return model.mapStateToOriginalModel(state);
 		}
@@ -75,7 +75,7 @@ public class CallMDPRestricted
 		}
 
 		@Override
-		public Integer get(final MDPRestricted model, final Integer state)
+		public Integer apply(final MDPRestricted model, final Integer state)
 		{
 			return model.mapStateToRestrictedModel(state);
 		}
@@ -86,7 +86,7 @@ public class CallMDPRestricted
 			implements UnaryMethod<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
 		@Override
-		public Entry<Integer, Double> get(final MDPRestricted model, final Entry<Integer, Double> transition)
+		public Entry<Integer, Double> apply(final MDPRestricted model, final Entry<Integer, Double> transition)
 		{
 			return model.mapTransitionToRestrictedModel(transition);
 		}
