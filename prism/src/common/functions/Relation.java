@@ -130,7 +130,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	}
 
 	@Override
-	public Boolean get(final Double x, final Double y)
+	public Boolean apply(final Double x, final Double y)
 	{
 		return getBoolean(x.doubleValue(), y.doubleValue());
 	}

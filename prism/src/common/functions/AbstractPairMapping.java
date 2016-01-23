@@ -10,7 +10,7 @@ public abstract class AbstractPairMapping<R, S, T> implements PairMapping<R, S, 
 			@Override
 			public T apply(final S element2)
 			{
-				return AbstractPairMapping.this.get(element1, element2);
+				return AbstractPairMapping.this.apply(element1, element2);
 			}
 		};
 	}
@@ -19,7 +19,7 @@ public abstract class AbstractPairMapping<R, S, T> implements PairMapping<R, S, 
 	{
 		return new AbstractPairMapping<R, S, T>() {
 			@Override
-			public T get(final R element1, final S element2)
+			public T apply(final R element1, final S element2)
 			{
 				return value;
 			}

@@ -3,7 +3,7 @@ package common.functions;
 public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R, S, Boolean>implements PairPredicate<R, S>
 {
 	@Override
-	public Boolean get(final R element1, final S element2)
+	public Boolean apply(final R element1, final S element2)
 	{
 		return getBoolean(element1, element2);
 	}
