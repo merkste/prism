@@ -5,12 +5,12 @@ import common.functions.AbstractPairPredicate;
 public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPredicate<Double, Double>implements PairPredicateDoubleDouble
 {
 	@Override
-	public boolean getBoolean(final Double element1, final Double element2)
+	public boolean test(final Double element1, final Double element2)
 	{
-		return getBoolean(element1.doubleValue(), element2.doubleValue());
+		return test(element1.doubleValue(), element2.doubleValue());
 	}
 
-	public abstract boolean getBoolean(final double element1, final double element2);
+	public abstract boolean test(final double element1, final double element2);
 
 	@Override
 	public PredicateDouble curry(final Double element1)
@@ -26,7 +26,7 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 			@Override
 			public boolean test(final double element2)
 			{
-				return AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2);
+				return AbstractPairPredicateDoubleDouble.this.test(element1, element2);
 			}
 		};
 	}
@@ -37,9 +37,9 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element1, final double element2)
+			public final boolean test(final double element1, final double element2)
 			{
-				return !AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2);
+				return !AbstractPairPredicateDoubleDouble.this.test(element1, element2);
 			}
 
 			@Override
@@ -56,9 +56,9 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element1, final double element2)
+			public final boolean test(final double element1, final double element2)
 			{
-				return AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2) && predicate.getBoolean(element1, element2);
+				return AbstractPairPredicateDoubleDouble.this.test(element1, element2) && predicate.test(element1, element2);
 			}
 		};
 	}
@@ -69,9 +69,9 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element1, final double element2)
+			public final boolean test(final double element1, final double element2)
 			{
-				return AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2) || predicate.getBoolean(element1, element2);
+				return AbstractPairPredicateDoubleDouble.this.test(element1, element2) || predicate.test(element1, element2);
 			}
 		};
 	}
@@ -82,9 +82,9 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element1, final double element2)
+			public final boolean test(final double element1, final double element2)
 			{
-				return (!AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2)) || predicate.getBoolean(element1, element2);
+				return (!AbstractPairPredicateDoubleDouble.this.test(element1, element2)) || predicate.test(element1, element2);
 			}
 		};
 	}
@@ -95,9 +95,9 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPairPredicateDoubleDouble()
 		{
 			@Override
-			public boolean getBoolean(double element1, double element2)
+			public boolean test(double element1, double element2)
 			{
-				return AbstractPairPredicateDoubleDouble.this.getBoolean(element2, element1);
+				return AbstractPairPredicateDoubleDouble.this.test(element2, element1);
 			}
 		};
 	}

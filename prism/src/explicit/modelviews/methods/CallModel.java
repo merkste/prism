@@ -35,7 +35,7 @@ public class CallModel
 		}
 
 		@Override
-		public boolean getBoolean(final Model model, final Integer state)
+		public boolean test(final Model model, final Integer state)
 		{
 			return model.isDeadlockState(state);
 		}

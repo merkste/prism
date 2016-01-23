@@ -45,7 +45,7 @@ public class CallCollection
 		}
 
 		@Override
-		public boolean getBoolean(final Collection<T> collection, final T element)
+		public boolean test(final Collection<T> collection, final T element)
 		{
 			return collection.contains(element);
 		}

@@ -14,7 +14,7 @@ public abstract class AbstractTriplePredicate<Q, R, S> implements TriplePredicat
 		return new AbstractPairPredicate<R, S>()
 		{
 			@Override
-			public boolean getBoolean(final R element2, final S element3)
+			public boolean test(final R element2, final S element3)
 			{
 				return AbstractTriplePredicate.this.getBoolean(element1, element2, element3);
 			}
