@@ -12,11 +12,13 @@ public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredi
 	@Override
 	public PairPredicate<R, S> negate();
 
-	public PairPredicate<R, S> and(PairPredicate<? super R, ? super S> predicate);
+	@Override
+	public PairPredicate<R, S> and(BiPredicate<? super R, ? super S> predicate);
 
-	public PairPredicate<R, S> or(PairPredicate<? super R, ? super S> predicate);
+	@Override
+	public PairPredicate<R, S> or(BiPredicate<? super R, ? super S> predicate);
 
-	public PairPredicate<R, S> implies(PairPredicate<? super R, ? super S> predicate);
+	public PairPredicate<R, S> implies(BiPredicate<? super R, ? super S> predicate);
 
 	public PairPredicate<S, R> inverse();
 }

@@ -1,5 +1,7 @@
 package common.functions;
 
+import java.util.function.BiPredicate;
+
 import common.functions.primitive.AbstractPairPredicateDoubleDouble;
 import common.functions.primitive.AbstractPredicateDouble;
 import common.functions.primitive.PairPredicateDoubleDouble;
@@ -20,6 +22,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return LEQ;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return LT;
@@ -38,6 +41,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return LT;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return LEQ;
@@ -56,6 +60,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return GEQ;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return GT;
@@ -74,6 +79,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return GT;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return GEQ;
@@ -92,6 +98,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return NEQ;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return EQ;
@@ -110,6 +117,7 @@ public enum Relation implements PairPredicateDoubleDouble
 			return EQ;
 		}
 
+		@Override
 		public Relation inverse()
 		{
 			return NEQ;
@@ -170,7 +178,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	}
 
 	@Override
-	public PairPredicateDoubleDouble and(final PairPredicate<? super Double, ? super Double> predicate)
+	public PairPredicateDoubleDouble and(BiPredicate<? super Double, ? super Double> predicate)
 	{
 		return new AbstractPairPredicateDoubleDouble()
 		{
@@ -196,7 +204,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	}
 
 	@Override
-	public PairPredicateDoubleDouble or(final PairPredicate<? super Double, ? super Double> predicate)
+	public PairPredicateDoubleDouble or(BiPredicate<? super Double, ? super Double> predicate)
 	{
 		return new AbstractPairPredicateDoubleDouble()
 		{
@@ -222,7 +230,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	}
 
 	@Override
-	public PairPredicateDoubleDouble implies(final PairPredicate<? super Double, ? super Double> predicate)
+	public PairPredicateDoubleDouble implies(BiPredicate<? super Double, ? super Double> predicate)
 	{
 		return new AbstractPairPredicateDoubleDouble()
 		{
