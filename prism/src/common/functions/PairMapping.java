@@ -1,6 +1,8 @@
 package common.functions;
 
-public interface PairMapping<R, S, T>
+import java.util.function.BiFunction;
+
+public interface PairMapping<R, S, T> extends BiFunction<R, S, T>
 {
 	public T apply(R element1, S element2);
 
