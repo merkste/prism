@@ -302,7 +302,7 @@ public class MDPDisjointUnion extends MDPView
 		final Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new AbstractMapping<Entry<Integer, Integer>, BitSet>()
 		{
 			@Override
-			public final BitSet get(final Entry<Integer, Integer> id)
+			public final BitSet apply(final Entry<Integer, Integer> id)
 			{
 				final BitSet equivalentStates = new BitSet();
 				equivalentStates.set(id.getKey());

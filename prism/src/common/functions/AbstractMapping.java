@@ -8,7 +8,7 @@ public abstract class AbstractMapping<S, T> implements Mapping<S, T>
 	private static final AbstractMapping<Object, Object> IDENTITY = new AbstractMapping<Object, Object>()
 	{
 		@Override
-		public Object get(final Object element)
+		public Object apply(final Object element)
 		{
 			return element;
 		}
@@ -20,9 +20,9 @@ public abstract class AbstractMapping<S, T> implements Mapping<S, T>
 		return new AbstractMapping<P, T>()
 		{
 			@Override
-			public final T get(final P element)
+			public final T apply(final P element)
 			{
-				return AbstractMapping.this.get(mapping.get(element));
+				return AbstractMapping.this.apply(mapping.apply(element));
 			}
 		};
 	}
@@ -54,7 +54,7 @@ public abstract class AbstractMapping<S, T> implements Mapping<S, T>
 	{
 		return new AbstractMapping<S, T>() {
 			@Override
-			public T get(final S element)
+			public T apply(final S element)
 			{
 				return value;
 			}
@@ -77,11 +77,11 @@ public abstract class AbstractMapping<S, T> implements Mapping<S, T>
 		}
 
 		@Override
-		public T get(final S element)
+		public T apply(final S element)
 		{
 			T value = lookup(element);
 			if (value == null) {
-				value = store(element, mapping.get(element));
+				value = store(element, mapping.apply(element));
 			}
 			return value;
 		}

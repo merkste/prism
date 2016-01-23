@@ -45,7 +45,7 @@ public class CallMDP
 			new AbstractMappingFromInteger<Integer>()
 			{
 				@Override
-				public Integer get(int state)
+				public Integer apply(int state)
 				{
 					return model.getNumChoices(state);
 				}

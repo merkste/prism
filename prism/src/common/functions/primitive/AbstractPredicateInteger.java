@@ -75,7 +75,7 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 			@Override
 			public final boolean getBoolean(final S element)
 			{
-				return AbstractPredicateInteger.this.getBoolean(mapping.get(element).intValue());
+				return AbstractPredicateInteger.this.getBoolean(mapping.apply(element).intValue());
 			}
 		};
 	}

@@ -26,7 +26,7 @@ public class CallArrays
 		public static final class CopyOf extends AbstractMapping<Object[], Object[]>
 		{
 			@Override
-			public Object[] get(final Object[] array)
+			public Object[] apply(final Object[] array)
 			{
 				return Arrays.copyOf(array, array.length);
 			}

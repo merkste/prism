@@ -236,7 +236,7 @@ public class MDPAlteredDistributions extends MDPView
 		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
-			public List<Iterator<Entry<Integer, Double>>> get(final int state)
+			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
 					return null;
@@ -248,7 +248,7 @@ public class MDPAlteredDistributions extends MDPView
 				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 				{
 					@Override
-					public List<Iterator<Entry<Integer, Double>>> get(final int state)
+					public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 					{
 						if (identify.isRepresentative(state)) {
 							return Collections.emptyList();
@@ -267,7 +267,7 @@ public class MDPAlteredDistributions extends MDPView
 		final MappingFromInteger<List<Object>> addActions = new AbstractMappingFromInteger<List<Object>>()
 		{
 			@Override
-			public List<Object> get(final int state)
+			public List<Object> apply(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
 					return Collections.emptyList();
@@ -279,7 +279,7 @@ public class MDPAlteredDistributions extends MDPView
 				final MappingFromInteger<List<Object>> getOtherActions = new AbstractMappingFromInteger<List<Object>>()
 				{
 					@Override
-					public List<Object> get(final int state)
+					public List<Object> apply(final int state)
 					{
 						if (identify.isRepresentative(state)) {
 							return Collections.emptyList();

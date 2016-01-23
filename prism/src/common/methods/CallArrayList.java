@@ -27,7 +27,7 @@ public class CallArrayList
 	{
 		@SuppressWarnings("unchecked")
 		@Override
-		public ArrayList get(final Collection collection)
+		public ArrayList apply(final Collection collection)
 		{
 			return new ArrayList(collection);
 		}

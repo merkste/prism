@@ -78,7 +78,7 @@ public class IterableStateSet implements Iterable<Integer>
 			this.setOfStates = new Interval(numStates);
 		} else {
 			// FIXME ALG: exploit AbstractPredicateInteger::getBoolean(int element)
-			this.setOfStates = new FilteringIterable<>(new Interval(numStates), predicate::get);
+			this.setOfStates = new FilteringIterable<>(new Interval(numStates), predicate::apply);
 		}
 	}
 

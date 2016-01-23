@@ -144,7 +144,7 @@ public class DTMCAlteredDistributions extends DTMCView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
-		final Iterator<Entry<Integer, Double>> transitions = mapping.get(state);
+		final Iterator<Entry<Integer, Double>> transitions = mapping.apply(state);
 		if (transitions == null) {
 			return model.getTransitionsIterator(state);
 		}
@@ -182,7 +182,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		final MappingFromInteger<Iterator<Entry<Integer, Double>>> addLoops = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final int state)
+			public Iterator<Entry<Integer, Double>> apply(final int state)
 			{
 				if (states.get(state)) {
 					return DiracDistribution.iterator(state);
@@ -202,7 +202,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		final MappingFromInteger<Iterator<Entry<Integer, Double>>> reattach = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final int state)
+			public Iterator<Entry<Integer, Double>> apply(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
 					return Collections.emptyIterator();
@@ -237,7 +237,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		final MappingFromInteger<Iterator<Entry<Integer, Double>>> redirectDistribution = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final int state)
+			public Iterator<Entry<Integer, Double>> apply(final int state)
 			{
 				if (reattached.allSuccessorsInSet(state, representatives)) {
 					return null;
@@ -279,7 +279,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		final MappingFromInteger<Iterator<Entry<Integer, Double>>> transitions = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
-			public Iterator<Entry<Integer, Double>> get(final int state)
+			public Iterator<Entry<Integer, Double>> apply(final int state)
 			{
 				final Distribution distribution = new Distribution();
 				if (state == 0) {

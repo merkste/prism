@@ -76,7 +76,7 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 			@Override
 			public final boolean getBoolean(final S element)
 			{
-				return AbstractPredicateDouble.this.getBoolean(mapping.get(element).doubleValue());
+				return AbstractPredicateDouble.this.getBoolean(mapping.apply(element).doubleValue());
 			}
 		};
 	}

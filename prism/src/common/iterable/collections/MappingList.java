@@ -22,7 +22,7 @@ public class MappingList<S, T> extends AbstractList<T>
 	@Deprecated
 	public MappingList(final List<? extends S> list, final Mapping<S, ? extends T> mapping)
 	{
-		this(list, mapping::get);
+		this(list, mapping::apply);
 	}
 
 	public MappingList(final List<? extends S> list, final Function<S, ? extends T> function)
@@ -61,7 +61,7 @@ public class MappingList<S, T> extends AbstractList<T>
 		final Mapping<Integer, Integer> successor = new AbstractMapping<Integer, Integer>()
 		{
 			@Override
-			public final Integer get(final Integer i)
+			public final Integer apply(final Integer i)
 			{
 				return i + 1;
 			}

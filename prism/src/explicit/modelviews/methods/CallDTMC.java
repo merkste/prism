@@ -32,7 +32,7 @@ public class CallDTMC
 			return new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 			{
 				@Override
-				public Iterator<Entry<Integer, Double>> get(final int state)
+				public Iterator<Entry<Integer, Double>> apply(final int state)
 				{
 					return model.getTransitionsIterator(state);
 				}

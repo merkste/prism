@@ -3,7 +3,7 @@ package common.functions;
 public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>implements Predicate<T>
 {
 	@Override
-	public Boolean get(final T element)
+	public Boolean apply(final T element)
 	{
 		return getBoolean(element);
 	}
@@ -85,7 +85,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 			@Override
 			public final boolean getBoolean(final S element)
 			{
-				return AbstractPredicate.this.getBoolean(mapping.get(element));
+				return AbstractPredicate.this.getBoolean(mapping.apply(element));
 			}
 		};
 	}

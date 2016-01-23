@@ -27,7 +27,7 @@ public class CallCollections
 		public static final class SingletonList extends AbstractMapping<Object, List<Object>>
 		{
 			@Override
-			public List<Object> get(final Object object)
+			public List<Object> apply(final Object object)
 			{
 				return Collections.singletonList(object);
 			}
