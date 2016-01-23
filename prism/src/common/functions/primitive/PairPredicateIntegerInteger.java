@@ -7,5 +7,5 @@ public interface PairPredicateIntegerInteger extends PairPredicate<Integer, Inte
 	public boolean test(int element1, int element2);
 
 	@Override
-	public PairPredicateIntegerInteger not();
+	public PairPredicateIntegerInteger negate();
 }

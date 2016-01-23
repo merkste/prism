@@ -42,7 +42,7 @@ public class CloseDoubleRelation
 
 	public static PairPredicateDoubleDouble closeNEQ(final double epsilon)
 	{
-		return closeEQ(epsilon).not();
+		return closeEQ(epsilon).negate();
 	}
 
 	/**

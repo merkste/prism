@@ -22,7 +22,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 	}
 
 	@Override
-	public PairPredicate<R, S> not()
+	public PairPredicate<R, S> negate()
 	{
 		return new AbstractPairPredicate<R, S>()
 		{
@@ -33,7 +33,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 			}
 
 			@Override
-			public AbstractPairPredicate<R, S> not()
+			public AbstractPairPredicate<R, S> negate()
 			{
 				return AbstractPairPredicate.this;
 			}
