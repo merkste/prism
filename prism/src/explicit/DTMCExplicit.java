@@ -143,7 +143,7 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		return new MappingIterator<>(transitions, transition -> attachAction(transition, null));
+		return new MappingIterator.From<>(transitions, transition -> attachAction(transition, null));
 	}
 
 	@Override

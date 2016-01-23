@@ -2,10 +2,9 @@ package explicit.modelviews;
 
 import java.util.AbstractMap;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
-import common.functions.AbstractMapping;
-
-public class TransitionShift extends AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>
+public class TransitionShift implements Function<Entry<Integer, Double>, Entry<Integer, Double>>
 {
 	private final int offset;
 
@@ -15,7 +14,7 @@ public class TransitionShift extends AbstractMapping<Entry<Integer, Double>, Ent
 	}
 
 	@Override
-	public final Entry<Integer, Double> get(Entry<Integer, Double> transition)
+	public final Entry<Integer, Double> apply(Entry<Integer, Double> transition)
 	{
 		return new AbstractMap.SimpleImmutableEntry<>(transition.getKey() + offset, transition.getValue());
 	}

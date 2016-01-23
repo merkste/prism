@@ -194,7 +194,7 @@ public class DTMCRestricted extends DTMCView
 		if (restriction == Restriction.STRICT && ! allSuccessorsIncluded(originalState)) {
 			return Collections.emptyIterator();
 		}
-		return new MappingIterator<>(model.getTransitionsIterator(originalState), this::mapTransitionToRestrictedModel);
+		return new MappingIterator.From<>(model.getTransitionsIterator(originalState), this::mapTransitionToRestrictedModel);
 	}
 
 	private boolean allSuccessorsIncluded(final int originalState)

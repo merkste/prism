@@ -245,7 +245,7 @@ public class MDPRestricted extends MDPView
 		}
 		final int originalState = mapStateToOriginalModel(state);
 		final Iterator<Integer> successors = model.getSuccessorsIterator(originalState, choice);
-		return new MappingIterator<>(successors, this::mapStateToRestrictedModel);
+		return new MappingIterator.From<>(successors, this::mapStateToRestrictedModel);
 	}
 
 
@@ -258,7 +258,7 @@ public class MDPRestricted extends MDPView
 		final int originalState = mapStateToOriginalModel(state);
 		final int originalChoice = mapChoiceToOriginalModel(state, choice);
 		final Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState, originalChoice);
-		return new MappingIterator<>(transitions, this::mapTransitionToRestrictedModel);
+		return new MappingIterator.From<>(transitions, this::mapTransitionToRestrictedModel);
 	}
 
 

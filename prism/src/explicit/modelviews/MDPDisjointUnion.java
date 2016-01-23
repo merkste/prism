@@ -7,12 +7,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.Map.Entry;
 
 import common.BitSetTools;
 import common.functions.AbstractMapping;
 import common.functions.Mapping;
-import common.functions.Shift;
 import common.iterable.ChainedIterable;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
@@ -31,7 +31,7 @@ public class MDPDisjointUnion extends MDPView
 	private MDP model1;
 	private MDP model2;
 	private final int offset;
-	private final Shift shiftStateUp;
+	private final Function<Integer, Integer> shiftStateUp;
 	private final TransitionShift shiftTransitionUp;
 
 
@@ -41,7 +41,7 @@ public class MDPDisjointUnion extends MDPView
 		this.model1 = model1;
 		this.model2 = model2;
 		offset = model1.getNumStates();
-		shiftStateUp = new Shift(offset);
+		shiftStateUp = x -> x + offset;
 		shiftTransitionUp = new TransitionShift(offset);
 	}
 
@@ -176,7 +176,7 @@ public class MDPDisjointUnion extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
+		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator.From<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
 	}
 
 	@Override
@@ -235,7 +235,7 @@ public class MDPDisjointUnion extends MDPView
 	public Iterator<Integer> getSuccessorsIterator(int state, int choice)
 	{
 		return (state < offset) ? model1.getSuccessorsIterator(state, choice)
-				: new MappingIterator<>(model2.getSuccessorsIterator(state - offset, choice), shiftStateUp);
+				: new MappingIterator.From<>(model2.getSuccessorsIterator(state - offset, choice), shiftStateUp);
 	}
 
 
@@ -246,7 +246,7 @@ public class MDPDisjointUnion extends MDPView
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
 		return (state < offset) ? model1.getTransitionsIterator(state, choice)
-				: new MappingIterator<>(model2.getTransitionsIterator(state - offset, choice), shiftTransitionUp);
+				: new MappingIterator.From<>(model2.getTransitionsIterator(state - offset, choice), shiftTransitionUp);
 	}
 
 

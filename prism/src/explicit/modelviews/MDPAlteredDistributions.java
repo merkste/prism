@@ -8,11 +8,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import common.BitSetTools;
-import common.functions.AbstractMapping;
 import common.functions.AbstractPairMapping;
-import common.functions.Mapping;
 import common.functions.PairMapping;
 import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
@@ -299,10 +298,10 @@ public class MDPAlteredDistributions extends MDPView
 		final MDPView reattached = new MDPAdditionalChoices(droppedChoices, addChoices, addActions);
 
 		// 3. redirect transitions to representatives
-		final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> redirectTransition = new AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>()
+		final Function<Entry<Integer, Double>, Entry<Integer, Double>> redirectTransition = new Function<Entry<Integer, Double>, Entry<Integer, Double>>()
 		{
 			@Override
-			public final Entry<Integer, Double> get(final Entry<Integer, Double> transition)
+			public final Entry<Integer, Double> apply(final Entry<Integer, Double> transition)
 			{
 				final int target = transition.getKey();
 				if (identify.isRepresentative(target)) {
@@ -322,7 +321,7 @@ public class MDPAlteredDistributions extends MDPView
 					return null;
 				}
 				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state, choice);
-				return new MappingIterator<>(transitions, redirectTransition);
+				return new MappingIterator.From<>(transitions, redirectTransition);
 			}
 		};
 		final MDPAlteredDistributions redirected = new MDPAlteredDistributions(reattached, redirectChoice);
