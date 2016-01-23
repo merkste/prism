@@ -4,7 +4,8 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 {
 	public boolean test(T element);
 
-	public Predicate<T> not();
+	@Override
+	public Predicate<T> negate();
 
 	public Predicate<T> and(Predicate<? super T> predicate);
 

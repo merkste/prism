@@ -8,5 +8,5 @@ public interface PredicateDouble extends Predicate<Double>
 	public boolean test(double element);
 
 	@Override
-	public PredicateDouble not();
+	public PredicateDouble negate();
 }

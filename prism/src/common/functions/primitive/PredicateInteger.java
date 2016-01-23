@@ -8,5 +8,5 @@ public interface PredicateInteger extends Predicate<Integer>
 	public boolean test(int element);
 
 	@Override
-	public PredicateInteger not();
+	public PredicateInteger negate();
 }
