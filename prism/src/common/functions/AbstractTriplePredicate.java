@@ -35,7 +35,7 @@ public abstract class AbstractTriplePredicate<Q, R, S> implements TriplePredicat
 	}
 
 	@Override
-	public TriplePredicate<Q, R, S> not()
+	public TriplePredicate<Q, R, S> negate()
 	{
 		return new AbstractTriplePredicate<Q, R, S>()
 		{
@@ -46,7 +46,7 @@ public abstract class AbstractTriplePredicate<Q, R, S> implements TriplePredicat
 			}
 
 			@Override
-			public TriplePredicate<Q, R, S> not()
+			public TriplePredicate<Q, R, S> negate()
 			{
 				return AbstractTriplePredicate.this;
 			}

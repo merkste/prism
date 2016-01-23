@@ -11,5 +11,5 @@ public interface TriplePredicateDoubleDoubleDouble extends TriplePredicate<Doubl
 	public PredicateDouble curry(double element1, double element2);
 
 	@Override
-	public TriplePredicateDoubleDoubleDouble not();
+	public TriplePredicateDoubleDoubleDouble negate();
 }
