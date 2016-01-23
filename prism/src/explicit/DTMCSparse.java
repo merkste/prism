@@ -6,9 +6,8 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
-import common.functions.primitive.AbstractMappingFromInteger;
-import common.functions.primitive.MappingFromInteger;
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
@@ -198,30 +197,32 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
-		final MappingFromInteger<Entry<Integer, Double>> getTransition = new AbstractMappingFromInteger<Entry<Integer, Double>>()
+		// FIXME ALG: exploit IntFunction
+		final Function<Integer, Entry<Integer, Double>> getTransition = new Function<Integer, Entry<Integer, Double>>()
 		{
 			@Override
-			public Entry<Integer, Double> get(final int index)
+			public Entry<Integer, Double> apply(final Integer index)
 			{
 				return new SimpleImmutableEntry<>(columns[index], probabilities[index]);
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator<>(indices, getTransition);
+		return new MappingIterator.From<>(indices, getTransition);
 	}
 
 	@Override
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(final int state)
 	{
-		final MappingFromInteger<Entry<Integer, Pair<Double, Object>>> getTransitionWithAction = new AbstractMappingFromInteger<Entry<Integer, Pair<Double, Object>>>() {
+		// FIXME ALG: exploit IntFunction
+		final Function<Integer, Entry<Integer, Pair<Double, Object>>> getTransitionWithAction = new Function<Integer, Entry<Integer, Pair<Double, Object>>>() {
 			@Override
-			public Entry<Integer, Pair<Double, Object>> get(final int index)
+			public Entry<Integer, Pair<Double, Object>> apply(Integer index)
 			{
 				return new SimpleImmutableEntry<>(columns[index], new Pair<>(probabilities[index], null));
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator<>(indices, getTransitionWithAction);
+		return new MappingIterator.From<>(indices, getTransitionWithAction);
 	}
 
 	@Override
@@ -324,10 +325,11 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public String toString()
 	{
-		final MappingFromInteger<Entry<Integer, Distribution>> getDistribution = new AbstractMappingFromInteger<Entry<Integer, Distribution>>()
+		// FIXME ALG: exploit IntFunction
+		final Function<Integer, Entry<Integer, Distribution>> getDistribution = new Function<Integer, Entry<Integer, Distribution>>()
 		{
 			@Override
-			public final Entry<Integer, Distribution> get(final int state)
+			public final Entry<Integer, Distribution> apply(final Integer state)
 			{
 				final Distribution distribution = new Distribution(getTransitionsIterator(state));
 				return new AbstractMap.SimpleImmutableEntry<>(state, distribution);
@@ -335,7 +337,7 @@ public class DTMCSparse extends DTMCExplicit
 		};
 		String s = "trans: [ ";
 		final IterableStateSet states = new IterableStateSet(numStates);
-		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator<>(states, getDistribution);
+		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator.From<>(states, getDistribution);
 		while (distributions.hasNext()) {
 			final Entry<Integer, Distribution> dist = distributions.next();
 			s += dist.getKey() + ": " + dist.getValue();

@@ -9,10 +9,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import common.IteratorTools;
-import common.functions.primitive.AbstractMappingFromInteger;
-import common.functions.primitive.MappingFromInteger;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import explicit.DTMC;
@@ -45,10 +44,11 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public String toString()
 	{
-		final MappingFromInteger<Entry<Integer, Distribution>> getDistribution = new AbstractMappingFromInteger<Entry<Integer, Distribution>>()
+		// FIXME ALG: exploit IntFunction
+		final Function<Integer, Entry<Integer, Distribution>> getDistribution = new Function<Integer, Entry<Integer, Distribution>>()
 		{
 			@Override
-			public final Entry<Integer, Distribution> get(final int state)
+			public final Entry<Integer, Distribution> apply(final Integer state)
 			{
 				final Distribution distribution = new Distribution(getTransitionsIterator(state));
 				return new AbstractMap.SimpleImmutableEntry<>(state, distribution);
@@ -56,7 +56,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 		};
 		String s = "trans: [ ";
 		final IterableStateSet states = new IterableStateSet(getNumStates());
-		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator<>(states, getDistribution);
+		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator.From<>(states, getDistribution);
 		while (distributions.hasNext()) {
 			final Entry<Integer, Distribution> dist = distributions.next();
 			s += dist.getKey() + ": " + dist.getValue();
@@ -91,8 +91,9 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
+		// FIXME ALG: exploit OfInt
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		return new MappingIterator<>(transitions, Entry::getKey);
+		return new MappingIterator.ToInt<>(transitions, entry -> entry.getKey().intValue());
 	}
 
 	@Override
@@ -183,7 +184,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(final int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		return new MappingIterator<>(transitions, transition -> DTMCExplicit.attachAction(transition, null));
+		return new MappingIterator.From<>(transitions, transition -> DTMCExplicit.attachAction(transition, null));
 	}
 
 	@Override

@@ -12,20 +12,20 @@ import common.functions.Mapping;
 
 public class MappingIterable<S, T> implements Iterable<T>
 {
-	private final Iterable<? extends S> iterable;
-	private final Function<S, ? extends T> function;
+	private final Iterable<S> iterable;
+	private final Function<? super S, T> function;
 
 	/**
 	 * @deprecated
 	 * Use J8 Functions instead.
 	 */
 	@Deprecated
-	public MappingIterable(final Iterable<? extends S> iterable, final Mapping<S, ? extends T> mapping)
+	public MappingIterable(final Iterable<S> iterable, final Mapping<? super S, T> mapping)
 	{
 		this(iterable, mapping::get);
 	}
 
-	public MappingIterable(final Iterable<? extends S> iterable, final Function<S, ? extends T> function)
+	public MappingIterable(final Iterable<S> iterable, final Function<? super S, T> function)
 	{
 		this.iterable = iterable;
 		this.function = function;
@@ -34,7 +34,7 @@ public class MappingIterable<S, T> implements Iterable<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new MappingIterator<>(iterable.iterator(), function);
+		return new common.iterable.MappingIterator.From<>(iterable.iterator(), function);
 	}
 
 	public Stream<T> stream()

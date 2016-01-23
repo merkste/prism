@@ -7,10 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import common.BitSetTools;
-import common.functions.AbstractMapping;
-import common.functions.Mapping;
 import common.functions.Predicate;
 import common.functions.Relation;
 import common.functions.primitive.AbstractMappingFromInteger;
@@ -213,7 +212,7 @@ public class DTMCAlteredDistributions extends DTMCView
 					return null;
 				}
 				final MappingIterator<Integer, Iterator<Entry<Integer, Double>>> transitionIterators =
-						new MappingIterator<>(new IterableBitSet(equivalenceClass), CallDTMC.getTransitionsIterator().on(model));
+						new MappingIterator.From<>(new IterableBitSet(equivalenceClass), model::getTransitionsIterator);
 				// use Distribution to dedupe successors
 				return new Distribution(new ChainedIterator<>(transitionIterators)).iterator();
 			}
@@ -221,10 +220,10 @@ public class DTMCAlteredDistributions extends DTMCView
 		final DTMC reattached = new DTMCAlteredDistributions(model, reattach);
 
 		// 2. redirect transitions to representatives
-		final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> redirectTransition = new AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>()
+		final Function<Entry<Integer, Double>, Entry<Integer, Double>> redirectTransition = new Function<Entry<Integer, Double>, Entry<Integer, Double>>()
 		{
 			@Override
-			public final Entry<Integer, Double> get(final Entry<Integer, Double> transition)
+			public final Entry<Integer, Double> apply(final Entry<Integer, Double> transition)
 			{
 				final int target = transition.getKey();
 				if (identify.isRepresentative(target)) {
@@ -244,7 +243,7 @@ public class DTMCAlteredDistributions extends DTMCView
 					return null;
 				}
 				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state);
-				final Iterator<Entry<Integer, Double>> redirected = new MappingIterator<>(transitions, redirectTransition);
+				final Iterator<Entry<Integer, Double>> redirected = new MappingIterator.From<>(transitions, redirectTransition);
 				// use Distribution to dedupe successors
 				return new Distribution(redirected).iterator();
 			}

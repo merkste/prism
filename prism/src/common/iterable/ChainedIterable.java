@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import common.iterable.MappingIterator.From;
+
 
 public class ChainedIterable<T> implements Iterable<T>
 {
@@ -26,7 +28,7 @@ public class ChainedIterable<T> implements Iterable<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new ChainedIterator<>(new MappingIterator<>(iterables, Iterable::iterator));
+		return new ChainedIterator<>(new From<>(iterables, Iterable::iterator));
 	}
 
 	public Stream<T> stream()

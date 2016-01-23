@@ -1,44 +1,30 @@
 package common.iterable;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator.OfDouble;
+import java.util.PrimitiveIterator.OfInt;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
-import common.functions.Mapping;
-
-public class MappingIterator<S, T> implements Iterator<T>
+public abstract class MappingIterator<S, T> implements Iterator<T>
 {
-	private final Iterator<? extends S> iterator;
-	private final Function<S, ? extends T> function;
+	protected final Iterator<S> iterator;
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated()
-	public MappingIterator(final Iterable<? extends S> iterable, final Mapping<S, ? extends T> mapping)
+	public MappingIterator(Iterable<S> iterable)
 	{
-		this(iterable.iterator(), mapping);
+		this(iterable.iterator());
 	}
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated()
-	public MappingIterator(final Iterator<? extends S> iter, final Mapping<S, ? extends T> mapping)
+	public MappingIterator(Iterator<S> iterator)
 	{
-		this(iter, mapping::get);
-	}
-
-	public MappingIterator(final Iterable<? extends S> iterable, final Function<S, ? extends T> function)
-	{
-		this(iterable.iterator(), function);
-	}
-
-	public MappingIterator(final Iterator<? extends S> iter, final Function<S, ? extends T> function)
-	{
-		this.iterator = iter;
-		this.function = function;
+		this.iterator = iterator;
 	}
 
 	@Override
@@ -48,14 +34,176 @@ public class MappingIterator<S, T> implements Iterator<T>
 	}
 
 	@Override
-	public T next()
-	{
-		return function.apply(iterator.next());
-	}
-
-	@Override
 	public void remove()
 	{
 		iterator.remove();
+	}
+
+	public static class From<S, T> extends MappingIterator<S, T>
+	{
+		protected final Function<? super S, T> function;
+
+		public From(Iterable<S> iterable, Function<? super S, T> function)
+		{
+			this(iterable.iterator(), function);
+		}
+
+		public From(Iterator<S> iterator, Function<? super S, T> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public T next()
+		{
+			return function.apply(iterator.next());
+		}
+	}
+
+	public static class ToInt<S> extends MappingIterator<S, Integer> implements OfInt
+	{
+		protected ToIntFunction<? super S> function;
+
+		public ToInt(Iterable<S> iterable, ToIntFunction<? super S> function)
+		{
+			this(iterable.iterator(), function);
+		}
+
+		public ToInt(Iterator<S> iterator, ToIntFunction<? super S> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			return function.applyAsInt(iterator.next());
+		}
+	}
+
+	public static class ToDouble<S> extends MappingIterator<S, Double> implements OfDouble
+	{
+		protected ToDoubleFunction<? super S> function;
+
+		public ToDouble(Iterable<S> iterable, ToDoubleFunction<? super S> function)
+		{
+			this(iterable.iterator(), function);
+		}
+
+		public ToDouble(Iterator<S> iterator, ToDoubleFunction<? super S> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public double nextDouble()
+		{
+			return function.applyAsDouble(iterator.next());
+		}
+	}
+
+	public static class FromInt<T> extends MappingIterator<Integer, T>
+	{
+		protected IntFunction<T> function;
+
+		public FromInt(OfInt iterator, IntFunction<T> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public T next()
+		{
+			return function.apply(((OfInt) iterator).nextInt());
+		}
+	}
+
+	public static class FromIntToInt extends MappingIterator<Integer, Integer> implements OfInt
+	{
+		protected IntUnaryOperator function;
+
+		public FromIntToInt(OfInt iterator, IntUnaryOperator function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			return function.applyAsInt(((OfInt) iterator).nextInt());
+		}
+	}
+
+	public static class FromIntToDouble extends MappingIterator<Integer, Double> implements OfDouble
+	{
+		protected IntToDoubleFunction function;
+
+		public FromIntToDouble(OfInt iterator, IntToDoubleFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public double nextDouble()
+		{
+			return function.applyAsDouble(((OfInt) iterator).nextInt());
+		}
+	}
+
+	public static class FromDouble<T> extends MappingIterator<Double, T>
+	{
+		protected DoubleFunction<T> function;
+
+		public FromDouble(OfDouble iterator, DoubleFunction<T> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public T next()
+		{
+			return function.apply(((OfDouble) iterator).nextDouble());
+		}
+	}
+
+	public static class FromDoubleToInt extends MappingIterator<Double, Integer> implements OfInt
+	{
+		protected DoubleToIntFunction function;
+
+		public FromDoubleToInt(OfDouble iterator, DoubleToIntFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			return function.applyAsInt(((OfDouble) iterator).nextDouble());
+		}
+	}
+
+	public static class FromDoubleToDouble extends MappingIterator<Double, Double> implements OfDouble
+	{
+		protected DoubleUnaryOperator function;
+
+		public FromDoubleToDouble(OfDouble iterator, DoubleUnaryOperator function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public double nextDouble()
+		{
+			return function.applyAsDouble(((OfDouble) iterator).nextDouble());
+		}
 	}
 }

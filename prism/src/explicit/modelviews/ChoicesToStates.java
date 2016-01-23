@@ -7,11 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import common.BitSetTools;
-import common.functions.AbstractMapping;
 import common.functions.AbstractPairMapping;
-import common.functions.Mapping;
 import common.functions.PairMapping;
 import common.functions.primitive.AbstractPairPredicateIntegerInteger;
 import common.functions.primitive.PairPredicateIntegerInteger;
@@ -65,17 +64,17 @@ public class ChoicesToStates
 				}
 				// redirect to original model
 				final Iterator<Entry<Integer, Double>> transitions = union.getTransitionsIterator(state, choice);
-				final Mapping<Entry<Integer, Double>, ? extends Entry<Integer, Double>> redirect = new AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>()
+				final Function<Entry<Integer, Double>, Entry<Integer, Double>> redirect = new Function<Entry<Integer, Double>, Entry<Integer, Double>>()
 				{
 					@Override
-					public Entry<Integer, Double> get(Entry<Integer, Double> transition)
+					public Entry<Integer, Double> apply(Entry<Integer, Double> transition)
 					{
 						final int target = transition.getKey() % offset;
 						final Double probability = transition.getValue();
 						return new AbstractMap.SimpleImmutableEntry<>(target, probability);
 					}
 				};
-				return new MappingIterator<Entry<Integer, Double>, Entry<Integer, Double>>(transitions, redirect);
+				return new MappingIterator.From<Entry<Integer, Double>, Entry<Integer, Double>>(transitions, redirect);
 			}
 		};
 		return new MDPAlteredDistributions(union, choiceMapping);
