@@ -10,7 +10,7 @@ public abstract class AbstractTripleMapping<Q, R, S, T> implements TripleMapping
 			@Override
 			public T apply(final R element2, final S element3)
 			{
-				return AbstractTripleMapping.this.get(element1, element2, element3);
+				return AbstractTripleMapping.this.apply(element1, element2, element3);
 			}
 		};
 	}
@@ -23,7 +23,7 @@ public abstract class AbstractTripleMapping<Q, R, S, T> implements TripleMapping
 			@Override
 			public T apply(final S element3)
 			{
-				return AbstractTripleMapping.this.get(element1, element2, element3);
+				return AbstractTripleMapping.this.apply(element1, element2, element3);
 			}
 		};
 	}
