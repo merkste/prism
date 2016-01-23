@@ -40,7 +40,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 	}
 
 	@Override
-	public Predicate<T> and(final Predicate<? super T> predicate)
+	public Predicate<T> and(java.util.function.Predicate<? super T> predicate)
 	{
 		return new AbstractPredicate<T>()
 		{
@@ -53,7 +53,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 	}
 
 	@Override
-	public Predicate<T> or(final Predicate<? super T> predicate)
+	public Predicate<T> or(java.util.function.Predicate<? super T> predicate)
 	{
 		return new AbstractPredicate<T>()
 		{
@@ -66,7 +66,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 	}
 
 	@Override
-	public Predicate<T> implies(final Predicate<? super T> predicate)
+	public Predicate<T> implies(java.util.function.Predicate<? super T> predicate)
 	{
 		return new AbstractPredicate<T>()
 		{
