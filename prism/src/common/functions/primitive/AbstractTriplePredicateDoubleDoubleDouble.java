@@ -52,7 +52,7 @@ public abstract class AbstractTriplePredicateDoubleDoubleDouble extends Abstract
 	}
 
 	@Override
-	public TriplePredicateDoubleDoubleDouble not()
+	public TriplePredicateDoubleDoubleDouble negate()
 	{
 		return new AbstractTriplePredicateDoubleDoubleDouble()
 		{
@@ -63,7 +63,7 @@ public abstract class AbstractTriplePredicateDoubleDoubleDouble extends Abstract
 			}
 
 			@Override
-			public TriplePredicateDoubleDoubleDouble not()
+			public TriplePredicateDoubleDoubleDouble negate()
 			{
 				return AbstractTriplePredicateDoubleDoubleDouble.this;
 			}

@@ -10,7 +10,7 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 	@Override
 	public Predicate<S> curry(final Q element1, final R element2);
 
-	public TriplePredicate<Q, R, S> not();
+	public TriplePredicate<Q, R, S> negate();
 
 	public TriplePredicate<Q, R, S> and(final TriplePredicate<? super Q, ? super R, ? super S> predicate);
 
