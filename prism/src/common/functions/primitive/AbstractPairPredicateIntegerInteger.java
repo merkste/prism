@@ -23,7 +23,7 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 		return new AbstractPredicateInteger()
 		{
 			@Override
-			public boolean getBoolean(final int element2)
+			public boolean test(final int element2)
 			{
 				return AbstractPairPredicateIntegerInteger.this.getBoolean(element1, element2);
 			}

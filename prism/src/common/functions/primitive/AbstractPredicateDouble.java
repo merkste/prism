@@ -7,12 +7,12 @@ import common.functions.Predicate;
 public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>implements PredicateDouble
 {
 	@Override
-	public boolean getBoolean(final Double element)
+	public boolean test(final Double element)
 	{
-		return getBoolean(element.doubleValue());
+		return test(element.doubleValue());
 	}
 
-	public abstract boolean getBoolean(final double element);
+	public abstract boolean test(final double element);
 
 	@Override
 	public PredicateDouble not()
@@ -20,9 +20,9 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element)
+			public final boolean test(final double element)
 			{
-				return !AbstractPredicateDouble.this.getBoolean(element);
+				return !AbstractPredicateDouble.this.test(element);
 			}
 
 			@Override
@@ -38,9 +38,9 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element)
+			public final boolean test(final double element)
 			{
-				return AbstractPredicateDouble.this.getBoolean(element) && predicate.getBoolean(element);
+				return AbstractPredicateDouble.this.test(element) && predicate.test(element);
 			}
 		};
 	}
@@ -50,9 +50,9 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element)
+			public final boolean test(final double element)
 			{
-				return AbstractPredicateDouble.this.getBoolean(element) || predicate.getBoolean(element);
+				return AbstractPredicateDouble.this.test(element) || predicate.test(element);
 			}
 		};
 	}
@@ -62,9 +62,9 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public final boolean getBoolean(final double element)
+			public final boolean test(final double element)
 			{
-				return (!AbstractPredicateDouble.this.getBoolean(element)) || predicate.getBoolean(element);
+				return (!AbstractPredicateDouble.this.test(element)) || predicate.test(element);
 			}
 		};
 	}
@@ -74,9 +74,9 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 		return new AbstractPredicate<S>()
 		{
 			@Override
-			public final boolean getBoolean(final S element)
+			public final boolean test(final S element)
 			{
-				return AbstractPredicateDouble.this.getBoolean(mapping.apply(element).doubleValue());
+				return AbstractPredicateDouble.this.test(mapping.apply(element).doubleValue());
 			}
 		};
 	}

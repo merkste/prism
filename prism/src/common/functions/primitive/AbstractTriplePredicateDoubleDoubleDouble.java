@@ -44,7 +44,7 @@ public abstract class AbstractTriplePredicateDoubleDoubleDouble extends Abstract
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public boolean getBoolean(final double element3)
+			public boolean test(final double element3)
 			{
 				return AbstractTriplePredicateDoubleDoubleDouble.this.getBoolean(element1, element2, element3);
 			}

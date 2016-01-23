@@ -14,7 +14,7 @@ public class BitSetPredicate extends AbstractPredicateInteger
 	}
 
 	@Override
-	public boolean getBoolean(final int index)
+	public boolean test(final int index)
 	{
 		return indices.get(index);
 	}

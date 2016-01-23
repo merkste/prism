@@ -6,12 +6,12 @@ import common.functions.Predicate;
 
 public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer>implements PredicateInteger
 {
-	public boolean getBoolean(final Integer element)
+	public boolean test(final Integer element)
 	{
-		return getBoolean(element.intValue());
+		return test(element.intValue());
 	}
 
-	public abstract boolean getBoolean(final int element);
+	public abstract boolean test(final int element);
 
 	@Override
 	public PredicateInteger not()
@@ -19,9 +19,9 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 		return new AbstractPredicateInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element)
+			public final boolean test(final int element)
 			{
-				return !AbstractPredicateInteger.this.getBoolean(element);
+				return !AbstractPredicateInteger.this.test(element);
 			}
 
 			@Override
@@ -37,9 +37,9 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 		return new AbstractPredicateInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element)
+			public final boolean test(final int element)
 			{
-				return AbstractPredicateInteger.this.getBoolean(element) && predicate.getBoolean(element);
+				return AbstractPredicateInteger.this.test(element) && predicate.test(element);
 			}
 		};
 	}
@@ -49,9 +49,9 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 		return new AbstractPredicateInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element)
+			public final boolean test(final int element)
 			{
-				return AbstractPredicateInteger.this.getBoolean(element) || predicate.getBoolean(element);
+				return AbstractPredicateInteger.this.test(element) || predicate.test(element);
 			}
 		};
 	}
@@ -61,9 +61,9 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 		return new AbstractPredicateInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int element)
+			public final boolean test(final int element)
 			{
-				return (!AbstractPredicateInteger.this.getBoolean(element)) || predicate.getBoolean(element);
+				return (!AbstractPredicateInteger.this.test(element)) || predicate.test(element);
 			}
 		};
 	}
@@ -73,9 +73,9 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 		return new AbstractPredicate<S>()
 		{
 			@Override
-			public final boolean getBoolean(final S element)
+			public final boolean test(final S element)
 			{
-				return AbstractPredicateInteger.this.getBoolean(mapping.apply(element).intValue());
+				return AbstractPredicateInteger.this.test(mapping.apply(element).intValue());
 			}
 		};
 	}

@@ -135,7 +135,7 @@ public class MDPRestricted extends MDPView
 		final PredicateInteger isDeadlock = new AbstractPredicateInteger()
 		{
 			@Override
-			public final boolean getBoolean(final int state)
+			public final boolean test(final int state)
 			{
 				return model.isDeadlockState(mapStateToOriginalModel(state));
 			}
@@ -279,7 +279,7 @@ public class MDPRestricted extends MDPView
 			final int numStates = model.getNumStates();
 
 			@Override
-			public boolean getBoolean(final int state)
+			public boolean test(final int state)
 			{
 				return (0 <= state) && (state < numStates);
 			}
