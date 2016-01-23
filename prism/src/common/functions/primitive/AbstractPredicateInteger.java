@@ -4,7 +4,7 @@ import common.functions.AbstractPredicate;
 import common.functions.Mapping;
 import common.functions.Predicate;
 
-public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer>implements PredicateInteger
+public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer> implements PredicateInteger
 {
 	public boolean test(final Integer element)
 	{

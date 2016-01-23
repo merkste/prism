@@ -4,7 +4,7 @@ import common.functions.AbstractPredicate;
 import common.functions.Mapping;
 import common.functions.Predicate;
 
-public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>implements PredicateDouble
+public abstract class AbstractPredicateDouble extends AbstractPredicate<Double> implements PredicateDouble
 {
 	@Override
 	public boolean test(final Double element)
