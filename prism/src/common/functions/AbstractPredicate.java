@@ -21,7 +21,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 	}
 
 	@Override
-	public Predicate<T> not()
+	public Predicate<T> negate()
 	{
 		return new AbstractPredicate<T>()
 		{
@@ -32,7 +32,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 			}
 
 			@Override
-			public AbstractPredicate<T> not()
+			public AbstractPredicate<T> negate()
 			{
 				return AbstractPredicate.this;
 			}

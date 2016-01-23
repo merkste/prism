@@ -14,7 +14,7 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 	public abstract boolean test(final int element);
 
 	@Override
-	public PredicateInteger not()
+	public PredicateInteger negate()
 	{
 		return new AbstractPredicateInteger()
 		{
@@ -25,7 +25,7 @@ public abstract class AbstractPredicateInteger extends AbstractPredicate<Integer
 			}
 
 			@Override
-			public PredicateInteger not()
+			public PredicateInteger negate()
 			{
 				return AbstractPredicateInteger.this;
 			}

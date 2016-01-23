@@ -15,7 +15,7 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 	public abstract boolean test(final double element);
 
 	@Override
-	public PredicateDouble not()
+	public PredicateDouble negate()
 	{
 		return new AbstractPredicateDouble()
 		{
@@ -26,7 +26,7 @@ public abstract class AbstractPredicateDouble extends AbstractPredicate<Double>i
 			}
 
 			@Override
-			public AbstractPredicateDouble not()
+			public AbstractPredicateDouble negate()
 			{
 				return AbstractPredicateDouble.this;
 			}
