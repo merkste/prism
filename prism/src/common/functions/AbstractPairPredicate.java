@@ -14,7 +14,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 		return new AbstractPredicate<S>()
 		{
 			@Override
-			public boolean getBoolean(final S element2)
+			public boolean test(final S element2)
 			{
 				return AbstractPairPredicate.this.getBoolean(element1, element2);
 			}

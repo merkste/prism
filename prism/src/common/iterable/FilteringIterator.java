@@ -30,7 +30,7 @@ public class FilteringIterator<T> implements Iterator<T>
 	@Deprecated
 	public FilteringIterator(final Iterator<? extends T> iter, final common.functions.Predicate<T> predicate)
 	{
-		this(iter, predicate::getBoolean);
+		this(iter, predicate::test);
 	}
 
 	public FilteringIterator(final Iterable<? extends T> iterable, final Predicate<T> predicate)

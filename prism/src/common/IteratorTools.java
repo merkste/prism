@@ -167,7 +167,7 @@ public class IteratorTools
 	{
 		int count = 0;
 		while (iterator.hasNext()) {
-			if (predicate.getBoolean(iterator.next())) {
+			if (predicate.test(iterator.next())) {
 				count++;
 			}
 			;

@@ -5,7 +5,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 	@Override
 	public Boolean apply(final T element)
 	{
-		return getBoolean(element);
+		return test(element);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -26,9 +26,9 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		return new AbstractPredicate<T>()
 		{
 			@Override
-			public final boolean getBoolean(final T element)
+			public final boolean test(final T element)
 			{
-				return !AbstractPredicate.this.getBoolean(element);
+				return !AbstractPredicate.this.test(element);
 			}
 
 			@Override
@@ -45,9 +45,9 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		return new AbstractPredicate<T>()
 		{
 			@Override
-			public final boolean getBoolean(final T element)
+			public final boolean test(final T element)
 			{
-				return AbstractPredicate.this.getBoolean(element) && predicate.getBoolean(element);
+				return AbstractPredicate.this.test(element) && predicate.test(element);
 			}
 		};
 	}
@@ -58,9 +58,9 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		return new AbstractPredicate<T>()
 		{
 			@Override
-			public final boolean getBoolean(final T element)
+			public final boolean test(final T element)
 			{
-				return AbstractPredicate.this.getBoolean(element) || predicate.getBoolean(element);
+				return AbstractPredicate.this.test(element) || predicate.test(element);
 			}
 		};
 	}
@@ -71,9 +71,9 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		return new AbstractPredicate<T>()
 		{
 			@Override
-			public final boolean getBoolean(final T element)
+			public final boolean test(final T element)
 			{
-				return (!AbstractPredicate.this.getBoolean(element)) || predicate.getBoolean(element);
+				return (!AbstractPredicate.this.test(element)) || predicate.test(element);
 			}
 		};
 	}
@@ -83,9 +83,9 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		return new AbstractPredicate<S>()
 		{
 			@Override
-			public final boolean getBoolean(final S element)
+			public final boolean test(final S element)
 			{
-				return AbstractPredicate.this.getBoolean(mapping.apply(element));
+				return AbstractPredicate.this.test(mapping.apply(element));
 			}
 		};
 	}
@@ -95,7 +95,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		private static final True<Object> TRUE = new True<>();
 
 		@Override
-		public final boolean getBoolean(final T element)
+		public final boolean test(final T element)
 		{
 			return Boolean.TRUE;
 		}
@@ -106,7 +106,7 @@ public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>im
 		private static final False<Object> FALSE = new False<>();
 
 		@Override
-		public final boolean getBoolean(final T element)
+		public final boolean test(final T element)
 		{
 			return Boolean.FALSE;
 		}

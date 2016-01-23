@@ -221,7 +221,7 @@ public class DTMCRestricted extends DTMCView
 			final int numStates = model.getNumStates();
 
 			@Override
-			public boolean getBoolean(final int state)
+			public boolean test(final int state)
 			{
 				return (0 <= state) && (state < numStates);
 			}

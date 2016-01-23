@@ -24,7 +24,7 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public boolean getBoolean(final double element2)
+			public boolean test(final double element2)
 			{
 				return AbstractPairPredicateDoubleDouble.this.getBoolean(element1, element2);
 			}

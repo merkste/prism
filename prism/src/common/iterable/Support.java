@@ -41,7 +41,7 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 
 	public Support(final double[] values, final PredicateDouble predicate)
 	{
-		this(values, predicate::getBoolean);
+		this(values, predicate::test);
 	}
 
 	public Support(final double[] values, final DoublePredicate predicate)
@@ -51,7 +51,7 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 	}
 
 	@Override
-	public final boolean getBoolean(final int index)
+	public final boolean test(final int index)
 	{
 		return 0 <= index && index <= values.length && predicate.test(values[index]);
 	}
@@ -64,7 +64,7 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 	@Override
 	public Iterator<Integer> iterator()
 	{
-		return IntStream.range(0, values.length).filter(this::getBoolean).iterator();
+		return IntStream.range(0, values.length).filter(this::test).iterator();
 	}
 
 	public Stream<Integer> stream()

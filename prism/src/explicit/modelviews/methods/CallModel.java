@@ -27,7 +27,7 @@ public class CallModel
 			return new AbstractPredicateInteger()
 			{
 				@Override
-				public boolean getBoolean(final int state)
+				public boolean test(final int state)
 				{
 					return model.isDeadlockState(state);
 				}

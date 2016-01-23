@@ -156,7 +156,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		return new AbstractPredicateDouble()
 		{
 			@Override
-			public boolean getBoolean(final double y)
+			public boolean test(final double y)
 			{
 				return Relation.this.getBoolean(x, y);
 			}

@@ -123,7 +123,7 @@ public class IterableStateSet implements Iterable<Integer>
 		final PredicateInteger odd = new AbstractPredicateInteger()
 		{
 			@Override
-			public boolean getBoolean(int number)
+			public boolean test(int number)
 			{
 				return number % 2 == 1;
 			}

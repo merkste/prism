@@ -37,7 +37,7 @@ public class CallCollection
 			return new AbstractPredicate<T>()
 			{
 				@Override
-				public boolean getBoolean(final T element)
+				public boolean test(final T element)
 				{
 					return collection.contains(element);
 				}
