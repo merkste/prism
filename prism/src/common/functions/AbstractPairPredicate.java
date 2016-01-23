@@ -1,5 +1,7 @@
 package common.functions;
 
+import java.util.function.BiPredicate;
+
 public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R, S, Boolean>implements PairPredicate<R, S>
 {
 	@Override
@@ -41,7 +43,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 	}
 
 	@Override
-	public PairPredicate<R, S> and(final PairPredicate<? super R, ? super S> predicate)
+	public PairPredicate<R, S> and(BiPredicate<? super R, ? super S> predicate)
 	{
 		return new AbstractPairPredicate<R, S>()
 		{
@@ -54,7 +56,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 	}
 
 	@Override
-	public PairPredicate<R, S> or(final PairPredicate<? super R, ? super S> predicate)
+	public PairPredicate<R, S> or(BiPredicate<? super R, ? super S> predicate)
 	{
 		return new AbstractPairPredicate<R, S>()
 		{
@@ -67,7 +69,7 @@ public abstract class AbstractPairPredicate<R, S> extends AbstractPairMapping<R,
 	}
 
 	@Override
-	public PairPredicate<R, S> implies(final PairPredicate<? super R, ? super S> predicate)
+	public PairPredicate<R, S> implies(BiPredicate<? super R, ? super S> predicate)
 	{
 		return new AbstractPairPredicate<R, S>()
 		{
