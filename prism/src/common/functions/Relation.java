@@ -15,7 +15,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return LEQ;
 		}
@@ -33,7 +33,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return LT;
 		}
@@ -51,7 +51,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return GEQ;
 		}
@@ -69,7 +69,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return GT;
 		}
@@ -87,7 +87,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return NEQ;
 		}
@@ -105,7 +105,7 @@ public enum Relation implements PairPredicateDoubleDouble
 		}
 
 		@Override
-		public Relation not()
+		public Relation negate()
 		{
 			return EQ;
 		}

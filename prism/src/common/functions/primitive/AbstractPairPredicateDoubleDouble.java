@@ -32,7 +32,7 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 	}
 
 	@Override
-	public PairPredicateDoubleDouble not()
+	public PairPredicateDoubleDouble negate()
 	{
 		return new AbstractPairPredicateDoubleDouble()
 		{
@@ -43,7 +43,7 @@ public abstract class AbstractPairPredicateDoubleDouble extends AbstractPairPred
 			}
 
 			@Override
-			public AbstractPairPredicateDoubleDouble not()
+			public AbstractPairPredicateDoubleDouble negate()
 			{
 				return AbstractPairPredicateDoubleDouble.this;
 			}

@@ -31,7 +31,7 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 	}
 
 	@Override
-	public PairPredicateIntegerInteger not()
+	public PairPredicateIntegerInteger negate()
 	{
 		return new AbstractPairPredicateIntegerInteger()
 		{
@@ -42,7 +42,7 @@ public abstract class AbstractPairPredicateIntegerInteger extends AbstractPairPr
 			}
 
 			@Override
-			public PairPredicateIntegerInteger not()
+			public PairPredicateIntegerInteger negate()
 			{
 				return AbstractPairPredicateIntegerInteger.this;
 			}

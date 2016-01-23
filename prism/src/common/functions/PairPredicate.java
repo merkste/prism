@@ -9,7 +9,8 @@ public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredi
 	@Override
 	public Predicate<S> curry(R element1);
 
-	public PairPredicate<R, S> not();
+	@Override
+	public PairPredicate<R, S> negate();
 
 	public PairPredicate<R, S> and(PairPredicate<? super R, ? super S> predicate);
 

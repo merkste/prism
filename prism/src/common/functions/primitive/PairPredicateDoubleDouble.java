@@ -9,7 +9,7 @@ public interface PairPredicateDoubleDouble extends PairPredicate<Double, Double>
 	public PredicateDouble curry(double element1);
 
 	@Override
-	public PairPredicateDoubleDouble not();
+	public PairPredicateDoubleDouble negate();
 
 	public PairPredicateDoubleDouble and(PairPredicateDoubleDouble predicate);
 

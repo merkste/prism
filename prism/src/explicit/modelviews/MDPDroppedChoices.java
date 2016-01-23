@@ -30,7 +30,7 @@ public class MDPDroppedChoices extends MDPView
 	{
 		this.model = model;
 		// FIXME ALG: consider using preserved instead of dropped
-		this.preserved = dropped.not();
+		this.preserved = dropped.negate();
 	}
 
 	public MDPDroppedChoices(final MDPDroppedChoices dropped)
