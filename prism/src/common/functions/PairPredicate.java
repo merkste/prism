@@ -1,6 +1,8 @@
 package common.functions;
 
-public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>
+import java.util.function.BiPredicate;
+
+public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredicate<R, S>
 {
 	public boolean test(R element1, S element2);
 
