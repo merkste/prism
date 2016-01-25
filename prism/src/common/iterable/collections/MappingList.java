@@ -12,20 +12,20 @@ import common.functions.Mapping;
 
 public class MappingList<S, T> extends AbstractList<T>
 {
-	private final List<? extends S> list;
-	private final Function<S, ? extends T> function;
+	private final List<S> list;
+	private final Function<? super S, T> function;
 
 	/**
 	 * @deprecated
 	 * Use J8 Functions instead.
 	 */
 	@Deprecated
-	public MappingList(final List<? extends S> list, final Mapping<S, ? extends T> mapping)
+	public MappingList(final List<S> list, final Mapping<? super S, T> mapping)
 	{
-		this(list, mapping::apply);
+		this(list, (Function<? super S, T>) mapping::apply);
 	}
 
-	public MappingList(final List<? extends S> list, final Function<S, ? extends T> function)
+	public MappingList(final List<S> list, final Function<? super S, T> function)
 	{
 		this.list = list;
 		this.function = function;
