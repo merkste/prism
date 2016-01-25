@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import common.BitSetTools;
 import common.functions.Relation;
-import common.functions.primitive.MappingFromInteger;
 import common.iterable.ChainedIterator;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableBitSet;
@@ -31,7 +31,7 @@ public class DTMCAlteredDistributions extends DTMCView
 	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose(Entry::getValue);
 
 	private DTMC model;
-	private MappingFromInteger<Iterator<Entry<Integer, Double>>> mapping;
+	private IntFunction<Iterator<Entry<Integer, Double>>> mapping;
 
 
 
@@ -41,7 +41,7 @@ public class DTMCAlteredDistributions extends DTMCView
 	 * @param model a DTMC
 	 * @param mapping from states to (new) distributions or null
 	 */
-	public DTMCAlteredDistributions(final DTMC model, final MappingFromInteger<Iterator<Entry<Integer, Double>>> mapping)
+	public DTMCAlteredDistributions(final DTMC model, final IntFunction<Iterator<Entry<Integer, Double>>> mapping)
 	{
 		this.model = model;
 		this.mapping = mapping;
@@ -158,7 +158,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = fixDeadlocks(this.clone());
-		mapping = MappingFromInteger.constantFromInteger(null);
+		mapping = state -> null;
 	}
 
 
@@ -176,7 +176,7 @@ public class DTMCAlteredDistributions extends DTMCView
 
 	public static DTMCAlteredDistributions addSelfLoops(final DTMC model, final BitSet states)
 	{
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> addLoops = new MappingFromInteger<Iterator<Entry<Integer, Double>>>()
+		final IntFunction<Iterator<Entry<Integer, Double>>> addLoops = new IntFunction<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final int state)
@@ -196,7 +196,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		final BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
 
 		// 1. attach all transitions of an equivalence class to its representative
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> reattach = new MappingFromInteger<Iterator<Entry<Integer, Double>>>()
+		final IntFunction<Iterator<Entry<Integer, Double>>> reattach = new IntFunction<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final int state)
@@ -231,7 +231,7 @@ public class DTMCAlteredDistributions extends DTMCView
 				return new AbstractMap.SimpleImmutableEntry<>(representative, probability);
 			}
 		};
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> redirectDistribution = new MappingFromInteger<Iterator<Entry<Integer, Double>>>()
+		final IntFunction<Iterator<Entry<Integer, Double>>> redirectDistribution = new IntFunction<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final int state)
@@ -273,7 +273,7 @@ public class DTMCAlteredDistributions extends DTMCView
 
 		System.out.println();
 
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> transitions = new MappingFromInteger<Iterator<Entry<Integer, Double>>>()
+		final IntFunction<Iterator<Entry<Integer, Double>>> transitions = new IntFunction<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final int state)
