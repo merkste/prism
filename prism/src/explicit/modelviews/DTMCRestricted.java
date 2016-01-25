@@ -17,6 +17,7 @@ import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
+import common.iterable.primitive.IterableInt;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -120,9 +121,9 @@ public class DTMCRestricted extends DTMCView
 	}
 
 	@Override
-	public Iterable<Integer> getInitialStates()
+	public IterableInt getInitialStates()
 	{
-		return new MappingIterable<>(new FilteringIterable<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
+		return new MappingIterable.ToInt<>(new FilteringIterable<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
 	}
 
 	@Override

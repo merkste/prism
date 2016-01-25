@@ -16,6 +16,7 @@ import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
+import common.iterable.primitive.IterableInt;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
@@ -102,10 +103,10 @@ public class MDPRestricted extends MDPView
 	}
 
 	@Override
-	public Iterable<Integer> getInitialStates()
+	public IterableInt getInitialStates()
 	{
 		final FilteringIterable<Integer> initialStates = new FilteringIterable<>(model.getInitialStates(), isStateIncluded);
-		return new MappingIterable<>(initialStates, this::mapStateToRestrictedModel);
+		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
 	}
 
 	@Override

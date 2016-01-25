@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import common.BitSetTools;
 import common.functions.PairMapping;
-import common.functions.primitive.MappingFromInteger;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
@@ -230,7 +230,7 @@ public class MDPAlteredDistributions extends MDPView
 		final MDPDroppedAllChoices droppedChoices = new MDPDroppedAllChoices(model, identify.getNonRepresentatives());
 
 		// 2. attach all choices of an equivalence class to its representative
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addChoices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final IntFunction<List<Iterator<Entry<Integer, Double>>>> addChoices = new IntFunction<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -242,7 +242,7 @@ public class MDPAlteredDistributions extends MDPView
 				if (equivalenceClass == null) {
 					return null;
 				}
-				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+				final IntFunction<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new IntFunction<List<Iterator<Entry<Integer, Double>>>>()
 				{
 					@Override
 					public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -258,10 +258,10 @@ public class MDPAlteredDistributions extends MDPView
 						return choices;
 					}
 				};
-				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable<>(new IterableBitSet(equivalenceClass), getOtherChoices));
+				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable.FromInt<>(new IterableBitSet(equivalenceClass), getOtherChoices));
 			}
 		};
-		final MappingFromInteger<List<Object>> addActions = new MappingFromInteger<List<Object>>()
+		final IntFunction<List<Object>> addActions = new IntFunction<List<Object>>()
 		{
 			@Override
 			public List<Object> apply(final int state)
@@ -273,7 +273,7 @@ public class MDPAlteredDistributions extends MDPView
 				if (equivalenceClass == null) {
 					return Collections.emptyList();
 				}
-				final MappingFromInteger<List<Object>> getOtherActions = new MappingFromInteger<List<Object>>()
+				final IntFunction<List<Object>> getOtherActions = new IntFunction<List<Object>>()
 				{
 					@Override
 					public List<Object> apply(final int state)
@@ -289,7 +289,7 @@ public class MDPAlteredDistributions extends MDPView
 						return actions;
 					}
 				};
-				return new ChainedList<Object>(new MappingIterable<>(new IterableBitSet(equivalenceClass), getOtherActions));
+				return new ChainedList<Object>(new MappingIterable.FromInt<>(new IterableBitSet(equivalenceClass), getOtherActions));
 			}
 		};
 		final MDPView reattached = new MDPAdditionalChoices(droppedChoices, addChoices, addActions);
