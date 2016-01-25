@@ -33,7 +33,7 @@ public class MappingIterable<S, T> implements Iterable<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new common.iterable.MappingIterator.From<>(iterable.iterator(), function);
+		return new MappingIterator.From<>(iterable.iterator(), function);
 	}
 
 	public Stream<T> stream()

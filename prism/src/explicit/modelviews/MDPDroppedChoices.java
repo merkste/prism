@@ -9,6 +9,7 @@ import java.util.Set;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.primitive.PairPredicateIntegerInteger;
+import common.functions.primitive.PredicateInteger;
 import common.iterable.Interval;
 import explicit.Distribution;
 import explicit.MDP;

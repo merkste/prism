@@ -91,7 +91,6 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		// FIXME ALG: exploit OfInt
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
 		return new MappingIterator.ToInt<>(transitions, entry -> entry.getKey().intValue());
 	}
