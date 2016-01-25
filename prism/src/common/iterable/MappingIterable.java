@@ -1,66 +1,182 @@
 package common.iterable;
 
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
+import java.util.PrimitiveIterator.OfDouble;
+import java.util.PrimitiveIterator.OfInt;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.function.IntFunction;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
-import common.functions.Mapping;
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
 
-public class MappingIterable<S, T> implements Iterable<T>
+public abstract class MappingIterable<S, T> implements Iterable<T>
 {
-	private final Iterable<S> iterable;
-	private final Function<? super S, T> function;
+	protected final Iterable<S> iterable;
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated
-	public MappingIterable(final Iterable<S> iterable, final Mapping<? super S, T> mapping)
-	{
-		this(iterable, (Function<? super S, T>) mapping::apply);
-	}
-
-	public MappingIterable(final Iterable<S> iterable, final Function<? super S, T> function)
+	public MappingIterable(Iterable<S> iterable)
 	{
 		this.iterable = iterable;
-		this.function = function;
 	}
 
-	@Override
-	public Iterator<T> iterator()
+	public static class From<S, T> extends MappingIterable<S, T>
 	{
-		return new MappingIterator.From<>(iterable.iterator(), function);
-	}
+		protected final Function<? super S, T> function;
 
-	public Stream<T> stream()
-	{
-		return StreamSupport.stream(spliterator(), false);
-	}
-
-	public static void main(String[] args)
-	{
-		final List<Integer> list = Arrays.asList(new Integer[] { 1, 2, 3 });
-		final Mapping<Integer, Integer> successor = new Mapping<Integer, Integer>()
+		public From(Iterable<S> iterable, Function<? super S, T> function)
 		{
-			@Override
-			public final Integer apply(final Integer i)
-			{
-				return i + 1;
-			}
-		};
-		final Iterable<Integer> successors = new MappingIterable<>(list, successor);
-
-		System.out.print("[");
-		for (Iterator<Integer> integers = successors.iterator(); integers.hasNext();) {
-			System.out.print(integers.next());
-			if (integers.hasNext()) {
-				System.out.print(", ");
-			}
+			super(iterable);
+			this.function = function;
 		}
-		System.out.println("]");
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new MappingIterator.From<>(iterable, function);
+		}
+	}
+
+	public static class ToInt<S> extends MappingIterable<S, Integer> implements IterableInt
+	{
+		protected ToIntFunction<? super S> function;
+
+		public ToInt(Iterable<S> iterable, ToIntFunction<? super S> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfInt iterator()
+		{
+			return new MappingIterator.ToInt<>(iterable, function);
+		}
+
+	}
+
+	public static class ToDouble<S> extends MappingIterable<S, Double> implements IterableDouble
+	{
+		protected ToDoubleFunction<? super S> function;
+
+		public ToDouble(Iterable<S> iterable, ToDoubleFunction<? super S> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfDouble iterator()
+		{
+			return new MappingIterator.ToDouble<>(iterable, function);
+		}
+	}
+
+	public static class FromInt<T> extends MappingIterable<Integer, T>
+	{
+		protected IntFunction<T> function;
+
+		public FromInt(IterableInt iterable, IntFunction<T> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new MappingIterator.FromInt<T>((IterableInt) iterable, function);
+		}
+	}
+
+	public static class FromIntToInt extends MappingIterable<Integer, Integer> implements IterableInt
+	{
+		protected IntUnaryOperator function;
+
+		public FromIntToInt(IterableInt iterable, IntUnaryOperator function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfInt iterator()
+		{
+			return new MappingIterator.FromIntToInt((IterableInt) iterable, function);
+		}
+	}
+
+	public static class FromIntToDouble extends MappingIterable<Integer, Double> implements IterableDouble
+	{
+		protected IntToDoubleFunction function;
+
+		public FromIntToDouble(IterableInt iterable, IntToDoubleFunction function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfDouble iterator()
+		{
+			return new MappingIterator.FromIntToDouble((IterableInt) iterable, function);
+		}
+
+	}
+
+	public static class FromDouble<T> extends MappingIterable<Double, T>
+	{
+		protected DoubleFunction<T> function;
+
+		public FromDouble(IterableDouble iterable, DoubleFunction<T> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new MappingIterator.FromDouble<>((IterableDouble) iterable, function);
+		}
+	}
+
+	public static class FromDoubleToInt extends MappingIterable<Double, Integer> implements IterableInt
+	{
+		protected DoubleToIntFunction function;
+
+		public FromDoubleToInt(IterableDouble iterable, DoubleToIntFunction function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfInt iterator()
+		{
+			return new MappingIterator.FromDoubleToInt((IterableDouble) iterable, function);
+		}
+	}
+
+	public static class FromDoubleToDouble extends MappingIterable<Double, Double> implements IterableDouble
+	{
+		protected DoubleUnaryOperator function;
+
+		public FromDoubleToDouble(IterableDouble iterable, DoubleUnaryOperator function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfDouble iterator()
+		{
+			return new MappingIterator.FromDoubleToDouble((IterableDouble) iterable, function);
+		}
 	}
 }

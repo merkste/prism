@@ -85,7 +85,7 @@ public class MDPDisjointUnion extends MDPView
 	{
 		final Iterable<Integer> initials1 = model1.getInitialStates();
 		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable<>(initials1, new MappingIterable<>(initials2, shiftStateUp));
+		return new ChainedIterable<>(initials1, new MappingIterable.From<>(initials2, shiftStateUp));
 	}
 
 	@Override
@@ -309,7 +309,7 @@ public class MDPDisjointUnion extends MDPView
 				return equivalentStates;
 			}
 		};
-		return MDPAlteredDistributions.identifyStates(union, new MappingIterable<>(identify.entrySet(), equivalenceClass));
+		return MDPAlteredDistributions.identifyStates(union, new MappingIterable.From<>(identify.entrySet(), equivalenceClass));
 	}
 
 	public static void main(final String[] args) throws PrismException
