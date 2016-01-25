@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import common.iterable.IterableBitSet;
-import common.iterable.primitive.IteratorInteger;
+import common.iterable.primitive.IteratorInt;
 
 /**
  * Wrapper to connect the Set-interface to instances of the class BitSet.
@@ -22,7 +22,7 @@ public class BitSetWrapper implements Set<Integer>
 	}
 
 	@Override
-	public IteratorInteger iterator()
+	public IteratorInt iterator()
 	{
 		return IterableBitSet.getSetBits(bitSet).iterator();
 	}

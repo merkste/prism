@@ -11,25 +11,25 @@ import common.iterable.AbstractIterableArray;
  * Use J8: Arrays::stream
  */
 @Deprecated
-public class IterableArrayInteger extends AbstractIterableArray<Integer>implements IterableInteger
+public class IterableArrayInt extends AbstractIterableArray<Integer> implements IterableInt
 {
 	private final int[] elements;
 
-	public IterableArrayInteger(final int[] elements)
+	public IterableArrayInt(final int[] elements)
 	{
 		this(0, elements.length, elements);
 	}
 
-	public IterableArrayInteger(final int fromIndex, final int toIndex, final int... elements)
+	public IterableArrayInt(final int fromIndex, final int toIndex, final int... elements)
 	{
 		super(fromIndex, toIndex);
 		this.elements = elements;
 	}
 
 	@Override
-	public ArrayIteratorInteger iterator()
+	public ArrayIteratorInt iterator()
 	{
-		return new ArrayIteratorInteger(fromIndex, toIndex, elements);
+		return new ArrayIteratorInt(fromIndex, toIndex, elements);
 	}
 
 	@Override

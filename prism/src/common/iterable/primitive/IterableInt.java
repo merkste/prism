@@ -5,8 +5,8 @@ package common.iterable.primitive;
  * Use J8: PrimitiveIterator.OfInt
  */
 @Deprecated
-public interface IterableInteger extends Iterable<Integer>
+public interface IterableInt extends Iterable<Integer>
 {
 	@Override
-	public IteratorInteger iterator();
+	public IteratorInt iterator();
 }

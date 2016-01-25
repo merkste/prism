@@ -31,8 +31,8 @@ import java.util.BitSet;
 import java.util.NoSuchElementException;
 
 import common.IteratorTools;
-import common.iterable.primitive.IterableInteger;
-import common.iterable.primitive.IteratorInteger;
+import common.iterable.primitive.IterableInt;
+import common.iterable.primitive.IteratorInt;
 
 /**
  * Convenience class to loop easily over the set/clear bits of a BitSet.
@@ -40,7 +40,7 @@ import common.iterable.primitive.IteratorInteger;
  * For example:<br/><br/>
  * <code>for (Integer index : getSetBits(set)) { ... }</code><br/>
  */
-public class IterableBitSet implements IterableInteger
+public class IterableBitSet implements IterableInt
 {
 	private BitSet set;
 	private boolean clearBits = false;
@@ -71,7 +71,7 @@ public class IterableBitSet implements IterableInteger
 	}
 
 	/** Implementation of the iterator over the set bits */
-	private class SetBitsIterator implements IteratorInteger
+	private class SetBitsIterator implements IteratorInt
 	{
 		private int current = -1;
 		private int next = set.nextSetBit(0);
@@ -111,7 +111,7 @@ public class IterableBitSet implements IterableInteger
 	}
 
 	/** Implementation of the iterator over the cleared bits, requires that {@code maxIndex != null} */
-	private class ClearBitsIterator implements IteratorInteger
+	private class ClearBitsIterator implements IteratorInt
 	{
 		private int current = -1;
 		private int next = set.nextClearBit(0);
@@ -151,7 +151,7 @@ public class IterableBitSet implements IterableInteger
 	}
 
 	@Override
-	public IteratorInteger iterator()
+	public IteratorInt iterator()
 	{
 		if (clearBits == false) {
 			return new SetBitsIterator();
