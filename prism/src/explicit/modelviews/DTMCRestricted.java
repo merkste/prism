@@ -123,7 +123,7 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		return new MappingIterable.ToInt<>(new FilteringIterable<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
+		return new MappingIterable.ToInt<>(new FilteringIterable.Of<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
 	}
 
 	@Override

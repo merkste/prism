@@ -1,40 +1,71 @@
 package common.iterable;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
+import java.util.function.DoublePredicate;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
 
-public class FilteringIterable<T> implements Iterable<T>
+public abstract class FilteringIterable<T> implements Iterable<T>
 {
-	private final Iterable<? extends T> iterable;
-	private final Predicate<T> predicate;
+	protected final Iterable<T> iterable;
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated
-	public FilteringIterable(final Iterable<? extends T> iterable, final common.functions.Predicate<T> predicate)
-	{
-		this(iterable, (Predicate<T>) predicate::test);
-	}
-
-	public FilteringIterable(final Iterable<? extends T> iterable, final Predicate<T> predicate)
+	public FilteringIterable(final Iterable<T> iterable)
 	{
 		this.iterable = iterable;
-		this.predicate = predicate;
 	}
 
-	@Override
-	public Iterator<T> iterator()
+	public static class Of<T> extends FilteringIterable<T>
 	{
-		return new FilteringIterator<>(iterable, predicate);
+		private Predicate<? super T> predicate;
+
+		public Of(Iterable<T> iterable, Predicate<? super T> predicate)
+		{
+			super(iterable);
+			this.predicate = predicate;
+		}
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new FilteringIterator.Of<>(iterable, predicate);
+		}
 	}
 
-	public Stream<T> stream()
+	public static class OfInt extends FilteringIterable<Integer> implements IterableInt
 	{
-		return StreamSupport.stream(spliterator(), false);
+		private IntPredicate predicate;
+
+		public OfInt(IterableInt iterable, IntPredicate predicate)
+		{
+			super(iterable);
+			this.predicate = predicate;
+		}
+
+		@Override
+		public PrimitiveIterator.OfInt iterator()
+		{
+			return new FilteringIterator.OfInt((IterableInt) iterable, predicate);
+		}
+	}
+
+	public static class OfDouble extends FilteringIterable<Double> implements IterableDouble
+	{
+		private DoublePredicate predicate;
+
+		public OfDouble(IterableDouble iterable, DoublePredicate predicate)
+		{
+			super(iterable);
+			this.predicate = predicate;
+		}
+
+		@Override
+		public PrimitiveIterator.OfDouble iterator()
+		{
+			return new FilteringIterator.OfDouble((IterableDouble) iterable, predicate);
+		}
 	}
 }
