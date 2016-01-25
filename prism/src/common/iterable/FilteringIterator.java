@@ -20,7 +20,7 @@ public class FilteringIterator<T> implements Iterator<T>
 	@Deprecated
 	public FilteringIterator(final Iterable<? extends T> iterable, final common.functions.Predicate<T> predicate)
 	{
-		this(iterable.iterator(), predicate);
+		this(iterable.iterator(), (Predicate<T>) predicate);
 	}
 
 	/**
@@ -30,7 +30,7 @@ public class FilteringIterator<T> implements Iterator<T>
 	@Deprecated
 	public FilteringIterator(final Iterator<? extends T> iter, final common.functions.Predicate<T> predicate)
 	{
-		this(iter, predicate::test);
+		this(iter, (Predicate<T>) predicate::test);
 	}
 
 	public FilteringIterator(final Iterable<? extends T> iterable, final Predicate<T> predicate)
@@ -78,6 +78,6 @@ public class FilteringIterator<T> implements Iterator<T>
 	public static <T> Iterator<T> dedupe(final Iterator<T> iter)
 	{
 		final Set<T> elements = new HashSet<>();
-		return new FilteringIterator<>(iter, elements::add);
+		return new FilteringIterator<>(iter, (Predicate<T>) elements::add);
 	}
 }

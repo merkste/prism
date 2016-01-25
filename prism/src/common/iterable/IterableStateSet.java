@@ -30,6 +30,7 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 import common.functions.primitive.AbstractPredicateInteger;
 import common.functions.primitive.PredicateInteger;
@@ -77,8 +78,8 @@ public class IterableStateSet implements Iterable<Integer>
 		if (predicate == null) {
 			this.setOfStates = new Interval(numStates);
 		} else {
-			// FIXME ALG: exploit AbstractPredicateInteger::getBoolean(int element)
-			this.setOfStates = new FilteringIterable<>(new Interval(numStates), predicate::apply);
+			// FIXME ALG: exploit PredicateInteger::test(int element)
+			this.setOfStates = new FilteringIterable<>(new Interval(numStates), (Predicate<Integer>) predicate::apply);
 		}
 	}
 

@@ -2,113 +2,13 @@ package common.functions;
 
 public abstract class AbstractPredicate<T> extends AbstractMapping<T, Boolean>implements Predicate<T>
 {
-	@Override
-	public Boolean apply(final T element)
+	public static final <T> Predicate<T> True()
 	{
-		return test(element);
+		return Predicate.True();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static final <T> AbstractPredicate<T> True()
+	public static final <T> Predicate<T> False()
 	{
-		return (AbstractPredicate<T>) True.TRUE;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static final <T> AbstractPredicate<T> False()
-	{
-		return (AbstractPredicate<T>) False.FALSE;
-	}
-
-	@Override
-	public Predicate<T> negate()
-	{
-		return new AbstractPredicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return !AbstractPredicate.this.test(element);
-			}
-
-			@Override
-			public AbstractPredicate<T> negate()
-			{
-				return AbstractPredicate.this;
-			}
-		};
-	}
-
-	@Override
-	public Predicate<T> and(java.util.function.Predicate<? super T> predicate)
-	{
-		return new AbstractPredicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return AbstractPredicate.this.test(element) && predicate.test(element);
-			}
-		};
-	}
-
-	@Override
-	public Predicate<T> or(java.util.function.Predicate<? super T> predicate)
-	{
-		return new AbstractPredicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return AbstractPredicate.this.test(element) || predicate.test(element);
-			}
-		};
-	}
-
-	@Override
-	public Predicate<T> implies(java.util.function.Predicate<? super T> predicate)
-	{
-		return new AbstractPredicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return (!AbstractPredicate.this.test(element)) || predicate.test(element);
-			}
-		};
-	}
-
-	public <S> Predicate<S> compose(final Mapping<S, ? extends T> mapping)
-	{
-		return new AbstractPredicate<S>()
-		{
-			@Override
-			public final boolean test(final S element)
-			{
-				return AbstractPredicate.this.test(mapping.apply(element));
-			}
-		};
-	}
-
-	public static final class True<T> extends AbstractPredicate<T>
-	{
-		private static final True<Object> TRUE = new True<>();
-
-		@Override
-		public final boolean test(final T element)
-		{
-			return Boolean.TRUE;
-		}
-	}
-
-	public static final class False<T> extends AbstractPredicate<T>
-	{
-		private static final False<Object> FALSE = new False<>();
-
-		@Override
-		public final boolean test(final T element)
-		{
-			return Boolean.FALSE;
-		}
+		return Predicate.False();
 	}
 }
