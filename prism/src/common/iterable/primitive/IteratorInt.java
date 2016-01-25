@@ -5,7 +5,7 @@ package common.iterable.primitive;
  * Use J8: PrimitiveIterator.OfInt
  */
 @Deprecated
-public interface IteratorInteger extends PrimitiveIterator<Integer>, java.util.PrimitiveIterator.OfInt
+public interface IteratorInt extends PrimitiveIterator<Integer>, java.util.PrimitiveIterator.OfInt
 {
 	public int nextInt();
 }

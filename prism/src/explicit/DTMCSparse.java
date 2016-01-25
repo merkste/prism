@@ -11,7 +11,7 @@ import java.util.function.Function;
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
-import common.iterable.primitive.ArrayIteratorInteger;
+import common.iterable.primitive.ArrayIteratorInt;
 import explicit.rewards.MCRewards;
 import prism.Pair;
 import prism.PrismException;
@@ -116,7 +116,7 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return new ArrayIteratorInteger(rows[state], rows[state+1], columns);
+		return new ArrayIteratorInt(rows[state], rows[state+1], columns);
 	}
 
 	@Override

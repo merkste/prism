@@ -1,12 +1,11 @@
 package common.iterable;
 
-import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
-import common.iterable.primitive.IterableInteger;
-import common.iterable.primitive.IteratorInteger;
+import common.iterable.primitive.IterableInt;
+import common.iterable.primitive.IteratorInt;
 
-public class Interval implements IterableInteger
+public class Interval implements IterableInt
 {
 	final int lowerBound;
 	final int upperBound;
@@ -31,9 +30,9 @@ public class Interval implements IterableInteger
 	}
 
 	@Override
-	public IteratorInteger iterator()
+	public IteratorInt iterator()
 	{
-		return new IteratorInteger()
+		return new IteratorInt()
 		{
 			final OfInt iterator = stream().iterator();
 
