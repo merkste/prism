@@ -11,7 +11,7 @@ import common.iterable.AbstractIterableArray;
  * Use J8: Arrays::stream
  */
 @Deprecated
-public class IterableArrayDouble extends AbstractIterableArray<Double>implements IterableDouble
+public class IterableArrayDouble extends AbstractIterableArray<Double> implements IterableDouble
 {
 	protected final double[] elements;
 
