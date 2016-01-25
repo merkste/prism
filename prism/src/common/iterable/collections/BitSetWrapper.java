@@ -3,10 +3,10 @@ package common.iterable.collections;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 
 import common.iterable.IterableBitSet;
-import common.iterable.primitive.IteratorInt;
 
 /**
  * Wrapper to connect the Set-interface to instances of the class BitSet.
@@ -22,7 +22,7 @@ public class BitSetWrapper implements Set<Integer>
 	}
 
 	@Override
-	public IteratorInt iterator()
+	public OfInt iterator()
 	{
 		return IterableBitSet.getSetBits(bitSet).iterator();
 	}
