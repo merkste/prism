@@ -1,9 +1,9 @@
 package common.iterable;
 
+import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 import common.iterable.primitive.IterableInt;
-import common.iterable.primitive.IteratorInt;
 
 public class Interval implements IterableInt
 {
@@ -30,30 +30,9 @@ public class Interval implements IterableInt
 	}
 
 	@Override
-	public IteratorInt iterator()
+	public OfInt iterator()
 	{
-		return new IteratorInt()
-		{
-			final OfInt iterator = stream().iterator();
-
-			@Override
-			public boolean hasNext()
-			{
-				return iterator.hasNext();
-			}
-
-			@Override
-			public Integer next()
-			{
-				return iterator.next();
-			}
-
-			@Override
-			public int nextInt()
-			{
-				return iterator.nextInt();
-			}
-		};
+		return stream().iterator();
 	}
 
 	public IntStream stream()
