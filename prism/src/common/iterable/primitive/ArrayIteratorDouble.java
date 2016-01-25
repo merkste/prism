@@ -2,6 +2,7 @@ package common.iterable.primitive;
 
 import java.util.Arrays;
 import java.util.PrimitiveIterator;
+import java.util.PrimitiveIterator.OfDouble;
 
 import common.IteratorTools;
 import common.iterable.AbstractArrayIterator;
@@ -11,7 +12,7 @@ import common.iterable.AbstractArrayIterator;
  * Use J8: Arrays::stream
  */
 @Deprecated
-public class ArrayIteratorDouble extends AbstractArrayIterator<Double> implements IteratorDouble
+public class ArrayIteratorDouble extends AbstractArrayIterator<Double> implements OfDouble
 {
 	@SafeVarargs
 	public ArrayIteratorDouble(final double... elements)
