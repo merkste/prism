@@ -18,7 +18,7 @@ public class FilteringIterable<T> implements Iterable<T>
 	@Deprecated
 	public FilteringIterable(final Iterable<? extends T> iterable, final common.functions.Predicate<T> predicate)
 	{
-		this(iterable, predicate::test);
+		this(iterable, (Predicate<T>) predicate::test);
 	}
 
 	public FilteringIterable(final Iterable<? extends T> iterable, final Predicate<T> predicate)
