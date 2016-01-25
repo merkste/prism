@@ -210,8 +210,7 @@ public class DTMCAlteredDistributions extends DTMCView
 				}
 				final MappingIterator<Integer, Iterator<Entry<Integer, Double>>> transitionIterators =
 						new MappingIterator.FromInt<>(new IterableBitSet(equivalenceClass), model::getTransitionsIterator);
-				// use Distribution to dedupe successors
-				return new Distribution(new ChainedIterator.Of<>(transitionIterators)).iterator();
+				return FilteringIterator.dedupe(new ChainedIterator.Of<>(transitionIterators));
 			}
 		};
 		final DTMC reattached = new DTMCAlteredDistributions(model, reattach);
