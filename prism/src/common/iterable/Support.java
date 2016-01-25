@@ -1,9 +1,9 @@
 package common.iterable;
 
 import java.util.BitSet;
-import java.util.Iterator;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.function.DoublePredicate;
-import java.util.stream.IntStream;
+import java.util.function.IntPredicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -11,14 +11,14 @@ import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.Relation;
 import common.functions.primitive.PredicateDouble;
-import common.functions.primitive.PredicateInteger;
+import common.iterable.primitive.IterableInt;
 
 // FIXME ALG: consider using e.g. Support(values) is equal to
 // support = Relation.LEQ.curry(0)
 //				.and(Relation.GEQ.curry(values.length))
 //				.and(Relation.GEQ.curry(0).compose(values::get)); 
 // new FilteredIterable(values, support)
-public class Support implements PredicateInteger, Iterable<Integer>
+public class Support implements IntPredicate, IterableInt
 {
 	private final double[] values;
 	private final DoublePredicate predicate;
@@ -62,9 +62,9 @@ public class Support implements PredicateInteger, Iterable<Integer>
 	}
 
 	@Override
-	public Iterator<Integer> iterator()
+	public OfInt iterator()
 	{
-		return IntStream.range(0, values.length).filter(this::test).iterator();
+		return new FilteringIterator.OfInt(new Interval(0, values.length), this);
 	}
 
 	public Stream<Integer> stream()
@@ -79,8 +79,8 @@ public class Support implements PredicateInteger, Iterable<Integer>
 
 		final Support support1 = new Support(new double[] { 1, 0, 1 });
 		final Support support2 = new Support(new double[] { 0, 1, 1 });
-		System.out.println(support1.and(support2).apply(0));
-		System.out.println(support1.and(support2).apply(1));
-		System.out.println(support1.and(support2).apply(2));
+		System.out.println(support1.and(support2).test(0));
+		System.out.println(support1.and(support2).test(1));
+		System.out.println(support1.and(support2).test(2));
 	}
 }
