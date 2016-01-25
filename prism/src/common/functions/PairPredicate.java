@@ -2,6 +2,7 @@ package common.functions;
 
 import java.util.function.BiPredicate;
 
+@FunctionalInterface
 public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredicate<R, S>
 {
 	public boolean test(R element1, S element2);

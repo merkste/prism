@@ -1,5 +1,6 @@
 package common.functions;
 
+@FunctionalInterface
 public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean>
 {
 	public boolean getBoolean(final Q element1, final R element2, final S element3);

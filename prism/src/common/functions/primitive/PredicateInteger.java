@@ -4,6 +4,7 @@ import common.functions.Mapping;
 import common.functions.Predicate;
 
 //Cannot extend IntPredicate due to negate() signature clash
+@FunctionalInterface
 public interface PredicateInteger extends Predicate<Integer>
 {
 	public boolean test(int element);

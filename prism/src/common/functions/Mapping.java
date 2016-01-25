@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+@FunctionalInterface
 public interface Mapping<S, T> extends Function<S, T>
 {
 	public T apply(S element);
