@@ -2,6 +2,7 @@ package common.functions.primitive;
 
 import common.functions.TriplePredicate;
 
+@FunctionalInterface
 public interface TriplePredicateDoubleDoubleDouble extends TriplePredicate<Double, Double, Double>
 {
 	public boolean getBoolean(double element1, double element2, double element3);

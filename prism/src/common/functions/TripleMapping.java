@@ -1,5 +1,6 @@
 package common.functions;
 
+@FunctionalInterface
 public interface TripleMapping<Q, R, S, T>
 {
 	public T apply(Q element1, R element2, S element3);

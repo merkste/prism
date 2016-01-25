@@ -5,6 +5,7 @@ import common.functions.Mapping;
 import common.functions.Predicate;
 
 // Cannot extend DoublePredicate due to negate() signature clash
+@FunctionalInterface
 public interface PredicateDouble extends Predicate<Double>
 {
 	public boolean test(double element);

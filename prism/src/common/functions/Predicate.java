@@ -1,5 +1,6 @@
 package common.functions;
 
+@FunctionalInterface
 public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Predicate<T>
 {
 	public boolean test(T element);

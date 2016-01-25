@@ -2,6 +2,7 @@ package common.functions.primitive;
 
 import common.functions.PairPredicate;
 
+@FunctionalInterface
 public interface PairPredicateDoubleDouble extends PairPredicate<Double, Double>
 {
 	public boolean test(double element1, double element2);
