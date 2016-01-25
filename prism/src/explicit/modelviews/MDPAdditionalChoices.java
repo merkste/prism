@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import common.BitSetTools;
 import common.functions.primitive.MappingFromInteger;
@@ -21,8 +22,8 @@ import prism.PrismException;
 public class MDPAdditionalChoices extends MDPView
 {
 	private MDP model;
-	private MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices;
-	private MappingFromInteger<List<Object>> actions;
+	private IntFunction<List<Iterator<Entry<Integer, Double>>>> choices;
+	private IntFunction<List<Object>> actions;
 
 
 
@@ -34,8 +35,8 @@ public class MDPAdditionalChoices extends MDPView
 	 * @param choices
 	 * @param actions
 	 */
-	public MDPAdditionalChoices(final MDP model, final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices,
-			MappingFromInteger<List<Object>> actions)
+	public MDPAdditionalChoices(final MDP model, final IntFunction<List<Iterator<Entry<Integer, Double>>>> choices,
+			IntFunction<List<Object>> actions)
 	{
 		this.model = model;
 		this.choices = choices;
