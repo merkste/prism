@@ -41,7 +41,7 @@ public class Support extends AbstractPredicateInteger implements Iterable<Intege
 
 	public Support(final double[] values, final PredicateDouble predicate)
 	{
-		this(values, predicate::test);
+		this(values, (DoublePredicate) predicate::test);
 	}
 
 	public Support(final double[] values, final DoublePredicate predicate)
