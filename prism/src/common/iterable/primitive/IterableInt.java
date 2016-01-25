@@ -1,12 +1,9 @@
 package common.iterable.primitive;
 
-/**
- * @deprecated
- * Use J8: PrimitiveIterator.OfInt
- */
-@Deprecated
+import java.util.PrimitiveIterator.OfInt;
+
 public interface IterableInt extends Iterable<Integer>
 {
 	@Override
-	public IteratorInt iterator();
+	public OfInt iterator();
 }
