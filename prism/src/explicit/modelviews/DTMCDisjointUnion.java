@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.iterable.ChainedIterable;
@@ -28,7 +29,7 @@ public class DTMCDisjointUnion extends DTMCView
 	private DTMC model1;
 	private DTMC model2;
 	public final int offset;
-	private final Function<Integer, Integer> shiftStateUp;
+	private final ToIntFunction<Integer> shiftStateUp;
 	private final Function<Entry<Integer, Double>, Entry<Integer, Double>> shiftTransitionUp;
 
 
@@ -84,7 +85,7 @@ public class DTMCDisjointUnion extends DTMCView
 	{
 		final Iterable<Integer> initials1 = model1.getInitialStates();
 		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable<>(initials1, new MappingIterable.From<>(initials2, shiftStateUp));
+		return new ChainedIterable<>(initials1, new MappingIterable.ToInt<>(initials2, shiftStateUp));
 	}
 
 	@Override
@@ -174,7 +175,7 @@ public class DTMCDisjointUnion extends DTMCView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator.From<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
+		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator.ToInt<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
 	}
 
 	@Override
