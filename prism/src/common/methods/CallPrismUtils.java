@@ -1,8 +1,6 @@
 package common.methods;
 
 import prism.PrismUtils;
-import common.functions.primitive.AbstractPairPredicateDoubleDouble;
-import common.functions.primitive.AbstractTriplePredicateDoubleDoubleDouble;
 import common.functions.primitive.PairPredicateDoubleDouble;
 import common.functions.primitive.TriplePredicateDoubleDoubleDouble;
 
@@ -16,7 +14,7 @@ public class CallPrismUtils
 	public static class Static
 	{
 
-		private static final TriplePredicateDoubleDoubleDouble DOUBLES_ARE_CLOSE_ABS = new AbstractTriplePredicateDoubleDoubleDouble()
+		private static final TriplePredicateDoubleDoubleDouble DOUBLES_ARE_CLOSE_ABS = new TriplePredicateDoubleDoubleDouble()
 		{
 			@Override
 			public boolean getBoolean(final double d1, final double d2, final double epsilon)
@@ -25,7 +23,7 @@ public class CallPrismUtils
 			}
 		};
 
-		private static final TriplePredicateDoubleDoubleDouble DOUBLES_ARE_CLOSE_REL = new AbstractTriplePredicateDoubleDoubleDouble()
+		private static final TriplePredicateDoubleDoubleDouble DOUBLES_ARE_CLOSE_REL = new TriplePredicateDoubleDoubleDouble()
 		{
 			@Override
 			public boolean getBoolean(final double d1, final double d2, final double epsilon)
@@ -46,7 +44,7 @@ public class CallPrismUtils
 
 		public static PairPredicateDoubleDouble doublesAreCloseAbs(final double epsilon)
 		{
-			return new AbstractPairPredicateDoubleDouble()
+			return new PairPredicateDoubleDouble()
 			{
 				@Override
 				public final boolean test(final double d1, final double d2)
@@ -58,7 +56,7 @@ public class CallPrismUtils
 
 		public static PairPredicateDoubleDouble doublesAreCloseRel(final double epsilon)
 		{
-			return new AbstractPairPredicateDoubleDouble()
+			return new PairPredicateDoubleDouble()
 			{
 				@Override
 				public final boolean test(final double d1, final double d2)

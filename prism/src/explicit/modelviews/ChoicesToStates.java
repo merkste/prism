@@ -10,9 +10,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import common.BitSetTools;
-import common.functions.AbstractPairMapping;
 import common.functions.PairMapping;
-import common.functions.primitive.AbstractPairPredicateIntegerInteger;
 import common.functions.primitive.PairPredicateIntegerInteger;
 import common.iterable.Interval;
 import common.iterable.MappingIterator;
@@ -24,7 +22,7 @@ import prism.PrismException;
 
 public class ChoicesToStates
 {
-	private static final class PreserveChoice extends AbstractPairPredicateIntegerInteger
+	private static final class PreserveChoice implements PairPredicateIntegerInteger
 	{
 		final int preserve;
 
@@ -50,7 +48,7 @@ public class ChoicesToStates
 		}
 		final MDP union = MDPDisjointUnion.union(replica);
 
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> choiceMapping = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> choiceMapping = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = mdp.getNumStates();
 
@@ -84,7 +82,7 @@ public class ChoicesToStates
 	{
 		final MDP choicesToStates = choicesToStates(mdp);
 
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> selectedMapping = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> selectedMapping = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = mdp.getNumStates();
 
@@ -105,7 +103,7 @@ public class ChoicesToStates
 	{
 		final MDP choicesToStates = choicesToStates(mdp);
 
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> selectedMapping = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> selectedMapping = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = mdp.getNumStates();
 

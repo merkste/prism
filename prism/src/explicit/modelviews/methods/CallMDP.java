@@ -3,9 +3,8 @@ package explicit.modelviews.methods;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import common.functions.AbstractPairMapping;
-import common.functions.AbstractTripleMapping;
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.PairMapping;
+import common.functions.TripleMapping;
 import common.functions.primitive.MappingFromInteger;
 import common.methods.BinaryMethod;
 import common.methods.UnaryMethod;
@@ -30,8 +29,7 @@ public class CallMDP
 	}
 
 	public static final class MDPGetNumChoices
-			extends AbstractPairMapping<MDP, Integer, Integer>
-			implements UnaryMethod<MDP, Integer, Integer>
+			implements PairMapping<MDP, Integer, Integer>, UnaryMethod<MDP, Integer, Integer>
 	{
 		@Override
 		public Integer apply(final MDP model, final Integer state)
@@ -42,7 +40,7 @@ public class CallMDP
 		@Override
 		public MappingFromInteger<Integer> curry(final MDP model)
 		{
-			new AbstractMappingFromInteger<Integer>()
+			new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(int state)
@@ -55,8 +53,8 @@ public class CallMDP
 	}
 
 	public static final class MDPGetTransitionsIterator
-			extends AbstractTripleMapping<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
-			implements BinaryMethod<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
+			implements TripleMapping<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>,
+			BinaryMethod<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
 	{
 		@Override
 		public Iterator<Entry<Integer, Double>> apply(final MDP model, final Integer state, final Integer choice)

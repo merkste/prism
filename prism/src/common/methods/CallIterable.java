@@ -1,6 +1,5 @@
 package common.methods;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 /**
@@ -20,7 +19,7 @@ public class CallIterable
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static final class Iterator extends AbstractMapping<Iterable, java.util.Iterator> implements Method<Iterable, java.util.Iterator>
+	public static final class Iterator implements Mapping<Iterable, java.util.Iterator>, Method<Iterable, java.util.Iterator>
 	{
 		@Override
 		public java.util.Iterator apply(final Iterable iterable)

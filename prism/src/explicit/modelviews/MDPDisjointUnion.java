@@ -11,7 +11,6 @@ import java.util.function.Function;
 import java.util.Map.Entry;
 
 import common.BitSetTools;
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 import common.iterable.ChainedIterable;
 import common.iterable.MappingIterable;
@@ -299,7 +298,7 @@ public class MDPDisjointUnion extends MDPView
 	public static MDP MDPUnion(final MDP model1, final MDP model2, final Map<Integer, Integer> identify)
 	{
 		final MDPDisjointUnion union = new MDPDisjointUnion(model1, model2);
-		final Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new AbstractMapping<Entry<Integer, Integer>, BitSet>()
+		final Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new Mapping<Entry<Integer, Integer>, BitSet>()
 		{
 			@Override
 			public final BitSet apply(final Entry<Integer, Integer> id)

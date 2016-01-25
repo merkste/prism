@@ -2,10 +2,8 @@ package common.methods;
 
 import java.util.BitSet;
 
-import common.functions.AbstractMapping;
-import common.functions.AbstractPairMapping;
 import common.functions.Mapping;
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.PairMapping;
 import common.functions.primitive.MappingFromInteger;
 
 /**
@@ -24,7 +22,7 @@ public class CallBitSet
 
 	public static Mapping<BitSet, Integer> nextSetBit(final int fromIndex)
 	{
-		return new AbstractMapping<BitSet, Integer>()
+		return new Mapping<BitSet, Integer>()
 		{
 			@Override
 			public Integer apply(final BitSet indices)
@@ -34,12 +32,12 @@ public class CallBitSet
 		};
 	}
 
-	public static final class NextSetBit extends AbstractPairMapping<BitSet, Integer, Integer>implements UnaryMethod<BitSet, Integer, Integer>
+	public static final class NextSetBit implements PairMapping<BitSet, Integer, Integer>, UnaryMethod<BitSet, Integer, Integer>
 	{
 		@Override
 		public MappingFromInteger<Integer> curry(final BitSet indices)
 		{
-			return new AbstractMappingFromInteger<Integer>()
+			return new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(final int fromIndex)

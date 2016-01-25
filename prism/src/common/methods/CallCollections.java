@@ -3,7 +3,6 @@ package common.methods;
 import java.util.Collections;
 import java.util.List;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 /**
@@ -24,7 +23,7 @@ public class CallCollections
 			return SINGLETON_LIST;
 		}
 
-		public static final class SingletonList extends AbstractMapping<Object, List<Object>>
+		public static final class SingletonList implements Mapping<Object, List<Object>>
 		{
 			@Override
 			public List<Object> apply(final Object object)

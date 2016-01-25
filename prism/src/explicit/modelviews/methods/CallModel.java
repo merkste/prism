@@ -1,7 +1,6 @@
 package explicit.modelviews.methods;
 
-import common.functions.AbstractPairPredicate;
-import common.functions.primitive.AbstractPredicateInteger;
+import common.functions.PairPredicate;
 import common.functions.primitive.PredicateInteger;
 import common.methods.UnaryMethod;
 import explicit.Model;
@@ -19,12 +18,12 @@ public class CallModel
 		return IS_DEADLOCK_STATE;
 	}
 
-	public static final class ModelIsDeadlockState extends AbstractPairPredicate<Model, Integer>implements UnaryMethod<Model, Integer, Boolean>
+	public static final class ModelIsDeadlockState implements PairPredicate<Model, Integer>, UnaryMethod<Model, Integer, Boolean>
 	{
 		@Override
 		public PredicateInteger curry(final Model model)
 		{
-			return new AbstractPredicateInteger()
+			return new PredicateInteger()
 			{
 				@Override
 				public boolean test(final int state)

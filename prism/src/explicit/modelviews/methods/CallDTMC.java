@@ -3,8 +3,7 @@ package explicit.modelviews.methods;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import common.functions.AbstractPairMapping;
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.PairMapping;
 import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
 import explicit.DTMC;
@@ -23,13 +22,13 @@ public class CallDTMC
 	}
 
 	public static final class DTMCGetTransitionsIterator
-			extends AbstractPairMapping<DTMC, Integer, Iterator<Entry<Integer, Double>>>
-			implements UnaryMethod<DTMC, Integer, Iterator<Entry<Integer, Double>>>
+			implements PairMapping<DTMC, Integer, Iterator<Entry<Integer, Double>>>,
+			UnaryMethod<DTMC, Integer, Iterator<Entry<Integer, Double>>>
 	{
 		@Override
 		public MappingFromInteger<Iterator<Entry<Integer, Double>>> curry(final DTMC model)
 		{
-			return new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
+			return new MappingFromInteger<Iterator<Entry<Integer, Double>>>()
 			{
 				@Override
 				public Iterator<Entry<Integer, Double>> apply(final int state)

@@ -21,7 +21,7 @@ public interface PairPredicateDoubleDouble extends PairPredicate<Double, Double>
 
 	default PredicateDouble curry(final double element1)
 	{
-		return new AbstractPredicateDouble()
+		return new PredicateDouble()
 		{
 			@Override
 			public boolean test(final double element2)
@@ -34,7 +34,7 @@ public interface PairPredicateDoubleDouble extends PairPredicate<Double, Double>
 	@Override
 	default PairPredicateDoubleDouble negate()
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double element1, final double element2)

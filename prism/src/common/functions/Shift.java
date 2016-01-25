@@ -1,13 +1,13 @@
 package common.functions;
 
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.primitive.MappingFromInteger;
 
 /**
  * @deprecated
  * Use J8: x -> x + offset
  */
 @Deprecated
-public class Shift extends AbstractMappingFromInteger<Integer>
+public class Shift implements MappingFromInteger<Integer>
 {
 	private final int offset;
 

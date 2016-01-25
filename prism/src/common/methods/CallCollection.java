@@ -2,9 +2,8 @@ package common.methods;
 
 import java.util.Collection;
 
-import common.functions.AbstractMapping;
-import common.functions.AbstractPairPredicate;
-import common.functions.AbstractPredicate;
+import common.functions.Mapping;
+import common.functions.PairPredicate;
 import common.functions.Predicate;
 
 /**
@@ -29,12 +28,12 @@ public class CallCollection
 		return SIZE;
 	}
 
-	public static final class Contains<T> extends AbstractPairPredicate<Collection<T>, T> implements UnaryMethod<Collection<T>, T, Boolean>
+	public static final class Contains<T> implements PairPredicate<Collection<T>, T>, UnaryMethod<Collection<T>, T, Boolean>
 	{
 		@Override
 		public Predicate<T> curry(final Collection<T> collection)
 		{
-			return new AbstractPredicate<T>()
+			return new Predicate<T>()
 			{
 				@Override
 				public boolean test(final T element)
@@ -51,7 +50,7 @@ public class CallCollection
 		}
 	}
 
-	public static final class Size extends AbstractMapping<Collection<?>, Integer> implements Method<Collection<?>, Integer>
+	public static final class Size implements Mapping<Collection<?>, Integer>, Method<Collection<?>, Integer>
 	{
 		@Override
 		public Integer apply(final Collection<?> collection)

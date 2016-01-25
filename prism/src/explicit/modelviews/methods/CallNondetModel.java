@@ -1,6 +1,6 @@
 package explicit.modelviews.methods;
 
-import common.functions.AbstractTripleMapping;
+import common.functions.TripleMapping;
 import common.methods.BinaryMethod;
 import explicit.NondetModel;
 
@@ -18,8 +18,8 @@ public class CallNondetModel
 	}
 
 	public static final class NondetModelGetAction
-			extends AbstractTripleMapping<NondetModel, Integer, Integer, Object>
-			implements BinaryMethod<NondetModel, Integer, Integer, Object>
+			implements TripleMapping<NondetModel, Integer, Integer, Object>,
+			BinaryMethod<NondetModel, Integer, Integer, Object>
 	{
 		@Override
 		public Object apply(final NondetModel model, final Integer state, final Integer choice)

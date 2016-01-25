@@ -2,8 +2,7 @@ package explicit.modelviews.methods;
 
 import java.util.Map.Entry;
 
-import common.functions.AbstractPairMapping;
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.PairMapping;
 import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
 import explicit.modelviews.MDPRestricted;
@@ -34,13 +33,12 @@ public class CallMDPRestricted
 	}
 
 	public static final class MapStateToOriginalModel
-			extends AbstractPairMapping<MDPRestricted, Integer, Integer>
-			implements UnaryMethod<MDPRestricted, Integer, Integer>
+			implements PairMapping<MDPRestricted, Integer, Integer>, UnaryMethod<MDPRestricted, Integer, Integer>
 	{
 		@Override
 		public MappingFromInteger<Integer> curry(final MDPRestricted model)
 		{
-			return new AbstractMappingFromInteger<Integer>()
+			return new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(final int state)
@@ -58,13 +56,12 @@ public class CallMDPRestricted
 	}
 
 	public static final class MapStateToRestrictedModel
-			extends AbstractPairMapping<MDPRestricted, Integer, Integer>
-			implements UnaryMethod<MDPRestricted, Integer, Integer>
+			implements PairMapping<MDPRestricted, Integer, Integer>, UnaryMethod<MDPRestricted, Integer, Integer>
 	{
 		@Override
 		public MappingFromInteger<Integer> curry(final MDPRestricted model)
 		{
-			return new AbstractMappingFromInteger<Integer>()
+			return new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(final int state)
@@ -82,8 +79,8 @@ public class CallMDPRestricted
 	}
 
 	public static final class MapTransitionToRestrictedModel
-			extends AbstractPairMapping<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
-			implements UnaryMethod<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
+			implements PairMapping<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>,
+			UnaryMethod<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
 		@Override
 		public Entry<Integer, Double> apply(final MDPRestricted model, final Entry<Integer, Double> transition)
