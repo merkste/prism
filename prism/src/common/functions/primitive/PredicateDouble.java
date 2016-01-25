@@ -1,6 +1,5 @@
 package common.functions.primitive;
 
-import common.functions.AbstractPredicate;
 import common.functions.Mapping;
 import common.functions.Predicate;
 
@@ -19,7 +18,7 @@ public interface PredicateDouble extends Predicate<Double>
 	@Override
 	default <S> Predicate<S> compose(final Mapping<S, ? extends Double> mapping)
 	{
-		return new AbstractPredicate<S>()
+		return new Predicate<S>()
 		{
 			@Override
 			public final boolean test(final S element)

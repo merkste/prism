@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.function.Predicate;
 
-import common.functions.primitive.AbstractPredicateInteger;
 import common.functions.primitive.PredicateInteger;
 
 /**
@@ -121,7 +120,7 @@ public class IterableStateSet implements Iterable<Integer>
 		BitSet test = new BitSet();
 		test.set(1);
 		test.set(3);
-		final PredicateInteger odd = new AbstractPredicateInteger()
+		final PredicateInteger odd = new PredicateInteger()
 		{
 			@Override
 			public boolean test(int number)

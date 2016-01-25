@@ -14,7 +14,7 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 	@Override
 	default PairPredicate<R, S> curry(final Q element1)
 	{
-		return new AbstractPairPredicate<R, S>()
+		return new PairPredicate<R, S>()
 		{
 			@Override
 			public boolean test(final R element2, final S element3)
@@ -27,7 +27,7 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 	@Override
 	default Predicate<S> curry(final Q element1, final R element2)
 	{
-		return new AbstractPredicate<S>()
+		return new Predicate<S>()
 		{
 			@Override
 			public boolean test(final S element3)

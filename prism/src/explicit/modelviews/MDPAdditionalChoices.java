@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import common.BitSetTools;
-import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
 import explicit.DiracDistribution;
 import explicit.Distribution;
@@ -193,7 +192,7 @@ public class MDPAdditionalChoices extends MDPView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = fixDeadlocks((MDP) this.clone());
-		choices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		choices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(int element)
@@ -229,7 +228,7 @@ public class MDPAdditionalChoices extends MDPView
 
 	public static MDPView addSelfLoops(final MDP model, final BitSet states)
 	{
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -275,7 +274,7 @@ public class MDPAdditionalChoices extends MDPView
 
 		System.out.println();
 
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -297,7 +296,7 @@ public class MDPAdditionalChoices extends MDPView
 			}
 		};
 
-		final MappingFromInteger<List<Object>> actions = new AbstractMappingFromInteger<List<Object>>()
+		final MappingFromInteger<List<Object>> actions = new MappingFromInteger<List<Object>>()
 		{
 			@Override
 			public List<Object> apply(final int state)

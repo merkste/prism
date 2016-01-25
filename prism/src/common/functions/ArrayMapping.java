@@ -1,8 +1,8 @@
 package common.functions;
 
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.primitive.MappingFromInteger;
 
-public class ArrayMapping<T> extends AbstractMappingFromInteger<T>
+public class ArrayMapping<T> implements MappingFromInteger<T>
 {
 	private final T[] elements;
 

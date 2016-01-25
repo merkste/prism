@@ -2,7 +2,6 @@ package common.methods;
 
 import java.util.Arrays;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 /**
@@ -23,7 +22,7 @@ public class CallArrays
 			return COPY_OF;
 		}
 
-		public static final class CopyOf extends AbstractMapping<Object[], Object[]>
+		public static final class CopyOf implements Mapping<Object[], Object[]>
 		{
 			@Override
 			public Object[] apply(final Object[] array)

@@ -10,15 +10,15 @@ import java.util.stream.StreamSupport;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.Relation;
-import common.functions.primitive.AbstractPredicateInteger;
 import common.functions.primitive.PredicateDouble;
+import common.functions.primitive.PredicateInteger;
 
 // FIXME ALG: consider using e.g. Support(values) is equal to
 // support = Relation.LEQ.curry(0)
 //				.and(Relation.GEQ.curry(values.length))
 //				.and(Relation.GEQ.curry(0).compose(values::get)); 
 // new FilteredIterable(values, support)
-public class Support extends AbstractPredicateInteger implements Iterable<Integer>
+public class Support implements PredicateInteger, Iterable<Integer>
 {
 	private final double[] values;
 	private final DoublePredicate predicate;

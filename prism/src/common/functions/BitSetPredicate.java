@@ -2,9 +2,9 @@ package common.functions;
 
 import java.util.BitSet;
 
-import common.functions.primitive.AbstractPredicateInteger;
+import common.functions.primitive.PredicateInteger;
 
-public class BitSetPredicate extends AbstractPredicateInteger
+public class BitSetPredicate implements PredicateInteger
 {
 	private final BitSet indices;
 
@@ -22,7 +22,7 @@ public class BitSetPredicate extends AbstractPredicateInteger
 	@Override
 	public BitSetPredicate memoize()
 	{
-		// an BitSet predicate is efficiently memoized by its backing BitSet
+		// a BitSet predicate is efficiently memoized by its backing BitSet
 		return this;
 	}
 }

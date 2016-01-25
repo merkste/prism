@@ -12,7 +12,6 @@ import java.util.Set;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.BitSetPredicate;
-import common.functions.primitive.AbstractPredicateInteger;
 import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
@@ -216,7 +215,7 @@ public class DTMCRestricted extends DTMCView
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
 		restriction = Restriction.TRANSITIVE_CLOSURE;
-		isStateIncluded = new AbstractPredicateInteger()
+		isStateIncluded = new PredicateInteger()
 		{
 			final int numStates = model.getNumStates();
 

@@ -8,7 +8,6 @@ import java.util.Set;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.primitive.AbstractPairPredicateIntegerInteger;
 import common.functions.primitive.PairPredicateIntegerInteger;
 import common.iterable.Interval;
 import explicit.Distribution;
@@ -171,7 +170,7 @@ public class MDPDroppedChoices extends MDPView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = MDPAdditionalChoices.fixDeadlocks((MDP) this.clone());
-		preserved = new AbstractPairPredicateIntegerInteger()
+		preserved = new PairPredicateIntegerInteger()
 		{
 			@Override
 			public boolean test(int element1, int element2)
@@ -187,7 +186,7 @@ public class MDPDroppedChoices extends MDPView
 
 	public static MDPDroppedChoices dropDenormalizedDistributions(final MDP model)
 	{
-		final PairPredicateIntegerInteger denormalizedChoices = new AbstractPairPredicateIntegerInteger()
+		final PairPredicateIntegerInteger denormalizedChoices = new PairPredicateIntegerInteger()
 		{
 			@Override
 			public boolean test(int state, int choice)
@@ -246,7 +245,7 @@ public class MDPDroppedChoices extends MDPView
 
 		System.out.println();
 
-		final PairPredicateIntegerInteger dropped = new AbstractPairPredicateIntegerInteger()
+		final PairPredicateIntegerInteger dropped = new PairPredicateIntegerInteger()
 		{
 			@Override
 			public boolean test(final int state, final int choice)

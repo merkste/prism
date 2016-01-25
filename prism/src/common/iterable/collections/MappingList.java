@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 public class MappingList<S, T> extends AbstractList<T>
@@ -58,7 +57,7 @@ public class MappingList<S, T> extends AbstractList<T>
 	public static void main(String[] args)
 	{
 		final List<Integer> list = Arrays.asList(new Integer[] {1, 2, 3});
-		final Mapping<Integer, Integer> successor = new AbstractMapping<Integer, Integer>()
+		final Mapping<Integer, Integer> successor = new Mapping<Integer, Integer>()
 		{
 			@Override
 			public final Integer apply(final Integer i)

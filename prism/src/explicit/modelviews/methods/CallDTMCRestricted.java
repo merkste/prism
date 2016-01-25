@@ -2,8 +2,7 @@ package explicit.modelviews.methods;
 
 import java.util.Map.Entry;
 
-import common.functions.AbstractPairMapping;
-import common.functions.primitive.AbstractMappingFromInteger;
+import common.functions.PairMapping;
 import common.functions.primitive.MappingFromInteger;
 import common.methods.UnaryMethod;
 import explicit.modelviews.DTMCRestricted;
@@ -34,13 +33,12 @@ public class CallDTMCRestricted
 	}
 
 	public static final class MapStateToOriginalModel
-			extends AbstractPairMapping<DTMCRestricted, Integer, Integer>
-			implements UnaryMethod<DTMCRestricted, Integer, Integer>
+			implements PairMapping<DTMCRestricted, Integer, Integer>, UnaryMethod<DTMCRestricted, Integer, Integer>
 	{
 		@Override
 		public MappingFromInteger<Integer> curry(final DTMCRestricted model)
 		{
-			return new AbstractMappingFromInteger<Integer>()
+			return new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(final int state)
@@ -58,13 +56,12 @@ public class CallDTMCRestricted
 	}
 
 	public static final class MapStateToRestrictedModel
-			extends AbstractPairMapping<DTMCRestricted, Integer, Integer>
-			implements UnaryMethod<DTMCRestricted, Integer, Integer>
+			implements PairMapping<DTMCRestricted, Integer, Integer>, UnaryMethod<DTMCRestricted, Integer, Integer>
 	{
 		@Override
 		public MappingFromInteger<Integer> curry(final DTMCRestricted model)
 		{
-			return new AbstractMappingFromInteger<Integer>()
+			return new MappingFromInteger<Integer>()
 			{
 				@Override
 				public Integer apply(final int state)
@@ -82,8 +79,8 @@ public class CallDTMCRestricted
 	}
 
 	public static final class MapTransitionToRestrictedModel
-			extends AbstractPairMapping<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
-			implements UnaryMethod<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
+			implements PairMapping<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>,
+			UnaryMethod<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
 		@Override
 		public Entry<Integer, Double> apply(final DTMCRestricted model, final Entry<Integer, Double> transition)

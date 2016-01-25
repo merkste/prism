@@ -11,9 +11,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import common.BitSetTools;
-import common.functions.AbstractPairMapping;
 import common.functions.PairMapping;
-import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterable;
@@ -191,7 +189,7 @@ public class MDPAlteredDistributions extends MDPView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = MDPAdditionalChoices.fixDeadlocks(this.clone());
-		choices = AbstractPairMapping.constant(null);
+		choices = PairMapping.constant(null);
 		actions = null;
 	}
 
@@ -201,7 +199,7 @@ public class MDPAlteredDistributions extends MDPView
 
 	public static MDPAlteredDistributions normalizeDistributions(final MDP model)
 	{
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> normalize = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> normalize = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
@@ -233,7 +231,7 @@ public class MDPAlteredDistributions extends MDPView
 		final MDPDroppedAllChoices droppedChoices = new MDPDroppedAllChoices(model, identify.getNonRepresentatives());
 
 		// 2. attach all choices of an equivalence class to its representative
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addChoices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -245,7 +243,7 @@ public class MDPAlteredDistributions extends MDPView
 				if (equivalenceClass == null) {
 					return null;
 				}
-				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 				{
 					@Override
 					public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -264,7 +262,7 @@ public class MDPAlteredDistributions extends MDPView
 				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable<>(new IterableBitSet(equivalenceClass), getOtherChoices));
 			}
 		};
-		final MappingFromInteger<List<Object>> addActions = new AbstractMappingFromInteger<List<Object>>()
+		final MappingFromInteger<List<Object>> addActions = new MappingFromInteger<List<Object>>()
 		{
 			@Override
 			public List<Object> apply(final int state)
@@ -276,7 +274,7 @@ public class MDPAlteredDistributions extends MDPView
 				if (equivalenceClass == null) {
 					return Collections.emptyList();
 				}
-				final MappingFromInteger<List<Object>> getOtherActions = new AbstractMappingFromInteger<List<Object>>()
+				final MappingFromInteger<List<Object>> getOtherActions = new MappingFromInteger<List<Object>>()
 				{
 					@Override
 					public List<Object> apply(final int state)
@@ -312,7 +310,7 @@ public class MDPAlteredDistributions extends MDPView
 				return new AbstractMap.SimpleImmutableEntry<>(representative, probability);
 			}
 		};
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> redirectChoice = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> redirectChoice = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
@@ -362,7 +360,7 @@ public class MDPAlteredDistributions extends MDPView
 
 		System.out.println();
 
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> transitions = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> transitions = new PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final Integer state, final Integer choice)
@@ -383,7 +381,7 @@ public class MDPAlteredDistributions extends MDPView
 			}
 		};
 
-		final PairMapping<Integer, Integer, Object> actions = new AbstractPairMapping<Integer, Integer, Object>()
+		final PairMapping<Integer, Integer, Object> actions = new PairMapping<Integer, Integer, Object>()
 		{
 			@Override
 			public Object apply(final Integer state, final Integer choice)

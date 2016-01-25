@@ -3,7 +3,6 @@ package common.methods;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 /**
@@ -23,7 +22,7 @@ public class CallArrayList
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static final class Constructor extends AbstractMapping<Collection, ArrayList>
+	public static final class Constructor implements Mapping<Collection, ArrayList>
 	{
 		@SuppressWarnings("unchecked")
 		@Override

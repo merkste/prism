@@ -2,8 +2,6 @@ package common.functions;
 
 import java.util.function.BiPredicate;
 
-import common.functions.primitive.AbstractPairPredicateDoubleDouble;
-import common.functions.primitive.AbstractPredicateDouble;
 import common.functions.primitive.PairPredicateDoubleDouble;
 import common.functions.primitive.PredicateDouble;
 
@@ -161,7 +159,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PredicateDouble curry(final double x)
 	{
-		return new AbstractPredicateDouble()
+		return new PredicateDouble()
 		{
 			@Override
 			public boolean test(final double y)
@@ -180,7 +178,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble and(BiPredicate<? super Double, ? super Double> predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)
@@ -193,7 +191,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble and(final PairPredicateDoubleDouble predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)
@@ -206,7 +204,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble or(BiPredicate<? super Double, ? super Double> predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)
@@ -219,7 +217,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble or(final PairPredicateDoubleDouble predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)
@@ -232,7 +230,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble implies(BiPredicate<? super Double, ? super Double> predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)
@@ -245,7 +243,7 @@ public enum Relation implements PairPredicateDoubleDouble
 	@Override
 	public PairPredicateDoubleDouble implies(final PairPredicateDoubleDouble predicate)
 	{
-		return new AbstractPairPredicateDoubleDouble()
+		return new PairPredicateDoubleDouble()
 		{
 			@Override
 			public final boolean test(final double x, final double y)

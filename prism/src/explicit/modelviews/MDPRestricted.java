@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.BitSetPredicate;
-import common.functions.primitive.AbstractPredicateInteger;
 import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
@@ -132,7 +131,7 @@ public class MDPRestricted extends MDPView
 	public Iterable<Integer> getDeadlockStates()
 	{
 		//		CallModel.isDeadlockState().on(model).compose(mapStateToOriginalModel);
-		final PredicateInteger isDeadlock = new AbstractPredicateInteger()
+		final PredicateInteger isDeadlock = new PredicateInteger()
 		{
 			@Override
 			public final boolean test(final int state)
@@ -274,7 +273,7 @@ public class MDPRestricted extends MDPView
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
 		restriction = Restriction.TRANSITIVE_CLOSURE;
-		isStateIncluded = new AbstractPredicateInteger()
+		isStateIncluded = new PredicateInteger()
 		{
 			final int numStates = model.getNumStates();
 

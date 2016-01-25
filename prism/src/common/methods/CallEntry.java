@@ -2,7 +2,6 @@ package common.methods;
 
 import java.util.Map.Entry;
 
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 
 /**
@@ -30,7 +29,7 @@ public class CallEntry
 		return GET_VALUE;
 	}
 
-	public static final class GetKey extends AbstractMapping<Entry<Object, ?>, Object>implements Method<Entry<Object, ?>, Object>
+	public static final class GetKey implements Mapping<Entry<Object, ?>, Object>, Method<Entry<Object, ?>, Object>
 	{
 		@Override
 		public Object apply(final Entry<Object, ?> entry)
@@ -39,7 +38,7 @@ public class CallEntry
 		}
 	}
 
-	public static final class GetValue extends AbstractMapping<Entry<?, Object>, Object>implements Method<Entry<?, Object>, Object>
+	public static final class GetValue implements Mapping<Entry<?, Object>, Object>, Method<Entry<?, Object>, Object>
 	{
 		@Override
 		public Object apply(final Entry<?, Object> entry)
