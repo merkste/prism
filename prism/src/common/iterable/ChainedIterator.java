@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
 
 /**
  * A helper class implementing an Iterator that chains a sequence of iterators.
@@ -44,36 +45,36 @@ import java.util.NoSuchElementException;
  * iterators support it.
  */
 
-public class ChainedIterator<T> implements Iterator<T>
+public abstract class ChainedIterator<T> implements Iterator<T>
 {
 	/** An iterator for the sequence of iterators that will be chained */
-	private Iterator<? extends Iterator<? extends T>> iterators;
+	protected Iterator<? extends Iterator<? extends T>> iterators;
 	/** The current iterator in the sequence of iterators */
-	private Iterator<? extends T> current;
+	protected Iterator<? extends T> current;
 
 	/**
-	 * Constructor for chaining a variable number of Iterator.
+	 * Constructor for chaining a variable number of Iterators.
 	 * @param iterators a variable number of Iterator to be chained */
 	@SafeVarargs
-	public ChainedIterator(final Iterator<? extends T>... iterators)
+	public ChainedIterator(Iterator<? extends T>... iterators)
 	{
 		this(Arrays.asList(iterators));
 	}
 
 	/**
-	 * Constructor for chaining a sequence of Iterable.
+	 * Constructor for chaining a sequence of Iterables.
 	 * @param an Iterable over the sequence of Iterators to be chained
 	 **/
-	public ChainedIterator(final Iterable<Iterator<? extends T>> iterators)
+	public ChainedIterator(Iterable<? extends Iterator<? extends T>> iterators)
 	{
 		this(iterators.iterator());
 	}
 
 	/**
-	 * Constructor for chaining Iterator, with the sequence provided by an Iterator.
+	 * Constructor for chaining Iterator, with the sequence provided by an Iterators.
 	 * @param iterators an Iterator the provides the sequence of Iterator to be chained
 	 **/
-	public ChainedIterator(final Iterator<? extends Iterator<? extends T>> iterators)
+	public ChainedIterator(Iterator<? extends Iterator<? extends T>> iterators)
 	{
 		this.iterators = iterators;
 		current = iterators.hasNext() ? iterators.next() : Collections.<T> emptyIterator();
@@ -104,13 +105,88 @@ public class ChainedIterator<T> implements Iterator<T>
 		return false;
 	}
 
-	@Override
-	public T next()
+	protected void requireNext()
 	{
 		if (!hasNext()) {
 			throw new NoSuchElementException();
 		}
-		// return the next element
-		return current.next();
+	}
+
+	public static class Of<T> extends ChainedIterator<T>
+	{
+		@SafeVarargs
+		public Of(Iterator<? extends T>... iterators)
+		{
+			super(iterators);
+		}
+
+		public Of(Iterable<? extends Iterator<? extends T>> iterators)
+		{
+			super(iterators);
+		}
+
+		public Of(Iterator<? extends Iterator<? extends T>> iterators)
+		{
+			super(iterators);
+		}
+
+		@Override
+		public T next()
+		{
+			requireNext();
+			return current.next();
+		}
+	}
+
+	public static class OfInt extends ChainedIterator<Integer> implements PrimitiveIterator.OfInt
+	{
+		@SafeVarargs
+		public OfInt(PrimitiveIterator.OfInt... iterators)
+		{
+			super(iterators);
+		}
+
+		public OfInt(Iterable<? extends PrimitiveIterator.OfInt> iterators)
+		{
+			super(iterators);
+		}
+
+		public OfInt(Iterator<? extends PrimitiveIterator.OfInt> iterators)
+		{
+			super(iterators);
+		}
+
+		@Override
+		public int nextInt()
+		{
+			requireNext();
+			return ((PrimitiveIterator.OfInt) current).nextInt();
+		}
+	}
+
+	public static class OfDouble extends ChainedIterator<Double> implements PrimitiveIterator.OfDouble
+	{
+		@SafeVarargs
+		public OfDouble(PrimitiveIterator.OfDouble... iterators)
+		{
+			super(iterators);
+		}
+
+		public OfDouble(Iterable<? extends PrimitiveIterator.OfDouble> iterators)
+		{
+			super(iterators);
+		}
+
+		public OfDouble(Iterator<? extends PrimitiveIterator.OfDouble> iterators)
+		{
+			super(iterators);
+		}
+
+		@Override
+		public double nextDouble()
+		{
+			requireNext();
+			return ((PrimitiveIterator.OfDouble) current).nextDouble();
+		}
 	}
 }

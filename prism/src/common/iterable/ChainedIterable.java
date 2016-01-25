@@ -3,47 +3,110 @@ package common.iterable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.PrimitiveIterator;
 
-import common.iterable.MappingIterator.From;
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
 
 
-public class ChainedIterable<T> implements Iterable<T>
+public abstract class ChainedIterable<T> implements Iterable<T>
 {
-	private final Iterable<Iterable<T>> iterables;
+	protected final Iterable<? extends Iterable<? extends T>> iterables;
 
 	@SafeVarargs
-	public ChainedIterable(final Iterable<? extends T>... iterables)
+	public ChainedIterable(Iterable<? extends T>... iterables)
 	{
 		this(Arrays.asList(iterables));
 	}
 
-	@SuppressWarnings("unchecked")
-	public ChainedIterable(final Iterable<? extends Iterable<? extends T>> iterables)
+	public ChainedIterable(Iterable<? extends Iterable<? extends T>> iterables)
 	{
-		this.iterables = (Iterable<Iterable<T>>) iterables;
+		this.iterables = iterables;
 	}
 
-	@Override
-	public Iterator<T> iterator()
+	public static class Of<T> extends ChainedIterable<T>
 	{
-		return new ChainedIterator<>(new From<>(iterables, Iterable::iterator));
+		@SafeVarargs
+		public Of(Iterable<? extends T>... iterables)
+		{
+			super(iterables);
+		}
+
+		public Of(Iterable<? extends Iterable<? extends T>> iterables)
+		{
+			super(iterables);
+		}
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new ChainedIterator.Of<>(new MappingIterator.From<>(iterables, Iterable::iterator));
+		}
 	}
 
-	public Stream<T> stream()
+	public static class OfInt extends ChainedIterable<Integer> implements IterableInt
 	{
-		return StreamSupport.stream(spliterator(), false);
+		@SafeVarargs
+		public OfInt(IterableInt... iterables)
+		{
+			super(iterables);
+		}
+
+		public OfInt(Iterable<IterableInt> iterables)
+		{
+			super(iterables);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public PrimitiveIterator.OfInt iterator()
+		{
+			return new ChainedIterator.OfInt(new MappingIterator.From<>((Iterable<IterableInt>) iterables, IterableInt::iterator));
+		}
+	}
+
+	public static class OfDouble extends ChainedIterable<Double> implements IterableDouble
+	{
+		@SafeVarargs
+		public OfDouble(IterableDouble... iterables)
+		{
+			super(iterables);
+		}
+
+		public OfDouble(Iterable<IterableDouble> iterables)
+		{
+			super(iterables);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public PrimitiveIterator.OfDouble iterator()
+		{
+			return new ChainedIterator.OfDouble(new MappingIterator.From<>((Iterable<IterableDouble>) iterables, IterableDouble::iterator));
+		}
 	}
 
 	public static void main(final String[] args)
 	{
 		final List<Integer> l1 = Arrays.asList(new Integer[] { 1, 2, 3 });
 		final List<Integer> l2 = Arrays.asList(new Integer[] { 4, 5, 6 });
-		final Iterable<Integer> chain = new ChainedIterable<Integer>(l1, l2);
+		final Iterable<Integer> chain1 = new ChainedIterable.Of<Integer>(l1, l2);
 
 		System.out.print("[");
-		for (Iterator<Integer> integers = chain.iterator(); integers.hasNext();) {
+		for (Iterator<Integer> integers = chain1.iterator(); integers.hasNext();) {
+			System.out.print(integers.next());
+			if (integers.hasNext()) {
+				System.out.print(", ");
+			}
+		}
+		System.out.println("]");
+
+		final Interval i1 = new Interval(1, 4);
+		final Interval i2 = new Interval(5, 10, 2);
+		final IterableInt chain2 = new ChainedIterable.OfInt(i1, i2);
+
+		System.out.print("[");
+		for (Iterator<Integer> integers = chain2.iterator(); integers.hasNext();) {
 			System.out.print(integers.next());
 			if (integers.hasNext()) {
 				System.out.print(", ");

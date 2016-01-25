@@ -85,7 +85,7 @@ public class MDPDisjointUnion extends MDPView
 	{
 		final Iterable<Integer> initials1 = model1.getInitialStates();
 		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable<>(initials1, new MappingIterable.From<>(initials2, shiftStateUp));
+		return new ChainedIterable.Of<>(initials1, new MappingIterable.From<>(initials2, shiftStateUp));
 	}
 
 	@Override
