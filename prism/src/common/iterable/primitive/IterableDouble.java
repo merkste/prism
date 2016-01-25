@@ -1,12 +1,9 @@
 package common.iterable.primitive;
 
-/**
- * @deprecated
- * Use J8: PrimitiveIterator.OfDouble
- */
-@Deprecated
+import java.util.PrimitiveIterator.OfDouble;
+
 public interface IterableDouble extends Iterable<Double>
 {
 	@Override
-	public IteratorDouble iterator();
+	public OfDouble iterator();
 }
