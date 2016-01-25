@@ -1,5 +1,7 @@
 package common.functions;
 
+import java.util.function.Function;
+
 @FunctionalInterface
 public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Predicate<T>
 {
@@ -12,7 +14,7 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 	}
 
 	@Override
-	default <S> Predicate<S> compose(final Mapping<S, ? extends T> mapping)
+	default <S> Predicate<S> compose(final Function<? super S, ? extends T> mapping)
 	{
 		return new Predicate<S>()
 		{

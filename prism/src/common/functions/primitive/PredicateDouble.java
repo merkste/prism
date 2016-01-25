@@ -1,6 +1,7 @@
 package common.functions.primitive;
 
-import common.functions.Mapping;
+import java.util.function.Function;
+
 import common.functions.Predicate;
 
 // Cannot extend DoublePredicate due to negate() signature clash
@@ -16,7 +17,7 @@ public interface PredicateDouble extends Predicate<Double>
 	}
 
 	@Override
-	default <S> Predicate<S> compose(final Mapping<S, ? extends Double> mapping)
+	default <S> Predicate<S> compose(final Function<? super S, ? extends Double> mapping)
 	{
 		return new Predicate<S>()
 		{
