@@ -8,16 +8,15 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import common.BitSetTools;
-import common.functions.Predicate;
 import common.functions.Relation;
 import common.functions.primitive.MappingFromInteger;
 import common.iterable.ChainedIterator;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterator;
-import common.methods.CallEntry;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -26,11 +25,10 @@ import explicit.DTMC;
 import explicit.DTMCSimple;
 import explicit.DiracDistribution;
 import explicit.Distribution;
-import explicit.modelviews.methods.CallDTMC;
 
 public class DTMCAlteredDistributions extends DTMCView
 {
-	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose(CallEntry.<Integer, Double> getValue());
+	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose(Entry::getValue);
 
 	private DTMC model;
 	private MappingFromInteger<Iterator<Entry<Integer, Double>>> mapping;

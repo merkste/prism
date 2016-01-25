@@ -20,7 +20,6 @@ import common.iterable.collections.ChainedList;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
-import explicit.modelviews.methods.CallNondetModel;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -42,7 +41,7 @@ public class MDPAlteredDistributions extends MDPView
 	 */
 	public MDPAlteredDistributions(final MDP model, final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> choiceMapping)
 	{
-		this(model, choiceMapping, CallNondetModel.getAction().on(model));
+		this(model, choiceMapping, model::getAction);
 	}
 
 	/**
@@ -219,7 +218,7 @@ public class MDPAlteredDistributions extends MDPView
 			}
 		};
 
-		return new MDPAlteredDistributions(model, normalize, CallNondetModel.getAction().on(model));
+		return new MDPAlteredDistributions(model, normalize, model::getAction);
 	}
 
 	public static MDP identifyStates(final MDP model, final Iterable<BitSet> equivalenceClasses)
