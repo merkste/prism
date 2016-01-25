@@ -1,6 +1,7 @@
 package common.functions.primitive;
 
-import common.functions.Mapping;
+import java.util.function.Function;
+
 import common.functions.Predicate;
 
 //Cannot extend IntPredicate due to negate() signature clash
@@ -15,7 +16,7 @@ public interface PredicateInteger extends Predicate<Integer>
 	}
 
 	@Override
-	default <S> Predicate<S> compose(final Mapping<S, ? extends Integer> mapping)
+	default <S> Predicate<S> compose(final Function<? super S, ? extends Integer> mapping)
 	{
 		return new Predicate<S>()
 		{

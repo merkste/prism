@@ -9,7 +9,7 @@ public interface Mapping<S, T> extends Function<S, T>
 {
 	public T apply(S element);
 
-	default <P> Mapping<P, T> compose(final Mapping<P, ? extends S> mapping)
+	default <P> Mapping<P, T> compose(final Function<? super P, ? extends S> mapping)
 	{
 		return new Mapping<P, T>()
 		{
