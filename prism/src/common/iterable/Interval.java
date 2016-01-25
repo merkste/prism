@@ -50,7 +50,7 @@ public class Interval implements IterableInteger
 			}
 
 			@Override
-			public int nextInteger()
+			public int nextInt()
 			{
 				return iterator.nextInt();
 			}

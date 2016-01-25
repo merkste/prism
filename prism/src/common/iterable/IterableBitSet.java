@@ -89,11 +89,11 @@ public class IterableBitSet implements IterableInteger
 		@Override
 		public Integer next()
 		{
-			return nextInteger();
+			return nextInt();
 		}
 
 		@Override
-		public int nextInteger()
+		public int nextInt()
 		{
 			if (hasNext()) {
 				current = next;
@@ -129,11 +129,11 @@ public class IterableBitSet implements IterableInteger
 		@Override
 		public Integer next()
 		{
-			return nextInteger();
+			return nextInt();
 		}
 
 		@Override
-		public int nextInteger()
+		public int nextInt()
 		{
 			if (hasNext()) {
 				current = next;
