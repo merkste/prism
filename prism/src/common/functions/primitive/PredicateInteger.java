@@ -1,5 +1,6 @@
 package common.functions.primitive;
 
+import common.functions.Mapping;
 import common.functions.Predicate;
 
 //Cannot extend IntPredicate due to negate() signature clash
@@ -7,6 +8,76 @@ public interface PredicateInteger extends Predicate<Integer>
 {
 	public boolean test(int element);
 
+	default boolean test(final Integer element)
+	{
+		return test(element.intValue());
+	}
+
 	@Override
-	public PredicateInteger negate();
+	default <S> Predicate<S> compose(final Mapping<S, ? extends Integer> mapping)
+	{
+		return new Predicate<S>()
+		{
+			@Override
+			public final boolean test(final S element)
+			{
+				return PredicateInteger.this.test(mapping.apply(element).intValue());
+			}
+		};
+	}
+
+	@Override
+	default PredicateInteger negate()
+	{
+		return new PredicateInteger()
+		{
+			@Override
+			public final boolean test(final int element)
+			{
+				return !PredicateInteger.this.test(element);
+			}
+
+			@Override
+			public PredicateInteger negate()
+			{
+				return PredicateInteger.this;
+			}
+		};
+	}
+
+	default PredicateInteger and(final PredicateInteger predicate)
+	{
+		return new PredicateInteger()
+		{
+			@Override
+			public final boolean test(final int element)
+			{
+				return PredicateInteger.this.test(element) && predicate.test(element);
+			}
+		};
+	}
+
+	default PredicateInteger or(final PredicateInteger predicate)
+	{
+		return new PredicateInteger()
+		{
+			@Override
+			public final boolean test(final int element)
+			{
+				return PredicateInteger.this.test(element) || predicate.test(element);
+			}
+		};
+	}
+
+	default PredicateInteger implies(final PredicateInteger predicate)
+	{
+		return new PredicateInteger()
+		{
+			@Override
+			public final boolean test(final int element)
+			{
+				return (!PredicateInteger.this.test(element)) || predicate.test(element);
+			}
+		};
+	}
 }
