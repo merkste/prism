@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.BitSetPredicate;
 import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
@@ -32,7 +31,6 @@ public class MDPRestricted extends MDPView
 	// FIXME ALG: consider using a predicate instead
 	private BitSet states;
 	private Restriction restriction;
-	private PredicateInteger isStateIncluded;
 	// FIXME ALG: consider using a mapping function instead
 	private int[] mappingToOriginalModel;
 	private Integer[] mappingToRestrictedModel;
@@ -52,7 +50,6 @@ public class MDPRestricted extends MDPView
 		this.restriction = restriction;
 		this.states = restriction.getStateSet(model, include);
 
-		isStateIncluded = new BitSetPredicate(states);
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[states.cardinality()];
 		for (int state = 0, index = 0, numStates = model.getNumStates(); state < numStates; state++) {
@@ -70,7 +67,6 @@ public class MDPRestricted extends MDPView
 		model = restricted.model;
 		states = restricted.states;
 		restriction = restricted.restriction;
-		isStateIncluded = restricted.isStateIncluded;
 		mappingToOriginalModel = restricted.mappingToOriginalModel;
 		mappingToRestrictedModel = restricted.mappingToRestrictedModel;
 		//		mapTargetState = restricted.mapTargetState;
@@ -105,7 +101,7 @@ public class MDPRestricted extends MDPView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), isStateIncluded);
+		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), states::get);
 		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
 	}
 
@@ -274,16 +270,6 @@ public class MDPRestricted extends MDPView
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
 		restriction = Restriction.TRANSITIVE_CLOSURE;
-		isStateIncluded = new PredicateInteger()
-		{
-			final int numStates = model.getNumStates();
-
-			@Override
-			public boolean test(final int state)
-			{
-				return (0 <= state) && (state < numStates);
-			}
-		};
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[model.getNumStates()];
 		mappingToRestrictedModel = new Integer[model.getNumStates()];

@@ -11,7 +11,6 @@ import java.util.Set;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.BitSetPredicate;
 import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
@@ -31,7 +30,6 @@ public class DTMCRestricted extends DTMCView
 	// FIXME ALG: consider using a predicate instead
 	private BitSet states;
 	private Restriction restriction;
-	private PredicateInteger isStateIncluded;
 	// FIXME ALG: consider using a mapping function instead
 	private int[] mappingToOriginalModel;
 	private Integer[] mappingToRestrictedModel;
@@ -71,7 +69,6 @@ public class DTMCRestricted extends DTMCView
 		this.restriction = restriction;
 		this.states = restriction.getStateSet(model, include);
 
-		isStateIncluded = new BitSetPredicate(states);
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[states.cardinality()];
 		for (int state = 0, index = 0, numStates = model.getNumStates(); state < numStates; state++) {
@@ -89,7 +86,6 @@ public class DTMCRestricted extends DTMCView
 		model = restricted.model;
 		states = restricted.states;
 		restriction = restricted.restriction;
-		isStateIncluded = restricted.isStateIncluded;
 		mappingToOriginalModel = restricted.mappingToOriginalModel;
 		mappingToRestrictedModel = restricted.mappingToRestrictedModel;
 	}
@@ -123,7 +119,7 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		return new MappingIterable.ToInt<>(new FilteringIterable.Of<>(model.getInitialStates(), isStateIncluded), this::mapStateToRestrictedModel);
+		return new MappingIterable.ToInt<>(new FilteringIterable.Of<>(model.getInitialStates(), states::get), this::mapStateToRestrictedModel);
 	}
 
 	@Override
@@ -216,16 +212,6 @@ public class DTMCRestricted extends DTMCView
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
 		restriction = Restriction.TRANSITIVE_CLOSURE;
-		isStateIncluded = new PredicateInteger()
-		{
-			final int numStates = model.getNumStates();
-
-			@Override
-			public boolean test(final int state)
-			{
-				return (0 <= state) && (state < numStates);
-			}
-		};
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[model.getNumStates()];
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
