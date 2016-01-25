@@ -22,7 +22,7 @@ public class MappingIterable<S, T> implements Iterable<T>
 	@Deprecated
 	public MappingIterable(final Iterable<S> iterable, final Mapping<? super S, T> mapping)
 	{
-		this(iterable, mapping::apply);
+		this(iterable, (Function<? super S, T>) mapping::apply);
 	}
 
 	public MappingIterable(final Iterable<S> iterable, final Function<? super S, T> function)
