@@ -13,6 +13,9 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
+
 public abstract class MappingIterator<S, T> implements Iterator<T>
 {
 	protected final Iterator<S> iterator;
@@ -109,6 +112,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	{
 		protected IntFunction<T> function;
 
+		public FromInt(IterableInt iterable, IntFunction<T> function)
+		{
+			this(iterable.iterator(), function);
+		}
+
 		public FromInt(OfInt iterator, IntFunction<T> function)
 		{
 			super(iterator);
@@ -125,6 +133,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	public static class FromIntToInt extends MappingIterator<Integer, Integer> implements OfInt
 	{
 		protected IntUnaryOperator function;
+
+		public FromIntToInt(IterableInt iterable, IntUnaryOperator function)
+		{
+			this(iterable.iterator(), function);
+		}
 
 		public FromIntToInt(OfInt iterator, IntUnaryOperator function)
 		{
@@ -143,6 +156,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	{
 		protected IntToDoubleFunction function;
 
+		public FromIntToDouble(IterableInt iterable, IntToDoubleFunction function)
+		{
+			this(iterable.iterator(), function);
+		}
+
 		public FromIntToDouble(OfInt iterator, IntToDoubleFunction function)
 		{
 			super(iterator);
@@ -159,6 +177,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	public static class FromDouble<T> extends MappingIterator<Double, T>
 	{
 		protected DoubleFunction<T> function;
+
+		public FromDouble(IterableDouble iterable, DoubleFunction<T> function)
+		{
+			this(iterable.iterator(), function);
+		}
 
 		public FromDouble(OfDouble iterator, DoubleFunction<T> function)
 		{
@@ -177,6 +200,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	{
 		protected DoubleToIntFunction function;
 
+		public FromDoubleToInt(IterableDouble iterable, DoubleToIntFunction function)
+		{
+			this(iterable.iterator(), function);
+		}
+
 		public FromDoubleToInt(OfDouble iterator, DoubleToIntFunction function)
 		{
 			super(iterator);
@@ -193,6 +221,11 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 	public static class FromDoubleToDouble extends MappingIterator<Double, Double> implements OfDouble
 	{
 		protected DoubleUnaryOperator function;
+
+		public FromDoubleToDouble(IterableDouble iterable, DoubleUnaryOperator function)
+		{
+			this(iterable.iterator(), function);
+		}
 
 		public FromDoubleToDouble(OfDouble iterator, DoubleUnaryOperator function)
 		{
