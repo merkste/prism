@@ -46,6 +46,18 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		return new FilteringIterator.Of<>(iterator, (Predicate<T>) elements::add);
 	}
 
+	public static OfInt dedupe(final PrimitiveIterator.OfInt iterator)
+	{
+		final Set<Integer> elements = new HashSet<>();
+		return new FilteringIterator.OfInt(iterator, (IntPredicate) elements::add);
+	}
+
+	public static OfDouble dedupe(final PrimitiveIterator.OfDouble iterator)
+	{
+		final Set<Double> elements = new HashSet<>();
+		return new FilteringIterator.OfDouble(iterator, (DoublePredicate) elements::add);
+	}
+
 	public static class Of<T> extends FilteringIterator<T>
 	{
 		protected final Predicate<? super T> predicate;
