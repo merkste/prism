@@ -7,12 +7,13 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 
 import common.iterable.IterableBitSet;
+import common.iterable.primitive.IterableInt;
 
 /**
  * Wrapper to connect the Set-interface to instances of the class BitSet.
  * @author Marcus Daum (mdaum@tcs.inf.tu-dresden.de)
  */
-public class BitSetWrapper implements Set<Integer>
+public class BitSetWrapper implements Set<Integer>, IterableInt
 {
 	private BitSet bitSet;
 

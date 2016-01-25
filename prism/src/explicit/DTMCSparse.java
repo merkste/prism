@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
@@ -197,32 +198,30 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
-		// FIXME ALG: exploit IntFunction
-		final Function<Integer, Entry<Integer, Double>> getTransition = new Function<Integer, Entry<Integer, Double>>()
+		final IntFunction<Entry<Integer, Double>> getTransition = new IntFunction<Entry<Integer, Double>>()
 		{
 			@Override
-			public Entry<Integer, Double> apply(final Integer index)
+			public Entry<Integer, Double> apply(final int index)
 			{
 				return new SimpleImmutableEntry<>(columns[index], probabilities[index]);
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator.From<>(indices, getTransition);
+		return new MappingIterator.FromInt<>(indices, getTransition);
 	}
 
 	@Override
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(final int state)
 	{
-		// FIXME ALG: exploit IntFunction
-		final Function<Integer, Entry<Integer, Pair<Double, Object>>> getTransitionWithAction = new Function<Integer, Entry<Integer, Pair<Double, Object>>>() {
+		final IntFunction<Entry<Integer, Pair<Double, Object>>> getTransitionWithAction = new IntFunction<Entry<Integer, Pair<Double, Object>>>() {
 			@Override
-			public Entry<Integer, Pair<Double, Object>> apply(Integer index)
+			public Entry<Integer, Pair<Double, Object>> apply(int index)
 			{
 				return new SimpleImmutableEntry<>(columns[index], new Pair<>(probabilities[index], null));
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator.From<>(indices, getTransitionWithAction);
+		return new MappingIterator.FromInt<>(indices, getTransitionWithAction);
 	}
 
 	@Override
