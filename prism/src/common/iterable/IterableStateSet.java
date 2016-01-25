@@ -28,7 +28,7 @@
 package common.iterable;
 
 import java.util.BitSet;
-import java.util.Iterator;
+import java.util.PrimitiveIterator.OfInt;
 
 import common.functions.primitive.PredicateInteger;
 import common.iterable.primitive.IterableInt;
@@ -38,7 +38,7 @@ import common.iterable.primitive.IterableInt;
  * iterating over the set or cleared bits of a BitSet representing a set of states
  * as well as iterating over all states if the BitSet is {@code null}.
  */
-public class IterableStateSet implements Iterable<Integer>
+public class IterableStateSet implements IterableInt
 {
 	private final IterableInt setOfStates;
 
@@ -103,7 +103,7 @@ public class IterableStateSet implements Iterable<Integer>
 	}
 
 	@Override
-	public Iterator<Integer> iterator()
+	public OfInt iterator()
 	{
 		return setOfStates.iterator();
 	}
