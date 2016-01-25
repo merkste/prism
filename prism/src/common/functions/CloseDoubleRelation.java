@@ -2,7 +2,7 @@ package common.functions;
 
 import common.functions.primitive.PairPredicateDoubleDouble;
 import common.functions.primitive.PredicateDouble;
-import common.methods.CallPrismUtils;
+import prism.PrismUtils;
 
 public class CloseDoubleRelation
 {
@@ -37,7 +37,7 @@ public class CloseDoubleRelation
 
 	public static PairPredicateDoubleDouble closeEQ(final double epsilon)
 	{
-		return CallPrismUtils.Static.doublesAreCloseAbs(epsilon);
+		return (d1, d2) -> PrismUtils.doublesAreCloseAbs(d1, d2, epsilon);
 	}
 
 	public static PairPredicateDoubleDouble closeNEQ(final double epsilon)
