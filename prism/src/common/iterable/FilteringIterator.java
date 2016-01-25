@@ -3,46 +3,28 @@ package common.iterable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
 import java.util.Set;
+import java.util.function.DoublePredicate;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
-public class FilteringIterator<T> implements Iterator<T>
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
+
+public abstract class FilteringIterator<T> implements Iterator<T>
 {
-	private final Iterator<? extends T> iter;
-	private final Predicate<T> predicate;
-	private boolean hasNext;
-	private T next;
+	protected final Iterator<T> iterator;
+	protected boolean hasNext;
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated
-	public FilteringIterator(final Iterable<? extends T> iterable, final common.functions.Predicate<T> predicate)
+	public FilteringIterator(final Iterable<T> iterable)
 	{
-		this(iterable.iterator(), (Predicate<T>) predicate);
+		this(iterable.iterator());
 	}
 
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated
-	public FilteringIterator(final Iterator<? extends T> iter, final common.functions.Predicate<T> predicate)
+	public FilteringIterator(final Iterator<T> iterator)
 	{
-		this(iter, (Predicate<T>) predicate::test);
-	}
-
-	public FilteringIterator(final Iterable<? extends T> iterable, final Predicate<T> predicate)
-	{
-		this(iterable.iterator(), predicate);
-	}
-
-	public FilteringIterator(final Iterator<? extends T> iter, final Predicate<T> predicate)
-	{
-		this.iter = iter;
-		this.predicate = predicate;
-		seekNext();
+		this.iterator = iterator;
 	}
 
 	@Override
@@ -51,33 +33,134 @@ public class FilteringIterator<T> implements Iterator<T>
 		return hasNext;
 	}
 
-	@Override
-	public T next()
+	protected void requireNext()
 	{
-		if (!hasNext()) {
+		if (!hasNext) {
 			throw new NoSuchElementException();
 		}
-		final T current = next;
-		seekNext();
-		return current;
 	}
 
-	private void seekNext()
-	{
-		while (iter.hasNext()) {
-			next = iter.next();
-			if (predicate.test(next)) {
-				hasNext = true;
-				return;
-			}
-		}
-		hasNext = false;
-		next = null;
-	}
-
-	public static <T> Iterator<T> dedupe(final Iterator<T> iter)
+	public static <T> Iterator<T> dedupe(final Iterator<T> iterator)
 	{
 		final Set<T> elements = new HashSet<>();
-		return new FilteringIterator<>(iter, (Predicate<T>) elements::add);
+		return new FilteringIterator.Of<>(iterator, (Predicate<T>) elements::add);
+	}
+
+	public static class Of<T> extends FilteringIterator<T>
+	{
+		protected final Predicate<? super T> predicate;
+		private T next;
+
+		public Of(Iterable<T> iterable, Predicate<? super T> predicate)
+		{
+			this(iterable.iterator(), predicate);
+		}
+
+		public Of(Iterator<T> iterator, Predicate<? super T> predicate)
+		{
+			super(iterator);
+			this.predicate = predicate;
+			seekNext();
+		}
+
+		@Override
+		public T next()
+		{
+			requireNext();
+			T current = next;
+			seekNext();
+			return current;
+		}
+
+		private void seekNext()
+		{
+			while (iterator.hasNext()) {
+				next = iterator.next();
+				if (predicate.test(next)) {
+					hasNext = true;
+					return;
+				}
+			}
+			hasNext = false;
+			next = null;
+		}
+	}
+
+	public static class OfInt extends FilteringIterator<Integer> implements PrimitiveIterator.OfInt
+	{
+		protected final IntPredicate predicate;
+		private int next;
+
+		public OfInt(IterableInt iterable, IntPredicate predicate)
+		{
+			this(iterable.iterator(), predicate);
+		}
+
+		public OfInt(PrimitiveIterator.OfInt iterator, IntPredicate predicate)
+		{
+			super(iterator);
+			this.predicate = predicate;
+			seekNext();
+		}
+
+		@Override
+		public int nextInt()
+		{
+			requireNext();
+			int current = next;
+			seekNext();
+			return current;
+		}
+
+		private void seekNext()
+		{
+			while (iterator.hasNext()) {
+				next = ((PrimitiveIterator.OfInt) iterator).nextInt();
+				if (predicate.test(next)) {
+					hasNext = true;
+					return;
+				}
+			}
+			hasNext = false;
+		}
+	}
+
+	public static class OfDouble extends FilteringIterator<Double> implements PrimitiveIterator.OfDouble
+	{
+		protected final DoublePredicate predicate;
+		private double next;
+
+		public OfDouble(IterableDouble iterable, DoublePredicate predicate)
+		{
+			this(iterable.iterator(), predicate);
+		}
+
+		public OfDouble(PrimitiveIterator.OfDouble iterator, DoublePredicate predicate)
+		{
+			super(iterator);
+			this.predicate = predicate;
+			seekNext();
+		}
+
+		@Override
+		public double nextDouble()
+		{
+			requireNext();
+			double current = next;
+			seekNext();
+			return current;
+		}
+
+		private void seekNext()
+		{
+			while (iterator.hasNext()) {
+				next = ((PrimitiveIterator.OfDouble) iterator).nextDouble();
+				if (predicate.test(next)) {
+					hasNext = true;
+					return;
+				}
+			}
+			hasNext = false;
+		}
 	}
 }

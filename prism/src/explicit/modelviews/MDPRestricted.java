@@ -105,7 +105,7 @@ public class MDPRestricted extends MDPView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		final FilteringIterable<Integer> initialStates = new FilteringIterable<>(model.getInitialStates(), isStateIncluded);
+		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), isStateIncluded);
 		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
 	}
 

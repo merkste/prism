@@ -28,11 +28,10 @@
 package common.iterable;
 
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.function.Predicate;
 
 import common.functions.primitive.PredicateInteger;
+import common.iterable.primitive.IterableInt;
 
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of
@@ -41,7 +40,7 @@ import common.functions.primitive.PredicateInteger;
  */
 public class IterableStateSet implements Iterable<Integer>
 {
-	private final Iterable<Integer> setOfStates;
+	private final IterableInt setOfStates;
 
 	/**
 	 * Constructor (iterate over all states 0..numStates-1)
@@ -77,8 +76,7 @@ public class IterableStateSet implements Iterable<Integer>
 		if (predicate == null) {
 			this.setOfStates = new Interval(numStates);
 		} else {
-			// FIXME ALG: exploit PredicateInteger::test(int element)
-			this.setOfStates = new FilteringIterable<>(new Interval(numStates), (Predicate<Integer>) predicate::apply);
+			this.setOfStates = new FilteringIterable.OfInt(new Interval(numStates), predicate::apply);
 		}
 	}
 
@@ -94,10 +92,10 @@ public class IterableStateSet implements Iterable<Integer>
 	{
 		if (setOfStates == null || (setOfStates.length() == numStates && setOfStates.cardinality() == numStates)) {
 			// all states
-			this.setOfStates = complement ? Collections.<Integer> emptyList() : new Interval(numStates);
+			this.setOfStates = complement ? new Interval(0, 0) : new Interval(numStates);
 		} else if (setOfStates.isEmpty()) {
 			// no states
-			this.setOfStates = complement ? new Interval(numStates) : Collections.<Integer> emptyList();
+			this.setOfStates = complement ? new Interval(numStates) : new Interval(0, 0);
 		} else {
 			// build appropriate IterableBitSet with maxIndex = numStates-1
 			this.setOfStates = new IterableBitSet(setOfStates, numStates - 1, complement);

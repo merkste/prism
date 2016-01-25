@@ -145,7 +145,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		if (transitions == null) {
 			return model.getTransitionsIterator(state);
 		}
-		return new FilteringIterator<>(transitions, nonZero);
+		return new FilteringIterator.Of<>(transitions, nonZero);
 	}
 
 
