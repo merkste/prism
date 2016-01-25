@@ -26,7 +26,7 @@ public class ArrayIteratorInteger extends AbstractArrayIterator<Integer>implemen
 	}
 
 	@Override
-	public int nextInteger()
+	public int nextInt()
 	{
 		return ((PrimitiveIterator.OfInt) iterator).nextInt();
 	}
