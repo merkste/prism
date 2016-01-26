@@ -4,8 +4,7 @@ import java.util.BitSet;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.stream.IntStream;
 
 import common.BitSetTools;
 import common.IteratorTools;
@@ -66,9 +65,9 @@ public class Support implements IntPredicate, IterableInt
 		return new FilteringIterator.OfInt(new Interval(0, values.length), this);
 	}
 
-	public Stream<Integer> stream()
+	public IntStream stream()
 	{
-		return StreamSupport.stream(spliterator(), false);
+		return new Interval(0, values.length).stream().filter(this);
 	}
 
 	public static void main(final String[] args)
