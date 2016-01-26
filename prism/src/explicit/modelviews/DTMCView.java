@@ -190,7 +190,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public void prob0step(final BitSet subset, final BitSet u, final BitSet result)
 	{
 		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
-			int state = states.nextInt();
+			final int state = states.nextInt();
 			boolean hasTransitionToU = false;
 			for (Iterator<Integer> successors = getSuccessorsIterator(state); successors.hasNext();) {
 				if (u.get(successors.next())) {
