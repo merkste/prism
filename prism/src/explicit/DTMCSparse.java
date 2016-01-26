@@ -10,7 +10,6 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
-import common.iterable.ArrayIterator;
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
@@ -118,7 +117,7 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public OfInt getSuccessorsIterator(final int state)
 	{
-		return new ArrayIterator.OfInt(columns, rows[state], rows[state+1]);
+		return Arrays.stream(columns, rows[state], rows[state+1]).iterator();
 	}
 
 	@Override
