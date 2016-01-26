@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Map.Entry;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.primitive.PredicateInteger;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
@@ -116,34 +116,6 @@ public class MDPRestricted extends MDPView
 	public boolean isInitialState(final int state)
 	{
 		return model.isInitialState(mapStateToOriginalModel(state));
-	}
-
-	@Override
-	public int getNumDeadlockStates()
-	{
-		return IteratorTools.count(getDeadlockStates());
-	}
-
-	@Override
-	public Iterable<Integer> getDeadlockStates()
-	{
-		//		CallModel.isDeadlockState().on(model).compose(mapStateToOriginalModel);
-		final PredicateInteger isDeadlock = new PredicateInteger()
-		{
-			@Override
-			public final boolean test(final int state)
-			{
-				return model.isDeadlockState(mapStateToOriginalModel(state));
-			}
-		};
-
-		return new IterableStateSet(isDeadlock, getNumStates());
-	}
-
-	@Override
-	public boolean isDeadlockState(final int state)
-	{
-		return model.isDeadlockState(mapStateToOriginalModel(state));
 	}
 
 	@Override
@@ -315,9 +287,8 @@ public class MDPRestricted extends MDPView
 
 	public BitSet mapStatesToRestrictedModel(final BitSet originalStates)
 	{
-		if (originalStates == null) {
-			throw new NullPointerException();
-		}
+		Objects.requireNonNull(originalStates);
+
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
 			final Integer state = mappingToRestrictedModel[originalState];
