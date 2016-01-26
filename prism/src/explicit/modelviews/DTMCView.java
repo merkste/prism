@@ -7,8 +7,9 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
-import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import common.IteratorTools;
 import common.iterable.IterableStateSet;
@@ -42,11 +43,10 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public String toString()
 	{
-		// FIXME ALG: exploit IntFunction
-		final Function<Integer, Entry<Integer, Distribution>> getDistribution = new Function<Integer, Entry<Integer, Distribution>>()
+		final IntFunction<Entry<Integer, Distribution>> getDistribution = new IntFunction<Entry<Integer, Distribution>>()
 		{
 			@Override
-			public final Entry<Integer, Distribution> apply(final Integer state)
+			public final Entry<Integer, Distribution> apply(final int state)
 			{
 				final Distribution distribution = new Distribution(getTransitionsIterator(state));
 				return new AbstractMap.SimpleImmutableEntry<>(state, distribution);
@@ -54,7 +54,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 		};
 		String s = "trans: [ ";
 		final IterableStateSet states = new IterableStateSet(getNumStates());
-		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator.From<>(states, getDistribution);
+		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator.FromInt<>(states, getDistribution);
 		while (distributions.hasNext()) {
 			final Entry<Integer, Distribution> dist = distributions.next();
 			s += dist.getKey() + ": " + dist.getValue();
@@ -90,7 +90,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
-		return new MappingIterator.ToInt<>(transitions, entry -> entry.getKey().intValue());
+		return new MappingIterator.From<>(transitions, Entry::getKey);
 	}
 
 	@Override
@@ -187,7 +187,8 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public void prob0step(final BitSet subset, final BitSet u, final BitSet result)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			int state = states.nextInt();
 			boolean hasTransitionToU = false;
 			for (Iterator<Integer> successors = getSuccessorsIterator(state); successors.hasNext();) {
 				if (u.get(successors.next())) {
@@ -202,7 +203,8 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public void prob1step(final BitSet subset, final BitSet u, final BitSet v, final BitSet result)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			boolean allTransitionsToU = true;
 			boolean hasTransitionToV = false;
 			for (Iterator<Integer> successors = getSuccessorsIterator(state); successors.hasNext();) {
@@ -220,7 +222,8 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public void mvMult(final double[] vect, final double[] result, final BitSet subset, final boolean complement)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			result[state] = mvMultSingle(state, vect);
 		}
 	}
@@ -242,7 +245,8 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	public double mvMultGS(final double[] vect, final BitSet subset, final boolean complement, final boolean absolute)
 	{
 		double maxDiff = 0.0;
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			final double d = mvMultJacSingle(state, vect);
 			final double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
 			maxDiff = diff > maxDiff ? diff : maxDiff;
@@ -282,7 +286,8 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public void mvMultRew(final double[] vect, final MCRewards mcRewards, final double[] result, final BitSet subset, final boolean complement)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			result[state] = mvMultRewSingle(state, vect, mcRewards);
 		}
 	}
