@@ -1,35 +1,96 @@
 package common.iterable;
 
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.stream.Stream;
+import java.util.PrimitiveIterator;
 
-public class IterableArray<T> extends AbstractIterableArray<T>implements Iterable<T>
+import common.iterable.primitive.IterableDouble;
+import common.iterable.primitive.IterableInt;
+
+public abstract class IterableArray<T> implements Iterable<T>
 {
-	protected final T[] elements;
+	protected final int fromIndex;
+	protected final int toIndex;
 
-	@SafeVarargs
-	public IterableArray(final T... elements)
+	public IterableArray(int fromIndex, int toIndex)
 	{
-		this(0, elements.length, elements);
+		this.fromIndex = fromIndex;
+		this.toIndex = toIndex;
 	}
 
-	@SafeVarargs
-	public IterableArray(final int fromIndex, final int toIndex, final T... elements)
+	public int size()
 	{
-		super(fromIndex, toIndex);
-		this.elements = elements;
+		return Math.max(0, toIndex - fromIndex);
 	}
 
-	@Override
-	public Iterator<T> iterator()
+	public static class Of<T> extends IterableArray<T>
 	{
-		return stream().iterator();
+		protected final T[] elements;
+
+		@SafeVarargs
+		public Of(T... elements)
+		{
+			super(0, elements.length);
+			this.elements = elements;
+		}
+
+		public Of(T[] elements, int fromIndex, int toIndex)
+		{
+			super(fromIndex, toIndex);
+			this.elements = elements;
+		}
+
+		@Override
+		public Iterator<T> iterator()
+		{
+			return new ArrayIterator.Of<>(elements, fromIndex, toIndex);
+		}
 	}
 
-	@Override
-	public Stream<T> stream()
+	public static class OfInt extends IterableArray<Integer> implements IterableInt
 	{
-		return Arrays.stream(elements, fromIndex, toIndex);
+		protected final int[] elements;
+
+		@SafeVarargs
+		public OfInt(int... elements)
+		{
+			super(0, elements.length);
+			this.elements = elements;
+		}
+
+		public OfInt(int[] elements, int fromIndex, int toIndex)
+		{
+			super(fromIndex, toIndex);
+			this.elements = elements;
+		}
+
+		@Override
+		public PrimitiveIterator.OfInt iterator()
+		{
+			return new ArrayIterator.OfInt(elements, fromIndex, toIndex);
+		}
+	}
+
+	public static class OfDouble extends IterableArray<Double> implements IterableDouble
+	{
+		protected final double[] elements;
+
+		@SafeVarargs
+		public OfDouble(double... elements)
+		{
+			super(0, elements.length);
+			this.elements = elements;
+		}
+
+		public OfDouble(double[] elements, int fromIndex, int toIndex)
+		{
+			super(fromIndex, toIndex);
+			this.elements = elements;
+		}
+
+		@Override
+		public PrimitiveIterator.OfDouble iterator()
+		{
+			return new ArrayIterator.OfDouble(elements, fromIndex, toIndex);
+		}
 	}
 }

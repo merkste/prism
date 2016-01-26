@@ -6,13 +6,14 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
+import common.iterable.ArrayIterator;
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
-import common.iterable.primitive.ArrayIteratorInt;
 import explicit.rewards.MCRewards;
 import prism.Pair;
 import prism.PrismException;
@@ -115,9 +116,9 @@ public class DTMCSparse extends DTMCExplicit
 	}
 
 	@Override
-	public Iterator<Integer> getSuccessorsIterator(final int state)
+	public OfInt getSuccessorsIterator(final int state)
 	{
-		return new ArrayIteratorInt(rows[state], rows[state+1], columns);
+		return new ArrayIterator.OfInt(columns, rows[state], rows[state+1]);
 	}
 
 	@Override
