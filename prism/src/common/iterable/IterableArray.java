@@ -1,5 +1,6 @@
 package common.iterable;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.PrimitiveIterator;
 
@@ -39,7 +40,7 @@ public abstract class IterableArray<T> implements Iterable<T>
 		@Override
 		public Iterator<T> iterator()
 		{
-			return new ArrayIterator.Of<>(elements, fromIndex, toIndex);
+			return Arrays.stream(elements, fromIndex, toIndex).iterator();
 		}
 	}
 
@@ -63,7 +64,7 @@ public abstract class IterableArray<T> implements Iterable<T>
 		@Override
 		public PrimitiveIterator.OfInt iterator()
 		{
-			return new ArrayIterator.OfInt(elements, fromIndex, toIndex);
+			return Arrays.stream(elements, fromIndex, toIndex).iterator();
 		}
 	}
 
@@ -87,7 +88,7 @@ public abstract class IterableArray<T> implements Iterable<T>
 		@Override
 		public PrimitiveIterator.OfDouble iterator()
 		{
-			return new ArrayIterator.OfDouble(elements, fromIndex, toIndex);
+			return Arrays.stream(elements, fromIndex, toIndex).iterator();
 		}
 	}
 }
