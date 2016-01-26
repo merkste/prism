@@ -47,7 +47,7 @@ public class BitSetTools
 
 	public static boolean areDisjoint(final BitSet... sets)
 	{
-		return areDisjoint(new IterableArray<>(sets));
+		return areDisjoint(new IterableArray.Of<>(sets));
 	}
 
 	public static boolean areDisjoint(final Iterable<BitSet> sets)
