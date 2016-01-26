@@ -7,22 +7,12 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import common.functions.Mapping;
+import common.iterable.MappingIterator;
 
 public class MappingList<S, T> extends AbstractList<T>
 {
-	private final List<S> list;
-	private final Function<? super S, T> function;
-
-	/**
-	 * @deprecated
-	 * Use J8 Functions instead.
-	 */
-	@Deprecated
-	public MappingList(final List<S> list, final Mapping<? super S, T> mapping)
-	{
-		this(list, (Function<? super S, T>) mapping::apply);
-	}
+	protected final List<S> list;
+	protected final Function<? super S, T> function;
 
 	public MappingList(final List<S> list, final Function<? super S, T> function)
 	{
@@ -39,7 +29,7 @@ public class MappingList<S, T> extends AbstractList<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return stream().iterator();
+		return new MappingIterator.From<>(list, function);
 	}
 
 	@Override
@@ -57,14 +47,7 @@ public class MappingList<S, T> extends AbstractList<T>
 	public static void main(String[] args)
 	{
 		final List<Integer> list = Arrays.asList(new Integer[] {1, 2, 3});
-		final Mapping<Integer, Integer> successor = new Mapping<Integer, Integer>()
-		{
-			@Override
-			public final Integer apply(final Integer i)
-			{
-				return i + 1;
-			}
-		};
+		final Function<Integer, Integer> successor = x -> x + 1;
 		final Iterable<Integer> successors = new MappingList<>(list, successor);
 
 		System.out.println(successors);
