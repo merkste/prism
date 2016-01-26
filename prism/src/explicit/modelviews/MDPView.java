@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 
 import common.IteratorTools;
@@ -311,7 +312,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	@Override
 	public void prob0step(final BitSet subset, final BitSet u, final boolean forall, final BitSet result)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			boolean value = forall; // there exists or for all
 			for (int choice = 0, numChoices = getNumChoices(state); choice < numChoices; choice++) {
 				value = someSuccessorsInSet(state, choice, u);
@@ -326,7 +328,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	@Override
 	public void prob1Astep(final BitSet subset, final BitSet u, final BitSet v, final BitSet result)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			boolean value = true;
 			for (int choice = 0, numChoices = getNumChoices(state); choice < numChoices; choice++) {
 				if (!(allSuccessorsInSet(state, choice, u) && someSuccessorsInSet(state, choice, v))) {
@@ -342,7 +345,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	public void prob1Estep(final BitSet subset, final BitSet u, final BitSet v, final BitSet result, final int strat[])
 	{
 		int stratCh = -1;
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			boolean value = false;
 			for (int choice = 0, numChoices = getNumChoices(state); choice < numChoices; choice++) {
 				if (allSuccessorsInSet(state, choice, u) && someSuccessorsInSet(state, choice, v)) {
@@ -367,7 +371,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	@Override
 	public void prob1step(final BitSet subset, final BitSet u, final BitSet v, final boolean forall, final BitSet result)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates())) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates()).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			boolean value = forall; // there exists or for all
 			for (int choice = 0, numChoices = getNumChoices(state); choice < numChoices; choice++) {
 				value = someSuccessorsInSet(state, choice, v) && allSuccessorsInSet(state, choice, u);
@@ -388,7 +393,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	@Override
 	public void mvMultMinMax(final double[] vect, final boolean min, final double[] result, final BitSet subset, final boolean complement, final int[] strat)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			result[state] = mvMultMinMaxSingle(state, vect, min, strat);
 		}
 	}
@@ -477,7 +483,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	{
 		double maxDiff = 0.0;
 
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			final double d = mvMultJacMinMaxSingle(state, vect, min, strat);
 			final double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
 			maxDiff = diff > maxDiff ? diff : maxDiff;
@@ -567,7 +574,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	public void mvMultRewMinMax(final double[] vect, final MDPRewards mdpRewards, final boolean min, final double[] result, final BitSet subset,
 			final boolean complement, final int[] strat)
 	{
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			result[state] = mvMultRewMinMaxSingle(state, vect, mdpRewards, min, strat);
 		}
 	}
@@ -636,7 +644,8 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	{
 		double maxDiff = 0.0;
 
-		for (int state : new IterableStateSet(subset, getNumStates(), complement)) {
+		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
 			final double d = mvMultRewJacMinMaxSingle(state, vect, mdpRewards, min, strat);
 			double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
 			maxDiff = diff > maxDiff ? diff : maxDiff;
