@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import common.BitSetTools;
@@ -119,7 +120,8 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		return new MappingIterable.ToInt<>(new FilteringIterable.Of<>(model.getInitialStates(), states::get), this::mapStateToRestrictedModel);
+		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), states::get);
+		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
 	}
 
 	@Override
@@ -180,6 +182,15 @@ public class DTMCRestricted extends DTMCView
 		return model.hasLabel(name);
 	}
 
+	public Iterator<Integer> getSuccessorsIterator(final int state)
+	{
+		if (restriction == Restriction.STRICT) {
+			return super.getSuccessorsIterator(state);
+		}
+		return model.getSuccessorsIterator(mapStateToOriginalModel(state));
+	}
+
+
 
 	//--- DTMC ---
 
@@ -237,9 +248,8 @@ public class DTMCRestricted extends DTMCView
 
 	public BitSet mapStatesToRestrictedModel(final BitSet originalStates)
 	{
-		if (originalStates == null) {
-			throw new NullPointerException();
-		}
+		Objects.requireNonNull(originalStates);
+
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
 			final Integer state = mappingToRestrictedModel[originalState];
