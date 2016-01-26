@@ -7,7 +7,7 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 
 import common.iterable.IterableBitSet;
-import common.iterable.primitive.IterableInt;
+import common.iterable.IterableInt;
 
 /**
  * Wrapper to connect the Set-interface to instances of the class BitSet.

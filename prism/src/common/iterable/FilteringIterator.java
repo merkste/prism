@@ -9,9 +9,6 @@ import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 
-import common.iterable.primitive.IterableDouble;
-import common.iterable.primitive.IterableInt;
-
 public abstract class FilteringIterator<T> implements Iterator<T>
 {
 	protected final Iterator<T> iterator;

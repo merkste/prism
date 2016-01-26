@@ -31,7 +31,6 @@ import java.util.BitSet;
 import java.util.PrimitiveIterator.OfInt;
 
 import common.functions.primitive.PredicateInteger;
-import common.iterable.primitive.IterableInt;
 
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of

@@ -11,7 +11,6 @@ import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.Relation;
 import common.functions.primitive.PredicateDouble;
-import common.iterable.primitive.IterableInt;
 
 // FIXME ALG: consider using e.g. Support(values) is equal to
 // support = Relation.LEQ.curry(0)

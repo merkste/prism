@@ -13,9 +13,6 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
-import common.iterable.primitive.IterableDouble;
-import common.iterable.primitive.IterableInt;
-
 public abstract class MappingIterable<S, T> implements Iterable<T>
 {
 	protected final Iterable<S> iterable;

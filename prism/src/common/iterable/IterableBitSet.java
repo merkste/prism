@@ -32,7 +32,6 @@ import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator.OfInt;
 
 import common.IteratorTools;
-import common.iterable.primitive.IterableInt;
 
 /**
  * Convenience class to loop easily over the set/clear bits of a BitSet.
