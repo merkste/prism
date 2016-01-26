@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import common.iterable.IterableBitSet;
+import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
 import explicit.Model;
 import explicit.PredecessorRelation;
@@ -13,6 +14,7 @@ import explicit.StateValues;
 import parser.State;
 import parser.VarList;
 import prism.Prism;
+import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismLog;
@@ -46,7 +48,7 @@ public abstract class ModelView implements Model
 	}
 
 	@Override
-	public Iterable<Integer> getDeadlockStates()
+	public IterableInt getDeadlockStates()
 	{
 		return new IterableBitSet(deadlockStates);
 	}
@@ -253,7 +255,7 @@ public abstract class ModelView implements Model
 	}
 
 	@Override
-	public PredecessorRelation getPredecessorRelation(prism.PrismComponent parent, boolean storeIfNew)
+	public PredecessorRelation getPredecessorRelation(PrismComponent parent, boolean storeIfNew)
 	{
 		if (predecessorRelation != null) {
 			return predecessorRelation;
