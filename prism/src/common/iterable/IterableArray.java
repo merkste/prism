@@ -3,9 +3,6 @@ package common.iterable;
 import java.util.Iterator;
 import java.util.PrimitiveIterator;
 
-import common.iterable.primitive.IterableDouble;
-import common.iterable.primitive.IterableInt;
-
 public abstract class IterableArray<T> implements Iterable<T>
 {
 	protected final int fromIndex;

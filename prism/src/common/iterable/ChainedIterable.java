@@ -5,9 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PrimitiveIterator;
 
-import common.iterable.primitive.IterableDouble;
-import common.iterable.primitive.IterableInt;
-
 
 public abstract class ChainedIterable<T> implements Iterable<T>
 {

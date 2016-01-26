@@ -1,4 +1,4 @@
-package common.iterable.primitive;
+package common.iterable;
 
 import java.util.PrimitiveIterator.OfInt;
 

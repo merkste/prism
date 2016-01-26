@@ -3,8 +3,6 @@ package common.iterable;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
-import common.iterable.primitive.IterableInt;
-
 public class Interval implements IterableInt
 {
 	final int lowerBound;
