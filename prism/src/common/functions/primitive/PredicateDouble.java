@@ -1,6 +1,7 @@
 package common.functions.primitive;
 
 import java.util.Objects;
+import java.util.function.DoubleFunction;
 import java.util.function.DoublePredicate;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToDoubleFunction;
@@ -69,5 +70,12 @@ public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 	{
 		Objects.requireNonNull(predicate);
 		return element -> !test(element) || predicate.test(element);
+	}
+
+	default <T> MappingDouble<T> ite(DoubleFunction<? extends T> function1, DoubleFunction<? extends T> function2)
+	{
+		Objects.requireNonNull(function1);
+		Objects.requireNonNull(function2);
+		return element -> test(element) ? function1.apply(element) : function2.apply(element);
 	}
 }
