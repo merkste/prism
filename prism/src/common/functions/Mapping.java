@@ -3,6 +3,7 @@ package common.functions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @FunctionalInterface
@@ -16,6 +17,18 @@ public interface Mapping<S, T> extends Function<S, T>
 	{
 		Objects.requireNonNull(function);
 		return each -> apply(function.apply(each));
+	}
+
+	default <P, Q> PairMapping<P, Q, T> compose(BiFunction<? super P, ? super Q, ? extends S> function)
+	{
+		Objects.requireNonNull(function);
+		return (element1, element2) -> apply(function.apply(element1, element2));
+	}
+
+	default <P, Q, R> TripleMapping<P, Q, R, T> compose(TripleMapping<? super P, ? super Q, ? super R, ? extends S> function)
+	{
+		Objects.requireNonNull(function);
+		return (element1, element2, element3) -> apply(function.apply(element1, element2, element3));
 	}
 
 	default Mapping<S, T> memoize()

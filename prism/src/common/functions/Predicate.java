@@ -1,6 +1,7 @@
 package common.functions;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @FunctionalInterface
@@ -20,6 +21,20 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 	{
 		Objects.requireNonNull(function);
 		return each -> test(function.apply(each));
+	}
+
+	@Override
+	default <P, Q> PairPredicate<P, Q> compose(BiFunction<? super P, ? super Q, ? extends T> function)
+	{
+		Objects.requireNonNull(function);
+		return (element1, element2) -> apply(function.apply(element1, element2));
+	}
+
+	@Override
+	default <P, Q, R> TriplePredicate<P, Q, R> compose(TripleMapping<? super P, ? super Q, ? super R, ? extends T> function)
+	{
+		Objects.requireNonNull(function);
+		return (element1, element2, element3) -> apply(function.apply(element1, element2, element3));
 	}
 
 	/**
