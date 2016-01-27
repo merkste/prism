@@ -21,7 +21,7 @@ public interface PredicateInt extends Predicate<Integer>, IntPredicate
 	default <S> Predicate<S> compose(ToIntFunction<? super S> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> test(function.applyAsInt(each));
+		return element -> test(function.applyAsInt(element));
 	}
 
 	default <P, Q> PairPredicate<P, Q> compose(ToIntBiFunction<? super P, ? super Q> function)
@@ -55,18 +55,18 @@ public interface PredicateInt extends Predicate<Integer>, IntPredicate
 	default PredicateInt and(IntPredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) && predicate.test(each);
+		return element -> test(element) && predicate.test(element);
 	}
 
 	default PredicateInt or(IntPredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) || predicate.test(each);
+		return element -> test(element) || predicate.test(element);
 	}
 
 	default PredicateInt implies(IntPredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> !test(each) || predicate.test(each);
+		return element -> !test(element) || predicate.test(element);
 	}
 }

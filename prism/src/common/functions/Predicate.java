@@ -20,7 +20,7 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 	default <S> Predicate<S> compose(Function<? super S, ? extends T> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> test(function.apply(each));
+		return element -> test(function.apply(element));
 	}
 
 	@Override
@@ -63,19 +63,19 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 	default Predicate<T> and(java.util.function.Predicate<? super T> predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) && predicate.test(each);
+		return element -> test(element) && predicate.test(element);
 	}
 
 	@Override
 	default Predicate<T> or(java.util.function.Predicate<? super T> predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) || predicate.test(each);
+		return element -> test(element) || predicate.test(element);
 	}
 
 	default Predicate<T> implies(java.util.function.Predicate<? super T> predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> !test(each) || predicate.test(each);
+		return element -> !test(element) || predicate.test(element);
 	}
 }
