@@ -8,7 +8,7 @@ import java.util.Set;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.primitive.PairPredicateIntegerInteger;
+import common.functions.primitive.PairPredicateInt;
 import common.iterable.Interval;
 import explicit.Distribution;
 import explicit.MDP;
@@ -21,11 +21,11 @@ import prism.PrismException;
 public class MDPDroppedChoices extends MDPView
 {
 	private MDP model;
-	private PairPredicateIntegerInteger preserved;
+	private PairPredicateInt preserved;
 
 
 
-	public MDPDroppedChoices(final MDP model, final PairPredicateIntegerInteger dropped)
+	public MDPDroppedChoices(final MDP model, final PairPredicateInt dropped)
 	{
 		this.model = model;
 		// FIXME ALG: consider using preserved instead of dropped
@@ -170,7 +170,7 @@ public class MDPDroppedChoices extends MDPView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = MDPAdditionalChoices.fixDeadlocks((MDP) this.clone());
-		preserved = new PairPredicateIntegerInteger()
+		preserved = new PairPredicateInt()
 		{
 			@Override
 			public boolean test(int element1, int element2)
@@ -186,7 +186,7 @@ public class MDPDroppedChoices extends MDPView
 
 	public static MDPDroppedChoices dropDenormalizedDistributions(final MDP model)
 	{
-		final PairPredicateIntegerInteger denormalizedChoices = new PairPredicateIntegerInteger()
+		final PairPredicateInt denormalizedChoices = new PairPredicateInt()
 		{
 			@Override
 			public boolean test(int state, int choice)
@@ -245,7 +245,7 @@ public class MDPDroppedChoices extends MDPView
 
 		System.out.println();
 
-		final PairPredicateIntegerInteger dropped = new PairPredicateIntegerInteger()
+		final PairPredicateInt dropped = new PairPredicateInt()
 		{
 			@Override
 			public boolean test(final int state, final int choice)

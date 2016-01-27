@@ -5,28 +5,13 @@ import java.util.function.BiFunction;
 @FunctionalInterface
 public interface PairMapping<R, S, T> extends BiFunction<R, S, T>
 {
-	public T apply(R element1, S element2);
-
-	default Mapping<S, T> curry(final R element1)
+	default Mapping<S, T> curry(R element1)
 	{
-		return new Mapping<S, T>()
-		{
-			@Override
-			public T apply(final S element2)
-			{
-				return PairMapping.this.apply(element1, element2);
-			}
-		};
+		return element2 -> apply(element1, element2);
 	}
 
-	public static <R, S, T> PairMapping<R, S, T> constant(final T value)
+	public static <R, S, T> PairMapping<R, S, T> constant(T value)
 	{
-		return new PairMapping<R, S, T>() {
-			@Override
-			public T apply(final R element1, final S element2)
-			{
-				return value;
-			}
-		};
+		return (element1, element2) -> value;
 	}
 }

@@ -11,7 +11,7 @@ import java.util.function.Function;
 
 import common.BitSetTools;
 import common.functions.PairMapping;
-import common.functions.primitive.PairPredicateIntegerInteger;
+import common.functions.primitive.PairPredicateInt;
 import common.iterable.Interval;
 import common.iterable.MappingIterator;
 import explicit.DiracDistribution;
@@ -22,7 +22,7 @@ import prism.PrismException;
 
 public class ChoicesToStates
 {
-	private static final class PreserveChoice implements PairPredicateIntegerInteger
+	private static final class PreserveChoice implements PairPredicateInt
 	{
 		final int preserve;
 
@@ -99,7 +99,7 @@ public class ChoicesToStates
 		return new MDPRestricted(selectedChoicesToStates, BitSetTools.asBitSet(new Interval(mdp.getNumStates())));
 	}
 
-	public static MDPRestricted selectedChoicesToStates(final MDP mdp, final PairPredicateIntegerInteger choices)
+	public static MDPRestricted selectedChoicesToStates(final MDP mdp, final PairPredicateInt choices)
 	{
 		final MDP choicesToStates = choicesToStates(mdp);
 

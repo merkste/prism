@@ -4,10 +4,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 
-import common.functions.primitive.PairPredicateIntegerInteger;
+import common.functions.primitive.PairPredicateInt;
 import common.iterable.IterableBitSet;
 
-public class EquivalenceRelationInteger implements PairPredicateIntegerInteger
+public class EquivalenceRelationInteger implements PairPredicateInt
 {
 	final private Map<Integer, BitSet> classes = new HashMap<Integer, BitSet>();
 	final private BitSet nonRepresentatives = new BitSet();

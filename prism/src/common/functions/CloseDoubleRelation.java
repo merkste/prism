@@ -1,6 +1,6 @@
 package common.functions;
 
-import common.functions.primitive.PairPredicateDoubleDouble;
+import common.functions.primitive.PairPredicateDouble;
 import common.functions.primitive.PredicateDouble;
 import prism.PrismUtils;
 
@@ -8,39 +8,39 @@ public class CloseDoubleRelation
 {
 	public static final double EPSILON = 1.0e-12d;
 
-	public static final PairPredicateDoubleDouble C_GT = closeGT(EPSILON);
-	public static final PairPredicateDoubleDouble C_GEQ = closeGEQ(EPSILON);
-	public static final PairPredicateDoubleDouble C_LT = closeLT(EPSILON);
-	public static final PairPredicateDoubleDouble C_LEQ = closeLEQ(EPSILON);
-	public static final PairPredicateDoubleDouble C_EQ = closeEQ(EPSILON);
-	public static final PairPredicateDoubleDouble C_NEQ = closeNEQ(EPSILON);
+	public static final PairPredicateDouble C_GT = closeGT(EPSILON);
+	public static final PairPredicateDouble C_GEQ = closeGEQ(EPSILON);
+	public static final PairPredicateDouble C_LT = closeLT(EPSILON);
+	public static final PairPredicateDouble C_LEQ = closeLEQ(EPSILON);
+	public static final PairPredicateDouble C_EQ = closeEQ(EPSILON);
+	public static final PairPredicateDouble C_NEQ = closeNEQ(EPSILON);
 
-	public static PairPredicateDoubleDouble closeGT(final double epsilon)
+	public static PairPredicateDouble closeGT(final double epsilon)
 	{
 		return Relation.GT.and(closeNEQ(epsilon));
 	}
 
-	public static PairPredicateDoubleDouble closeGEQ(final double epsilon)
+	public static PairPredicateDouble closeGEQ(final double epsilon)
 	{
 		return Relation.GEQ.or(closeEQ(epsilon));
 	}
 
-	public static PairPredicateDoubleDouble closeLT(final double epsilon)
+	public static PairPredicateDouble closeLT(final double epsilon)
 	{
 		return Relation.LT.and(closeNEQ(epsilon));
 	}
 
-	public static PairPredicateDoubleDouble closeLEQ(final double epsilon)
+	public static PairPredicateDouble closeLEQ(final double epsilon)
 	{
 		return Relation.LEQ.or(closeEQ(epsilon));
 	}
 
-	public static PairPredicateDoubleDouble closeEQ(final double epsilon)
+	public static PairPredicateDouble closeEQ(final double epsilon)
 	{
 		return (d1, d2) -> PrismUtils.doublesAreCloseAbs(d1, d2, epsilon);
 	}
 
-	public static PairPredicateDoubleDouble closeNEQ(final double epsilon)
+	public static PairPredicateDouble closeNEQ(final double epsilon)
 	{
 		return closeEQ(epsilon).negate();
 	}
