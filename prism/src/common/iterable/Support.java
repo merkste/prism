@@ -10,13 +10,14 @@ import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.Relation;
 import common.functions.primitive.PredicateDouble;
+import common.functions.primitive.PredicateInt;
 
 // FIXME ALG: consider using e.g. Support(values) is equal to
 // support = Relation.LEQ.curry(0)
 //				.and(Relation.GEQ.curry(values.length))
 //				.and(Relation.GEQ.curry(0).compose(values::get)); 
 // new FilteredIterable(values, support)
-public class Support implements IntPredicate, IterableInt
+public class Support implements PredicateInt, IterableInt
 {
 	private final double[] values;
 	private final DoublePredicate predicate;
@@ -77,8 +78,8 @@ public class Support implements IntPredicate, IterableInt
 
 		final Support support1 = new Support(new double[] { 1, 0, 1 });
 		final Support support2 = new Support(new double[] { 0, 1, 1 });
-		System.out.println(support1.and(support2).test(0));
-		System.out.println(support1.and(support2).test(1));
-		System.out.println(support1.and(support2).test(2));
+		System.out.println(support1.and((IntPredicate) support2).test(0));
+		System.out.println(support1.and((IntPredicate) support2).test(1));
+		System.out.println(support1.and((IntPredicate) support2).test(2));
 	}
 }
