@@ -1,41 +1,38 @@
 package common.functions.primitive;
 
-import java.util.function.Function;
+import java.util.Objects;
+import java.util.function.DoublePredicate;
+import java.util.function.ToDoubleFunction;
 
 import common.functions.Predicate;
 
-// Cannot extend DoublePredicate due to negate() signature clash
 @FunctionalInterface
-public interface PredicateDouble extends Predicate<Double>
+public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 {
 	public boolean test(double element);
 
 	@Override
-	default boolean test(final Double element)
+	default boolean test(Double element)
 	{
 		return test(element.doubleValue());
 	}
 
-	@Override
-	default <S> Predicate<S> compose(final Function<? super S, ? extends Double> mapping)
+	default <S> Predicate<S> compose(ToDoubleFunction<? super S> function)
 	{
-		return new Predicate<S>()
-		{
-			@Override
-			public final boolean test(final S element)
-			{
-				return PredicateDouble.this.test(mapping.apply(element).doubleValue());
-			}
-		};
+		Objects.requireNonNull(function);
+		return each -> test(function.applyAsDouble(each));
 	}
 
+	/**
+	 *  Overridden to ensure that the return type is PredicateDouble and to optimize double negation.
+	 */
 	@Override
 	default PredicateDouble negate()
 	{
 		return new PredicateDouble()
 		{
 			@Override
-			public final boolean test(final double element)
+			public boolean test(double element)
 			{
 				return !PredicateDouble.this.test(element);
 			}
@@ -48,39 +45,21 @@ public interface PredicateDouble extends Predicate<Double>
 		};
 	}
 
-	default PredicateDouble and(final PredicateDouble predicate)
+	default PredicateDouble and(DoublePredicate predicate)
 	{
-		return new PredicateDouble()
-		{
-			@Override
-			public final boolean test(final double element)
-			{
-				return PredicateDouble.this.test(element) && predicate.test(element);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return each -> test(each) && predicate.test(each);
 	}
 
-	default PredicateDouble or(final PredicateDouble predicate)
+	default PredicateDouble or(DoublePredicate predicate)
 	{
-		return new PredicateDouble()
-		{
-			@Override
-			public final boolean test(final double element)
-			{
-				return PredicateDouble.this.test(element) || predicate.test(element);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return each -> test(each) || predicate.test(each);
 	}
 
-	default PredicateDouble implies(final PredicateDouble predicate)
+	default PredicateDouble implies(DoublePredicate predicate)
 	{
-		return new PredicateDouble()
-		{
-			@Override
-			public final boolean test(final double element)
-			{
-				return (!PredicateDouble.this.test(element)) || predicate.test(element);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return each -> !test(each) || predicate.test(each);
 	}
 }

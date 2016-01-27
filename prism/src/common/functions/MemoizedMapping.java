@@ -1,16 +1,20 @@
 package common.functions;
 
+import java.util.Objects;
+import java.util.function.Function;
+
 public abstract class MemoizedMapping<S, T> implements Mapping<S, T>
 {
-	final Mapping<S, T> mapping;
+	protected final Function<S, T> mapping;
 
-	public MemoizedMapping(final Mapping<S, T> mapping)
+	public MemoizedMapping(Function<S, T> mapping)
 	{
+		Objects.requireNonNull(mapping);
 		this.mapping = mapping;
 	}
 
 	@Override
-	public T apply(final S element)
+	public T apply(S element)
 	{
 		T value = lookup(element);
 		if (value == null) {
@@ -25,7 +29,7 @@ public abstract class MemoizedMapping<S, T> implements Mapping<S, T>
 		return this;
 	}
 
-	protected abstract T lookup(final S element);
+	protected abstract T lookup(S element);
 
-	protected abstract T store(final S element, T value);
+	protected abstract T store(S element, T value);
 }

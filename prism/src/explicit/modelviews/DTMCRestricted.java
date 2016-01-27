@@ -12,7 +12,7 @@ import java.util.Set;
 
 import common.BitSetTools;
 import common.IteratorTools;
-import common.functions.primitive.PredicateInteger;
+import common.functions.primitive.PredicateInt;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
@@ -52,12 +52,12 @@ public class DTMCRestricted extends DTMCView
 		this(model, states, Restriction.TRANSITIVE_CLOSURE);
 	}
 
-	public DTMCRestricted(final DTMC model, final PredicateInteger states)
+	public DTMCRestricted(final DTMC model, final PredicateInt states)
 	{
 		this(model, states, Restriction.TRANSITIVE_CLOSURE);
 	}
 
-	public DTMCRestricted(final DTMC model, final PredicateInteger states, final Restriction restriction)
+	public DTMCRestricted(final DTMC model, final PredicateInt states, final Restriction restriction)
 	{
 		this(model, BitSetTools.asBitSet(new IterableStateSet(states, model.getNumStates())), restriction);
 	}

@@ -1,38 +1,37 @@
 package common.functions;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 @FunctionalInterface
 public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Predicate<T>
 {
-	public boolean test(T element);
-
 	@Override
-	default Boolean apply(final T element)
+	default Boolean apply(T element)
 	{
 		return test(element);
 	}
 
+	/**
+	 *  Overridden to ensure that the return type is Predicate.
+	 */
 	@Override
-	default <S> Predicate<S> compose(final Function<? super S, ? extends T> mapping)
+	default <S> Predicate<S> compose(Function<? super S, ? extends T> function)
 	{
-		return new Predicate<S>()
-		{
-			@Override
-			public final boolean test(final S element)
-			{
-				return Predicate.this.test(mapping.apply(element));
-			}
-		};
+		Objects.requireNonNull(function);
+		return each -> test(function.apply(each));
 	}
 
+	/**
+	 *  Overridden to ensure that the return type is Predicate and to optimize double negation.
+	 */
 	@Override
 	default Predicate<T> negate()
 	{
 		return new Predicate<T>()
 		{
 			@Override
-			public final boolean test(final T element)
+			public boolean test(T element)
 			{
 				return !Predicate.this.test(element);
 			}
@@ -48,72 +47,20 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 	@Override
 	default Predicate<T> and(java.util.function.Predicate<? super T> predicate)
 	{
-		return new Predicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return Predicate.this.test(element) && predicate.test(element);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return each -> test(each) && predicate.test(each);
 	}
 
 	@Override
 	default Predicate<T> or(java.util.function.Predicate<? super T> predicate)
 	{
-		return new Predicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return Predicate.this.test(element) || predicate.test(element);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return each -> test(each) || predicate.test(each);
 	}
 
 	default Predicate<T> implies(java.util.function.Predicate<? super T> predicate)
 	{
-		return new Predicate<T>()
-		{
-			@Override
-			public final boolean test(final T element)
-			{
-				return (!Predicate.this.test(element)) || predicate.test(element);
-			}
-		};
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> Predicate<T> True()
-	{
-		return (Predicate<T>) True.TRUE;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <T> Predicate<T> False()
-	{
-		return (Predicate<T>) False.FALSE;
-	}
-
-	public static final class True<T> implements Predicate<T>
-	{
-		private static final True<Object> TRUE = new True<>();
-
-		@Override
-		public final boolean test(final T element)
-		{
-			return Boolean.TRUE;
-		}
-	}
-
-	public static final class False<T> implements Predicate<T>
-	{
-		private static final False<Object> FALSE = new False<>();
-
-		@Override
-		public final boolean test(final T element)
-		{
-			return Boolean.FALSE;
-		}
+		Objects.requireNonNull(predicate);
+		return each -> !test(each) || predicate.test(each);
 	}
 }

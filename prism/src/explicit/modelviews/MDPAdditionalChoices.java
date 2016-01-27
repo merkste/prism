@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.function.IntFunction;
 
 import common.BitSetTools;
-import common.functions.primitive.MappingFromInteger;
+import common.functions.primitive.MappingInt;
 import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.MDP;
@@ -193,7 +193,7 @@ public class MDPAdditionalChoices extends MDPView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = fixDeadlocks((MDP) this.clone());
-		choices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		choices = new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(int element)
@@ -229,7 +229,7 @@ public class MDPAdditionalChoices extends MDPView
 
 	public static MDPView addSelfLoops(final MDP model, final BitSet states)
 	{
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final MappingInt<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -275,7 +275,7 @@ public class MDPAdditionalChoices extends MDPView
 
 		System.out.println();
 
-		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices = new MappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+		final MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
@@ -297,7 +297,7 @@ public class MDPAdditionalChoices extends MDPView
 			}
 		};
 
-		final MappingFromInteger<List<Object>> actions = new MappingFromInteger<List<Object>>()
+		final MappingInt<List<Object>> actions = new MappingInt<List<Object>>()
 		{
 			@Override
 			public List<Object> apply(final int state)
