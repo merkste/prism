@@ -14,14 +14,14 @@ public interface TriplePredicateDoubleDoubleDouble extends TriplePredicate<Doubl
 	}
 
 	@Override
-	default PairPredicateDoubleDouble curry(final Double element1)
+	default PairPredicateDouble curry(final Double element1)
 	{
 		return curry(element1.doubleValue());
 	}
 
-	default PairPredicateDoubleDouble curry(final double element1)
+	default PairPredicateDouble curry(final double element1)
 	{
-		return new PairPredicateDoubleDouble()
+		return new PairPredicateDouble()
 		{
 			@Override
 			public boolean test(final double element2, final double element3)
