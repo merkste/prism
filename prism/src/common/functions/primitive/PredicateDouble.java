@@ -2,8 +2,10 @@ package common.functions.primitive;
 
 import java.util.Objects;
 import java.util.function.DoublePredicate;
+import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToDoubleFunction;
 
+import common.functions.PairPredicate;
 import common.functions.Predicate;
 
 @FunctionalInterface
@@ -21,6 +23,12 @@ public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 	{
 		Objects.requireNonNull(function);
 		return each -> test(function.applyAsDouble(each));
+	}
+
+	default <P, Q> PairPredicate<P, Q> compose(ToDoubleBiFunction<? super P, ? super Q> function)
+	{
+		Objects.requireNonNull(function);
+		return (element1, element2) -> apply(function.applyAsDouble(element1, element2));
 	}
 
 	/**
