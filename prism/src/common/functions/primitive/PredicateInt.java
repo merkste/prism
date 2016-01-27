@@ -9,7 +9,7 @@ import common.functions.PairPredicate;
 import common.functions.Predicate;
 
 @FunctionalInterface
-public interface PredicateInt extends Predicate<Integer>
+public interface PredicateInt extends Predicate<Integer>, IntPredicate
 {
 	public boolean test(int element);
 
