@@ -78,4 +78,11 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 		Objects.requireNonNull(predicate);
 		return element -> !test(element) || predicate.test(element);
 	}
+
+	default <U> Mapping<T, U> ite(Function<? super T, ? extends U> function1, Function<? super T, ? extends U> function2)
+	{
+		Objects.requireNonNull(function1);
+		Objects.requireNonNull(function2);
+		return element -> test(element) ? function1.apply(element) : function2.apply(element);
+	}
 }

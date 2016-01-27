@@ -1,6 +1,7 @@
 package common.functions.primitive;
 
 import java.util.Objects;
+import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.ToIntBiFunction;
 import java.util.function.ToIntFunction;
@@ -68,5 +69,12 @@ public interface PredicateInt extends Predicate<Integer>, IntPredicate
 	{
 		Objects.requireNonNull(predicate);
 		return element -> !test(element) || predicate.test(element);
+	}
+
+	default <T> MappingInt<T> ite(IntFunction<? extends T> function1, IntFunction<? extends T> function2)
+	{
+		Objects.requireNonNull(function1);
+		Objects.requireNonNull(function2);
+		return element -> test(element) ? function1.apply(element) : function2.apply(element);
 	}
 }

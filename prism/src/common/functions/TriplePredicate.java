@@ -64,4 +64,11 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 		Objects.requireNonNull(predicate);
 		return (element1, element2, element3) -> !test(element1, element2, element3) || predicate.test(element1, element2, element3);
 	}
+
+	default <T> TripleMapping<Q, R, S, T> ite(TripleMapping<? super Q, ? super R, ? super S, ? extends T> function1, TripleMapping<? super Q, ? super R, ? super S, ? extends T> function2)
+	{
+		Objects.requireNonNull(function1);
+		Objects.requireNonNull(function2);
+		return (element1, element2, element3) -> test(element1, element2, element3) ? function1.apply(element1, element2, element3) : function2.apply(element1, element2, element3);
+	}
 }

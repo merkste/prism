@@ -1,6 +1,7 @@
 package common.functions;
 
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
 @FunctionalInterface
@@ -63,5 +64,12 @@ public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredi
 	default PairPredicate<S, R> inverse()
 	{
 		return (element1, element2) -> test(element2, element1);
+	}
+
+	default <T> PairMapping<R, S, T> ite(BiFunction<? super R, ? super S, ? extends T> function1, BiFunction<? super R, ? super S, ? extends T> function2)
+	{
+		Objects.requireNonNull(function1);
+		Objects.requireNonNull(function2);
+		return (element1, element2) -> test(element1, element2) ? function1.apply(element1, element2) : function2.apply(element1, element2);
 	}
 }
