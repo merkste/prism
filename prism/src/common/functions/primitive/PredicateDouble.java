@@ -22,7 +22,7 @@ public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 	default <S> Predicate<S> compose(ToDoubleFunction<? super S> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> test(function.applyAsDouble(each));
+		return element -> test(function.applyAsDouble(element));
 	}
 
 	default <P, Q> PairPredicate<P, Q> compose(ToDoubleBiFunction<? super P, ? super Q> function)
@@ -56,18 +56,18 @@ public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 	default PredicateDouble and(DoublePredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) && predicate.test(each);
+		return element -> test(element) && predicate.test(element);
 	}
 
 	default PredicateDouble or(DoublePredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> test(each) || predicate.test(each);
+		return element -> test(element) || predicate.test(element);
 	}
 
 	default PredicateDouble implies(DoublePredicate predicate)
 	{
 		Objects.requireNonNull(predicate);
-		return each -> !test(each) || predicate.test(each);
+		return element -> !test(element) || predicate.test(element);
 	}
 }

@@ -16,7 +16,7 @@ public interface Mapping<S, T> extends Function<S, T>
 	default <P> Mapping<P, T> compose(Function<? super P, ? extends S> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> apply(function.apply(each));
+		return element -> apply(function.apply(element));
 	}
 
 	default <P, Q> PairMapping<P, Q, T> compose(BiFunction<? super P, ? super Q, ? extends S> function)
@@ -54,6 +54,6 @@ public interface Mapping<S, T> extends Function<S, T>
 
 	public static <S, T> Mapping<S, T> constant(T value)
 	{
-		return each -> value;
+		return element -> value;
 	}
 }

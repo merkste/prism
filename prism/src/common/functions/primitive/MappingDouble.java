@@ -20,7 +20,7 @@ public interface MappingDouble<T> extends Mapping<Double, T>, DoubleFunction<T>
 	default <P> Mapping<P, T> compose(ToDoubleFunction<? super P> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> apply(function.applyAsDouble(each));
+		return element -> apply(function.applyAsDouble(element));
 	}
 
 	default <P, Q> PairMapping<P, Q, T> compose(ToDoubleBiFunction<? super P, ? super Q> function)
@@ -31,6 +31,6 @@ public interface MappingDouble<T> extends Mapping<Double, T>, DoubleFunction<T>
 
 	public static <T> MappingDouble<T> constant(T value)
 	{
-		return each -> value;
+		return element -> value;
 	}
 }

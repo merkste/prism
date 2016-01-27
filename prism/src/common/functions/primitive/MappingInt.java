@@ -20,7 +20,7 @@ public interface MappingInt<T> extends Mapping<Integer, T>, IntFunction<T>
 	default <P> Mapping<P, T> compose(ToIntFunction<? super P> function)
 	{
 		Objects.requireNonNull(function);
-		return each -> apply(function.applyAsInt(each));
+		return element -> apply(function.applyAsInt(element));
 	}
 
 	default <P, Q> PairMapping<P, Q, T> compose(ToIntBiFunction<? super P, ? super Q> function)
@@ -31,6 +31,6 @@ public interface MappingInt<T> extends Mapping<Integer, T>, IntFunction<T>
 
 	public static <T> MappingInt<T> constant(T value)
 	{
-		return each -> value;
+		return element -> value;
 	}
 }
