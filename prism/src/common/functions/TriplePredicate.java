@@ -1,50 +1,42 @@
 package common.functions;
 
+import java.util.Objects;
+
 @FunctionalInterface
 public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean>
 {
-	public boolean getBoolean(final Q element1, final R element2, final S element3);
+	public boolean test(Q element1, R element2, S element3);
 
 	@Override
-	default Boolean apply(final Q element1, final R element2, final S element3)
+	default Boolean apply(Q element1, R element2, S element3)
 	{
-		return getBoolean(element1, element2, element3);
+		return test(element1, element2, element3);
 	}
 
 	@Override
-	default PairPredicate<R, S> curry(final Q element1)
+	default PairPredicate<R, S> curry(Q element1)
 	{
-		return new PairPredicate<R, S>()
-		{
-			@Override
-			public boolean test(final R element2, final S element3)
-			{
-				return TriplePredicate.this.getBoolean(element1, element2, element3);
-			}
-		};
+		return (element2, element3) -> test(element1, element2, element3);
 	}
 
 	@Override
-	default Predicate<S> curry(final Q element1, final R element2)
+	default Predicate<S> curry(Q element1, R element2)
 	{
-		return new Predicate<S>()
-		{
-			@Override
-			public boolean test(final S element3)
-			{
-				return TriplePredicate.this.getBoolean(element1, element2, element3);
-			}
-		};
+		return (element3) -> test(element1, element2, element3);
+
 	}
 
+	/**
+	 *  Overridden to ensure that the return type is TriplePredicate and to optimize double negation.
+	 */
 	default TriplePredicate<Q, R, S> negate()
 	{
 		return new TriplePredicate<Q, R, S>()
 		{
 			@Override
-			public final boolean getBoolean(final Q element1, final R element2, final S element3)
+			public final boolean test(Q element1, R element2, S element3)
 			{
-				return !TriplePredicate.this.getBoolean(element1, element2, element3);
+				return !TriplePredicate.this.test(element1, element2, element3);
 			}
 
 			@Override
@@ -55,39 +47,21 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 		};
 	}
 
-	default TriplePredicate<Q, R, S> and(final TriplePredicate<? super Q, ? super R, ? super S> predicate)
+	default TriplePredicate<Q, R, S> and(TriplePredicate<? super Q, ? super R, ? super S> predicate)
 	{
-		return new TriplePredicate<Q, R, S>()
-		{
-			@Override
-			public final boolean getBoolean(final Q element1, final R element2, final S element3)
-			{
-				return TriplePredicate.this.getBoolean(element1, element2, element3) && predicate.getBoolean(element1, element2, element3);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return (element1, element2, element3) -> test(element1, element2, element3) && predicate.test(element1, element2, element3);
 	}
 
 	default TriplePredicate<Q, R, S> or(final TriplePredicate<? super Q, ? super R, ? super S> predicate)
 	{
-		return new TriplePredicate<Q, R, S>()
-		{
-			@Override
-			public final boolean getBoolean(final Q element1, final R element2, final S element3)
-			{
-				return TriplePredicate.this.getBoolean(element1, element2, element3) || predicate.getBoolean(element1, element2, element3);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return (element1, element2, element3) -> test(element1, element2, element3) || predicate.test(element1, element2, element3);
 	}
 
 	default TriplePredicate<Q, R, S> implies(final TriplePredicate<? super Q, ? super R, ? super S> predicate)
 	{
-		return new TriplePredicate<Q, R, S>()
-		{
-			@Override
-			public final boolean getBoolean(final Q element1, final R element2, final S element3)
-			{
-				return (!TriplePredicate.this.getBoolean(element1, element2, element3)) || predicate.getBoolean(element1, element2, element3);
-			}
-		};
+		Objects.requireNonNull(predicate);
+		return (element1, element2, element3) -> !test(element1, element2, element3) || predicate.test(element1, element2, element3);
 	}
 }
