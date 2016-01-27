@@ -1,8 +1,7 @@
 package common;
 
 import java.util.Iterator;
-
-import common.functions.Predicate;
+import java.util.function.Predicate;
 
 public class IteratorTools
 {

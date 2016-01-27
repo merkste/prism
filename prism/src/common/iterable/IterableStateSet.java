@@ -29,8 +29,7 @@ package common.iterable;
 
 import java.util.BitSet;
 import java.util.PrimitiveIterator.OfInt;
-
-import common.functions.primitive.PredicateInt;
+import java.util.function.IntPredicate;
 
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of
@@ -70,12 +69,12 @@ public class IterableStateSet implements IterableInt
 	 *                    {@code null} signifies "all states in the model"
 	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
 	 */
-	public IterableStateSet(PredicateInt predicate, int numStates)
+	public IterableStateSet(IntPredicate predicate, int numStates)
 	{
 		if (predicate == null) {
 			this.setOfStates = new Interval(numStates);
 		} else {
-			this.setOfStates = new FilteringIterable.OfInt(new Interval(numStates), predicate::apply);
+			this.setOfStates = new FilteringIterable.OfInt(new Interval(numStates), predicate);
 		}
 	}
 
@@ -117,14 +116,7 @@ public class IterableStateSet implements IterableInt
 		BitSet test = new BitSet();
 		test.set(1);
 		test.set(3);
-		final PredicateInt odd = new PredicateInt()
-		{
-			@Override
-			public boolean test(int number)
-			{
-				return number % 2 == 1;
-			}
-		};
+		final IntPredicate odd = n -> n % 2 == 1;
 
 		int numStates = 5;
 
