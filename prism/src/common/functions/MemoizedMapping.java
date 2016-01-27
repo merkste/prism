@@ -5,12 +5,12 @@ import java.util.function.Function;
 
 public abstract class MemoizedMapping<S, T> implements Mapping<S, T>
 {
-	protected final Function<S, T> mapping;
+	protected final Function<S, T> function;
 
-	public MemoizedMapping(Function<S, T> mapping)
+	public MemoizedMapping(Function<S, T> function)
 	{
-		Objects.requireNonNull(mapping);
-		this.mapping = mapping;
+		Objects.requireNonNull(function);
+		this.function = function;
 	}
 
 	@Override
@@ -18,7 +18,7 @@ public abstract class MemoizedMapping<S, T> implements Mapping<S, T>
 	{
 		T value = lookup(element);
 		if (value == null) {
-			value = store(element, mapping.apply(element));
+			value = store(element, function.apply(element));
 		}
 		return value;
 	}
