@@ -28,7 +28,7 @@ import explicit.Distribution;
 
 public class DTMCAlteredDistributions extends DTMCView
 {
-	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose(Entry::getValue);
+	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose((Function<Entry<Integer, Double>, Double>) Entry::getValue);
 
 	private DTMC model;
 	private IntFunction<Iterator<Entry<Integer, Double>>> mapping;

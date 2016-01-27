@@ -1,8 +1,8 @@
 package common.functions;
 
-import common.functions.primitive.MappingFromInteger;
+import common.functions.primitive.MappingInt;
 
-public class ArrayMapping<T> implements MappingFromInteger<T>
+public class ArrayMapping<T> implements MappingInt<T>
 {
 	private final T[] elements;
 
@@ -13,7 +13,7 @@ public class ArrayMapping<T> implements MappingFromInteger<T>
 	}
 
 	@Override
-	public T apply(final int index)
+	public T apply(int index)
 	{
 		return elements[index];
 	}
@@ -30,9 +30,9 @@ public class ArrayMapping<T> implements MappingFromInteger<T>
 		return elements;
 	}
 
-	public static ArrayMapping<Integer> identity(final int length)
+	public static ArrayMapping<Integer> identity(int length)
 	{
-		final Integer[] elements = new Integer[length];
+		Integer[] elements = new Integer[length];
 		for (int index = 0; index < length; index++) {
 			elements[index] = index;
 		}

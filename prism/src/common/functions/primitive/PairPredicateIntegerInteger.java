@@ -14,14 +14,14 @@ public interface PairPredicateIntegerInteger extends PairPredicate<Integer, Inte
 	}
 
 	@Override
-	default PredicateInteger curry(final Integer element1)
+	default PredicateInt curry(final Integer element1)
 	{
 		return curry(element1.intValue());
 	}
 
-	default PredicateInteger curry(final int element1)
+	default PredicateInt curry(final int element1)
 	{
-		return new PredicateInteger()
+		return new PredicateInt()
 		{
 			@Override
 			public boolean test(final int element2)

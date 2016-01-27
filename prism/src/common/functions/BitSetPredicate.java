@@ -2,19 +2,19 @@ package common.functions;
 
 import java.util.BitSet;
 
-import common.functions.primitive.PredicateInteger;
+import common.functions.primitive.PredicateInt;
 
-public class BitSetPredicate implements PredicateInteger
+public class BitSetPredicate implements PredicateInt
 {
 	private final BitSet indices;
 
-	public BitSetPredicate(final BitSet indices)
+	public BitSetPredicate(BitSet indices)
 	{
 		this.indices = indices;
 	}
 
 	@Override
-	public boolean test(final int index)
+	public boolean test(int index)
 	{
 		return indices.get(index);
 	}

@@ -30,7 +30,7 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.PrimitiveIterator.OfInt;
 
-import common.functions.primitive.PredicateInteger;
+import common.functions.primitive.PredicateInt;
 
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of
@@ -70,7 +70,7 @@ public class IterableStateSet implements IterableInt
 	 *                    {@code null} signifies "all states in the model"
 	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
 	 */
-	public IterableStateSet(PredicateInteger predicate, int numStates)
+	public IterableStateSet(PredicateInt predicate, int numStates)
 	{
 		if (predicate == null) {
 			this.setOfStates = new Interval(numStates);
@@ -117,7 +117,7 @@ public class IterableStateSet implements IterableInt
 		BitSet test = new BitSet();
 		test.set(1);
 		test.set(3);
-		final PredicateInteger odd = new PredicateInteger()
+		final PredicateInt odd = new PredicateInt()
 		{
 			@Override
 			public boolean test(int number)
