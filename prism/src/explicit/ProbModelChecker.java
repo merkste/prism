@@ -29,15 +29,23 @@ package explicit;
 import java.io.File;
 import java.util.BitSet;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 
+import common.iterable.collections.SetFactory.SupportedImplementations;
+
+import parser.Values;
 import parser.ast.Coalition;
 import parser.ast.Expression;
 import parser.ast.ExpressionProb;
+import parser.ast.ExpressionQuantileProb;
+import parser.ast.ExpressionQuantileExpNormalForm;
+import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
 import parser.ast.ExpressionStrategy;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
+import parser.ast.ModulesFile;
 import parser.ast.RewardStruct;
 import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
@@ -45,11 +53,16 @@ import parser.type.TypeDouble;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
 import prism.IntegerBound;
+import prism.ModelType;
 import prism.OpRelOpBound;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
+import explicit.quantile.QuantileTransformations;
+import explicit.quantile.QuantileUtilities;
+import explicit.quantile.context.helpers.multiStateSolutions.MultiStateSolutionMethod;
+import explicit.quantile.topologicalSorting.TopologicalSorting.QuantileSccMethod;
 import explicit.rewards.ConstructRewards;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
@@ -227,6 +240,21 @@ public class ProbModelChecker extends NonProbModelChecker
 				setExportAdv(true);
 			// PRISM_EXPORT_ADV_FILENAME
 			setExportAdvFilename(settings.getString(PrismSettings.PRISM_EXPORT_ADV_FILENAME));
+
+			// Quantile Options
+			setQuantileSccMethod(settings.getString(PrismSettings.QUANTILE_SCC_METHOD));
+			setSetFactory(settings.getString(PrismSettings.QUANTILE_SET_FACTORY));
+			setAdaptiveSetThreshold(settings.getInteger(PrismSettings.QUANTILE_ADAPTIVE_SET_THRESHOLD));
+			setMultiStateSolution(settings.getString(PrismSettings.QUANTILE_MULTI_STATE_METHOD));
+			setUseZeroRewardTryAndSet(settings.getBoolean(PrismSettings.QUANTILE_USE_ZERO_REWARD_TRY_AND_SET));
+			setUseLpSolverOnly(settings.getBoolean(PrismSettings.QUANTILE_USE_LP_SOLVER_ONLY));
+			setLpSolverBound(settings.getInteger(PrismSettings.QUANTILE_LP_SOLVER_ONLY_BOUND));
+			setCalculatePositiveRewardStatesInParallel(settings.getBoolean(PrismSettings.QUANTILE_POSITIVE_REWARDS_PARALLEL));
+			setCalculateZeroRewardStatesInParallel(settings.getBoolean(PrismSettings.QUANTILE_ZERO_REWARDS_PARALLEL));
+			setWorkerPool(settings.getInteger(PrismSettings.QUANTILE_PARALLEL_POOL_SIZE));
+			setDebugLevel(settings.getInteger(PrismSettings.QUANTILE_DEBUG_LEVEL));
+			setQuantileVerifyResult(settings.getBoolean(PrismSettings.QUANTILE_VERIFY_RESULT));
+			setQuantileUseQuantitative(settings.getBoolean(PrismSettings.QUANTILE_USE_QUANTITATIVE));
 		}
 	}
 
@@ -481,12 +509,235 @@ public class ProbModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionSS) {
 			res = checkExpressionSteadyState(model, (ExpressionSS) expr);
 		}
+		// Quantile Operator
+		else if (expr instanceof ExpressionQuantileProbNormalForm) {
+			res = checkExpressionQuantile(model, (ExpressionQuantileProbNormalForm) expr, statesOfInterest);
+		}
+		// Quantile Operator
+		else if (expr instanceof ExpressionQuantileProb) {
+			res = checkExpressionQuantile(model, (ExpressionQuantileProb) expr, statesOfInterest);
+		}
+		// Expectation-Quantile Operator
+		else if (expr instanceof ExpressionQuantileExpNormalForm) {
+			res = checkExpressionQuantile(model, (ExpressionQuantileExpNormalForm) expr, statesOfInterest);
+		}
 		// Otherwise, use the superclass
 		else {
 			res = super.checkExpression(model, expr, statesOfInterest);
 		}
 
 		return res;
+	}
+
+	// Quantile calculations
+	protected QuantileSccMethod quantileSccMethod = QuantileSccMethod.TARJAN_ITERATIVE;
+	protected SupportedImplementations setFactory = SupportedImplementations.ADAPTIVE_SINGLETON_SET;
+	protected int adaptiveSetThreshold = 1;
+	protected MultiStateSolutionMethod multiStateSolutionMethod = MultiStateSolutionMethod.VALUE_ITERATION;
+	protected boolean useZeroRewardTryAndSet = true;
+	protected int lpSolverBound = 10;
+	protected boolean useLpSolverOnly = false;
+	protected boolean calculatePositiveRewardStatesInParallel = false;
+	protected boolean calculateZeroRewardStatesInParallel = false;
+	protected int debugLevel = 0;
+	protected boolean quantileVerifyResult = false;
+	protected boolean quantileUseQuantitative = false;
+	protected ForkJoinPool workerPool = null;
+
+	public void setMultiStateSolution(String theMultiStateSolutionMethod)
+	{
+		multiStateSolutionMethod = MultiStateSolutionMethod.valueOf(theMultiStateSolutionMethod);
+	}
+
+	public MultiStateSolutionMethod getMultiStateSolutionMethod()
+	{
+		return multiStateSolutionMethod;
+	}
+
+	public void setUseZeroRewardTryAndSet(boolean doUseZeroRewardTryAndSet)
+	{
+		useZeroRewardTryAndSet = doUseZeroRewardTryAndSet;
+	}
+
+	public boolean useZeroRewardTryAndSet()
+	{
+		return useZeroRewardTryAndSet;
+	}
+
+	public void setUseLpSolverOnly(boolean doUseLpSolverOnly)
+	{
+		useLpSolverOnly = doUseLpSolverOnly;
+	}
+
+	public boolean usesLpSolverOnly()
+	{
+		return useLpSolverOnly;
+	}
+
+	public void setLpSolverBound(int bound)
+	{
+		lpSolverBound = bound;
+	}
+
+	public int getLpSolverBound()
+	{
+		return lpSolverBound;
+	}
+
+	public void setWorkerPool(final int parallelism)
+	{
+		if (calculatePositiveRewardStatesInParallel || calculateZeroRewardStatesInParallel){
+			workerPool = new ForkJoinPool(parallelism);
+		}
+	}
+
+	public ForkJoinPool getWorkerPool()
+	{
+		return workerPool;
+	}
+
+	public void setCalculatePositiveRewardStatesInParallel(boolean value)
+	{
+		calculatePositiveRewardStatesInParallel = value;
+	}
+
+	public boolean calculatePositiveRewardStatesInParallel()
+	{
+		return calculatePositiveRewardStatesInParallel;
+	}
+
+	public void setCalculateZeroRewardStatesInParallel(boolean value)
+	{
+		calculateZeroRewardStatesInParallel = value;
+	}
+
+	public boolean calculateZeroRewardStatesInParallel()
+	{
+		return calculateZeroRewardStatesInParallel;
+	}
+
+	public void setDebugLevel(int debug)
+	{
+		debugLevel = debug;
+	}
+
+	public int getDebugLevel()
+	{
+		return debugLevel;
+	}
+
+	public void setQuantileVerifyResult(boolean verifyResult)
+	{
+		quantileVerifyResult = verifyResult;
+	}
+
+	public boolean getQuantileVerifyResult()
+	{
+		return quantileVerifyResult;
+	}
+
+	public void setQuantileUseQuantitative(boolean useQuantitative)
+	{
+		quantileUseQuantitative = useQuantitative;
+	}
+
+	public boolean getQuantileUseQuantitative()
+	{
+		return quantileUseQuantitative;
+	}
+
+	public void setQuantileSccMethod(String sccMethod)
+	{
+		quantileSccMethod = QuantileSccMethod.valueOf(sccMethod);
+	}
+
+	public QuantileSccMethod getQuantileSccMethod()
+	{
+		return quantileSccMethod;
+	}
+
+	public void setAdaptiveSetThreshold(int threshold) throws PrismException
+	{
+		if (threshold < 1)
+			throw new PrismException("The threshold for adaptive sets must be greater 0");
+		adaptiveSetThreshold = threshold;
+	}
+
+	public int getAdaptiveSetThreshold()
+	{
+		return adaptiveSetThreshold;
+	}
+
+	public void setSetFactory(String factory)
+	{
+		setFactory = SupportedImplementations.valueOf(factory);
+	}
+
+	public SupportedImplementations getSetFactory()
+	{
+		return setFactory;
+	}
+
+	public Values getConstantValues()
+	{
+		return constantValues;
+	}
+
+	public ModulesFile getModulesFile()
+	{
+		return modulesFile;
+	}
+
+	protected StateValues checkExpressionQuantile(final Model model, final ExpressionQuantileProb expressionQuantile, final BitSet statesOfInterest)
+			throws PrismException
+	{
+		ModelExpressionTransformation<Model, Model> transformed = QuantileTransformations.toNormalForm(this, model, expressionQuantile, statesOfInterest);
+
+		mainLog.println("Normal Form: " + transformed.getTransformedExpression() + "\n");
+		final QuantileUtilities quantileUtilities = new QuantileUtilities(this);
+		StateValues result;
+		if (settings.getBoolean(PrismSettings.QUANTILE_NAIVE_COMPUTATION) || model.getModelType() == ModelType.CTMC){
+			result = quantileUtilities.checkExpressionQuantileNaive(transformed.getTransformedModel(),
+					                                                (ExpressionQuantileProbNormalForm) transformed.getTransformedExpression(),
+					                                                transformed.getTransformedStatesOfInterest()
+					                                               );
+		} else {
+			result = quantileUtilities.checkExpressionQuantile(transformed.getTransformedModel(),
+					                                           (ExpressionQuantileProbNormalForm) transformed.getTransformedExpression(),
+					                                           transformed.getTransformedStatesOfInterest()
+					                                          );
+		}
+		result = transformed.projectToOriginalModel(result);
+
+		if (getQuantileVerifyResult()) {
+			QuantileUtilities.verifyResult(this, model, expressionQuantile, result, statesOfInterest);
+		}
+
+		return result;
+	}
+
+	protected StateValues checkExpressionQuantile(final Model model, final ExpressionQuantileProbNormalForm expressionQuantile, final BitSet statesOfInterest)
+			throws PrismException
+	{
+		final QuantileUtilities quantileUtilities = new QuantileUtilities(this);
+		final StateValues result;
+		if (settings.getBoolean(PrismSettings.QUANTILE_NAIVE_COMPUTATION) || model.getModelType() == ModelType.CTMC){
+			result = quantileUtilities.checkExpressionQuantileNaive(model, expressionQuantile, statesOfInterest);
+		} else {
+			result = quantileUtilities.checkExpressionQuantile(model, expressionQuantile, statesOfInterest);
+		}
+
+		if (getQuantileVerifyResult()) {
+			quantileUtilities.verifyResult(this, model, expressionQuantile, result, statesOfInterest);
+		}
+
+		return result;
+	}
+
+	protected StateValues checkExpressionQuantile(final Model model, final ExpressionQuantileExpNormalForm expressionQuantileExpectation,
+			final BitSet statesOfInterest) throws PrismException
+	{
+		return new QuantileUtilities(this).checkExpressionQuantile(model, expressionQuantileExpectation, statesOfInterest);
 	}
 
 	/**
