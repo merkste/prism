@@ -89,5 +89,7 @@ public interface ASTVisitor
 	public Object visit(ForLoop e) throws PrismLangException;
 	public Object visit(TemporalOperatorBound e) throws PrismLangException;
 	public Object visit(TemporalOperatorBounds temporalOperatorBounds) throws PrismLangException;
+	public Object visit(ExpressionMultipleThresholds expressionMultipleThresholds) throws PrismLangException;
+	public Object visit(ExpressionThresholdRange expressionThresholdRange) throws PrismLangException;
 }
 

@@ -665,6 +665,34 @@ public class TypeCheck extends ASTTraverse
 		}
 	}
 
+	public void visitPost(ExpressionMultipleThresholds e) throws PrismLangException
+	{
+		for (Expression threshold : e.getThresholds()) {
+			if (threshold instanceof ExpressionThresholdRange) {
+				continue;
+			}
+			if (!TypeDouble.getInstance().canAssign(threshold.getType())) {
+				throw new PrismLangException("Type error: Threshold "+threshold+" in "+e+" must be an int or double", threshold);
+			}
+		}
+		e.setType(TypeDouble.getInstance());
+	}
+
+	public void visitPost(ExpressionThresholdRange e) throws PrismLangException
+	{
+		if (!TypeDouble.getInstance().canAssign(e.getUpper().getType())) {
+			throw new PrismLangException("Type error: Upper threshold "+e.getUpper()+" in "+e+" must be an int or double", e);
+		}
+
+		if (!TypeDouble.getInstance().canAssign(e.getLower().getType())) {
+			throw new PrismLangException("Type error: Lower threshold "+e.getLower()+" in "+e+" must be an int or double", e);
+		}
+
+		if (!TypeDouble.getInstance().canAssign(e.getStep().getType())) {
+			throw new PrismLangException("Type error: Step threshold "+e.getStep()+" in "+e+" must be an int or double", e);
+		}
+	}
+
 	public void visitPost(TemporalOperatorBound e) throws PrismLangException {
 		if (e.hasLowerBound() && !TypeDouble.getInstance().canAssign(e.getLowerBound().getType())) {
 			throw new PrismLangException("Type error: Lower bound in " + e + " must be an int or double", e.getLowerBound());

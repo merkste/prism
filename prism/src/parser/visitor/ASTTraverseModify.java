@@ -656,6 +656,28 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 	public void visitPost(ForLoop e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionMultipleThresholds e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionMultipleThresholds e) throws PrismLangException {
+		visitPre(e);
+		for (int i = 0; i < e.countThresholds(); i++) {
+			e.setThreshold(i, (Expression) e.getThreshold(i).accept(this));
+		}
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(ExpressionMultipleThresholds e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionThresholdRange e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionThresholdRange e) throws PrismLangException {
+		visitPre(e);
+		e.setLower((Expression) e.getLower().accept(this));
+		e.setUpper((Expression) e.getUpper().accept(this));
+		e.setStep((Expression) e.getStep().accept(this));
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(ExpressionThresholdRange e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(Filter e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(Filter e) throws PrismLangException
 	{
