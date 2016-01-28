@@ -1592,6 +1592,55 @@ Expression ExpressionParenth(boolean prop, boolean pathprop) :
 // Property stuff
 //-----------------------------------------------------------------------------------
 
+Expression ExpressionThresholdRange() :
+{
+	ExpressionThresholdRange threshold = null;
+	Expression lower = null;
+	Expression upper = null;
+	Expression step = null;
+}
+{
+   <LBRACKET>
+    lower = Expression(false, false)
+    <COLON>
+    upper = Expression(false, false)
+    <COLON>
+    step  = Expression(false, false)
+   <RBRACKET>
+   {
+     threshold = new ExpressionThresholdRange(lower, upper, step);
+     return threshold;
+   }
+}
+
+Expression ExpressionThresholdAtom() :
+{
+   Expression threshold = null;
+}
+{
+  (
+     (threshold = ExpressionThresholdRange())
+   | (threshold = Expression(false,false))
+  ) {return threshold;}
+}
+
+// A probability threshold, either {p1,p2,...,pn} or simple p (p = double expression)
+Expression ExpressionThreshold() :
+{
+	ExpressionMultipleThresholds thresholds = null;
+	Expression threshold = null;
+}
+{
+   ( <LBRACE> {thresholds = new ExpressionMultipleThresholds();}
+     threshold = ExpressionThresholdAtom() {thresholds.addThreshold(threshold);}
+     ( <COMMA> threshold = ExpressionThresholdAtom() {thresholds.addThreshold(threshold);})*
+     <RBRACE> {return thresholds;}
+   )
+ |
+   ( threshold = Expression(false, false) {return threshold;}
+   )
+}
+
 // (Property) expression: probabilistic operator P
 
 Expression ExpressionProb(boolean prop, boolean pathprop) :
@@ -1620,7 +1669,7 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
        | (begin = <PMAX> { minMax = MinMax.max();})
     )
     (
-        ( r = LtGt() prob = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
+        ( r = LtGt() prob = ExpressionThreshold() { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
        |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
 	)
 	// Path formula, optional filter
