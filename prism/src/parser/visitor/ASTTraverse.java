@@ -661,6 +661,33 @@ public class ASTTraverse implements ASTVisitor
 	}
 	public void visitPost(ForLoop e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionQuantileProbNormalForm e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionQuantileProbNormalForm e) throws PrismLangException {
+		visitPre(e);
+		if (e.getInnerFormula() != null) e.getInnerFormula().accept(this);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionQuantileProbNormalForm e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionQuantileProb e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionQuantileProb e) throws PrismLangException {
+		visitPre(e);
+		if (e.getInnerFormula() != null) e.getInnerFormula().accept(this);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionQuantileProb e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionQuantileExpNormalForm e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionQuantileExpNormalForm e) throws PrismLangException {
+		visitPre(e);
+		//XXX: weitermachen
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(ExpressionQuantileExpNormalForm e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionMultipleThresholds e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionMultipleThresholds e) throws PrismLangException {
 		visitPre(e);

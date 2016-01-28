@@ -29,8 +29,11 @@ package parser.visitor;
 import parser.ast.ConstantList;
 import parser.ast.Expression;
 import parser.ast.ExpressionFilter;
+import parser.ast.ExpressionIdent;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
+import parser.ast.ExpressionQuantileProb;
+import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
 import parser.ast.ExpressionTemporal;
@@ -52,6 +55,7 @@ public class PropertiesSemanticCheck extends SemanticCheck
 	private PropertiesFile propertiesFile;
 	private ModelInfo modelInfo;
 	private ModulesFile modulesFile;
+	private String quantileVariableName = null;
 
 	public PropertiesSemanticCheck(PropertiesFile propertiesFile)
 	{
@@ -155,10 +159,17 @@ public class PropertiesSemanticCheck extends SemanticCheck
 
 	public void visitPost(TemporalOperatorBound e) throws PrismLangException
 	{
+		// TODO: JK Refactor!
 		Expression lBound = e.getLowerBound();
-		Expression uBound = e.getUpperBound();
+		if (lBound != null && !lBound.isConstant() && quantileVariableName==null) {
+			throw new PrismLangException("Lower bound in " + e.toString() + " is not constant", lBound);
+		}
 		if (lBound != null && !lBound.isConstant()) {
 			throw new PrismLangException("Lower bound " + e + " is not constant", lBound);
+		}
+		Expression uBound = e.getUpperBound();
+		if (uBound != null && !uBound.isConstant() && quantileVariableName==null) {
+			throw new PrismLangException("Upper bound in " + e.toString() + " is not constant", uBound);
 		}
 		if (uBound != null && !uBound.isConstant()) {
 			throw new PrismLangException("Upper bound " + e + " not constant", uBound);
@@ -245,5 +256,34 @@ public class PropertiesSemanticCheck extends SemanticCheck
 		if (e.getOperatorType() == null) {
 			throw new PrismLangException("Unknown filter type \"" + e.getOperatorName() + "\"", e);
 		}
+	}
+
+	public void visitPost(ExpressionIdent e) throws PrismLangException
+	{
+		if (quantileVariableName != null && e.getName().equals(quantileVariableName)){
+			return;
+		} else {
+			super.visitPost(e);
+		}
+	}
+
+	public void visitPre(ExpressionQuantileProbNormalForm e)
+	{
+		quantileVariableName = e.getQuantileVariable();
+	}
+
+	public void visitPost(ExpressionQuantileProbNormalForm e)
+	{
+		quantileVariableName = null;
+	}
+
+	public void visitPre(ExpressionQuantileProb e)
+	{
+		quantileVariableName = e.getQuantileVariable();
+	}
+
+	public void visitPost(ExpressionQuantileProb e)
+	{
+		quantileVariableName = null;
 	}
 }

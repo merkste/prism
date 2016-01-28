@@ -701,4 +701,16 @@ public class TypeCheck extends ASTTraverse
 			throw new PrismLangException("Type error: Upper bound in " + e + " operator must be an int or double", e.getUpperBound());
 		}
 	}
+
+	public void visitPost(ExpressionQuantileProbNormalForm e){
+		e.setType(TypeDouble.getInstance());
+	}
+
+	public void visitPost(ExpressionQuantileProb e){
+		e.setType(TypeDouble.getInstance());
+	}
+
+	public void visitPost(ExpressionQuantileExpNormalForm e){
+		e.setType(TypeDouble.getInstance());
+	}
 }

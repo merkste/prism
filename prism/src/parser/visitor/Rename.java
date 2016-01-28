@@ -120,6 +120,13 @@ public class Rename extends ASTTraverseModify
 		throw new PrismLangException("P operator should never be renamed");
 	}
 
+	public void visitPost(ExpressionQuantileProbNormalForm e) throws PrismLangException
+	{
+		// This renaming is only designed to be applied
+		// at the level of an individual module (and below)
+		throw new PrismLangException("Quantile operator should never be renamed");
+	}
+
 	public void visitPost(ExpressionReward e) throws PrismLangException
 	{
 		// This renaming is only designed to be applied

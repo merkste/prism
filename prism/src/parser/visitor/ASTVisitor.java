@@ -85,6 +85,9 @@ public interface ASTVisitor
 	public Object visit(ExpressionProp e) throws PrismLangException;
 	public Object visit(ExpressionFilter e) throws PrismLangException;
 	public Object visit(ExpressionHOA e) throws PrismLangException;
+	public Object visit(ExpressionQuantileProbNormalForm e) throws PrismLangException;
+	public Object visit(ExpressionQuantileProb e) throws PrismLangException;
+	public Object visit(ExpressionQuantileExpNormalForm e) throws PrismLangException;
 	// ASTElement classes (misc.)
 	public Object visit(Filter e) throws PrismLangException;
 	public Object visit(ForLoop e) throws PrismLangException;
