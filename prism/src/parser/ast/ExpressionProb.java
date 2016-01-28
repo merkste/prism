@@ -28,6 +28,7 @@ package parser.ast;
 
 import explicit.MinMax;
 import param.BigRational;
+
 import parser.EvaluateContext;
 import parser.Values;
 import parser.visitor.ASTVisitor;
@@ -92,6 +93,9 @@ public class ExpressionProb extends ExpressionQuant
 	public OpRelOpBound getRelopBoundInfo(Values constantValues) throws PrismLangException
 	{
 		if (getBound() != null) {
+			if (getBound() instanceof ExpressionMultipleThresholds) {
+				return new OpRelOpBound("P", minMax, getRelOp(), ((ExpressionMultipleThresholds) getBound()).expandAndEvaluate(constantValues));
+			}
 			double boundVal = getBound().evaluateDouble(constantValues);
 			if (boundVal < 0 || boundVal > 1)
 				throw new PrismLangException("Invalid probability bound " + boundVal + " in P operator");
@@ -100,7 +104,7 @@ public class ExpressionProb extends ExpressionQuant
 			return new OpRelOpBound("P", minMax);
 		}
 	}
-	
+
 	// Methods required for Expression:
 
 	@Override

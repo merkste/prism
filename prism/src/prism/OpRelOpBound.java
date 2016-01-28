@@ -1,5 +1,7 @@
 package prism;
 
+import java.util.List;
+
 import parser.ast.RelOp;
 import explicit.MinMax;
 
@@ -13,6 +15,7 @@ public class OpRelOpBound
 	protected MinMax minMax;
 	protected boolean numeric;
 	protected double bound;
+	protected List<Double> multipleBounds;
 
 	/** Constructor, no bound */
 	public OpRelOpBound(String op, MinMax minMax)
@@ -32,6 +35,16 @@ public class OpRelOpBound
 		numeric = (boundObject == null);
 		if (boundObject != null)
 			bound = boundObject.doubleValue();
+	}
+
+	/** Constructor, with relOp and multiple bounds */
+	public OpRelOpBound(String op, MinMax minMax, RelOp relOp, List<Double> bounds)
+	{
+		this.op = op;
+		this.minMax = minMax;
+		this.relOp = relOp;
+		numeric = (bounds == null);
+		multipleBounds = bounds;
 	}
 
 	public boolean isProbabilistic()
@@ -56,9 +69,24 @@ public class OpRelOpBound
 
 	public double getBound()
 	{
+		if (multipleBounds != null) {
+			if (multipleBounds.size() == 1) {
+				return multipleBounds.get(0);
+			}
+			throw new UnsupportedOperationException("Multiple bounds, can not pick just one");
+		}
 		return bound;
 	}
+	
+	public boolean hasMultipleBounds()
+	{
+		return multipleBounds != null && multipleBounds.size() > 1;
+	}
 
+	public List<Double> getBounds() {
+		return multipleBounds;
+	}
+	
 	public boolean hasExplicitMinMax()
 	{
 		return minMax != null;
