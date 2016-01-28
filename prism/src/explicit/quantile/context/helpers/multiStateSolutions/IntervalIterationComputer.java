@@ -13,7 +13,6 @@ import explicit.quantile.dataStructure.RewardWrapper;
 import explicit.quantile.dataStructure.Triplet;
 import prism.PrismException;
 import prism.PrismLog;
-import prism.PrismNotSupportedException;
 import prism.PrismUtils;
 
 public class IntervalIterationComputer extends IterationComputer
@@ -38,14 +37,6 @@ public class IntervalIterationComputer extends IterationComputer
 			boolean absoluteConvergence, PrismLog log, int debugLevel) throws PrismException
 	{
 		assert (set != null);
-		if (context.pickMaximum()){
-			//XXX: unbedingt implementieren!!!
-			//XXX: unbedingt implementieren!!!
-			//XXX: unbedingt implementieren!!!
-			//XXX: unbedingt implementieren!!!
-			//XXX: unbedingt implementieren!!!
-			throw new PrismNotSupportedException("currently interval iteration is not supported for maximising properties");
-		}
 		if (debugLevel >= 3)
 			log.println("Starting interval iteration ...");
 		RewardWrapper model = context.getModel();
