@@ -557,6 +557,9 @@ public class ProbModelChecker extends NonProbModelChecker
 	{
 		// Get info from P operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		if (opInfo.hasMultipleBounds()) {
+			throw new PrismNotSupportedException("Can not currently check multi-threshold expression: "+expr);
+		}
 		MinMax minMax = opInfo.getMinMax(model.getModelType(), forAll);
 
 		// Compute probabilities

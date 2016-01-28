@@ -196,6 +196,9 @@ public class PTAModelChecker extends PrismComponent
 		}
 		// Get info from P operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		if (opInfo.hasMultipleBounds()) {
+			throw new PrismNotSupportedException("Can not currently check multi-threshold expression: "+expr);
+		}
 		min = opInfo.getMinMax(ModelType.PTA).isMin();
 
 		// Check this is a F path property (only case allowed at the moment)
