@@ -35,6 +35,9 @@ import java.awt.*;
 import javax.swing.*;
 
 import explicit.QuantAbstractRefine;
+import explicit.quantile.context.helpers.multiStateSolutions.MultiStateSolutionMethod;
+import explicit.quantile.dataStructure.CalculatedValues;
+import explicit.quantile.topologicalSorting.TopologicalSorting;
 
 import java.util.regex.*;
 
@@ -118,6 +121,7 @@ public class PrismSettings implements Observer
 	public static final String PRISM_NO_DA_SIMPLIFY				= "prism.noDaSimplify";
 	public static final String PRISM_EXPORT_ADV					= "prism.exportAdv";
 	public static final String PRISM_EXPORT_ADV_FILENAME			= "prism.exportAdvFilename";
+	public static final String PRISM_BOUNDS_VIA_COUNTERS			= "prism.boundsViaCounters";
 	
 	public static final	String PRISM_MULTI_MAX_POINTS				= "prism.multiMaxIters";
 	public static final	String PRISM_PARETO_EPSILON					= "prism.paretoEpsilon";
@@ -196,6 +200,27 @@ public class PrismSettings implements Observer
 	public static final	String LOG_BG_COLOUR						= "log.bgColour";
 	public static final	String LOG_BUFFER_LENGTH					= "log.bufferLength";
 	
+	//GUI Quantile
+	public static final String QUANTILE_SCC_METHOD					= "quantile.sccMethod";
+	public static final String QUANTILE_VALUES_STORAGE				= "quantile.valuesStorage";
+	public static final String QUANTILE_SET_FACTORY					= "quantile.setFactory";
+	public static final String QUANTILE_ADAPTIVE_SET_THRESHOLD		= "quantile.adaptiveSetThreshold";
+	public static final String QUANTILE_MULTI_STATE_METHOD			= "quantile.multiStateMethod";
+	public static final String QUANTILE_USE_ZERO_REWARD_TRY_AND_SET	= "quantile.useZeroRewardTryAndSet";
+	public static final String QUANTILE_USE_LP_SOLVER_ONLY			= "quantile.useLpSolverOnly";
+	public static final String QUANTILE_LP_SOLVER_ONLY_BOUND		= "quantile.lpSolverOnlyBound";
+	public static final String QUANTILE_PARALLEL_POOL_SIZE			= "quantile.parallelPoolSize";
+	public static final String QUANTILE_POSITIVE_REWARDS_PARALLEL	= "quantile.positiveRewardsParallel";
+	public static final String QUANTILE_ZERO_REWARDS_PARALLEL		= "quantile.zeroRewardsParallel";
+	public static final String QUANTILE_DEBUG_LEVEL					= "quantile.debugLevel";
+	public static final String QUANTILE_VERIFY_RESULT				= "quantile.verifyResult";
+	public static final String QUANTILE_USE_QUANTITATIVE			= "quantile.useQuantitative";
+	public static final String QUANTILE_BACKEND_FOR_TIME_BOUND		= "quantile.quantileBackendForTimeBound";
+	public static final String QUANTILE_NAIVE_COMPUTATION			= "quantile.naiveComputation";
+	public static final String QUANTILE_NAIVE_COMPUTATION_LINEAR	= "quantile.naiveComputationLinear";
+	public static final String QUANTILE_CTMC_START_PRECISION		= "quantile.ctmcStartPrecision";
+	public static final String QUANTILE_CTMC_PRECISION				= "quantile.ctmcPrecision";
+
 	
 	//Defaults, types and constaints
 	
@@ -205,7 +230,8 @@ public class PrismSettings implements Observer
 		"Simulator",
 		"Model",
 		"Properties",
-		"Log"
+		"Log",
+		"Quantile"
 	};
 	public static final int[] propertyOwnerIDs =
 	{
@@ -213,7 +239,8 @@ public class PrismSettings implements Observer
 		PropertyConstants.SIMULATOR,
 		PropertyConstants.MODEL,
 		PropertyConstants.PROPERTIES,
-		PropertyConstants.LOG		
+		PropertyConstants.LOG,
+		PropertyConstants.QUANTILE
 	};
 	
 	
@@ -290,6 +317,8 @@ public class PrismSettings implements Observer
 																			"Various options passed to the asbtraction-refinement engine (e.g. for PTA model checking)." },
 			{ BOOLEAN_TYPE,		PRISM_PATH_VIA_AUTOMATA,				"All path formulas via automata",			"4.2.1",			new Boolean(false),									"",
 																			"Handle all path formulas via automata constructions." },
+			{ BOOLEAN_TYPE,		PRISM_BOUNDS_VIA_COUNTERS,				"All bounds via counter transformation",			"4.2.1",			new Boolean(false),									"",
+																			"Handle all bounds via counter constructions." },
 			{ BOOLEAN_TYPE,		PRISM_NO_DA_SIMPLIFY,				"Do not simplify deterministic automata",			"4.3",			new Boolean(false),									"",
 																			"Do not attempt to simplify deterministic automata, acceptance conditions (for debugging)." },
 
@@ -451,6 +480,27 @@ public class PrismSettings implements Observer
 			{ FONT_COLOUR_TYPE,	LOG_FONT,								"Display font",							"2.1",			new FontColorPair(new Font("monospaced", Font.PLAIN, 12), Color.black),		"",																							"Font used for the log display." },
 			{ COLOUR_TYPE,		LOG_BG_COLOUR,							"Background colour",					"2.1",			new Color(255,255,255),														"",																							"Background colour for the log display." },
 			{ INTEGER_TYPE,		LOG_BUFFER_LENGTH,						"Buffer length",						"2.1",			new Integer(10000),															"1,",																						"Length of the buffer for the log display." }
+		},
+		{
+			{ CHOICE_TYPE,	QUANTILE_SCC_METHOD,						"method to compute zero-reward SCCs",					"4.1",	TopologicalSorting.QuantileSccMethod.TARJAN_ITERATIVE.toString(),	Arrays.stream(TopologicalSorting.QuantileSccMethod.values()).map(Object::toString).reduce((s, e) -> s + "," + e).orElse(""),	"The method to compute the topological sorting of the model's zero-reward SCCs. NONE deactivates the topological sorting."},
+			{ CHOICE_TYPE,	QUANTILE_VALUES_STORAGE,					"storage of positive reward successor values",			"4.1",	CalculatedValues.PreviousValuesStorage.ALL_STATES.toString(),		Arrays.stream(CalculatedValues.PreviousValuesStorage.values()).map(Object::toString).reduce((s, e) -> s + "," + e).orElse(""),	"Should calculated values for each state be stored, or just for states that are successors of positive reward states / transitions."},
+			{ CHOICE_TYPE,	QUANTILE_SET_FACTORY,						"implementation exploited for quantile computations",	"4.1",	"ADAPTIVE_SINGLETON_SET",											"ADAPTIVE_SINGLETON_SET,ADAPTIVE_SET,ADAPTIVE_SET_USING_HASHSET,BIT_SET",														"The implementation that is responsible for storing the state-sets used by the quantile-calculations"},
+			{ INTEGER_TYPE,	QUANTILE_ADAPTIVE_SET_THRESHOLD,			"threshold for the adaptive sets",						"4.1",	new Integer(1),														"",																																"The threshold which determines when AdaptiveSet should switch to BitSet in order to store the states."},
+			{ CHOICE_TYPE,	QUANTILE_MULTI_STATE_METHOD,				"method for solving multiple states",					"4.1",	MultiStateSolutionMethod.VALUE_ITERATION.toString(),				Arrays.stream(MultiStateSolutionMethod.values()).map(Object::toString).reduce((s, e) -> s + "," + e).orElse(""),				"The method that solves states belonging to zero-reward cycles."},
+			{ BOOLEAN_TYPE,	QUANTILE_USE_ZERO_REWARD_TRY_AND_SET,		"use try-and-set to compute zero-reward states",		"4.1",	new Boolean(true),													"",																																"Solve zero reward states using try-and-set first. This calculates states which are not in a zero-reward cycle."},
+			{ BOOLEAN_TYPE,	QUANTILE_USE_LP_SOLVER_ONLY,				"use LP-solver for everything",							"4.1",	new Boolean(false),													"",																																"Solve the complete quantile using exclusively LP-solver."},
+			{ INTEGER_TYPE,	QUANTILE_LP_SOLVER_ONLY_BOUND,				"bound using just LP-solver",							"4.1",	new Integer(20),													"",																																"Set the bound of the LP-solver to the specified value."},
+			{ INTEGER_TYPE,	QUANTILE_PARALLEL_POOL_SIZE,				"number of tasks that will run in parallel",			"4.1",	new Integer(1),														"",																																"Set the number of maximal threads that can run in parallel as long as the calculation permits it. Take care to not slow the system by assigning to much parallel threads."},
+			{ BOOLEAN_TYPE,	QUANTILE_POSITIVE_REWARDS_PARALLEL,			"parallel computation of positive reward states",		"4.1",	new Boolean(false),													"",																																"Positive reward-states can be calculated independently and therefore parallel."},
+			{ BOOLEAN_TYPE,	QUANTILE_ZERO_REWARDS_PARALLEL,				"parallel computation of zero reward states",			"4.1",	new Boolean(false),													"",																																"Using the DAG of the zero reward-states allows to sketch the influence of one zero-reward component on another. This allows usage of parallelism."},
+			{ INTEGER_TYPE,	QUANTILE_DEBUG_LEVEL,						"debug information",									"4.1",	new Integer(0),														"",																																"Set the debug level to enable / disable additional and helpful information for the quantile calculations. But be aware, a debug level greater or equals 4 is only recommended for small models, since this will blow up the output enormously."},
+			{ BOOLEAN_TYPE,	QUANTILE_VERIFY_RESULT,						"verify result",										"4.1",	new Boolean(false),													"",																																"Verify (where possible) the results of the quantile calculations."},
+			{ BOOLEAN_TYPE,	QUANTILE_USE_QUANTITATIVE,					"always quantitative algorithm",						"4.1",	new Boolean(false),													"",																																"Always use algorithms for quantitative probability thresholds."},
+			{ BOOLEAN_TYPE,	QUANTILE_BACKEND_FOR_TIME_BOUND,			"use quantile backend for time bounded reachability",	"4.1",	new Boolean(false),													"",																																"When analysing a time-bounded reachability query, the backend for the computation of quantiles can be used for the computation."},
+			{ BOOLEAN_TYPE,	QUANTILE_NAIVE_COMPUTATION,					"calculate quantiles the naive way",					"4.1",	new Boolean(false),													"",																																"A quantile query can be calculated straightforward by iteratively increasing the bound up to which the result will be searched."},
+			{ BOOLEAN_TYPE,	QUANTILE_NAIVE_COMPUTATION_LINEAR,			"do linear stepping for naive quantile-calculation",	"4.1",	new Boolean(false),													"",																																"The stepping for the naive quantile computation is done exponentially. If a linear stepping is desired one needs to deactivate this flag."},
+			{ DOUBLE_TYPE,	QUANTILE_CTMC_START_PRECISION,				"start epsilon for continuous quantile-computation",	"4.1",	new Double(0),														"",																																"Start value for precision of CTMC quantiles. Will be refined during computation if it is needed. Setting to 0 will deactivate the refinement and all calculations will be done using the standard-setting of PRISM." },
+			{ DOUBLE_TYPE,	QUANTILE_CTMC_PRECISION,					"termination epsilon for continuous quantiles",			"4.1",	new Double(1.0E-6),													"",																																"Epsilon value to use for checking termination of quantile-calculation for models with continuous time." },
 		}
 	};
 	
@@ -1198,6 +1248,9 @@ public class PrismSettings implements Observer
 		else if (sw.equals("nodasimplify")) {
 			set(PRISM_NO_DA_SIMPLIFY, true);
 		}
+		else if (sw.equals("boundsviacounters")) {
+			set(PRISM_BOUNDS_VIA_COUNTERS, true);
+		}
 
 		
 		// MULTI-OBJECTIVE MODEL CHECKING OPTIONS:
@@ -1675,7 +1728,122 @@ public class PrismSettings implements Observer
 				throw new PrismException("No file specified for -" + sw + " switch");
 			}
 		}
-		
+
+		// Quantile options
+		else if (sw.equals("zeroRewardSccMethod")){
+			if (i < args.length-1){
+				set(QUANTILE_SCC_METHOD, args[++i]);
+			} else
+				throw new PrismException("No correct method specified for -" + sw + " switch");
+		}
+		else if (sw.equals("valuesStorage")){
+			if (i < args.length-1){
+				set(QUANTILE_VALUES_STORAGE, args[++i]);
+			} else
+				throw new PrismException("No correct storage specified for -" + sw + " switch");
+		}
+		else if (sw.equals("setImplementation")){
+			if (i < args.length-1){
+				set(QUANTILE_SET_FACTORY, args[++i]);
+			} else
+				throw new PrismException("No correct implementation specified for -" + sw + " switch");
+		}
+		else if (sw.equals("adaptiveSetThreshold")){
+			if (i < args.length-1){
+				try {
+					int threshold = Integer.parseInt(args[++i]);
+					if (threshold < 1)
+						throw new PrismException("The threshold for the AdaptiveSet must be greater 0");
+					set(QUANTILE_ADAPTIVE_SET_THRESHOLD, threshold);
+				} catch (NumberFormatException nfe){
+					throw new PrismException("Invalid threshold for switch " + sw);
+				}
+			} else
+				throw new PrismException("No threshold specified for -" + sw + " switch");
+		}
+		else if (sw.equals("lpSolverOnly"))
+			if (i < args.length-1){
+				set(QUANTILE_USE_LP_SOLVER_ONLY, true);
+				try {
+					set(QUANTILE_LP_SOLVER_ONLY_BOUND, Integer.parseInt(args[++i]));
+				} catch (NumberFormatException nfe){
+					throw new PrismException("Invalid bound for -" + sw + " switch");
+				}
+			} else
+				throw new PrismException("No bound specified for -" + sw + " switch");
+		else if (sw.equals("multiStateMethod")){
+			if (i < args.length-1){
+				set(QUANTILE_MULTI_STATE_METHOD, args[++i]);
+			} else
+				throw new PrismException("No correct multi-state sets method specified for -" + sw + " switch");
+		}
+		else if (sw.equals("noTryAndSet"))
+			set(QUANTILE_USE_ZERO_REWARD_TRY_AND_SET, false);
+		else if (sw.equals("parallelPoolSize")){
+			if (i < args.length-1){
+				try {
+					int poolSize = Integer.parseInt(args[++i]);
+					if (poolSize < 1)
+						throw new PrismException("The pool size for parallel tasks must be at least 1");
+					set(QUANTILE_PARALLEL_POOL_SIZE, poolSize);
+				} catch (NumberFormatException nfe){
+					throw new PrismException("Invalid pool size for switch " + sw);
+				}
+			} else
+				throw new PrismException("No valid size specified for -" + sw + " switch");
+		}
+		else if (sw.equals("parallelForPositiveRewards"))
+			set(QUANTILE_POSITIVE_REWARDS_PARALLEL, true);
+		else if (sw.equals("parallelForZeroRewards"))
+			set(QUANTILE_ZERO_REWARDS_PARALLEL, true);
+		else if (sw.equals("debugQuantile")){
+			if (i < args.length-1){
+				try {
+					set(QUANTILE_DEBUG_LEVEL, Integer.parseInt(args[++i]));
+				} catch (NumberFormatException nfe){
+					throw new PrismException("Invalid debug level for switch " + sw);
+				}
+			} else
+				throw new PrismException("No debug level specified for -" + sw + " switch");
+		}
+		else if (sw.equals("quantileverify"))
+			set(QUANTILE_VERIFY_RESULT, true);
+		else if (sw.equals("quantilequantitative"))
+			set(QUANTILE_USE_QUANTITATIVE, true);
+		else if (sw.equals("quantileBackendForTimeBound"))
+			set(QUANTILE_BACKEND_FOR_TIME_BOUND, true);
+		else if (sw.equals("quantileNaive"))
+			set(QUANTILE_NAIVE_COMPUTATION, true);
+		else if (sw.equals("quantileNaiveLinear"))
+			set(QUANTILE_NAIVE_COMPUTATION_LINEAR, true);
+		else if (sw.equals("quantileCtmcPrecision")){
+			if (i < args.length - 1) {
+				try {
+					d = Double.parseDouble(args[++i]);
+					if (d < 0)
+						throw new NumberFormatException("");
+					set(QUANTILE_CTMC_PRECISION, d);
+				} catch (NumberFormatException e) {
+					throw new PrismException("Invalid value for -" + sw + " switch");
+				}
+			} else {
+				throw new PrismException("No value specified for -" + sw + " switch");
+			}
+		}
+		else if (sw.equals("quantileCtmcStartPrecision")){
+			if (i < args.length - 1) {
+				try {
+					d = Double.parseDouble(args[++i]);
+					if (d < 0)
+						throw new NumberFormatException("");
+					set(QUANTILE_CTMC_START_PRECISION, d);
+				} catch (NumberFormatException e) {
+					throw new PrismException("Invalid value for -" + sw + " switch");
+				}
+			} else {
+				throw new PrismException("No value specified for -" + sw + " switch");
+			}
+		}
 		// unknown switch - error
 		else {
 			throw new PrismException("Invalid switch -" + sw + " (type \"prism -help\" for full list)");
@@ -1787,6 +1955,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
 		mainLog.println("-explodebits ................... Model file transformation: Convert variables to single bits with views");
 		mainLog.println("-globalizevariables ............ Model file transformation: Make all variables global");
+		mainLog.println("-boundsviacounters ............. Handle all bounds via counter transformation");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");
@@ -1829,6 +1998,25 @@ public class PrismSettings implements Observer
 		mainLog.println("-fauarraythreshold <x> ......... Set threshold when to switch to sparse matrix in FAU [default: 100]");
 		mainLog.println("-fauintervals <x> .............. Set number of intervals to divide time intervals into for FAU [default: 1]");
 		mainLog.println("-fauinitival <x> ............... Set length of additional initial time interval for FAU [default: 1.0]");
+		mainLog.println();
+		mainLog.println("QUANTILE OPTIONS:");
+		mainLog.println("-zeroRewardSccMethod <name> .... Specify the method to calculate the topological sorting of zero-reward components (" + Arrays.toString(TopologicalSorting.QuantileSccMethod.values()) + ") [default: " + TopologicalSorting.QuantileSccMethod.TARJAN_ITERATIVE + "]");
+		mainLog.println("-valuesStorage <name> .......... Specify the method to store the values for the successors of positive reward states / transitions (" + Arrays.toString(CalculatedValues.PreviousValuesStorage.values()) + ") [default: " + CalculatedValues.PreviousValuesStorage.ALL_STATES + "]");
+		mainLog.println("-setImplementation <name> ...... Specify the implementation to store the states of the sets involved in quantile computations (ADAPTIVE_SINGLETON_SET, ADAPTIVE_SET, ADAPTIVE_SET_USING_HASHSET, BIT_SET) [default: ADAPTIVE_SINGLETON_SET]");
+		mainLog.println("-adaptiveSetThreshold <n> ...... Specify the threshold when AdaptiveSet should bring BitSet into play (must be > 0) [default: 1]");
+		mainLog.println("-lpSolverOnly <n> .............. Use the LP solver exclusively for all calculations (the number gives the bound for the calculations)");
+		mainLog.println("-multiStateMethod <name>........ Specify the method to solve multi-state sets (" + Arrays.toString(MultiStateSolutionMethod.values()) + ") [default: " + MultiStateSolutionMethod.VALUE_ITERATION + "]");
+		mainLog.println("-noTryAndSet ................... Switch the try-and-set off for the calculation of zero-reward states");
+		mainLog.println("-parallelPoolSize <n> .......... Specify the number of parallel threads for quantile-calculations");
+		mainLog.println("-parallelForPositiveRewards .... Exploit parallelism of J8 for parallel computations of positive-reward states. The degree of parallelity is controllable via -parallelPoolSize <n>");
+		mainLog.println("-parallelForZeroRewards ........ Exploit parallelism of J8 for parallel computations of zero-reward states. The degree of parallelity is controllable via -parallelPoolSize <n>");
+		mainLog.println("-debugQuantile <n> ............. Set the debugging output to the given level");
+		mainLog.println("-quantileverify ................ Verify the results of the quantile calculations");
+		mainLog.println("-quantileBackendForTimeBound ... Use the quantile backend for the computation of time bounded reachability properties");
+		mainLog.println("-quantileNaive ................. Use the naive approach for the computation of quantile queries");
+		mainLog.println("-quantileNaiveLinear ........... Specify the stepping for the naive computation of quantile queries to be linear");
+		mainLog.println("-quantileCtmcStartPrecision <x>  Set precision for quantile-calculations using CTMCs. Whenever a more precise computation is needed, the precision will adapt automatically. Setting to 0 will deactivate this behaviour and all calculations will be carried out using PRISMs standard-setting [default: 0]");
+		mainLog.println("-quantileCtmcPrecision <x> ..... Set value of epsilon for quantile-convergence in CTMCs [default: 1e-6]");
 	}
 
 	/**
