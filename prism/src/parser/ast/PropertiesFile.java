@@ -294,6 +294,9 @@ public class PropertiesFile extends ASTElement
 		// Check label identifiers
 		checkLabelIdents();
 
+		// replace ExpressionIdent with ExpressionBoundVariable for quantiles
+		findAllBoundQuantileVariables();
+		
 		// Check constant identifiers
 		checkConstantIdents();
 		// Find all instances of constants (i.e. locate idents which are constants).

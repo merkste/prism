@@ -262,6 +262,16 @@ public abstract class ASTElement
 	}
 	
 	/**
+	 * Find all idents which are bound quantile variables, replace with ExpressionBoundVariable,
+	 * return result.
+	 */
+	public ASTElement findAllBoundQuantileVariables() throws PrismLangException
+	{
+		FindAllBoundQuantileVariables visitor = new FindAllBoundQuantileVariables();
+		return (ASTElement) accept(visitor);
+	}
+	
+	/**
 	 * Replace all bound variables with the given name with the value, or delete if value == null
 	 */
 	public ASTElement replaceBoundVariable(String name, Integer value) throws PrismLangException
