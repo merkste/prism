@@ -462,6 +462,12 @@ TOKEN :
 |	< PMAX:				"Pmax" >
 |	< PMIN:				"Pmin" >
 |	< P:				"P" >
+|	< QUANTILE_NF:		"Quantile" >
+|	< QUANTILE:			"quantile" >
+|	< EXP_QUANTILE:		"expQuantile" >
+|	< EXP_UTIL:			"ExpUtil" >
+|	< EXISTENTIAL:		"Ex" >
+|	< UNIVERSAL:		"Un" >
 |	< PROBABILISTIC:	"probabilistic" >
 |	< PROB:				"prob" >
 |	< PTA:				"pta" >
@@ -1461,6 +1467,12 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) :
 	|
 		ret = ExpressionSS(prop, pathprop)
 	|
+		ret = ExpressionQuantileProbNormalForm(prop, pathprop)
+	|
+		ret = ExpressionQuantileProb(prop, pathprop)
+	|
+		ret = ExpressionQuantileExpNormalForm(prop, pathprop)
+	|
 		ret = ExpressionReward(prop, pathprop)
 	|
 		ret = ExpressionExists(prop, pathprop)
@@ -1753,6 +1765,114 @@ ExpressionHOA PathSpecificationHOA(boolean prop) :
 	{return result;}
 }
 
+
+
+// (Property) expression: operator Quantile (probability quantile)
+
+Expression ExpressionQuantileProbNormalForm(boolean prop, boolean pathprop) :
+{
+    Token begin;
+    ExpressionQuantileProbNormalForm ret = new ExpressionQuantileProbNormalForm();
+    Expression innerFormula;
+    Object index;
+}
+{
+    // This production is only allowed in expressions if the "prop" parameter is true
+    { if (!prop) throw generateParseException(); }
+    begin = <QUANTILE_NF>
+       <LPARENTH>
+         (
+           <EXISTENTIAL> { ret.setExistential(); }
+          |
+           <UNIVERSAL> { ret.setUniversal(); }
+         )
+         <COMMA>
+         innerFormula = ExpressionProb(prop, pathprop)
+         (<COMMA> <R> index = RewardIndex(){ ret.setRewardStructIndex(index); })?
+       <RPARENTH>
+    {
+       ret.setPosition(begin, getToken(0));
+
+       ret.setInnerFormula(innerFormula);
+       return ret;
+    }
+}
+
+
+// (Property) expression: operator Quantile (probability quantile)
+
+Expression ExpressionQuantileProb(boolean prop, boolean pathprop) :
+{
+    Token begin;
+    ExpressionQuantileProb ret = new ExpressionQuantileProb();
+    Expression innerFormula;
+    String quantileVariable;
+}
+{
+    // This production is only allowed in expressions if the "prop" parameter is true
+    { if (!prop) throw generateParseException(); }
+    begin = <QUANTILE>
+       <LPARENTH>
+         (
+           <MIN> { ret.setMinMax(explicit.MinMax.min()); }
+          |
+           <MAX> { ret.setMinMax(explicit.MinMax.max()); }
+         )
+         quantileVariable = Identifier()
+         <COMMA>
+         innerFormula = ExpressionProb(prop, pathprop)
+       <RPARENTH>
+    {
+       ret.setPosition(begin, getToken(0));
+
+       ret.setQuantileVariable(quantileVariable);
+       ret.setInnerFormula(innerFormula);
+       return ret;
+    }
+}
+
+// (Property) expression: operator Quantile (expectation quantile)
+
+Expression ExpressionQuantileExpNormalForm(boolean prop, boolean pathprop) :
+{
+    Token begin;
+    ExpressionQuantileExpNormalForm ret = new ExpressionQuantileExpNormalForm();
+    Object costRewardIndex;
+    Object valueRewardIndex;
+    Expression threshold;
+}
+{
+    // This production is only allowed in expressions if the "prop" parameter is true
+    { if (!prop) throw generateParseException(); }
+    begin = <EXP_QUANTILE>
+       <LPARENTH>
+         (
+           <EXISTENTIAL> { ret.setExistential(); }
+          |
+           <UNIVERSAL> { ret.setUniversal(); }
+         )
+         <COMMA>
+         <EXP_UTIL>
+         <R>
+         valueRewardIndex = RewardIndex()
+         <GT>
+         threshold = ExpressionThreshold()
+         <LPARENTH>
+           <R>
+           costRewardIndex = RewardIndex()
+           <LE>
+           <QMARK>
+         <RPARENTH>
+       <RPARENTH>
+    {
+       ret.setPosition(begin, getToken(0));
+
+       ret.setValueRewardStructIndex(valueRewardIndex);
+       ret.setThresholdExpression(threshold);
+       ret.setCostRewardStructIndex(costRewardIndex);
+       return ret;
+    }
+}
 
 
 // Filter for a P/S/R operator
