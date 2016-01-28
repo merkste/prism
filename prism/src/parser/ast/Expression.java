@@ -171,6 +171,20 @@ public abstract class Expression extends ASTElement
 		return converter.convert(this);
 	}
 
+	public static boolean hasBoundedVariables(final Expression expr) {
+		try {
+			expr.accept(new ASTTraverse()
+			{
+				public void visitPre(ExpressionBoundVariable e) throws PrismLangException {
+					throw new PrismLangException("bound-var");
+				}
+			});
+		} catch (PrismLangException e) {
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Evaluate this expression, using no constant or variable values.
 	 * Note: assumes that type checking has been done already.

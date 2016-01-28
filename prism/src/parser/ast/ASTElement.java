@@ -260,6 +260,31 @@ public abstract class ASTElement
 		FindAllConstants visitor = new FindAllConstants(constantList);
 		return (ASTElement) accept(visitor);
 	}
+	
+	/**
+	 * Replace all bound variables with the given name with the value, or delete if value == null
+	 */
+	public ASTElement replaceBoundVariable(String name, Integer value) throws PrismLangException
+	{
+		BoundVariableReplacer visitor;
+		if (value == null)
+			visitor = new BoundVariableReplacer(name);
+		else
+			visitor = new BoundVariableReplacer(name, value);
+		return (ASTElement) accept(visitor);
+	}
+
+	public ASTElement replaceBoundVariable(String name, Double value) throws PrismLangException
+	{
+		BoundVariableReplacer visitor;
+		if (value == null)
+			visitor = new BoundVariableReplacer(name);
+		else 
+			visitor = new BoundVariableReplacer(name, value);
+		
+		return (ASTElement) accept(visitor);
+	}
+
 
 	/**
 	 * Get all constants (i.e. ExpressionConstant objects), store names in set.

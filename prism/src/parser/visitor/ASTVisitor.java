@@ -71,6 +71,7 @@ public interface ASTVisitor
 	public Object visit(ExpressionIdent e) throws PrismLangException;
 	public Object visit(ExpressionLiteral e) throws PrismLangException;
 	public Object visit(ExpressionConstant e) throws PrismLangException;
+	public Object visit(ExpressionBoundVariable e) throws PrismLangException;
 	public Object visit(ExpressionFormula e) throws PrismLangException;
 	public Object visit(ExpressionVar e) throws PrismLangException;
 	public Object visit(ExpressionViewVar expressionViewVar) throws PrismLangException;

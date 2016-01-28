@@ -478,6 +478,15 @@ public class ASTTraverse implements ASTVisitor
 	}
 	public void visitPost(ExpressionLiteral e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionBoundVariable e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionBoundVariable e) throws PrismLangException
+	{
+		visitPre(e);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionBoundVariable e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionConstant e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionConstant e) throws PrismLangException
 	{
