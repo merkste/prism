@@ -50,6 +50,9 @@ import parser.ast.Expression;
 import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
+import parser.ast.ExpressionQuantileExpNormalForm;
+import parser.ast.ExpressionQuantileProb;
+import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionStrategy;
 import parser.ast.ExpressionTemporal;
@@ -76,6 +79,8 @@ import automata.LTL2WDBA;
 import dv.DoubleVector;
 import dv.IntegerVector;
 import explicit.MinMax;
+import quantile.QuantileCalculator;
+import quantile.QuantileTransformations;
 
 /*
  * Model checker for MDPs
@@ -168,6 +173,15 @@ public class NondetModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionReward) {
 			res = checkExpressionReward((ExpressionReward) expr, statesOfInterest);
 		}
+		else if (expr instanceof ExpressionQuantileProbNormalForm) {
+			res = checkExpressionQuantile((ExpressionQuantileProbNormalForm) expr, statesOfInterest);
+		}
+		else if (expr instanceof ExpressionQuantileProb) {
+			res = checkExpressionQuantile((ExpressionQuantileProb) expr, statesOfInterest);
+		}
+		else if (expr instanceof ExpressionQuantileExpNormalForm) {
+			throw new PrismNotSupportedException("Expectation quantiles not supported yet in symbolic engine.");
+		}
 		// Multi-objective
 		else if (expr instanceof ExpressionFunc) {
 			// Detect "multi" function
@@ -190,6 +204,36 @@ public class NondetModelChecker extends NonProbModelChecker
 			res.filter(reach);
 
 		return res;
+	}
+
+	protected StateValues checkExpressionQuantile(ExpressionQuantileProbNormalForm expr, JDDNode statesOfInterest) throws PrismException
+	{
+		return QuantileCalculator.checkExpressionQuantile(prism, this, model, expr, statesOfInterest);
+	}
+
+	protected StateValues checkExpressionQuantile(ExpressionQuantileProb expressionQuantile, JDDNode statesOfInterest)
+			throws PrismException
+	{
+		ModelExpressionTransformation<Model, Model> transformed = QuantileTransformations.toNormalForm(this, model, expressionQuantile, statesOfInterest);
+
+		NondetModelChecker transformedMC = this.createNewModelChecker(prism, transformed.getTransformedModel(), propertiesFile);
+
+		mainLog.println("Normal Form: " + transformed.getTransformedExpression());
+		StateValues result = QuantileCalculator.checkExpressionQuantile(prism, transformedMC,
+		                                                                transformed.getTransformedModel(),
+		                                                                (ExpressionQuantileProbNormalForm) transformed.getTransformedExpression(),
+		                                                                transformed.getTransformedStatesOfInterest());
+
+		JDD.Deref(statesOfInterest);
+		result = transformed.projectToOriginalModel(result);
+		transformed.clear();
+
+// TODO(JK): support verification
+//		if (getQuantileVerifyResult()) {
+//			QuantileUtilities.verifyResult(this, model, expressionQuantile, result);
+//		}
+
+		return result;
 	}
 
 	/**

@@ -49,6 +49,9 @@ import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionProb;
+import parser.ast.ExpressionQuantileExpNormalForm;
+import parser.ast.ExpressionQuantileProb;
+import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
 import parser.ast.ExpressionTemporal;
@@ -56,6 +59,8 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
+import quantile.QuantileCalculator;
+import quantile.QuantileTransformations;
 import parser.type.TypeBool;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
@@ -144,6 +149,15 @@ public class ProbModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionSS) {
 			res = checkExpressionSteadyState((ExpressionSS) expr, statesOfInterest);
 		}
+		else if (expr instanceof ExpressionQuantileProbNormalForm) {
+			res = checkExpressionQuantile((ExpressionQuantileProbNormalForm) expr, statesOfInterest);
+		}
+		else if (expr instanceof ExpressionQuantileProb) {
+			res = checkExpressionQuantile((ExpressionQuantileProb) expr, statesOfInterest);
+		}
+		else if (expr instanceof ExpressionQuantileExpNormalForm) {
+			throw new PrismNotSupportedException("Expectation quantiles not supported yet in symbolic engine.");
+		}
 		// Otherwise, use the superclass
 		else {
 			res = super.checkExpression(expr, statesOfInterest);
@@ -160,6 +174,36 @@ public class ProbModelChecker extends NonProbModelChecker
 	// -----------------------------------------------------------------------------------
 	// Check method for each operator
 	// -----------------------------------------------------------------------------------
+
+	protected StateValues checkExpressionQuantile(ExpressionQuantileProbNormalForm expr, JDDNode statesOfInterest) throws PrismException
+	{
+		return QuantileCalculator.checkExpressionQuantile(prism, this, model, expr, statesOfInterest);
+	}
+
+	protected StateValues checkExpressionQuantile(ExpressionQuantileProb expressionQuantile, JDDNode statesOfInterest)
+			throws PrismException
+	{
+		ModelExpressionTransformation<Model, Model> transformed = QuantileTransformations.toNormalForm(this, model, expressionQuantile, statesOfInterest);
+
+		ProbModelChecker transformedMC = this.createNewModelChecker(prism, transformed.getTransformedModel(), propertiesFile);
+
+		mainLog.println("Normal Form: " + transformed.getTransformedExpression());
+		StateValues result = QuantileCalculator.checkExpressionQuantile(prism,
+		                                                                transformedMC,
+		                                                                transformed.getTransformedModel(),
+		                                                                (ExpressionQuantileProbNormalForm) transformed.getTransformedExpression(),
+		                                                                transformed.getTransformedStatesOfInterest());
+
+		result = transformed.projectToOriginalModel(result);
+
+// TODO(JK): support verification
+//		if (getQuantileVerifyResult()) {
+//			QuantileUtilities.verifyResult(this, model, expressionQuantile, result);
+//		}
+
+		return result;
+	}
+
 
 	// P operator
 
