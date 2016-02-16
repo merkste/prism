@@ -1,7 +1,19 @@
 package common;
 
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.function.BinaryOperator;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.IntBinaryOperator;
 import java.util.function.Predicate;
+
+import common.iterable.FilteringIterator;
+import common.iterable.MappingIterator;
+
+import java.util.PrimitiveIterator.OfDouble;
+import java.util.PrimitiveIterator.OfInt;
 
 public class IteratorTools
 {
@@ -18,6 +30,16 @@ public class IteratorTools
 			count++;
 		}
 		return count;
+	}
+
+	public static <T> int count(final Iterable<T> iterable, final Predicate<? super T> predicate)
+	{
+		return count(iterable.iterator(), predicate);
+	}
+
+	public static <T> int count(final Iterator<T> iterator, final Predicate<? super T> predicate)
+	{
+		return count(new FilteringIterator.Of<>(iterator, predicate));
 	}
 
 	public static boolean and(final Iterator<Boolean> booleans)
@@ -40,138 +62,155 @@ public class IteratorTools
 		return false;
 	}
 
-	public static int maxInteger(final Iterator<Integer> numbers)
+	public static OptionalInt maxInt(final Iterator<Integer> numbers)
 	{
-		return maxInteger(numbers, Integer.MIN_VALUE);
+		return max(MappingIterator.toInt(FilteringIterator.nonNull(numbers)));
 	}
 
-	public static int maxInteger(final Iterator<Integer> numbers, final int value)
+	public static OptionalInt max(final OfInt numbers)
 	{
-		int max = value;
+		if(! numbers.hasNext()) {
+			return OptionalInt.empty();
+		}
+		int max = numbers.nextInt();
 		while (numbers.hasNext()) {
-			final int next = numbers.next();
+			final int next = numbers.nextInt();
 			max = next > max ? next : max; 
 		}
-		return max;
+		return OptionalInt.of(max);
 	}
 
-	public static double maxDouble(final Iterator<Double> numbers)
+	public static OptionalDouble maxDouble(final Iterator<Double> numbers)
 	{
-		return maxDouble(numbers, Double.MIN_VALUE);
+		return max(MappingIterator.toDouble(FilteringIterator.nonNull(numbers)));
 	}
 
-	public static double maxDouble(final Iterator<Double> numbers, final double value)
+	public static OptionalDouble max(final OfDouble numbers)
 	{
-		double max = value;
+		if(! numbers.hasNext()) {
+			return OptionalDouble.empty();
+		}
+		double max = numbers.nextDouble();
 		while (numbers.hasNext()) {
 			final double next = numbers.next();
 			max = next > max ? next : max; 
 		}
-		return max;
+		return OptionalDouble.of(max);
 	}
 
-	public static float maxFloat(final Iterator<Float> numbers)
+	public static OptionalInt minInt(final Iterator<Integer> numbers)
 	{
-		return maxFloat(numbers, Float.MIN_VALUE);
+		return min(MappingIterator.toInt(FilteringIterator.nonNull(numbers)));
 	}
 
-	public static float maxFloat(final Iterator<Float> numbers, final float value)
+	public static OptionalInt min(final OfInt numbers)
 	{
-		float max = value;
-		while (numbers.hasNext()) {
-			final float next = numbers.next();
-			max = next > max ? next : max; 
+		if(! numbers.hasNext()) {
+			return OptionalInt.empty();
 		}
-		return max;
-	}
-
-	public static int minInteger(final Iterator<Integer> numbers)
-	{
-		return minInteger(numbers, Integer.MAX_VALUE);
-	}
-
-	public static int minInteger(final Iterator<Integer> numbers, final int value)
-	{
-		int min = value;
+		int min = numbers.nextInt();
 		while (numbers.hasNext()) {
-			final int next = numbers.next();
+			final int next = numbers.nextInt();
+			min = next < min ? next : min;
+		}
+		return OptionalInt.of(min);
+	}
+
+	public static OptionalDouble minDouble(final Iterator<Double> numbers)
+	{
+		return min(MappingIterator.toDouble(FilteringIterator.nonNull(numbers)));
+	}
+
+	public static OptionalDouble min(final OfDouble numbers)
+	{
+		if(! numbers.hasNext()) {
+			return OptionalDouble.empty();
+		}
+		double min = numbers.nextDouble();
+		while (numbers.hasNext()) {
+			final double next = numbers.nextDouble();
 			min = next < min ? next : min; 
 		}
-		return min;
+		return OptionalDouble.of(min);
 	}
 
-	public static double minDouble(final Iterator<Double> numbers)
+	public static int sumInt(final Iterator<Integer> numbers)
 	{
-		return minDouble(numbers, Double.MAX_VALUE);
+		return sum(MappingIterator.toInt(numbers));
 	}
 
-	public static double minDouble(final Iterator<Double> numbers, final double value)
-	{
-		double min = value;
-		while (numbers.hasNext()) {
-			final double next = numbers.next();
-			min = next < min ? next : min; 
-		}
-		return min;
-	}
-
-	public static float minFloat(final Iterator<Float> numbers)
-	{
-		return minFloat(numbers, Float.MAX_VALUE);
-	}
-
-	public static float minFloat(final Iterator<Float> numbers, final float value)
-	{
-		float min = value;
-		while (numbers.hasNext()) {
-			final float next = numbers.next();
-			min = next < min ? next : min; 
-		}
-		return min;
-	}
-
-	public static int sumInteger(final Iterator<Integer> numbers)
+	public static int sum(final OfInt numbers)
 	{
 		int sum = 0;
 		while (numbers.hasNext()) {
-			sum += numbers.next();
+			sum += numbers.nextInt();
 		}
 		return sum;
 	}
 
 	public static double sumDouble(final Iterator<Double> numbers)
 	{
+		return sum(MappingIterator.toDouble(numbers));
+	}
+
+	public static double sum(final OfDouble numbers)
+	{
 		double sum = 0;
 		while (numbers.hasNext()) {
-			sum += numbers.next();
+			sum += numbers.nextDouble();
 		}
 		return sum;
 	}
 
-	public static float sumFloat(final Iterator<Float> numbers)
+	public static <T> Optional<T> reduce(Iterator<T> iterator, BinaryOperator<T> accumulator)
 	{
-		float sum = 0;
-		while (numbers.hasNext()) {
-			sum += numbers.next();
+		if (! iterator.hasNext()) {
+			return Optional.empty();
 		}
-		return sum;
+		return Optional.of(reduce(iterator, iterator.next(), accumulator));
 	}
 
-	public static <T> int count(final Iterable<T> iterable, final Predicate<T> predicate)
+	public static <T> T reduce(Iterator<T> iterator, T identity, BinaryOperator<T> accumulator)
 	{
-		return count(iterable.iterator(), predicate);
+		T result = identity;
+		while(iterator.hasNext()) {
+			result = accumulator.apply(result, iterator.next());
+		}
+		return result;
 	}
 
-	public static <T> int count(final Iterator<T> iterator, final Predicate<T> predicate)
+	public static OptionalInt reduce(OfInt iterator, IntBinaryOperator accumulator)
 	{
-		int count = 0;
-		while (iterator.hasNext()) {
-			if (predicate.test(iterator.next())) {
-				count++;
-			}
-			;
+		if (! iterator.hasNext()) {
+			return OptionalInt.empty();
 		}
-		return count;
+		return OptionalInt.of(reduce(iterator, iterator.nextInt(), accumulator));
+	}
+
+	public static int reduce(OfInt iterator, int identity, IntBinaryOperator accumulator)
+	{
+		int result = identity;
+		while(iterator.hasNext()) {
+			result = accumulator.applyAsInt(result, iterator.nextInt());
+		}
+		return result;
+	}
+
+	public static OptionalDouble reduce(OfDouble iterator, DoubleBinaryOperator accumulator)
+	{
+		if (! iterator.hasNext()) {
+			return OptionalDouble.empty();
+		}
+		return OptionalDouble.of(reduce(iterator, iterator.nextDouble(), accumulator));
+	}
+
+	public static double reduce(OfDouble iterator, double identity, DoubleBinaryOperator accumulator)
+	{
+		double result = identity;
+		while(iterator.hasNext()) {
+			result = accumulator.applyAsDouble(result, iterator.nextDouble());
+		}
+		return result;
 	}
 
 	public static <T> void printIterator(final String name, final Iterator<T> iter)
