@@ -61,6 +61,19 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 		}
 	}
 
+	public static OfInt toInt(Iterable<Integer> iterable)
+	{
+		return toInt(iterable.iterator());
+	}
+
+	public static OfInt toInt(Iterator<Integer> iterator)
+	{
+		if (iterator instanceof OfInt) {
+			return (OfInt) iterator;
+		}
+		return new ToInt<>(iterator, Integer::intValue);
+	}
+
 	public static class ToInt<S> extends MappingIterator<S, Integer> implements OfInt
 	{
 		protected ToIntFunction<? super S> function;
@@ -81,6 +94,19 @@ public abstract class MappingIterator<S, T> implements Iterator<T>
 		{
 			return function.applyAsInt(iterator.next());
 		}
+	}
+
+	public static OfDouble toDouble(Iterable<Double> iterable)
+	{
+		return toDouble(iterable.iterator());
+	}
+
+	public static OfDouble toDouble(Iterator<Double> iterator)
+	{
+		if (iterator instanceof OfDouble) {
+			return (OfDouble) iterator;
+		}
+		return new ToDouble<>(iterator, Double::doubleValue);
 	}
 
 	public static class ToDouble<S> extends MappingIterator<S, Double> implements OfDouble

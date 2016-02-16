@@ -1,6 +1,7 @@
 package common.iterable;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -9,6 +10,14 @@ import java.util.function.Predicate;
 public abstract class FilteringIterable<T> implements Iterable<T>
 {
 	protected final Iterable<T> iterable;
+
+	public static <T> Iterable<T> nonNull(Iterable<T> iterable)
+	{
+		if (iterable instanceof PrimitiveIterable) {
+			return iterable;
+		}
+		return new FilteringIterable.Of<>(iterable, Objects::nonNull);
+	}
 
 	public FilteringIterable(final Iterable<T> iterable)
 	{
