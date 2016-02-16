@@ -39,6 +39,14 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 	}
 
+	public static IterableInt toInt(Iterable<Integer> iterable)
+	{
+		if (iterable instanceof IterableInt) {
+			return (IterableInt) iterable;
+		}
+		return new ToInt<>(iterable, Integer::intValue);
+	}
+
 	public static class ToInt<S> extends MappingIterable<S, Integer> implements IterableInt
 	{
 		protected ToIntFunction<? super S> function;
@@ -55,6 +63,14 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 			return new MappingIterator.ToInt<>(iterable, function);
 		}
 
+	}
+
+	public static IterableDouble toDouble(Iterable<Double> iterable)
+	{
+		if (iterable instanceof IterableDouble) {
+			return (IterableDouble) iterable;
+		}
+		return new ToDouble<>(iterable, Double::intValue);
 	}
 
 	public static class ToDouble<S> extends MappingIterable<S, Double> implements IterableDouble

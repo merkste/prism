@@ -3,6 +3,7 @@ package common.iterable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.DoublePredicate;
@@ -13,6 +14,19 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 {
 	protected final Iterator<T> iterator;
 	protected boolean hasNext;
+
+	public static <T> Iterator<T> nonNull(Iterable<T> iterable)
+	{
+		return nonNull(iterable.iterator());
+	}
+
+	public static <T> Iterator<T> nonNull(Iterator<T> iterator)
+	{
+		if (iterator instanceof PrimitiveIterator) {
+			return iterator;
+		}
+		return new FilteringIterator.Of<>(iterator, Objects::nonNull);
+	}
 
 	public FilteringIterator(final Iterable<T> iterable)
 	{
