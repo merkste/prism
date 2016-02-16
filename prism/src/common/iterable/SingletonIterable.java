@@ -1,9 +1,6 @@
-package common.iterable.collections;
+package common.iterable;
 
 import java.util.Iterator;
-
-import common.iterable.IterableDouble;
-import common.iterable.IterableInt;
 
 public abstract class SingletonIterable<T> implements Iterable<T>
 {

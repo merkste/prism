@@ -30,7 +30,7 @@ public class SingletonSet<T> implements Set<T>
 		if (isEmpty()){
 			return Collections.emptyIterator();
 		}
-		return new SingletonIterator<T>(element)
+		return new SingletonIterator.Of<T>(element)
 		{
 			@Override
 			public void remove()

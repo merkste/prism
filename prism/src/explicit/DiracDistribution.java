@@ -17,12 +17,12 @@ public class DiracDistribution implements Iterable<Entry<Integer, Double>>
 
 	public Iterator<Entry<Integer, Double>> iterator()
 	{
-		return new SingletonIterator<>(transition);
+		return new SingletonIterator.Of<>(transition);
 	}
 
 	public static Iterator<Entry<Integer, Double>> iterator(final int state)
 	{
-		return new SingletonIterator<>((Entry<Integer, Double>) new Transition(state));
+		return new SingletonIterator.Of<>((Entry<Integer, Double>) new Transition(state));
 	}
 
 	public static class Transition implements Map.Entry<Integer, Double>
