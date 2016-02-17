@@ -27,7 +27,7 @@
 
 package acceptance;
 
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 import acceptance.AcceptanceGeneric.ElementType;
 import jdd.JDD;
 import jdd.JDDNode;

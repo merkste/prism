@@ -35,8 +35,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import common.IterableStateSet;
-
+import common.iterable.IterableStateSet;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLog;

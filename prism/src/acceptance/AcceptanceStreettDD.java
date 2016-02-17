@@ -28,8 +28,7 @@ package acceptance;
 
 import java.util.ArrayList;
 
-import common.IterableBitSet;
-
+import common.iterable.IterableBitSet;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;

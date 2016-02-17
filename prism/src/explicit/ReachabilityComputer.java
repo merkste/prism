@@ -31,7 +31,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Stack;
 
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 
 
 /**

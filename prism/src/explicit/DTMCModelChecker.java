@@ -46,7 +46,7 @@ import prism.PrismNotSupportedException;
 import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 

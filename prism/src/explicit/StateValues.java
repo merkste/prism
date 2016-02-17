@@ -35,8 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import common.IterableBitSet;
-
+import common.iterable.IterableBitSet;
 import parser.State;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionFunc;

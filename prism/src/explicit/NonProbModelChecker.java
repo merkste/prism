@@ -33,8 +33,8 @@ import java.util.Vector;
 
 import automata.LTL2NBA;
 import jltl2dstar.NBA;
-import common.IterableBitSet;
-import common.IterableStateSet;
+import common.iterable.IterableBitSet;
+import common.iterable.IterableStateSet;
 import parser.ast.Expression;
 import parser.ast.ExpressionExists;
 import parser.ast.ExpressionForAll;

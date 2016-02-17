@@ -25,7 +25,7 @@
 //	
 //==============================================================================
 
-package common;
+package common.iterable;
 
 import java.util.BitSet;
 import java.util.Iterator;
