@@ -48,8 +48,8 @@ import prism.PrismNotSupportedException;
  * By default it is assumed that each initial state in the product corresponds
  * to exactly one lifted state of interest in the original model,
  * allowing a mapping between product and original model state values.
- * If this assumption is not correct, overload {@code projectToOriginalModel} and
- * {@code getTransformedStatesOfInterest}.
+ * If this assumption is not correct, overload {@code projectToOriginalModel},
+ * {@code getTransformedStatesOfInterest} and {@code mapToTransformedModel}.
  *
  * @param <M> The type of the product model, e.g, DTMC, MDP, ...
  */
@@ -188,5 +188,30 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	public BitSet getTransformedStatesOfInterest()
 	{
 		return BitSetTools.asBitSet(productModel.getInitialStates());
+	}
+
+	@Override
+	public Integer mapToTransformedModel(final int state)
+	{
+		final Iterable<Integer> initial = productModel.getInitialStates();
+		for (Integer productState : initial) {
+			if (getModelState(productState) == state) {
+				return productState;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public BitSet mapToTransformedModel(final BitSet states)
+	{
+		final BitSet result = new BitSet();
+		final Iterable<Integer> initial = productModel.getInitialStates();
+		for (Integer productState : initial) {
+			if (states.get(getModelState(productState))) {
+				result.set(productState);
+			}
+		}
+		return result;
 	}
 }

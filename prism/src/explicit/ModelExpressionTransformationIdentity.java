@@ -98,4 +98,16 @@ public class ModelExpressionTransformationIdentity<M extends Model> implements M
 		return statesOfInterest;
 	}
 
+	@Override
+	public Integer mapToTransformedModel(final int state)
+	{
+		return state;
+	}
+
+	@Override
+	public BitSet mapToTransformedModel(final BitSet states)
+	{
+		return (BitSet) states.clone();
+	}
+
 }
