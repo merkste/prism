@@ -20,7 +20,6 @@ import common.iterable.IterableBitSet;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
 import common.iterable.collections.ChainedList;
-import common.methods.CallBitSet;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -217,30 +216,11 @@ public class MDPAlteredDistributions extends MDPView
 
 	public static MDP identifyStates(final MDP model, final Iterable<BitSet> equivalenceClasses)
 	{
-		assert BitSetTools.areDisjoint(equivalenceClasses) : "expected disjoint sets of identified states";
-		assert BitSetTools.areNonEmpty(equivalenceClasses) : "expected non-empty sets of identified states";
+		final EquivalenceRelationInteger identify = new EquivalenceRelationInteger(equivalenceClasses);
+		final BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
 
-		final Mapping<BitSet, Integer> getRepresentative = CallBitSet.nextSetBit(0);
-		final BitSet representatives = BitSetTools.asBitSet(new MappingIterator<>(equivalenceClasses, getRepresentative));
-
-		final MappingFromInteger<BitSet> equivalenceClass = new AbstractMappingFromInteger<BitSet>()
-		{
-			@Override
-			// FIXME ALG: consider memoizing
-			public BitSet get(final int state)
-			{
-				for (BitSet equivalenceClass : equivalenceClasses) {
-					if (equivalenceClass.get(state)) {
-						return equivalenceClass;
-					}
-				}
-				return null;
-			}
-		};
-		final BitSet unionOfEquivalenceClasses = BitSetTools.union(equivalenceClasses);
-
-		// 1. drop choices from equivalent states
-		final MDPDroppedAllChoices droppedChoices = new MDPDroppedAllChoices(model, unionOfEquivalenceClasses);
+		// 1. drop choices from non-representative states
+		final MDPDroppedAllChoices droppedChoices = new MDPDroppedAllChoices(model, identify.getNonRepresentatives());
 
 		// 2. attach all choices of an equivalence class to its representative
 		final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> addChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
@@ -248,14 +228,21 @@ public class MDPAlteredDistributions extends MDPView
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> get(final int state)
 			{
-				if (!representatives.get(state)) {
+				if (! identify.isRepresentative(state)) {
 					return Collections.emptyList();
 				}
-				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
+				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
+				if (equivalenceClass == null) {
+					return Collections.emptyList();
+				}
+				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 				{
 					@Override
 					public List<Iterator<Entry<Integer, Double>>> get(final int state)
 					{
+						if (identify.isRepresentative(state)) {
+							return Collections.emptyList();
+						}
 						final int numChoices = model.getNumChoices(state);
 						final List<Iterator<Entry<Integer, Double>>> choices = new ArrayList<>(numChoices);
 						for (int choice = 0; choice < numChoices; choice++) {
@@ -264,7 +251,7 @@ public class MDPAlteredDistributions extends MDPView
 						return choices;
 					}
 				};
-				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable<>(new IterableBitSet(equivalenceClass.get(state)), getChoices));
+				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable<>(new IterableBitSet(equivalenceClass), getOtherChoices));
 			}
 		};
 		final MappingFromInteger<List<Object>> addActions = new AbstractMappingFromInteger<List<Object>>()
@@ -272,14 +259,21 @@ public class MDPAlteredDistributions extends MDPView
 			@Override
 			public List<Object> get(final int state)
 			{
-				if (!representatives.get(state)) {
+				if (! identify.isRepresentative(state)) {
 					return Collections.emptyList();
 				}
-				final MappingFromInteger<List<Object>> getActions = new AbstractMappingFromInteger<List<Object>>()
+				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
+				if (equivalenceClass == null) {
+					return Collections.emptyList();
+				}
+				final MappingFromInteger<List<Object>> getOtherActions = new AbstractMappingFromInteger<List<Object>>()
 				{
 					@Override
 					public List<Object> get(final int state)
 					{
+						if (identify.isRepresentative(state)) {
+							return Collections.emptyList();
+						}
 						final int numChoices = model.getNumChoices(state);
 						final List<Object> actions = new ArrayList<>(numChoices);
 						for (int choice = 0; choice < numChoices; choice++) {
@@ -288,45 +282,42 @@ public class MDPAlteredDistributions extends MDPView
 						return actions;
 					}
 				};
-				return new ChainedList<Object>(new MappingIterable<>(new IterableBitSet(equivalenceClass.get(state)), getActions));
+				return new ChainedList<Object>(new MappingIterable<>(new IterableBitSet(equivalenceClass), getOtherActions));
 			}
 		};
 		final MDPView reattached = new MDPAdditionalChoices(droppedChoices, addChoices, addActions);
 
 		// 3. redirect transitions to representatives
-		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> redirect = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
+		final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> redirectTransition = new AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>()
+		{
+			@Override
+			public final Entry<Integer, Double> get(final Entry<Integer, Double> transition)
+			{
+				final int target = transition.getKey();
+				if (identify.isRepresentative(target)) {
+					return transition;
+				}
+				final int representative = identify.getRepresentative(target);
+				final Double probability = transition.getValue();
+				return new AbstractMap.SimpleImmutableEntry<>(representative, probability);
+			}
+		};
+		final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> redirectChoice = new AbstractPairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
 			{
 				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state, choice);
-				if (!reattached.someSuccessorsInSet(state, unionOfEquivalenceClasses)) {
+				if (reattached.allSuccessorsInSet(state, representatives)) {
 					return transitions;
 				}
-				final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> redirect = new AbstractMapping<Entry<Integer, Double>, Entry<Integer, Double>>()
-				{
-					@Override
-					public final Entry<Integer, Double> get(final Entry<Integer, Double> transition)
-					{
-						final int target = transition.getKey();
-						if (unionOfEquivalenceClasses.get(target) && !representatives.get(target)) {
-							final Integer redirectedTarget = getRepresentative.get(equivalenceClass.get(target));
-							final Double probability = transition.getValue();
-							return new AbstractMap.SimpleImmutableEntry<>(redirectedTarget, probability);
-						}
-						return transition;
-					}
-				};
-				return new MappingIterator<>(reattached.getTransitionsIterator(state, choice), redirect);
+				return new MappingIterator<>(transitions, redirectTransition);
 			}
 		};
-		final MDPAlteredDistributions redirected = new MDPAlteredDistributions(reattached, redirect);
+		final MDPAlteredDistributions redirected = new MDPAlteredDistributions(reattached, redirectChoice);
 
 		// 4. drop equivalence classes except for the representatives
-		final BitSet drop = BitSetTools.minus(unionOfEquivalenceClasses, representatives);
-		final BitSet preserve = BitSetTools.complement(model.getNumStates(), drop);
-
-		return new MDPRestricted(redirected, preserve, Restriction.STRICT);
+		return new MDPRestricted(redirected, representatives, Restriction.STRICT);
 	}
 
 	public static void main(final String[] args) throws PrismException
