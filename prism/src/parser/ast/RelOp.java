@@ -55,7 +55,7 @@ public enum RelOp
 		@Override
 		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return (keepStrictness ? GT : GEQ);
+			return keepStrictness ? GT : GEQ;
 		}
 	},
 	LEQ("<=") {
@@ -68,7 +68,7 @@ public enum RelOp
 		@Override
 		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return (keepStrictness ? GEQ : GT);
+			return keepStrictness ? GEQ : GT;
 		}
 	},
 	COMPUTE_VALUES("=") {
