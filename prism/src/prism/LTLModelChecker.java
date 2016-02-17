@@ -60,12 +60,19 @@ import parser.type.TypePathBool;
  */
 public class LTLModelChecker extends PrismComponent
 {
+	private boolean allowSimplificationsBasedOnModel = true;
+
 	/**
 	 * Create a new DTMCModelChecker, inherit basic state from parent (unless null).
 	 */
 	public LTLModelChecker(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+	}
+
+	public void disallowSimplificationsBasedOnModel()
+	{
+		allowSimplificationsBasedOnModel = false;
 	}
 
 	/**
@@ -109,32 +116,34 @@ public class LTLModelChecker extends PrismComponent
 		if (expr.getType() instanceof TypeBool) {
 			// Model check
 			JDDNode dd = mc.checkExpressionDD(expr, model.getReach().copy());
-			// Detect special cases (true, false) for optimisation
-			if (dd.equals(JDD.ZERO)) {
-				JDD.Deref(dd);
-				return Expression.False();
-			}
-			if (dd.equals(model.getReach())) {
-				JDD.Deref(dd);
-				return Expression.True();
-			}
-			// See if we already have an identical result
-			// (in which case, reuse it)
-			int i = labelDDs.indexOf(dd);
-			if (i != -1) {
-				JDD.Deref(dd);
-				return new ExpressionLabel("L" + i);
-			}
-			// Also, see if we already have the negation of this result
-			// (in which case, reuse it)
-			JDD.Ref(dd);
-			JDD.Ref(model.getReach());
-			JDDNode ddNeg = JDD.And(JDD.Not(dd), model.getReach());
-			i = labelDDs.indexOf(ddNeg);
-			JDD.Deref(ddNeg);
-			if (i != -1) {
-				JDD.Deref(dd);
-				return Expression.Not(new ExpressionLabel("L" + i));
+			if (allowSimplificationsBasedOnModel) {
+				// Detect special cases (true, false) for optimisation
+				if (dd.equals(JDD.ZERO)) {
+					JDD.Deref(dd);
+					return Expression.False();
+				}
+				if (dd.equals(model.getReach())) {
+					JDD.Deref(dd);
+					return Expression.True();
+				}
+				// See if we already have an identical result
+				// (in which case, reuse it)
+				int i = labelDDs.indexOf(dd);
+				if (i != -1) {
+					JDD.Deref(dd);
+					return new ExpressionLabel("L" + i);
+				}
+				// Also, see if we already have the negation of this result
+				// (in which case, reuse it)
+				JDD.Ref(dd);
+				JDD.Ref(model.getReach());
+				JDDNode ddNeg = JDD.And(JDD.Not(dd), model.getReach());
+				i = labelDDs.indexOf(ddNeg);
+				JDD.Deref(ddNeg);
+				if (i != -1) {
+					JDD.Deref(dd);
+					return Expression.Not(new ExpressionLabel("L" + i));
+				}
 			}
 			// Otherwise, add result to list, return new label
 			labelDDs.add(dd);
