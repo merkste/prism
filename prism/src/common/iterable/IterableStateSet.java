@@ -3,6 +3,7 @@
 //	Copyright (c) 2014-
 //	Authors:
 //	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Steffen Märcker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
 //	
 //------------------------------------------------------------------------------
 //	
@@ -24,27 +25,28 @@
 //	
 //==============================================================================
 
-
 package common.iterable;
 
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+
+import common.functions.primitive.AbstractPredicateInteger;
+import common.functions.primitive.PredicateInteger;
 
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of
  * iterating over the set or cleared bits of a BitSet representing a set of states
  * as well as iterating over all states if the BitSet is {@code null}.
  */
-public class IterableStateSet implements Iterable<Integer> {
-	private BitSet setOfStates;
-	private Integer numStates = null;
-	private boolean complement = false;
+public class IterableStateSet implements Iterable<Integer>
+{
+	private final Iterable<Integer> setOfStates;
 
 	/**
 	 * Constructor (iterate over all states 0..numStates-1)
 	 * 
-	 * @param numStates the number of states in the model, i.e., with indizes 0..numStates-1
+	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
 	 */
 	public IterableStateSet(int numStates)
 	{
@@ -54,9 +56,9 @@ public class IterableStateSet implements Iterable<Integer> {
 	/**
 	 * Constructor (iterate over the sets given by setOfStates or over all states)
 	 * 
-	 * @param setOfStates the BitSet representing state indizes in the model.
+	 * @param setOfStates the BitSet representing state indices in the model.
 	 *                    {@code null} signifies "all states in the model"
-	 * @param numStates the number of states in the model, i.e., with indizes 0..numStates-1
+	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
 	 */
 	public IterableStateSet(BitSet setOfStates, int numStates)
 	{
@@ -64,87 +66,44 @@ public class IterableStateSet implements Iterable<Integer> {
 	}
 
 	/**
+	 * Constructor (iterate over the all states filtered by predicate or over all states)
+	 * 
+	 * @param setOfStates the AbstractPredicateInteger filtering the state indices in the model.
+	 *                    {@code null} signifies "all states in the model"
+	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
+	 */
+	public IterableStateSet(PredicateInteger predicate, int numStates)
+	{
+		if (predicate == null) {
+			this.setOfStates = new Interval(numStates);
+		} else {
+			// FIXME ALG: exploit AbstractPredicateInteger::getBoolean(int element)
+			this.setOfStates = new FilteringIterable<>(new Interval(numStates), predicate);
+		}
+	}
+
+	/**
 	 * Constructor (most general form)
 	 *
-	 * @param setOfStates the BitSet representing state indizes in the model.
+	 * @param setOfStates the BitSet representing state indices in the model.
 	 *                    {@code null} signifies "all states in the model"
-	 * @param numStates the number of states in the model, i.e., with indizes 0..numStates-1
+	 * @param numStates the number of states in the model, i.e., with indices 0..numStates-1
 	 * @param complement if {@code true}, iterate over all the states not included in setOfStates
 	 */
 	public IterableStateSet(BitSet setOfStates, int numStates, boolean complement)
 	{
-		this.setOfStates = setOfStates;
-		this.numStates = numStates;
-		this.complement = complement;
+		if (setOfStates == null) {
+			this.setOfStates = complement ? Collections.<Integer> emptyList() : new Interval(numStates);
+		} else {
+			// build appropriate IterableBitSet with maxIndex = numStates-1
+			this.setOfStates = new IterableBitSet(setOfStates, numStates - 1, complement);
+		}
 	}
-
-	/** Implementation of an Iterator that iterates over all state indizes 0..numStates-1 */
-	private class AllStatesIterator implements Iterator<Integer>
-	{
-		private int current = 0;
-
-		@Override
-		public boolean hasNext()
-		{
-			if (current < numStates) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-		@Override
-		public Integer next()
-		{
-			if (hasNext()) {
-				return current++;
-			}
-			throw new NoSuchElementException();
-		}
-
-		@Override
-		public void remove()
-		{
-			throw new UnsupportedOperationException();
-		}
-	};
-
-	/** Implementation of an Iterator that iterates over the empty state set */
-	private class NoStatesIterator implements Iterator<Integer>
-	{
-		@Override
-		public boolean hasNext()
-		{
-			return false;
-		}
-
-		@Override
-		public Integer next()
-		{
-			throw new NoSuchElementException();
-		}
-
-		@Override
-		public void remove()
-		{
-			throw new UnsupportedOperationException();
-		}
-	};
 
 	@Override
 	public Iterator<Integer> iterator()
 	{
-		if (setOfStates == null) {
-			if (!complement) {
-				// return iterator over all states
-				return new AllStatesIterator();
-			} else {
-				return new NoStatesIterator();
-			}
-		} else {
-			// return appropriate IterableBitSet with maxIndex = numStates-1
-			return new IterableBitSet(setOfStates, numStates-1, complement).iterator();
-		}
+		return setOfStates.iterator();
 	}
 
 	/**
@@ -157,11 +116,24 @@ public class IterableStateSet implements Iterable<Integer> {
 		BitSet test = new BitSet();
 		test.set(1);
 		test.set(3);
+		final PredicateInteger odd = new AbstractPredicateInteger()
+		{
+			@Override
+			public boolean getBoolean(int number)
+			{
+				return number % 2 == 1;
+			}
+		};
 
 		int numStates = 5;
 
 		System.out.println("\n" + test + " - included states:");
 		for (Integer index : new IterableStateSet(test, numStates)) {
+			System.out.println(index);
+		}
+
+		System.out.println("\nodd(n) - included states:");
+		for (Integer index : new IterableStateSet(odd, numStates)) {
 			System.out.println(index);
 		}
 
@@ -171,7 +143,7 @@ public class IterableStateSet implements Iterable<Integer> {
 		}
 
 		System.out.println("\nAll " + numStates + " states:");
-		for (Integer index : new IterableStateSet(null, numStates)) {
+		for (Integer index : new IterableStateSet((BitSet) null, numStates)) {
 			System.out.println(index);
 		}
 
