@@ -160,7 +160,7 @@ public class LTL2RabinLibrary
 		// handle simple until formula with time bounds
 		if (Expression.containsTemporalTimeBounds(ltl)) {
 			if (!ltl.isSimplePathFormula()) {
-				throw new PrismNotSupportedException("Unsupported LTL formula with time bounds: "+ltl);
+				return null;
 			}
 
 			ltl = Expression.convertSimplePathFormulaToCanonicalForm(ltl);

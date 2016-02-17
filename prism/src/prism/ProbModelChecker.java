@@ -945,10 +945,6 @@ public class ProbModelChecker extends NonProbModelChecker
 			if (model.getModelType().continuousTime()) {
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");
 			}
-
-			if (!expr.isSimplePathFormula()) {
-				throw new PrismException("Time-bounded operators not supported in LTL: " + expr);
-			}
 		}
 
 		// Can't do "dfa" properties yet
