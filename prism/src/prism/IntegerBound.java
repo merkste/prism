@@ -28,6 +28,7 @@ package prism;
 
 import parser.Values;
 import parser.ast.ExpressionTemporal;
+import parser.ast.TemporalOperatorBound;
 
 /**
  * Canonical representation of an integer bound, with strict/non-strict lower and upper bound.
@@ -93,10 +94,16 @@ public class IntegerBound
 	 */
 	public static IntegerBound fromExpressionTemporal(ExpressionTemporal expression, Values constantValues, boolean check) throws PrismException
 	{
-		IntegerBound bounds =  new IntegerBound(expression.getLowerBound() == null ? null : expression.getLowerBound().evaluateInt(constantValues),
-		                                          expression.lowerBoundIsStrict(),
-		                                          expression.getUpperBound() == null ? null : expression.getUpperBound().evaluateInt(constantValues),
-		                                          expression.upperBoundIsStrict());
+		TemporalOperatorBound eBound = expression.bound;
+		IntegerBound bounds;
+		if (eBound == null) {
+			bounds = new IntegerBound(null, false, null, false);
+		} else {
+			bounds =  new IntegerBound(eBound.getLowerBound() == null ? null : eBound.getLowerBound().evaluateInt(constantValues),
+		                                eBound.lowerBoundIsStrict(),
+		                                eBound.getUpperBound() == null ? null : eBound.getUpperBound().evaluateInt(constantValues),
+		                                eBound.upperBoundIsStrict());
+		}
 
 		if (check) {
 			if (bounds.hasNegativeBound()) {

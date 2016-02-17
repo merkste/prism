@@ -59,15 +59,15 @@ public class CheckValid extends ASTTraverse
 			}
 		}
 		// PTA only support upper time bounds
-		if (e.getLowerBound() != null) {
+		if (e.bound != null && e.bound.getLowerBound() != null) {
 			if (modelType == ModelType.PTA) {
 				throw new PrismLangException("Only upper time bounds are allowed on the " + e.getOperatorSymbol()
 						+ " operator for PTAs");
 			}
 		}
 		// Apart from CTMCs, we only support integer time bounds
-		if ((e.getUpperBound() != null && !(e.getUpperBound().getType() instanceof TypeInt)) ||
-		    (e.getLowerBound() != null && !(e.getLowerBound().getType() instanceof TypeInt))) {
+		if ((e.bound != null && e.bound.getUpperBound() != null && !(e.bound.getUpperBound().getType() instanceof TypeInt)) ||
+		    (e.bound != null && e.bound.getLowerBound() != null && !(e.bound.getLowerBound().getType() instanceof TypeInt))) {
 			if (modelType == ModelType.DTMC) {
 				throw new PrismLangException("Time bounds on the " + e.getOperatorSymbol()
 						+ " operator must be integers for DTMCs");
@@ -82,7 +82,7 @@ public class CheckValid extends ASTTraverse
 			}
 		}
 		// Don't allow lower bounds on weak until - does not have intuitive semantics
-		if (e.getOperator() == ExpressionTemporal.P_W && e.getLowerBound() != null) {
+		if (e.getOperator() == ExpressionTemporal.P_W && e.getBound().hasLowerBound()) {
 			throw new PrismLangException("The weak until operator (W) with lower bounds is not yet supported");
 		}
 	}

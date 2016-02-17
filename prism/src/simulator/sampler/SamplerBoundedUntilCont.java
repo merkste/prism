@@ -55,8 +55,8 @@ public class SamplerBoundedUntilCont extends SamplerBoolean
 			throw new PrismException("Error creating Sampler");
 		left = expr.getOperand1();
 		right = expr.getOperand2();
-		lb = expr.getLowerBound() == null ? 0.0 : expr.getLowerBound().evaluateDouble();
-		ub = expr.getUpperBound() == null ? Double.POSITIVE_INFINITY : expr.getUpperBound().evaluateDouble();
+		lb = (expr.bound == null || expr.bound.getLowerBound() == null) ? 0.0 : expr.bound.getLowerBound().evaluateDouble();
+		ub = (expr.bound == null || expr.bound.getUpperBound() == null) ? Double.POSITIVE_INFINITY : expr.bound.getUpperBound().evaluateDouble();
 		// Initialise sampler info
 		reset();
 		resetStats();

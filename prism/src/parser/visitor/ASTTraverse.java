@@ -408,8 +408,7 @@ public class ASTTraverse implements ASTVisitor
 		visitPre(e);
 		if (e.getOperand1() != null) e.getOperand1().accept(this);
 		if (e.getOperand2() != null) e.getOperand2().accept(this);
-		if (e.getLowerBound() != null) e.getLowerBound().accept(this);
-		if (e.getUpperBound() != null) e.getUpperBound().accept(this);
+		if (e.bound != null) e.bound.accept(this);
 		visitPost(e);
 		return null;
 	}

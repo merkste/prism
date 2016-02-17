@@ -136,7 +136,7 @@ public class CTMCModelChecker extends ProbModelChecker
 
 		// lower bound is 0 if not specified
 		// (i.e. if until is of form U<=t)
-		exprTmp = expr.getLowerBound();
+		exprTmp = expr.bound == null ? null : expr.bound.getLowerBound();
 		if (exprTmp != null) {
 			lTime = exprTmp.evaluateDouble(constantValues);
 			if (lTime < 0) {
@@ -147,11 +147,11 @@ public class CTMCModelChecker extends ProbModelChecker
 		}
 		// upper bound is -1 if not specified
 		// (i.e. if until is of form U>=t)
-		exprTmp = expr.getUpperBound();
+		exprTmp = expr.bound == null ? null : expr.bound.getUpperBound();
 		if (exprTmp != null) {
 			uTime = exprTmp.evaluateDouble(constantValues);
-			if (uTime < 0 || (uTime == 0 && expr.upperBoundIsStrict())) {
-				String bound = (expr.upperBoundIsStrict() ? "<" : "<=") + uTime;
+			if (uTime < 0 || (uTime == 0 && expr.bound.upperBoundIsStrict())) {
+				String bound = (expr.bound.upperBoundIsStrict() ? "<" : "<=") + uTime;
 				throw new PrismException("Invalid upper bound " + bound + " in time-bounded until formula");
 			}
 			if (uTime < lTime) {

@@ -213,8 +213,8 @@ public class PTAModelChecker extends PrismComponent
 		if (exprTemp.hasBounds()) {
 			mainLog.println("Modifying PTA to encode time bound from property...");
 			// Get time bound info (is always of form <=T or <T)
-			timeBound = exprTemp.getUpperBound().evaluateInt(constantValues);
-			timeBoundStrict = exprTemp.upperBoundIsStrict();
+			timeBound = exprTemp.bound.getUpperBound().evaluateInt(constantValues);
+			timeBoundStrict = exprTemp.bound.upperBoundIsStrict();
 			// Modify PTA to include time bound; get new target
 			targetLocs = buildTimeBoundIntoPta(pta, targetLocs, timeBound, timeBoundStrict);
 			mainLog.println("New PTA: " + pta.infoString());

@@ -51,14 +51,9 @@ public class ExpressionTemporal extends Expression
 	// Up to two operands (either may be null)
 	protected Expression operand1 = null; // LHS of operator
 	protected Expression operand2 = null; // RHS of operator
-	// Optional (time) bounds
-	protected Expression lBound = null; // None if null, i.e. zero
-	protected Expression uBound = null; // None if null, i.e. infinity
-	// Strictness of (time) bounds
-	protected boolean lBoundStrict = false; // true: >, false: >= 
-	protected boolean uBoundStrict = false; // true: <, false: <=
-	// Display as =T rather than [T,T] ?
-	protected boolean equals = false;
+
+	// optional bound
+	public TemporalOperatorBound bound;
 
 	// Constructors
 
@@ -88,56 +83,6 @@ public class ExpressionTemporal extends Expression
 	public void setOperand2(Expression e2)
 	{
 		operand2 = e2;
-	}
-
-	/**
-	 * Set lower time bound to be of form &gt;= e
-	 * (null denotes no lower bound, i.e. zero)
-	 */
-	public void setLowerBound(Expression e)
-	{
-		setLowerBound(e, false);
-	}
-
-	/**
-	 * Set lower time bound to be of form &gt;= e or &gt; e
-	 * (null denotes no lower bound, i.e. zero)
-	 */
-	public void setLowerBound(Expression e, boolean strict)
-	{
-		lBound = e;
-		lBoundStrict = strict;
-	}
-
-	/**
-	 * Set upper time bound to be of form &lt;= e
-	 * (null denotes no upper bound, i.e. infinity)
-	 */
-	public void setUpperBound(Expression e)
-	{
-		setUpperBound(e, false);
-	}
-
-	/**
-	 * Set upper time bound to be of form &lt;= e or &lt; e
-	 * (null denotes no upper bound, i.e. infinity)
-	 */
-	public void setUpperBound(Expression e, boolean strict)
-	{
-		uBound = e;
-		uBoundStrict = strict;
-	}
-
-	/**
-	 * Set both lower/upper time bound to e, i.e. "=e".
-	 */
-	public void setEqualBounds(Expression e)
-	{
-		lBound = e;
-		lBoundStrict = false;
-		uBound = e;
-		uBoundStrict = false;
-		equals = true;
 	}
 
 	// Get methods
@@ -170,38 +115,16 @@ public class ExpressionTemporal extends Expression
 			return (operand2 == null) ? 1 : 2;
 	}
 
+	public TemporalOperatorBound getBound()
+	{
+		return bound;
+	}
+
 	public boolean hasBounds()
 	{
-		return lBound != null || uBound != null;
+		return bound != null;
 	}
 
-	public Expression getLowerBound()
-	{
-		return lBound;
-	}
-
-	public boolean lowerBoundIsStrict()
-	{
-		return lBoundStrict;
-	}
-
-	public Expression getUpperBound()
-	{
-		return uBound;
-	}
-
-	public boolean upperBoundIsStrict()
-	{
-		return uBoundStrict;
-	}
-
-	/**
-	 * Returns true if lower/upper bound are equal and should be displayed as =T 
-	 */
-	public boolean getEquals()
-	{
-		return equals;
-	}
 
 	// Methods required for Expression:
 
@@ -246,12 +169,16 @@ public class ExpressionTemporal extends Expression
 			expr.setOperand1(operand1.deepCopy());
 		if (operand2 != null)
 			expr.setOperand2(operand2.deepCopy());
-		expr.setLowerBound(lBound == null ? null : lBound.deepCopy(), lBoundStrict);
-		expr.setUpperBound(uBound == null ? null : uBound.deepCopy(), uBoundStrict);
-		expr.equals = equals;
+		if (bound != null) {
+			expr.setBound((TemporalOperatorBound) bound.deepCopy());
+		}
 		expr.setType(type);
 		expr.setPosition(this);
 		return expr;
+	}
+	
+	public void setBound(TemporalOperatorBound bound) {
+		this.bound = bound;
 	}
 
 	// Standard methods
@@ -263,21 +190,23 @@ public class ExpressionTemporal extends Expression
 		if (operand1 != null)
 			s += operand1 + " ";
 		s += opSymbols[op];
-		if (lBound == null) {
-			if (uBound != null) {
-				if (op != R_I)
-					s += "<" + (uBoundStrict ? "" : "=") + uBound;
-				else
-					s += "=" + uBound;
-			}
-		} else {
-			if (uBound == null) {
-				s += ">" + (lBoundStrict ? "" : "=") + lBound;
+		if (bound != null) {
+			if (bound.getLowerBound() == null) {
+				if (bound.getUpperBound() != null) {
+					if (op != R_I)
+						s += "<" + (bound.upperBoundIsStrict() ? "" : "=") + bound.getUpperBound();
+					else
+						s += "=" + bound.getUpperBound();
+				}
 			} else {
-				if (equals)
-					s += "=" + lBound;
-				else
-					s += "[" + lBound + "," + uBound + "]";
+				if (bound.getUpperBound() == null) {
+					s += ">" + (bound.lowerBoundIsStrict() ? "" : "=") + bound.getLowerBound();
+				} else {
+					if (bound.getEquals())
+						s += "=" + bound.getLowerBound();
+					else
+						s += "[" + bound.getLowerBound() + "," + bound.getUpperBound() + "]";
+				}
 			}
 		}
 		if (operand2 != null)
@@ -290,14 +219,10 @@ public class ExpressionTemporal extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (equals ? 1231 : 1237);
-		result = prime * result + ((lBound == null) ? 0 : lBound.hashCode());
-		result = prime * result + (lBoundStrict ? 1231 : 1237);
+		result = prime * result + ((bound == null) ? 0 : bound.hashCode());
 		result = prime * result + op;
 		result = prime * result + ((operand1 == null) ? 0 : operand1.hashCode());
 		result = prime * result + ((operand2 == null) ? 0 : operand2.hashCode());
-		result = prime * result + ((uBound == null) ? 0 : uBound.hashCode());
-		result = prime * result + (uBoundStrict ? 1231 : 1237);
 		return result;
 	}
 
@@ -308,17 +233,13 @@ public class ExpressionTemporal extends Expression
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (!(obj instanceof ExpressionTemporal))
 			return false;
 		ExpressionTemporal other = (ExpressionTemporal) obj;
-		if (equals != other.equals)
-			return false;
-		if (lBound == null) {
-			if (other.lBound != null)
+		if (bound == null) {
+			if (other.bound != null)
 				return false;
-		} else if (!lBound.equals(other.lBound))
-			return false;
-		if (lBoundStrict != other.lBoundStrict)
+		} else if (!bound.equals(other.bound))
 			return false;
 		if (op != other.op)
 			return false;
@@ -331,13 +252,6 @@ public class ExpressionTemporal extends Expression
 			if (other.operand2 != null)
 				return false;
 		} else if (!operand2.equals(other.operand2))
-			return false;
-		if (uBound == null) {
-			if (other.uBound != null)
-				return false;
-		} else if (!uBound.equals(other.uBound))
-			return false;
-		if (uBoundStrict != other.uBoundStrict)
 			return false;
 		return true;
 	}
@@ -358,36 +272,30 @@ public class ExpressionTemporal extends Expression
 			// F a == true U a
 			op1 = Expression.True();
 			exprTemp = new ExpressionTemporal(P_U, op1, operand2);
-			exprTemp.setLowerBound(lBound, lBoundStrict);
-			exprTemp.setUpperBound(uBound, uBoundStrict);
-			exprTemp.equals = equals;
+			// TODO: Verify for rewards etc
+			exprTemp.setBound(bound.deepCopy());
 			return exprTemp;
 		case P_G:
 			// G a == !(true U !a)
 			op1 = Expression.True();
 			op2 = Expression.Not(operand2);
 			exprTemp = new ExpressionTemporal(P_U, op1, op2);
-			exprTemp.setLowerBound(lBound, lBoundStrict);
-			exprTemp.setUpperBound(uBound, uBoundStrict);
-			exprTemp.equals = equals;
+			// TODO: Verify for rewards etc
+			exprTemp.setBound(bound.deepCopy());
 			return Expression.Not(exprTemp);
 		case P_W:
 			// a W b == !(a&!b U !a&!b)
 			op1 = Expression.And(operand1, Expression.Not(operand2));
 			op2 = Expression.And(Expression.Not(operand1), Expression.Not(operand2));
 			exprTemp = new ExpressionTemporal(P_U, op1, op2);
-			exprTemp.setLowerBound(lBound, lBoundStrict);
-			exprTemp.setUpperBound(uBound, uBoundStrict);
-			exprTemp.equals = equals;
+			exprTemp.setBound(bound.deepCopy());
 			return Expression.Not(exprTemp);
 		case P_R:
 			// a R b == !(!a U !b)
 			op1 = Expression.Not(operand1);
 			op2 = Expression.Not(operand2);
 			exprTemp = new ExpressionTemporal(P_U, op1, op2);
-			exprTemp.setLowerBound(lBound, lBoundStrict);
-			exprTemp.setUpperBound(uBound, uBoundStrict);
-			exprTemp.equals = equals;
+			exprTemp.setBound(bound.deepCopy());
 			return Expression.Not(exprTemp);
 		}
 		throw new PrismLangException("Cannot convert " + getOperatorSymbol() + " to until form");
