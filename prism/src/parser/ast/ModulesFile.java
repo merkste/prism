@@ -1082,7 +1082,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	 */
 	public State getDefaultInitialState() throws PrismLangException
 	{
-		int i, j, count, n, n2;
+		int i, j, curIndex, n, n2;
 		Module module;
 		Declaration decl;
 		State initialState;
@@ -1094,14 +1094,27 @@ public class ModulesFile extends ASTElement implements ModelInfo
 
 		// Create State object
 		initialState = new State(getNumVars(), this);
+		// We first initialize all views
+		for (Declaration declView : getViewDeclarations()) {
+			if (declView.getStart() != null) {
+				initialValue = declView.getStart().evaluate(constantValues);
+				initialValue = declView.getType().castValueTo(initialValue);
+				initialState.setViewValue(declView.getName(), initialValue);
+			}
+		}
+
 		// Then add values for all globals and all locals, in that order
-		count = 0;
+		curIndex = 0;
 		n = getNumGlobals();
 		for (i = 0; i < n; i++) {
 			decl = getGlobal(i);
 			initialValue = decl.getStartOrDefault().evaluate(constantValues);
 			initialValue = getGlobal(i).getType().castValueTo(initialValue);
-			initialState.setValue(count++, initialValue);
+			if (initialState.varValues[curIndex] == null) {
+				// not initialized yet
+				initialState.setValue(curIndex, initialValue);
+			}
+			curIndex++;
 		}
 		n = getNumModules();
 		for (i = 0; i < n; i++) {
@@ -1111,7 +1124,11 @@ public class ModulesFile extends ASTElement implements ModelInfo
 				decl = module.getDeclaration(j);
 				initialValue = decl.getStartOrDefault().evaluate(constantValues);
 				initialValue = module.getDeclaration(j).getType().castValueTo(initialValue);
-				initialState.setValue(count++, initialValue);
+				if (initialState.varValues[curIndex] == null) {
+					// not initialized yet
+					initialState.setValue(curIndex, initialValue);
+				}
+				curIndex++;
 			}
 		}
 
