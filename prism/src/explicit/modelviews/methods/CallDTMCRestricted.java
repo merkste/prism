@@ -94,7 +94,6 @@ public class CallDTMCRestricted
 			extends AbstractPairMapping<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 			implements UnaryMethod<DTMCRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
-		// FIXME ALG: consider primitive types
 		@Override
 		public Mapping<Entry<Integer, Double>, Entry<Integer, Double>> on(final DTMCRestricted model)
 		{

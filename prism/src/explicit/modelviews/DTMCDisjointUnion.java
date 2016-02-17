@@ -116,7 +116,6 @@ public class DTMCDisjointUnion extends DTMCView
 	@Override
 	public VarList getVarList()
 	{
-		// FIXME ALG: Does null actually work as VarList? 
 		// FIXME ALG: Can we be more efficient than potentially recomputing the VarList?
 		return null;
 	}
