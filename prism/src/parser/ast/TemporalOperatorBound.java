@@ -281,6 +281,32 @@ public class TemporalOperatorBound extends ASTElement {
 	}
 
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof TemporalOperatorBound))
+			return false;
+
+		TemporalOperatorBound otherBound = (TemporalOperatorBound) other;
+
+		if (boundType != otherBound.boundType)
+			return false;
+
+		if (lBound!=null && otherBound.lBound!=null && lBoundStrict != otherBound.lBoundStrict)
+			return false;
+		
+		if (uBound!=null && otherBound.uBound!=null && uBoundStrict != otherBound.uBoundStrict)
+			return false;
+
+		if ( (rewardStructureIndex!=null) != (otherBound.rewardStructureIndex!=null) )
+			return false;
+
+		if (rewardStructureIndex != null && !rewardStructureIndex.equals(otherBound.rewardStructureIndex))
+			return false;
+
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		String result ="";
 		switch (boundType) {

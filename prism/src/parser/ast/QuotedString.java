@@ -152,7 +152,19 @@ public class QuotedString extends ASTElement
 
 		return sb.toString();
 	}
-	
+
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof QuotedString))
+			return false;
+
+		QuotedString otherQS = (QuotedString) other;
+
+		return text.equals(otherQS.getText());
+	}
+
+
 	@Override
 	public int hashCode()
 	{
