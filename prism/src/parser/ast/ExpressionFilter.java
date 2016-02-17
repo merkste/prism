@@ -26,6 +26,9 @@
 
 package parser.ast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import parser.*;
 import parser.type.TypeBool;
 import parser.visitor.*;
@@ -76,6 +79,7 @@ public class ExpressionFilter extends Expression
 	// (and string representation of)
 	private FilterOperator opType;
 	private String opName;
+	private List<QuotedString> opArguments = new ArrayList<QuotedString>();
 	// Expression that filter is applied to
 	private Expression operand;
 	// Expression defining states that filter is over
@@ -108,6 +112,39 @@ public class ExpressionFilter extends Expression
 		setFilter(filter);
 	}
 
+	/**
+	 * Validates that the operator arguments are syntactially correct (arity, etc).
+	 * Throws exception if not.
+	 */
+	public void validateOperatorArguments() throws PrismLangException
+	{
+		if (opType == null)
+			return;
+
+		switch (opType) {
+		case ARGMAX:
+		case ARGMIN:
+		case AVG:
+		case COUNT:
+		case EXISTS:
+		case FIRST:
+		case FORALL:
+		case MAX:
+		case MIN:
+		case PRINT:
+		case PRINTALL:
+		case RANGE:
+		case STATE:
+		case SUM: {
+			if (opArguments.size() != 0) {
+				throw new PrismLangException("Filter operator " + opName + " may not have operator arguments", this);
+			}
+			return;
+		}
+		}
+		throw new IllegalArgumentException("Implementation error, filter " + opName + " not handled!");
+	}
+
 	// Set methods
 
 	public void setOperator(String opName)
@@ -128,6 +165,15 @@ public class ExpressionFilter extends Expression
 			opType = FilterOperator.EXISTS;
 		} else {
 			opType = null;
+		}
+	}
+
+	public void setOperatorArguments(List<QuotedString> args)
+	{
+		if (args != null) {
+			opArguments = args;
+		} else {
+			opArguments = new ArrayList<QuotedString>();
 		}
 	}
 
@@ -197,7 +243,13 @@ public class ExpressionFilter extends Expression
 	{
 		return storeVector;
 	}
+
+	public List<QuotedString> getOperatorArguments()
+	{
+		return opArguments;
+	}
 	
+
 	public boolean isParam()
 	{
 		return param;
@@ -237,7 +289,7 @@ public class ExpressionFilter extends Expression
 		else if (param) return false;
 		else return true;
 	}
-	
+
 	// Methods required for ASTElement:
 
 	@Override
@@ -255,6 +307,10 @@ public class ExpressionFilter extends Expression
 		e.setType(type);
 		e.setPosition(this);
 		e.param = this.param;
+		
+		for (QuotedString arg : getOperatorArguments()) {
+			e.opArguments.add(arg.deepCopy());
+		}
 
 		return e;
 	}
@@ -267,7 +323,19 @@ public class ExpressionFilter extends Expression
 		String s = "";
 		if (invisible)
 			return operand.toString();
-		s += (param ? "paramfilter(" : "filter(") + opName + ", " + operand;
+		s += (param ? "paramfilter(" : "filter(") + opName;
+		if (getOperatorArguments().size() > 0) {
+			s += "(";
+			boolean first = true;
+			for (QuotedString arg : getOperatorArguments()) {
+				if (!first)
+					s += ",";
+				first = false;
+				s += arg;
+			}
+			s += ")";
+		}
+		s += ", " + operand;
 		if (filter != null)
 			s += ", " + filter;
 		s += ")";
@@ -282,6 +350,7 @@ public class ExpressionFilter extends Expression
 		result = prime * result + (explanationEnabled ? 1231 : 1237);
 		result = prime * result + ((filter == null) ? 0 : filter.hashCode());
 		result = prime * result + (invisible ? 1231 : 1237);
+		result = prime * result + ((opArguments == null) ? 0 : opArguments.hashCode());
 		result = prime * result + ((opName == null) ? 0 : opName.hashCode());
 		result = prime * result + ((opType == null) ? 0 : opType.hashCode());
 		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
@@ -309,6 +378,11 @@ public class ExpressionFilter extends Expression
 			return false;
 		if (invisible != other.invisible)
 			return false;
+		if (opArguments == null) {
+			if (other.opArguments != null)
+				return false;
+		} else if (!opArguments.equals(other.opArguments))
+			return false;
 		if (opName == null) {
 			if (other.opName != null)
 				return false;
@@ -327,7 +401,7 @@ public class ExpressionFilter extends Expression
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * Wrap a "default" ExpressionFilter around an Expression representing a property to be model checked,
 	 * in order to pick out a single value (the final result of model checking) from a vector of values for all states.

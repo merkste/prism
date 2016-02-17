@@ -220,5 +220,7 @@ public class PropertiesSemanticCheck extends SemanticCheck
 		if (e.getOperatorType() == null) {
 			throw new PrismLangException("Unknown filter type \"" + e.getOperatorName() + "\"", e);
 		}
+
+		e.validateOperatorArguments();
 	}
 }

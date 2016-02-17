@@ -26,6 +26,8 @@
 
 package parser.visitor;
 
+import java.util.List;
+
 import parser.ast.*;
 import prism.Pair;
 import prism.PrismLangException;
@@ -593,6 +595,12 @@ public class ASTTraverseModify implements ASTVisitor
 		visitPre(e);
 		if (e.getFilter() != null) e.setFilter((Expression)(e.getFilter().accept(this)));
 		if (e.getOperand() != null) e.setOperand((Expression)(e.getOperand().accept(this)));
+
+		List<QuotedString> opArgs = e.getOperatorArguments();
+		for (int i=0; i < opArgs.size(); i++) {
+			opArgs.set(i, (QuotedString) opArgs.get(i).accept(this));
+		}
+
 		visitPost(e);
 		return e;
 	}

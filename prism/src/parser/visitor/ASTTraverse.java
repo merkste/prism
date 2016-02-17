@@ -580,6 +580,9 @@ public class ASTTraverse implements ASTVisitor
 		visitPre(e);
 		if (e.getFilter() != null) e.getFilter().accept(this);
 		if (e.getOperand() != null) e.getOperand().accept(this);
+		for (QuotedString arg : e.getOperatorArguments()) {
+			arg.accept(this);
+		}
 		visitPost(e);
 		return null;
 	}
