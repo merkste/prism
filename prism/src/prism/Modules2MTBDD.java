@@ -28,6 +28,8 @@ package prism;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.HashSet;
@@ -115,6 +117,8 @@ public class Modules2MTBDD
 	private JDDNode[] ddSchedVars;		// individual dd vars for scheduling non-det.
 	private JDDNode[] ddChoiceVars;		// individual dd vars for local non-det.
 
+	private TreeSet<Integer>[] globalVarUpdatesPerModule;
+	
 	private ModelVariablesDD modelVariables;
 	
 	// flags for keeping track of which variables have been used
@@ -143,6 +147,7 @@ public class Modules2MTBDD
 		public JDDNode rewards[];	// mtbdd for rewards
 		public int min; 			// min index of dd vars used for local nondeterminism
 		public int max; 			// max index of dd vars used for local nondeterminism
+		public TreeSet<Integer> synchedGlobalVarUpdates;	// global synched updates
 		public ComponentDDs()
 		{
 			rewards = new JDDNode[modulesFile.getNumRewardStructs()];
@@ -158,6 +163,7 @@ public class Modules2MTBDD
 		public ComponentDDs[] synchs;	// for each synchronising action
 		public JDDNode id;	 			// mtbdd for identity matrix
 		public HashSet<String> allSynchs;		// set of all synchs used (syntactic)
+		public TreeSet<Integer> globalVarUpdates;  // global (synchronized) var updates
 		public SystemDDs(int n)
 		{
 			synchs = new ComponentDDs[n];
@@ -202,6 +208,7 @@ public class Modules2MTBDD
 		numSynchs = synchs.size();
 		
 		initializeViews();
+		initializeGlobalUpdateInformation();
 		
 		// allocate dd variables
 		allocateDDVars();
@@ -369,6 +376,32 @@ public class Modules2MTBDD
 					}
 				}
 			}
+		}
+	}
+	
+	private void initializeGlobalUpdateInformation() throws PrismException
+	{
+		globalVarUpdatesPerModule = new TreeSet[numModules];
+
+		Map<String, String> modulesForGlobalVarUpdates = modulesFile.findModulesForGlobalVarUpdates();
+
+		for (int i = 0; i < numModules; i++) {
+			String moduleName = modulesFile.getModuleName(i);
+			globalVarUpdatesPerModule[i] = new TreeSet<Integer>();
+			for (Entry<String, String> entry : modulesForGlobalVarUpdates.entrySet()) {
+				if (!entry.getValue().equals(moduleName)) {
+					continue;
+				}
+
+				int varIndex = modulesFile.getVarIndex(entry.getKey());
+				if (varIndex == -1) {
+					throw new PrismException("Implementation error");
+				}
+				globalVarUpdatesPerModule[i].add(varIndex);
+				//mainLog.println("Module "+moduleName+" writes to "+entry.getKey()+ " (index "+varIndex+")");
+			}
+			
+			//mainLog.println("Module "+moduleName+": "+globalVarUpdatesPerModule[i]);
 		}
 	}
 	
@@ -1106,6 +1139,9 @@ public class Modules2MTBDD
 		// store synchs used
 		sysDDs.allSynchs.addAll(module.getAllSynchs());
 		
+		sysDDs.globalVarUpdates = new TreeSet<Integer>();
+		sysDDs.globalVarUpdates.addAll(globalVarUpdatesPerModule[m]);
+		
 		return sysDDs;
 	}
 
@@ -1153,7 +1189,9 @@ public class Modules2MTBDD
 					sysDDs.synchs[j] = translateNonSynchronising(sysDDs1.synchs[j], sysDDs2.synchs[j], sysDDs1.id, sysDDs2.id);
 				}
 				else {
-					sysDDs.synchs[j] = translateSynchronising(sysDDs1.synchs[j], sysDDs2.synchs[j]);
+					sysDDs.synchs[j] = translateSynchronising(sysDDs1.synchs[j], sysDDs2.synchs[j],
+					                                          sysDDs1.globalVarUpdates,
+					                                          sysDDs2.globalVarUpdates);
 				}
 			}
 			
@@ -1163,6 +1201,10 @@ public class Modules2MTBDD
 			// combine lists of synchs
 			sysDDs.allSynchs.addAll(sysDDs1.allSynchs);
 			sysDDs.allSynchs.addAll(sysDDs2.allSynchs);
+			
+			sysDDs.globalVarUpdates = new TreeSet<Integer>();
+			sysDDs.globalVarUpdates.addAll(sysDDs1.globalVarUpdates);
+			sysDDs.globalVarUpdates.addAll(sysDDs2.globalVarUpdates);
 		}
 		
 		return sysDDs;
@@ -1202,6 +1244,10 @@ public class Modules2MTBDD
 			// combine lists of synchs
 			sysDDs.allSynchs.addAll(sysDDs1.allSynchs);
 			sysDDs.allSynchs.addAll(sysDDs2.allSynchs);
+			
+			sysDDs.globalVarUpdates = new TreeSet<Integer>();
+			sysDDs.globalVarUpdates.addAll(sysDDs1.globalVarUpdates);
+			sysDDs.globalVarUpdates.addAll(sysDDs2.globalVarUpdates);
 		}
 		
 		return sysDDs;
@@ -1249,7 +1295,9 @@ public class Modules2MTBDD
 		// combine mtbdds for each synchronising action
 		for (i = 0; i < numSynchs; i++) {
 			if (synchBool[i]) {
-				sysDDs.synchs[i] = translateSynchronising(sysDDs1.synchs[i], sysDDs2.synchs[i]);
+				sysDDs.synchs[i] = translateSynchronising(sysDDs1.synchs[i], sysDDs2.synchs[i],
+				                                          sysDDs1.globalVarUpdates,
+				                                          sysDDs2.globalVarUpdates);
 			}
 			else {
 				sysDDs.synchs[i] = translateNonSynchronising(sysDDs1.synchs[i], sysDDs2.synchs[i], sysDDs1.id, sysDDs2.id);
@@ -1262,6 +1310,10 @@ public class Modules2MTBDD
 		// combine lists of synchs
 		sysDDs.allSynchs.addAll(sysDDs1.allSynchs);
 		sysDDs.allSynchs.addAll(sysDDs2.allSynchs);
+		
+		sysDDs.globalVarUpdates = new TreeSet<Integer>();
+		sysDDs.globalVarUpdates.addAll(sysDDs1.globalVarUpdates);
+		sysDDs.globalVarUpdates.addAll(sysDDs2.globalVarUpdates);
 		
 		return sysDDs;
 	}
@@ -1328,6 +1380,9 @@ public class Modules2MTBDD
 		for (i = 0; i < sys.getNumActions(); i++) {
 			sysDDs.allSynchs.remove(sys.getAction(i));
 		}
+		
+		sysDDs.globalVarUpdates = new TreeSet<Integer>();
+		sysDDs.globalVarUpdates.addAll(sysDDs1.globalVarUpdates);
 		
 		return sysDDs;
 	}
@@ -1398,10 +1453,15 @@ public class Modules2MTBDD
 			sysDDs.allSynchs.add(sys.getNewName(iter.next()));
 		}
 		
+		sysDDs.globalVarUpdates = new TreeSet<Integer>();
+		sysDDs.globalVarUpdates.addAll(sysDDs1.globalVarUpdates);
+		
 		return sysDDs;
 	}
 
-	private ComponentDDs translateSynchronising(ComponentDDs compDDs1, ComponentDDs compDDs2) throws PrismException
+	private ComponentDDs translateSynchronising(ComponentDDs compDDs1, ComponentDDs compDDs2,
+	                                            TreeSet<Integer> globalVarUpdates1,
+	                                            TreeSet<Integer> globalVarUpdates2) throws PrismException
 	{
 		ComponentDDs compDDs;
 		
@@ -1414,9 +1474,23 @@ public class Modules2MTBDD
 		JDD.Ref(compDDs2.guards);
 		compDDs.guards = JDD.And(compDDs1.guards, compDDs2.guards);
 		// then transitions
-		JDD.Ref(compDDs1.trans);
-		JDD.Ref(compDDs2.trans);
-		compDDs.trans = JDD.Apply(JDD.TIMES, compDDs1.trans, compDDs2.trans);
+
+		//JDD.PrintMinterms(mainLog, compDDs1.trans.copy(), "compDDs1.trans");
+		//JDD.PrintMinterms(mainLog, compDDs2.trans.copy(), "compDDs2.trans");
+		if (globalVarUpdates1.isEmpty() && globalVarUpdates2.isEmpty()) {
+			compDDs.trans = JDD.Apply(JDD.TIMES, compDDs1.trans.copy(), compDDs2.trans.copy());
+		} else {
+			// punch holes in compDDs1.trans for the global var updates of compDDs2 
+			JDDNode trans1 = removeVariableIdentities(compDDs1.trans.copy(), globalVarUpdates2);
+			//JDD.PrintMinterms(mainLog, trans1.copy(), "trans1");
+			// punch holes in compDDs2.trans for the global var updates of compDDs1 
+			JDDNode trans2 = removeVariableIdentities(compDDs2.trans.copy(), globalVarUpdates1);
+			//JDD.PrintMinterms(mainLog, trans2.copy(), "trans2");
+			
+			compDDs.trans = JDD.Apply(JDD.TIMES, trans1, trans2);
+		}
+		//JDD.PrintMinterms(mainLog, compDDs.trans.copy(), "compDDs.trans");
+		
 		// then transition rewards
 		//JDD.Ref(compDDs2.trans);
 		//compDDs1.rewards = JDD.Apply(JDD.TIMES, compDDs1.rewards, JDD.GreaterThan(compDDs2.trans, 0));
@@ -1988,6 +2062,25 @@ public class Modules2MTBDD
 		return compDDs;
 	}
 
+
+	/** [ REFs: <i>result</i>, DEREFs: trans ] */
+	private JDDNode removeVariableIdentities(JDDNode trans, TreeSet<Integer> varIndizes) {
+		for (int i : varIndizes) {
+			trans = removeVariableIdentity(trans, i);
+		}
+		return trans;
+	}
+
+	/** [ REFs: <i>result</i>, DEREFs: trans ] */
+	private JDDNode removeVariableIdentity(JDDNode trans, int varIndex)
+	{
+		JDDVars colVars = varDDColVars[varIndex];
+
+		JDDNode result = JDD.MaxAbstract(trans, colVars);
+
+		return result;
+	}
+
 	// translate the updates part of a command
 
 	private JDDNode translateUpdates(int m, int l, Updates u, boolean synch, JDDNode guard) throws PrismException
@@ -2079,11 +2172,6 @@ public class Modules2MTBDD
 				// (i.e. belongs to this module or is global)
 				if (varList.getModule(v) != -1 && varList.getModule(v) != m) {
 					throw new PrismLangException("Cannot modify variable \""+s+"\" from module \""+moduleNames[m]+"\"", c.getVarIdent(i));
-				}
-				// print out a warning if this update is in a command with a synchronising
-				// action AND it modifies a global variable
-				if (varList.getModule(v) == -1 && synch) {
-					throw new PrismLangException("Synchronous command cannot modify global variable", c.getVarIdent(i));
 				}
 				// get some info on the variable
 				l = varList.getLow(v);

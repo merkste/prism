@@ -679,7 +679,10 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		doSemanticChecks();
 		// Type checking
 		typeCheck();
-		
+
+		// error check: illegal global variable updates
+		findModulesForGlobalVarUpdates();
+
 		// If there are no undefined constants, set up values for constants
 		// (to avoid need for a later call to setUndefinedConstants).
 		// NB: Can't call setUndefinedConstants if there are undefined constants

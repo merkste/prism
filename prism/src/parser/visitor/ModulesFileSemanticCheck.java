@@ -270,10 +270,6 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 				s = "Module \"" + m.getName() + "\" is not allowed to modify variable \"" + var + "\"";
 				throw new PrismLangException(s, e.getVarIdent(i));
 			}
-			if (isGlobal && !c.getSynch().equals("")) {
-				s = "Synchronous command cannot modify global variable";
-				throw new PrismLangException(s, e.getVarIdent(i));
-			}
 		}
 	}
 
