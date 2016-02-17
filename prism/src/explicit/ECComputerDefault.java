@@ -50,6 +50,7 @@ public class ECComputerDefault extends ECComputer
 {
 	/** The model to compute (M)ECs for **/
 	protected NondetModel model;
+	
 
 	/**
 	 * Build (M)EC computer for a given model.
@@ -212,7 +213,9 @@ public class ECComputerDefault extends ECComputer
 				actions.put(i, act);
 			}
 		}
-		getLog().println("Restrict precomputations took "+iterations+" iterations, "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
+		if (verbosity > 0) {
+			getLog().println("Restrict precomputations took "+iterations+" iterations, "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
+		}
 
 		return new SubNondetModel(model, states, actions, initialStates);
 	}
@@ -262,7 +265,9 @@ public class ECComputerDefault extends ECComputer
 			}
 		}
 
-		getLog().println("Restrict precomputations took "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
+		if (verbosity > 0) {
+			getLog().println("Restrict precomputations took "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
+		}
 
 		return new SubNondetModel(model, states, actions, initialStates);
 	}

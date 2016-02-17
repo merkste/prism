@@ -42,6 +42,8 @@ public abstract class ECComputer extends PrismComponent
 {
 	protected PredecessorRelation pre;
 	
+	protected int verbosity = 0;
+
 	/**
 	 * Static method to create a new ECComputer object, depending on current settings.
 	 */
