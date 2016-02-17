@@ -1015,6 +1015,34 @@ public abstract class Expression extends ASTElement
 			throw new PrismException("Cannot convert jltl2ba formula " + ltl);
 		}
 	}
+
+	/**
+	 * Return the temporal operator for a simple path formula, i.e.,
+	 * ignoring parentheses and negation.
+	 */
+	public static ExpressionTemporal getTemporalOperatorForSimplePathFormula(Expression expr) throws PrismLangException {
+		// Negation/parentheses
+		while (expr instanceof ExpressionUnaryOp) {
+			ExpressionUnaryOp exprUnary = (ExpressionUnaryOp) expr;
+			// Parentheses
+			if (exprUnary.getOperator() == ExpressionUnaryOp.PARENTH) {
+				expr = exprUnary.getOperand();
+			}
+			// Negation
+			else if (exprUnary.getOperator() == ExpressionUnaryOp.NOT) {
+				expr = exprUnary.getOperand();
+			} else {
+				throw new PrismLangException("Expression is not a simple path formula: Unexpected unary operator "+exprUnary.getOperatorSymbol());
+			}
+		}
+
+		// Temporal operator
+		if (expr instanceof ExpressionTemporal) {
+			return (ExpressionTemporal)expr;
+		} else {
+			throw new PrismLangException("Expression is not a simple path formula: Unsupported expression "+expr.toString());
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
