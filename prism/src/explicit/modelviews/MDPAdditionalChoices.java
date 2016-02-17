@@ -118,6 +118,11 @@ public class MDPAdditionalChoices extends MDPView
 		return model.getLabels();
 	}
 
+	@Override
+	public boolean hasLabel(String name)
+	{
+		return model.hasLabel(name);
+	}
 
 
 	//--- NondetModel ---

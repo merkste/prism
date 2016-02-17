@@ -106,6 +106,13 @@ public class MDPFromDTMC extends MDPView
 	}
 
 	@Override
+	public boolean hasLabel(String name)
+	{
+		return model.hasLabel(name);
+	}
+
+
+	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
 		return model.getSuccessorsIterator(state);

@@ -162,6 +162,13 @@ public class MDPDisjointUnion extends MDPView
 	}
 
 	@Override
+	public boolean hasLabel(String name)
+	{
+		return model1.hasLabel(name) | model2.hasLabel(name);
+	}
+
+
+	@Override
 	public int getNumTransitions()
 	{
 		return model1.getNumTransitions() + model2.getNumTransitions();
