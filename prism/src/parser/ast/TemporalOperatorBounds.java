@@ -28,11 +28,15 @@ package parser.ast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import parser.visitor.ASTVisitor;
 import prism.ModelType;
+import prism.PrismException;
 import prism.PrismLangException;
 
 /**
@@ -229,9 +233,10 @@ public class TemporalOperatorBounds extends ASTElement {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((bounds == null) ? 0 : bounds.hashCode());
+		
 		return result;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -259,6 +264,63 @@ public class TemporalOperatorBounds extends ASTElement {
 		return result;
 	}
 
+	public static List<List<TemporalOperatorBound>> groupBoundsDiscreteTime(List<TemporalOperatorBound> bounds) throws PrismException {
+		return groupBounds(bounds, true);
+	}
+	
+	public static List<List<TemporalOperatorBound>> groupBoundsContinuousTime(List<TemporalOperatorBound> bounds) throws PrismException {
+		return groupBounds(bounds, false);
+	}
+	
+	/**
+	 * Group a list of TemporalOperatorBound by their reward structure / type.
+	 * <br>
+	 * Returns a List of Lists, where all TemporalOperatorBound in an inner list
+	 * are of the same type (TIME_BOUND, STEP_BOUND, REWARD_BOUND) and for
+	 * REWARD_BOUND share the same RewardStructure.
+	 *
+	 * The RewardStructure in the TemporalOperatorBound has to be already resolved.
+	 */
+	private static List<List<TemporalOperatorBound>> groupBounds(List<TemporalOperatorBound> bounds, boolean discreteTime) throws PrismException {
+		List<TemporalOperatorBound> stepBounds = null;
+		List<TemporalOperatorBound> timeBounds = null;
+		Map<RewardStruct, List<TemporalOperatorBound>> rewardBounds = new HashMap<RewardStruct, List<TemporalOperatorBound>>();
+		List<List<TemporalOperatorBound>> result = new ArrayList<List<TemporalOperatorBound>>();
+
+		stepBounds = filter(bounds, TemporalOperatorBound.BoundType.STEP_BOUND);
+		if (discreteTime) {
+			stepBounds.addAll(filter(bounds, TemporalOperatorBound.BoundType.TIME_BOUND));
+			stepBounds.addAll(filter(bounds, TemporalOperatorBound.BoundType.DEFAULT_BOUND));
+		} else {
+			timeBounds = filter(bounds, TemporalOperatorBound.BoundType.TIME_BOUND);
+			timeBounds.addAll(filter(bounds, TemporalOperatorBound.BoundType.DEFAULT_BOUND));
+		}
+
+		if (stepBounds != null && !stepBounds.isEmpty())
+			result.add(stepBounds);
+
+		if (timeBounds != null && !timeBounds.isEmpty())
+			result.add(timeBounds);
+
+		for (TemporalOperatorBound bound : filter(bounds, TemporalOperatorBound.BoundType.REWARD_BOUND)) {
+			RewardStruct rs = bound.getRewardStruct();
+			if (rs == null) {
+				throw new PrismException("groupBounds: RewardStruct has not yet been resolved.");
+			}
+
+			if (!rewardBounds.containsKey(rs)) {
+				rewardBounds.put(rs, new ArrayList<TemporalOperatorBound>());
+			}
+			rewardBounds.get(rs).add(bound);
+		}
+
+		for (Entry<RewardStruct, List<TemporalOperatorBound>> entry : rewardBounds.entrySet()) {
+			result.add(entry.getValue());
+		}
+
+		return result;
+	}
+
 	/** Helper: Count the number of bounds with the specified type */
 	private int countBoundsOfType(TemporalOperatorBound.BoundType... boundTypes)
 	{
@@ -282,6 +344,17 @@ public class TemporalOperatorBounds extends ASTElement {
 
 		for (TemporalOperatorBound bound : getBounds()) {
 			if (typeSet.contains(bound.getBoundType())) {
+				result.add(bound);
+			}
+		}
+
+		return result;
+	}
+	public static List<TemporalOperatorBound> filter(List<TemporalOperatorBound> bounds, TemporalOperatorBound.BoundType boundType) {
+		List<TemporalOperatorBound> result = new ArrayList<TemporalOperatorBound>();
+
+		for (TemporalOperatorBound bound : bounds) {
+			if (bound.getBoundType() == boundType) {
 				result.add(bound);
 			}
 		}
