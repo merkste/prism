@@ -28,6 +28,7 @@
 #include "JDD.h"
 #include "JDDNode.h"
 #include "JDDVars.h"
+#include "MtrNode.h"
 #include "DebugJDD.h"
 #include "jnipointer.h"
 
@@ -903,6 +904,50 @@ JNIEXPORT jint JNICALL Java_jdd_JDDVars_DDV_1GetIndex(JNIEnv *env, jobject obj, 
 JNIEXPORT jint JNICALL Java_jdd_DebugJDD_DebugJDD_1GetRefCount(JNIEnv *env, jclass cls, jlong __jlongpointer dd)
 {
 	return (jlong_to_DdNode(dd))->ref;
+}
+
+
+//==============================================================================
+//
+//	Functions for MtrNode class
+//
+//==============================================================================
+
+JNIEXPORT jlong __jlongpointer JNICALL Java_jdd_MtrNode_DDM_1MakeGroup(JNIEnv *env, jclass cls, jboolean fixed, jint index, jint size)
+{
+	MtrNode* node = Mtr_InitTree();
+	node->flags = (fixed ? MTR_FIXED : MTR_DEFAULT);
+	node->low = index;
+	node->size = size;
+	node->index = 0;
+
+	return ptr_to_jlong(node);
+}
+
+//------------------------------------------------------------------------------
+
+JNIEXPORT void JNICALL Java_jdd_MtrNode_DDM_1AddChild(JNIEnv *env, jclass cls, jlong __jlongpointer root, jlong __jlongpointer child)
+{
+	MtrNode* mtrRoot = jlong_to_MtrNode(root);
+	MtrNode* mtrChild = jlong_to_MtrNode(child);
+
+	Mtr_MakeLastChild(mtrRoot, mtrChild);
+}
+
+//------------------------------------------------------------------------------
+
+JNIEXPORT void JNICALL Java_jdd_MtrNode_DDM_1CuddSetTree(JNIEnv *env, jclass cls, jlong __jlongpointer root)
+{
+	MtrNode* mtrRoot = jlong_to_MtrNode(root);
+	Cudd_SetTree(ddman, mtrRoot);
+}
+
+//------------------------------------------------------------------------------
+
+JNIEXPORT void JNICALL Java_jdd_MtrNode_DDM_1FreeTree(JNIEnv *env, jclass cls, jlong __jlongpointer root)
+{
+	MtrNode* mtrRoot = jlong_to_MtrNode(root);
+	Mtr_FreeTree(mtrRoot);
 }
 
 //------------------------------------------------------------------------------
