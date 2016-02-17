@@ -281,6 +281,10 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 		else if (expr instanceof ExpressionVar) {
 			res = checkExpressionVar((ExpressionVar) expr);
 		}
+		// Views
+		else if (expr instanceof ExpressionViewVar) {
+			res = checkExpressionViewVar((ExpressionViewVar) expr);
+		}
 		// Labels
 		else if (expr instanceof ExpressionLabel) {
 			res = checkExpressionLabel((ExpressionLabel) expr);
@@ -961,6 +965,24 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 		for (i = l; i <= h; i++) {
 			dd = JDD.SetVectorElement(dd, varDDRowVars[v], i - l, i);
 		}
+
+		return new StateValuesMTBDD(dd, model);
+	}
+
+	protected StateValues checkExpressionViewVar(ExpressionViewVar expr) throws PrismException
+	{
+		JDDNode dd = JDD.Constant(0);
+
+		for (ExpressionVar bit : expr.getBits()) {
+			dd = JDD.Apply(JDD.TIMES, dd, JDD.Constant(2));
+			StateValuesMTBDD svBit = checkExpressionVar(bit).convertToStateValuesMTBDD();
+			dd = JDD.Apply(JDD.PLUS, dd, svBit.getJDDNode().copy());
+			svBit.clear();
+		}
+
+		StateValuesMTBDD svLow = checkExpression(expr.getLow()).convertToStateValuesMTBDD();
+		dd = JDD.Apply(JDD.PLUS, dd, svLow.getJDDNode().copy());
+		svLow.clear();
 
 		return new StateValuesMTBDD(dd, model);
 	}
