@@ -617,13 +617,28 @@ public class ProbModelChecker extends NonProbModelChecker
 		boolean negated = false;
 		StateValues probs = null;
 
-		if (Expression.containsTemporalRewardBounds(expr)) {
-			throw new PrismNotSupportedException("Can not handle reward bounds.");
+		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
+		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
+		
+		// Here, in the generic method, reward bounds and multiple bounds are not handled.
+		// If they can be handled, they will have been processed already by a checkProbPathFormulaSimple
+		// function in a derived model checker class.
+		if (exprTemp.getBounds().hasRewardBounds())
+			throw new PrismNotSupportedException("Reward bounds are not supported in the generic case.");
+		if (model.getModelType().continuousTime()) {
+			if (exprTemp.getBounds().hasStepBounds()) {
+				throw new PrismNotSupportedException("Step bounds are not supported for continuous time models.");
+			}
+			if (exprTemp.getBounds().countTimeBoundsContinuous() > 1) {
+				throw new PrismNotSupportedException("Multiple time bounds are not supported for continuous time models.");
+			}
+		} else {
+			if (exprTemp.getBounds().countStepBounds() > 1) {
+				throw new PrismNotSupportedException("Multiple step bounds are not supported by the generic calculator.");
+			}
 		}
 
-		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
-
-		// Negation
+		// Negation		
 		if (expr instanceof ExpressionUnaryOp &&
 		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {
 			negated = true;
@@ -632,7 +647,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		if (expr instanceof ExpressionTemporal) {
- 			ExpressionTemporal exprTemp = (ExpressionTemporal) expr;
+ 			exprTemp = (ExpressionTemporal) expr;
 
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
