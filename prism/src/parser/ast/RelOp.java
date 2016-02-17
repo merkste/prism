@@ -21,9 +21,9 @@ public enum RelOp
 		}
 
 		@Override
-		public RelOp negate() throws PrismLangException
+		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return LEQ;
+			return (keepStrictness ? LT : LEQ);
 		}
 	},
 	GEQ(">=") {
@@ -34,9 +34,9 @@ public enum RelOp
 		}
 
 		@Override
-		public RelOp negate() throws PrismLangException
+		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return LT;
+			return (keepStrictness ? LEQ : LT);
 		}
 	},
 	LT("<") {
@@ -53,9 +53,9 @@ public enum RelOp
 		}
 
 		@Override
-		public RelOp negate() throws PrismLangException
+		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return GEQ;
+			return (keepStrictness ? GT : GEQ);
 		}
 	},
 	LEQ("<=") {
@@ -66,14 +66,14 @@ public enum RelOp
 		}
 
 		@Override
-		public RelOp negate() throws PrismLangException
+		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
-			return GT;
+			return (keepStrictness ? GEQ : GT);
 		}
 	},
 	COMPUTE_VALUES("=") {
 		@Override
-		public RelOp negate() throws PrismLangException
+		public RelOp negate(boolean keepStrictness) throws PrismLangException
 		{
 			throw new PrismLangException("Cannot negate " + this);
 		}
@@ -119,7 +119,17 @@ public enum RelOp
 	/**
 	 * Returns the negated form of this operator.
 	 */
-	public abstract RelOp negate() throws PrismLangException;
+	public RelOp negate() throws PrismLangException {
+		return negate(false);
+	}
+
+	/**
+	 * Returns the negated form of this operator.
+	 * Depending on the flag {@code keepStrictness},
+	 * the strictness is preserved, i.e., &lt; is turned
+	 * into &gt; instead of &gt;=
+	 */
+	public abstract RelOp negate(boolean keepStrictness) throws PrismLangException;
 
 	/**
 	 * Returns the RelOp object corresponding to a (string) symbol,
