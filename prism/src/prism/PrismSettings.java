@@ -93,6 +93,7 @@ public class PrismSettings implements Observer
 	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
 
 	public static final String PRISM_EXPLODE_BITS					= "prism.explodeBits";
+	public static final String PRISM_GLOBALIZE_VARIABLES			= "prism.globalizeVariables";
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
 	public static final	String PRISM_CUDD_MAX_GROWTH				= "prism.cuddMaxGrowth";
@@ -283,7 +284,8 @@ public class PrismSettings implements Observer
 
 			{ BOOLEAN_TYPE,		PRISM_EXPLODE_BITS,						"Explode variable storage into individual bits",					"4.3",			new Boolean(false),															"",
 																			"Explode variable storage into individual bits" },
-																			
+			{ BOOLEAN_TYPE,		PRISM_GLOBALIZE_VARIABLES,				"Globalize variables",					"4.3",			new Boolean(false),															"",
+																			"Globalize variables" },
 																			
 			// MULTI-OBJECTIVE MODEL CHECKING OPTIONS:
 			{ INTEGER_TYPE,		PRISM_MULTI_MAX_POINTS,					"Max. multi-objective corner points",			"4.0.3",			new Integer(50),															"0,",																						
@@ -1270,6 +1272,9 @@ public class PrismSettings implements Observer
 		else if (sw.equals("explodebits")) {
 			set(PRISM_EXPLODE_BITS, true);
 		}
+		else if (sw.equals("globalizevariables")) {
+			set(PRISM_GLOBALIZE_VARIABLES, true);
+		}
 		// CUDD settings
 		else if (sw.equals("cuddmaxmem")) {
 			if (i < args.length - 1) {
@@ -1694,6 +1699,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans converge");
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
 		mainLog.println("-explodebits ................... Model file transformation: Convert variables to single bits with views");
+		mainLog.println("-globalizevariables ............ Model file transformation: Make all variables global");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");

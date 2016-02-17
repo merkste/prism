@@ -574,6 +574,18 @@ public class PrismCL implements PrismModelListener
 			errorAndExit(e.getMessage());
 		}
 
+		// globalize variables if necessary
+		try {
+			if (prism.getSettings().getBoolean(PrismSettings.PRISM_GLOBALIZE_VARIABLES)) {
+				mainLog.println("Globalizing variables...");
+				modulesFile.globalizeVariables();
+				//System.out.println(modulesFile);
+				//modulesFile = prism.parseModelString(modulesFile.toString());
+			}
+		} catch (PrismException e) {
+			errorAndExit(e.getMessage());
+		}
+
 		// explode bits if necessary
 		try {
 			if (prism.getSettings().getBoolean(PrismSettings.PRISM_EXPLODE_BITS)) {

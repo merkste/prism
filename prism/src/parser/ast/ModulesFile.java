@@ -623,6 +623,13 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return false;
 	}
 
+	public void globalizeVariables() throws PrismLangException
+	{
+		GlobalizeVariables visitor = new GlobalizeVariables();
+		this.accept(visitor);
+		tidyUp();
+	}
+
 	/**
 	 * Get the type of the ith variable.
 	 */
