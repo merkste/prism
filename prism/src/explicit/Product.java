@@ -29,6 +29,8 @@ package explicit;
 
 import java.util.BitSet;
 
+import common.BitSetTools;
+
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
@@ -185,10 +187,6 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	@Override
 	public BitSet getTransformedStatesOfInterest()
 	{
-		BitSet productStatesOfInterest = new BitSet();
-		for (int initial : productModel.getInitialStates()) {
-			productStatesOfInterest.set(initial);
-		}
-		return productStatesOfInterest;
+		return BitSetTools.asBitSet(productModel.getInitialStates());
 	}
 }
