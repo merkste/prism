@@ -1088,7 +1088,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			throw new PrismException("Filter satisfies no states");
 		}
 		// Remember whether filter is for the initial state and, if so, whether there's just one
-		boolean filterInit = (filter instanceof ExpressionLabel && ((ExpressionLabel) filter).isInitLabel());
+		boolean filterInit = filter != null && filter.isInitLabel();
 		boolean filterInitSingle = filterInit & model.getNumStartStates() == 1;
 
 		// For some types of filter, store info that may be used to optimise model checking

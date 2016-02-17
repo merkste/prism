@@ -51,6 +51,7 @@ public class ExpressionLabel extends Expression
 	/**
 	 * Is this the special "init" label?
 	 */
+	@Override
 	public boolean isInitLabel()
 	{
 		return getName().equals("init");
@@ -59,6 +60,7 @@ public class ExpressionLabel extends Expression
 	/**
 	 * Is this the special "deadlock" label?
 	 */
+	@Override
 	public boolean isDeadlockLabel()
 	{
 		return getName().equals("deadlock");
