@@ -434,10 +434,11 @@ public class Modules2MTBDD
 		
 		case 1: {
 		// ordering: (a ... a) (s ... s) (l ... l) (r c ... r c)
-		
+
 			// create arrays/etc. first
 
-			JDDVars vActionVars = new JDDVars();
+			modelVariables.preallocateExtraActionVariables(20);
+			JDDVars vActionVars = modelVariables.getExtraActionVariables().copy();
 
 			// nondeterministic variables
 			if (modelType == ModelType.MDP) {
@@ -562,11 +563,12 @@ public class Modules2MTBDD
 		}
 		case 2: {
 		// ordering: (a ... a) (l ... l) (s r c ... r c) (s r c ... r c) ...
-	
-			JDDVars vActionAndChoiceVars = new JDDVars();
 
 			// create arrays/etc. first
-			
+
+			modelVariables.preallocateExtraActionVariables(20);	
+			JDDVars vActionAndChoiceVars = modelVariables.getExtraActionVariables().copy();
+
 			// nondeterministic variables
 			if (modelType == ModelType.MDP) {
 				// synchronizing action variables
