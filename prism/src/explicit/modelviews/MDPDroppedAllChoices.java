@@ -1,13 +1,13 @@
 package explicit.modelviews;
 
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import common.BitSetTools;
+import common.iterable.EmptyIterator;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -120,7 +120,7 @@ public class MDPDroppedAllChoices extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return states.get(state) ? Collections.<Integer> emptyIterator() : model.getSuccessorsIterator(state);
+		return states.get(state) ? EmptyIterator.Of() : model.getSuccessorsIterator(state);
 	}
 
 

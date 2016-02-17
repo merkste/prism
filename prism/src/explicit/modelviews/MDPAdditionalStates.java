@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import common.BitSetTools;
+import common.iterable.EmptyIterator;
 import common.iterable.Interval;
 import common.iterable.collections.ChainedList;
 import explicit.Distribution;
@@ -161,7 +162,7 @@ public class MDPAdditionalStates extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return (state < model.getNumStates()) ? model.getSuccessorsIterator(state) : Collections.<Integer>emptyIterator();
+		return (state < model.getNumStates()) ? model.getSuccessorsIterator(state) : EmptyIterator.Of();
 	}
 
 	@Override
@@ -216,7 +217,7 @@ public class MDPAdditionalStates extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(int state, int choice)
 	{
-		return (state < model.getNumStates()) ? model.getSuccessorsIterator(state, choice) : Collections.<Integer>emptyIterator();
+		return (state < model.getNumStates()) ? model.getSuccessorsIterator(state, choice) : EmptyIterator.Of();
 	}
 
 

@@ -3,7 +3,6 @@ package explicit.modelviews;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -13,6 +12,7 @@ import java.util.function.IntPredicate;
 
 import common.BitSetTools;
 import common.IteratorTools;
+import common.iterable.EmptyIterator;
 import common.iterable.FilteringIterable;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
@@ -199,7 +199,7 @@ public class DTMCRestricted extends DTMCView
 	{
 		final int originalState = mapStateToOriginalModel(state);
 		if (restriction == Restriction.STRICT && ! allSuccessorsIncluded(originalState)) {
-			return Collections.emptyIterator();
+			return EmptyIterator.Of();
 		}
 		return new MappingIterator.From<>(model.getTransitionsIterator(originalState), this::mapTransitionToRestrictedModel);
 	}

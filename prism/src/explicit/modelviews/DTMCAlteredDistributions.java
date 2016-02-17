@@ -2,7 +2,6 @@ package explicit.modelviews;
 
 import java.util.AbstractMap;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -14,6 +13,7 @@ import java.util.function.Predicate;
 import common.BitSetTools;
 import common.functions.Relation;
 import common.iterable.ChainedIterator;
+import common.iterable.EmptyIterator;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterator;
@@ -202,7 +202,7 @@ public class DTMCAlteredDistributions extends DTMCView
 			public Iterator<Entry<Integer, Double>> apply(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
-					return Collections.emptyIterator();
+					return EmptyIterator.Of();
 				}
 				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
 				if (equivalenceClass == null) {
@@ -279,7 +279,7 @@ public class DTMCAlteredDistributions extends DTMCView
 			{
 				final Distribution distribution = new Distribution();
 				if (state == 0) {
-					return Collections.emptyIterator();
+					return EmptyIterator.Of();
 				}
 				if (state == 1) {
 					distribution.set(1, 0.4);
