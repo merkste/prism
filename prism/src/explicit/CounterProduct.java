@@ -28,6 +28,7 @@ package explicit;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 
 import common.SafeCast;
 
@@ -156,6 +157,20 @@ public class CounterProduct<M extends Model> extends ProductWithProductStates<M>
 		return result;
 	}
 
+
+	/**
+	 * Get the states in the product DTMC inside the conjunction of integer bounds,
+	 * given as a List of IntegerBounds.
+	 */
+	BitSet getStatesWithAccumulatedRewardInBoundConjunction(List<IntegerBound> bounds) {
+		BitSet result = new BitSet();
+		for (int r=0; r<=limit; r++) {
+			if (IntegerBound.isInBoundForConjunction(bounds, r)) {
+				result.or(getStatesWithAccumulatedReward(r));
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * Generate the product of a DTMC with an accumulated reward counter.
