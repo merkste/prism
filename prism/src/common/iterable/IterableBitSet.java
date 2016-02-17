@@ -30,6 +30,7 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.NoSuchElementException;
 
+import common.IteratorTools;
 import common.iterable.primitive.IterableInteger;
 import common.iterable.primitive.IteratorInteger;
 
@@ -72,16 +73,17 @@ public class IterableBitSet implements IterableInteger
 	/** Implementation of the iterator over the set bits */
 	private class SetBitsIterator implements IteratorInteger
 	{
-		private int index = set.nextSetBit(0);
+		private int current = -1;
+		private int next = set.nextSetBit(0);
 
 		@Override
 		public boolean hasNext()
 		{
-			if (maxIndex != null && index > maxIndex) {
+			if (maxIndex != null && next > maxIndex) {
 				// limit to 0 ... maxIndex
 				return false;
 			}
-			return index >= 0;
+			return next >= 0;
 		}
 
 		@Override
@@ -94,9 +96,9 @@ public class IterableBitSet implements IterableInteger
 		public int nextInteger()
 		{
 			if (hasNext()) {
-				int next = index;
-				index = set.nextSetBit(index + 1);
-				return next;
+				current = next;
+				next = set.nextSetBit(current + 1);
+				return current;
 			}
 			throw new NoSuchElementException();
 		}
@@ -104,19 +106,20 @@ public class IterableBitSet implements IterableInteger
 		@Override
 		public void remove()
 		{
-			throw new UnsupportedOperationException();
+			set.clear(current);
 		}
 	}
 
 	/** Implementation of the iterator over the cleared bits, requires that {@code maxIndex != null} */
 	private class ClearBitsIterator implements IteratorInteger
 	{
-		private int index = set.nextClearBit(0);
+		private int current = -1;
+		private int next = set.nextClearBit(0);
 
 		@Override
 		public boolean hasNext()
 		{
-			if (index > maxIndex) {
+			if (next > maxIndex) {
 				// limit to 0 ... maxIndex
 				return false;
 			}
@@ -133,9 +136,9 @@ public class IterableBitSet implements IterableInteger
 		public int nextInteger()
 		{
 			if (hasNext()) {
-				int next = index;
-				index = set.nextClearBit(index + 1);
-				return next;
+				current = next;
+				next = set.nextClearBit(current + 1);
+				return current;
 			}
 			throw new NoSuchElementException();
 		}
@@ -143,7 +146,7 @@ public class IterableBitSet implements IterableInteger
 		@Override
 		public void remove()
 		{
-			throw new UnsupportedOperationException();
+			set.set(current);
 		}
 	}
 
@@ -193,6 +196,10 @@ public class IterableBitSet implements IterableInteger
 		test.set(8);
 		test.set(13);
 		test.set(21);
+
+		IteratorTools.printIterator("set bits", getSetBits(test).iterator());
+		IteratorTools.printIterator("clear bits", getClearBits(test, test.length()).iterator());
+
 
 		System.out.println("\n" + test + " - set bits:");
 		for (Integer index : getSetBits(test)) {
