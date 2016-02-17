@@ -34,7 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
+import common.IterableBitSet;
+import common.IterableStateSet;
 import prism.PrismComponent;
 import prism.PrismException;
 
@@ -163,7 +166,28 @@ public class ECComputerDefault extends ECComputer
 		return L;
 	}
 
+	private BitSet getActionsRemainingInSet(NondetModel model, BitSet states, int s) {
+		BitSet actions = new BitSet();
+
+		for (int j = 0; j < model.getNumChoices(s); j++) {
+			if (model.allSuccessorsInSet(s, j, states)) {
+				actions.set(j);
+			}
+		}
+
+		return actions;
+	}
+
 	private SubNondetModel restrict(NondetModel model, BitSet states)
+	{
+		if (pre != null) {
+			return restrictUsingPre(model, states);
+		} else {
+			return restrictFixpoint(model, states);
+		}
+	}
+	
+	private SubNondetModel restrictFixpoint(NondetModel model, BitSet states)
 	{
 		Map<Integer, BitSet> actions = new HashMap<Integer, BitSet>();
 		BitSet initialStates = new BitSet();
@@ -196,6 +220,56 @@ public class ECComputerDefault extends ECComputer
 			}
 		}
 		getLog().println("Restrict precomputations took "+iterations+" iterations, "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
+
+		return new SubNondetModel(model, states, actions, initialStates);
+	}
+
+	private SubNondetModel restrictUsingPre(NondetModel model, BitSet states)
+	{
+		Map<Integer, BitSet> actions = new HashMap<Integer, BitSet>();
+		BitSet initialStates = new BitSet();
+		initialStates.set(states.nextSetBit(0));
+
+		Stack<Integer> toCheck = new Stack<Integer>();
+
+		int checks = 0;
+		long start = System.currentTimeMillis();
+
+		for (int i : IterableBitSet.getSetBits(states)) {
+			checks++;
+			BitSet act = getActionsRemainingInSet(model, states, i);
+			if (act.isEmpty()) {
+				states.clear(i);
+
+				for (int j : pre.getPre(i)) {
+					if (states.get(j))
+						toCheck.add(j);
+				}
+			} else {
+				actions.put(i, act);
+			}
+		}
+
+		while (!toCheck.isEmpty()) {
+			int i = toCheck.pop();
+			if (!states.get(i)) continue;  // already removed
+
+			checks++;
+			BitSet act = getActionsRemainingInSet(model, states, i);
+			if (act.isEmpty()) {
+				states.clear(i);
+				actions.remove(i);
+
+				for (int j : pre.getPre(i)) {
+					if (states.get(j))
+						toCheck.add(j);
+				}
+			} else {
+				actions.put(i, act);
+			}
+		}
+
+		getLog().println("Restrict precomputations took "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
 
 		return new SubNondetModel(model, states, actions, initialStates);
 	}
