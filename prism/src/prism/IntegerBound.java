@@ -64,9 +64,13 @@ public class IntegerBound
 	/**
 	 * Extract the bounds from an {@code ExpressionTemporal} expression
 	 * and create the corresponding {@code IntegerBound}.
-	 *
+	 * <br>
+	 * This only works if there is a single bound. Additionally, this
+	 * assumes that we are in the discrete-time setting, i.e., that
+	 * step and time bounds coincide.
+	 * <br>
 	 * Expects that constants for the upper and lower bounds have already been resolved.
-	 *
+	 * <br>
 	 * If {@code check} is {@code true}, throws an exception for negative or empty bounds.
 	 *
 	 * @param expression the expression
@@ -94,23 +98,41 @@ public class IntegerBound
 	 */
 	public static IntegerBound fromExpressionTemporal(ExpressionTemporal expression, Values constantValues, boolean check) throws PrismException
 	{
-		TemporalOperatorBound eBound = expression.getBounds().getStepBoundForDiscreteTime();
+		TemporalOperatorBound bound = expression.getBounds().getStepBoundForDiscreteTime();
+		return fromTemporalOperatorBound(bound, constantValues, check);
+	}
+
+	/**
+	 * Extract the bounds from a {@code TemporalOperatorBound}
+	 * and create the corresponding {@code IntegerBound}, resolving constants
+	 * via {@code constantValues}.
+	 *
+	 * If {@code check} is {@code true}, throws an exception for negative or empty bounds.
+	 *
+	 * @param bound the TemporalOperatorBounds
+	 * @param constantValues the values for constants (may be {@code null})
+	 * @param check check for non-negative bounds / non-emptiness?
+	 * @return the {@code IntegerBound} for the bound
+	 * @throws PrismException
+	 */
+	public static IntegerBound fromTemporalOperatorBound(TemporalOperatorBound bound, Values constantValues, boolean check) throws PrismException
+	{
 		IntegerBound bounds;
-		if (eBound == null) {
+		if (bound == null) {
 			bounds = new IntegerBound(null, false, null, false);
 		} else {
-			bounds =  new IntegerBound(eBound.getLowerBound() == null ? null : eBound.getLowerBound().evaluateInt(constantValues),
-		                                eBound.lowerBoundIsStrict(),
-		                                eBound.getUpperBound() == null ? null : eBound.getUpperBound().evaluateInt(constantValues),
-		                                eBound.upperBoundIsStrict());
+			bounds =  new IntegerBound(bound.getLowerBound() == null ? null : bound.getLowerBound().evaluateInt(constantValues),
+		                                bound.lowerBoundIsStrict(),
+		                                bound.getUpperBound() == null ? null : bound.getUpperBound().evaluateInt(constantValues),
+		                                bound.upperBoundIsStrict());
 		}
 
 		if (check) {
 			if (bounds.hasNegativeBound()) {
-				throw new PrismException("Negative bound in "+expression.toString());
+				throw new PrismException("Negative bound in "+bound);
 			}
 			if (bounds.isEmpty()) {
-				throw new PrismException("Empty bound in "+expression.toString());
+				throw new PrismException("Empty bound in "+bound);
 			}
 		}
 
