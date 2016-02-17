@@ -56,11 +56,18 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	 */
 	public Distribution(Distribution distr)
 	{
+		this(distr.iterator());
+	}
+
+	/**
+	 * Build a distribution of an iterator over transitions.
+	 */
+	public Distribution(Iterator<Entry<Integer, Double>> transitions)
+	{
 		this();
-		Iterator<Entry<Integer, Double>> i = distr.iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			add(e.getKey(), e.getValue());
+		while (transitions.hasNext()) {
+			final Entry<Integer, Double> trans = transitions.next();
+			add(trans.getKey(), trans.getValue());
 		}
 	}
 
@@ -73,10 +80,9 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	public Distribution(Distribution distr, int permut[])
 	{
 		this();
-		Iterator<Entry<Integer, Double>> i = distr.iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			add(permut[e.getKey()], e.getValue());
+		for (Iterator<Entry<Integer, Double>> transitions = distr.iterator(); transitions.hasNext();) {
+			Map.Entry<Integer, Double> transition = transitions.next();
+			add(permut[transition.getKey()], transition.getValue());
 		}
 	}
 
