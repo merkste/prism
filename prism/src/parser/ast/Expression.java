@@ -32,7 +32,6 @@ import jltl2ba.SimpleLTL;
 import param.BigRational;
 import parser.*;
 import parser.visitor.*;
-import parser.visitor.ASTToList.ElementWithParent;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -843,44 +842,38 @@ public abstract class Expression extends ASTElement
 	}
 
 	/**
-	 * Are expr1 and expr2 syntactically equal?
+	 * Are this expression and another expression syntactically equal?
 	 */
-	// FIXME ALG: Why is this method static?
-	public static boolean areSyntacticallyEqual(Expression expr1, Expression expr2) throws PrismLangException
+	public boolean syntacticallyEquals(final Expression other) throws PrismLangException
 	{
 		// Linearize both syntax trees
-		List<ASTToList.ElementWithParent> list1 = expr1.toList();
-		List<ASTToList.ElementWithParent> list2 = expr2.toList();
-	
+		List<ASTToList.ElementWithParent> list1 = this.toList();
+		List<ASTToList.ElementWithParent> list2 = other.toList();
+
 		if (list1 == null || list2 == null) {
 			throw new PrismLangException("Could not linearize syntax tree.");
 		}
-	
+
 		// do the sizes match?
 		if (list1.size() != list2.size())
 			return false;
-	
+
 		for (int i = 0; i < list1.size(); i++) {
 			// compare each element
 			ASTToList.ElementWithParent e1 = list1.get(i);
 			ASTToList.ElementWithParent e2 = list2.get(i);
-	
-			// different parents?
-			if (e1.getParentIndex() != e2.getParentIndex())
-				return false;
-	
-			// are the elements matching?
-			if (e1.getElement() instanceof ASTElement &&
-			    e2.getElement() instanceof ASTElement) {
 
-				boolean match = e1.getElement().isMatchingElement(e2.getElement());
-				if (!match) return false;
-			} else {
-				// FIXME ALG: Should this better be an assertion?
-				throw new PrismLangException("Implementation error: All children of Expression elements should be Expression elements.");
+			// different parents?
+			if (e1.getParentIndex() != e2.getParentIndex()) {
+				return false;
+			}
+
+			// are the elements matching?
+			if (!e1.getElement().isMatchingElement(e2.getElement())) {
+				return false;
 			}
 		}
-	
+
 		return true;
 	}
 
