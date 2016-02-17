@@ -57,7 +57,7 @@ public class DTMCDisjointUnion extends DTMCView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public DTMCDisjointUnion clone()

@@ -62,7 +62,7 @@ public class MDPAlteredDistributions extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPAlteredDistributions clone()

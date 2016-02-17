@@ -57,7 +57,7 @@ public class MDPDisjointUnion extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPDisjointUnion clone()

@@ -79,7 +79,7 @@ public class MDPRestricted extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPRestricted clone()

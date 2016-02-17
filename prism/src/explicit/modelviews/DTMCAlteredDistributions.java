@@ -55,7 +55,7 @@ public class DTMCAlteredDistributions extends DTMCView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public DTMCAlteredDistributions clone()

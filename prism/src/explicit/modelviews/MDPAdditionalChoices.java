@@ -46,7 +46,7 @@ public class MDPAdditionalChoices extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPView clone()

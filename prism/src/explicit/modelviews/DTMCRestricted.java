@@ -100,7 +100,7 @@ public class DTMCRestricted extends DTMCView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public DTMCRestricted clone()
