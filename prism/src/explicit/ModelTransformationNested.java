@@ -87,4 +87,17 @@ public class ModelTransformationNested<OriginalModel extends Model,
 		return svOriginal;
 	}
 
+	@Override
+	public Integer mapToTransformedModel(final int state)
+	{
+		final Integer intermediate = innerTransformation.mapToTransformedModel(state);
+		return (intermediate == null) ? null : outerTransformation.mapToTransformedModel(intermediate);
+	}
+
+	@Override
+	public BitSet mapToTransformedModel(final BitSet states)
+	{
+		return outerTransformation.mapToTransformedModel(innerTransformation.mapToTransformedModel(states));
+	}
+
 }

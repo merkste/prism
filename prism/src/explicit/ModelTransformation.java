@@ -53,4 +53,22 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	 * Get the transformed set of states of interest.
 	 **/
 	public BitSet getTransformedStatesOfInterest();
+
+	/**
+	 * Get the corresponding index of a {@code state} in the transformed model.
+	 * This is the index from which a result may be projected to the original model.
+	 * If no such state exists, return {@code null}.
+	 *
+	 * @param state index in the original model
+	 * @return corresponding index in the transformed model or null
+	 */
+	public Integer mapToTransformedModel(int state);
+
+	/**
+	 * Get the indices of a set of {@code states} in the transformed model.
+	 *
+	 * @param states set of indices in the original model
+	 * @return set of indices in the transformed model
+	 */
+	public BitSet mapToTransformedModel(BitSet states);
 }

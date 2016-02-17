@@ -318,4 +318,16 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 		return nested;
 	}
 
+	@Override
+	public Integer mapToTransformedModel(final int state)
+	{
+		return product.mapToTransformedModel(state);
+	}
+
+	@Override
+	public BitSet mapToTransformedModel(final BitSet states)
+	{
+		return product.mapToTransformedModel(states);
+	}
+
 }
