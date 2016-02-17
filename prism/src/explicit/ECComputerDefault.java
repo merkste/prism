@@ -49,7 +49,7 @@ import prism.PrismException;
 public class ECComputerDefault extends ECComputer
 {
 	/** The model to compute (M)ECs for **/
-	private NondetModel model;
+	protected NondetModel model;
 
 	/**
 	 * Build (M)EC computer for a given model.
@@ -91,7 +91,7 @@ public class ECComputerDefault extends ECComputer
 	 * @param restrict BitSet for the set of states to restrict to
 	 * @param accept BitSet for the set of accepting states
 	 */
-	private void findEndComponents(BitSet restrict, BitSet accept) throws PrismException
+	protected void findEndComponents(BitSet restrict, BitSet accept) throws PrismException
 	{
 		// If restrict is null, look within set of all reachable states
 		if (restrict == null) {
@@ -173,7 +173,7 @@ public class ECComputerDefault extends ECComputer
 		return actions;
 	}
 
-	private SubNondetModel restrict(NondetModel model, BitSet states)
+	protected SubNondetModel restrict(NondetModel model, BitSet states)
 	{
 		if (pre != null) {
 			return restrictUsingPre(model, states);
@@ -182,7 +182,7 @@ public class ECComputerDefault extends ECComputer
 		}
 	}
 	
-	private SubNondetModel restrictFixpoint(NondetModel model, BitSet states)
+	protected SubNondetModel restrictFixpoint(NondetModel model, BitSet states)
 	{
 		Map<Integer, BitSet> actions = new HashMap<Integer, BitSet>();
 		BitSet initialStates = new BitSet();
@@ -197,21 +197,19 @@ public class ECComputerDefault extends ECComputer
 			iterations++;
 			changed = false;
 			actions.clear();
-			for (int i = 0; i < model.getNumStates(); i++) {
+			for (Integer i : new IterableStateSet(states, model.getNumStates())) {
 				BitSet act = new BitSet();
-				if (states.get(i)) {
-					checks++;
-					for (int j = 0; j < model.getNumChoices(i); j++) {
-						if (model.allSuccessorsInSet(i, j, states)) {
-							act.set(j);
-						}
+				checks++;
+				for (int j = 0; j < model.getNumChoices(i); j++) {
+					if (model.allSuccessorsInSet(i, j, states)) {
+						act.set(j);
 					}
-					if (act.isEmpty()) {
-						states.clear(i);
-						changed = true;
-					}
-					actions.put(i, act);
 				}
+				if (act.isEmpty()) {
+					states.clear(i);
+					changed = true;
+				}
+				actions.put(i, act);
 			}
 		}
 		getLog().println("Restrict precomputations took "+iterations+" iterations, "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
@@ -219,7 +217,7 @@ public class ECComputerDefault extends ECComputer
 		return new SubNondetModel(model, states, actions, initialStates);
 	}
 
-	private SubNondetModel restrictUsingPre(NondetModel model, BitSet states)
+	protected SubNondetModel restrictUsingPre(NondetModel model, BitSet states)
 	{
 		Map<Integer, BitSet> actions = new HashMap<Integer, BitSet>();
 		BitSet initialStates = new BitSet();
