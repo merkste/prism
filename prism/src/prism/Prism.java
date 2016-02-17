@@ -992,6 +992,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		if (cuddStarted) {
 			JDD.SetCUDDEpsilon(settings.getDouble(PrismSettings.PRISM_CUDD_EPSILON));
+			JDD.SetCUDDReorderMaxGrowth(settings.getDouble(PrismSettings.PRISM_CUDD_MAX_GROWTH));
 			try {
 				long cuddMaxMem = PrismUtils.convertMemoryStringtoKB(getCUDDMaxMem());
 				JDD.SetCUDDMaxMem(cuddMaxMem);
@@ -1321,6 +1322,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		// initialise cudd/jdd
 		long cuddMaxMem = PrismUtils.convertMemoryStringtoKB(getCUDDMaxMem());
 		JDD.InitialiseCUDD(cuddMaxMem, getCUDDEpsilon());
+		JDD.SetCUDDReorderMaxGrowth(settings.getDouble(PrismSettings.PRISM_CUDD_MAX_GROWTH));
 		cuddStarted = true;
 		JDD.SetOutputStream(mainLog.getFilePointer());
 

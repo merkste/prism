@@ -94,6 +94,7 @@ public class PrismSettings implements Observer
 	
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
+	public static final	String PRISM_CUDD_MAX_GROWTH				= "prism.cuddMaxGrowth";
 	public static final	String PRISM_NUM_SB_LEVELS					= "prism.numSBLevels";//"prism.hybridNumLevels";
 	public static final	String PRISM_SB_MAX_MEM						= "prism.SBMaxMem";//"prism.hybridMaxMemory";
 	public static final	String PRISM_NUM_SOR_LEVELS					= "prism.numSORLevels";//"prism.hybridSORLevels";
@@ -307,6 +308,9 @@ public class PrismSettings implements Observer
 																			"Maximum memory available to CUDD (underlying BDD/MTBDD library), e.g. 125k, 50m, 4g. Note: Restart PRISM after changing this." },
 			{ DOUBLE_TYPE,		PRISM_CUDD_EPSILON,						"CUDD epsilon",							"2.1",			new Double(1.0E-15),														"0.0,",																						
 																			"Epsilon value used by CUDD (underlying BDD/MTBDD library) for terminal cache comparisons." },
+			{ DOUBLE_TYPE,		PRISM_CUDD_MAX_GROWTH,					"CUDD reordering max growth",							"4.3",			new Double(1.2),														"0.0,",																						
+																		"The max growth factor for CUDD reordering (e.g. 1.2 = maximal growth of 20%)." },
+
 			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
 																		"Perform reordering when building the model." },
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
@@ -1278,6 +1282,20 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
+		}
+		else if (sw.equals("reordermaxgrowth")) {
+				if (i < args.length - 1) {
+					try {
+						d = Double.parseDouble(args[++i]);
+						if (d < 0)
+							throw new NumberFormatException("");
+						set(PRISM_CUDD_MAX_GROWTH, d);
+					} catch (NumberFormatException e) {
+						throw new PrismException("Invalid value for -" + sw + " switch");
+					}
+				} else {
+					throw new PrismException("No value specified for -" + sw + " switch");
+				}
 		} else if (sw.equals("reorder")) {
 			set(PRISM_DO_REORDER, true);
 		} else if (sw.equals("reorderoptions")) {
@@ -1665,6 +1683,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
 		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans converge");
+		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");

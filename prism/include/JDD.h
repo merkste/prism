@@ -113,6 +113,14 @@ JNIEXPORT void JNICALL Java_jdd_JDD_DD_1SetCUDDEpsilon
 
 /*
  * Class:     jdd_JDD
+ * Method:    DD_SetCUDDReorderMaxGrowth
+ * Signature: (D)V
+ */
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1SetCUDDReorderMaxGrowth
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     jdd_JDD
  * Method:    DD_CloseDownCUDD
  * Signature: (Z)V
  */

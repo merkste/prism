@@ -44,6 +44,7 @@ public class JDD
 	private static native void DD_InitialiseCUDD(long max_mem, double epsilon);
 	private static native void DD_SetCUDDMaxMem(long max_mem);
 	private static native void DD_SetCUDDEpsilon(double epsilon);
+	private static native void DD_SetCUDDReorderMaxGrowth(double factor);
 	private static native void DD_CloseDownCUDD(boolean check);
 	private static native void DD_Ref(long dd);
 	private static native void DD_Deref(long dd);
@@ -245,6 +246,11 @@ public class JDD
 	public static void SetCUDDEpsilon(double epsilon)
 	{
 		DD_SetCUDDEpsilon(epsilon);
+	}
+	
+	public static void SetCUDDReorderMaxGrowth(double factor)
+	{
+		DD_SetCUDDReorderMaxGrowth(factor);
 	}
 		
 	/**
