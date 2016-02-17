@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import parser.Values;
+import parser.ast.DeclarationIntView;
 import parser.ast.Expression;
 import parser.ast.ExpressionReward;
 import parser.ast.ModulesFile;
@@ -572,6 +573,27 @@ public class PrismCL implements PrismModelListener
 		} catch (PrismException e) {
 			errorAndExit(e.getMessage());
 		}
+
+		// explode bits if necessary
+		try {
+			if (prism.getSettings().getBoolean(PrismSettings.PRISM_EXPLODE_BITS)) {
+				Values constSwitchValues = UndefinedConstants.getNonRangingConstantsFromConstSwitch(modulesFile, constSwitch);
+				modulesFile.replaceConstants(constSwitchValues);
+				modulesFile.setSomeUndefinedConstants(constSwitchValues);
+				// System.out.println(modulesFile);
+
+				mainLog.println("Exploding bits...");
+				ModulesFile mf = prism.explodeBits(modulesFile);
+				mf = prism.parseModelString(mf.toString(), typeOverride);
+				mf.setSomeUndefinedConstants(constSwitchValues);
+				// System.out.println(mf);
+
+				modulesFile = mf;
+			}
+		} catch (PrismException e) {
+			errorAndExit(e.getMessage());
+		}
+
 
 		// parse properties
 
@@ -1143,7 +1165,7 @@ public class PrismCL implements PrismModelListener
 						errorAndExit("The -" + sw + " switch requires an additional argument (JDDNode ID)");
 					}
 				}
-
+				
 				// IMPORT OPTIONS:
 
 				// change model type to pepa
@@ -1253,6 +1275,7 @@ public class PrismCL implements PrismModelListener
 						errorAndExit("No file/options specified for -" + sw + " switch");
 					}
 				}
+
 				// export model to explicit file(s)
 				else if (sw.equals("exportmodel")) {
 					if (i < args.length - 1) {

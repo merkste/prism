@@ -1468,6 +1468,12 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	{
 		return viewDecls.get(viewIndex);
 	}
+	
+	public void explodeBits() throws PrismLangException
+	{
+		ExplodeBits explodeBits = new ExplodeBits(constantValues);
+		this.accept(explodeBits);
+	}
 
 	public Vector<String> getViewNames()
 	{

@@ -91,7 +91,8 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
 	public static final String PRISM_DO_REORDER						= "prism.doReorder";
 	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
-	
+
+	public static final String PRISM_EXPLODE_BITS					= "prism.explodeBits";
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
 	public static final	String PRISM_CUDD_MAX_GROWTH				= "prism.cuddMaxGrowth";
@@ -250,6 +251,7 @@ public class PrismSettings implements Observer
 			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			new Integer(10000),															"0,",																						
 																			"Maximum number of iterations to perform if iterative methods do not converge." },
 			// MODEL CHECKING OPTIONS:
+																			
 			{ BOOLEAN_TYPE,		PRISM_PRECOMPUTATION,					"Use precomputation",					"2.1",			new Boolean(true),															"",																							
 																			"Whether to use model checking precomputation algorithms (Prob0, Prob1, etc.), where optional." },
 			{ BOOLEAN_TYPE,		PRISM_PROB0,							"Use Prob0 precomputation",				"4.0.2",		new Boolean(true),															"",																							
@@ -279,6 +281,10 @@ public class PrismSettings implements Observer
 			{ BOOLEAN_TYPE,		PRISM_NO_DA_SIMPLIFY,				"Do not simplify deterministic automata",			"4.3",			new Boolean(false),									"",
 																			"Do not attempt to simplify deterministic automata, acceptance conditions (for debugging)." },
 
+			{ BOOLEAN_TYPE,		PRISM_EXPLODE_BITS,						"Explode variable storage into individual bits",					"4.3",			new Boolean(false),															"",
+																			"Explode variable storage into individual bits" },
+																			
+																			
 			// MULTI-OBJECTIVE MODEL CHECKING OPTIONS:
 			{ INTEGER_TYPE,		PRISM_MULTI_MAX_POINTS,					"Max. multi-objective corner points",			"4.0.3",			new Integer(50),															"0,",																						
 																			"Maximum number of corner points to explore if (value iteration based) multi-objective model checking does not converge." },
@@ -1261,6 +1267,9 @@ public class PrismSettings implements Observer
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
 		}
+		else if (sw.equals("explodebits")) {
+			set(PRISM_EXPLODE_BITS, true);
+		}
 		// CUDD settings
 		else if (sw.equals("cuddmaxmem")) {
 			if (i < args.length - 1) {
@@ -1684,6 +1693,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
 		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans converge");
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
+		mainLog.println("-explodebits ................... Model file transformation: Convert variables to single bits with views");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");

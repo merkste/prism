@@ -4166,6 +4166,33 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		doTransient(time, exportType, file, fileIn);
 	}
 
+	public ModulesFile explodeBits(ModulesFile mf) throws PrismException
+	{
+		switch (mf.getModelType()) {
+		case CTMC:
+		case DTMC:
+		case MDP:
+			// ok
+			break;
+		default:
+			throw new PrismNotSupportedException("Exploding bits is not supported for "+mf.getModelType());
+			
+		}
+		ModulesFile exploded = (ModulesFile) mf.deepCopy();
+		exploded.explodeBits();
+		return exploded;
+	}
+
+	public void explodeBits(String explodeBitsFile) throws PrismLangException
+	{
+		ModulesFile exploded = (ModulesFile) currentModulesFile.deepCopy();
+		exploded.explodeBits();
+		PrismFileLog out = new PrismFileLog(explodeBitsFile);
+		out.println(exploded);
+		out.close();
+		mainLog.println("Exported exploded-bits model to \""+explodeBitsFile+"\"");
+	}
+
 }
 
 //------------------------------------------------------------------------------
