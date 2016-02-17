@@ -30,4 +30,10 @@ public class SingletonIterator<T> implements Iterator<T>
 		}
 		throw new NoSuchElementException();
 	}
+
+	@Override
+	public void remove()
+	{
+		throw new UnsupportedOperationException("remove");
+	}
 }
