@@ -29,7 +29,6 @@ package explicit;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -54,13 +53,13 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	/**
 	 * Copy constructor.
 	 */
-	public Distribution(Distribution distr)
+	public Distribution(Iterable<Entry<Integer, Double>> distr)
 	{
 		this(distr.iterator());
 	}
 
 	/**
-	 * Build a distribution of an iterator over transitions.
+	 * Construct a distribution from an iterator over transitions.
 	 */
 	public Distribution(Iterator<Entry<Integer, Double>> transitions)
 	{
@@ -72,17 +71,26 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	}
 
 	/**
-	 * Construct a distribution from an existing one and an index permutation,
-	 * i.e. in which index i becomes index permut[i].
+	 * Construct a distribution from an existing one and an index permutation.
+	 */
+	public Distribution(Iterable<Entry<Integer, Double>> distr, int permut[])
+	{
+		this(distr.iterator(), permut);
+	}
+
+	/**
+	 * Construct a distribution from an iterator over transitions
+	 * and an index permutation,
+	 * i.e. in which index {@code i} becomes index {@code permut[i]}.
 	 * Note: have to build the new distributions from scratch anyway to do this,
 	 * so may as well provide this functionality as a constructor.
 	 */
-	public Distribution(Distribution distr, int permut[])
+	public Distribution(Iterator<Entry<Integer, Double>> transitions, int permut[])
 	{
 		this();
-		for (Iterator<Entry<Integer, Double>> transitions = distr.iterator(); transitions.hasNext();) {
-			Map.Entry<Integer, Double> transition = transitions.next();
-			add(permut[transition.getKey()], transition.getValue());
+		while (transitions.hasNext()) {
+			final Entry<Integer, Double> trans = transitions.next();
+			add(permut[trans.getKey()], trans.getValue());
 		}
 	}
 
@@ -95,13 +103,13 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	}
 
 	/**
-	 * Add 'prob' to the probability for index 'j'.
+	 * Add {@code prob} to the probability for index {@code j}.
 	 * Return boolean indicating whether or not there was already
 	 * non-zero probability for this index (i.e. false denotes new transition).
 	 */
 	public boolean add(int j, double prob)
 	{
-		Double d = (Double) map.get(j);
+		Double d = map.get(j);
 		if (d == null) {
 			map.put(j, prob);
 			return false;
@@ -112,7 +120,7 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	}
 
 	/**
-	 * Set the probability for index 'j' to 'prob'.
+	 * Set the probability for index {@code j} to {@code prob}.
 	 */
 	public void set(int j, double prob)
 	{
@@ -123,21 +131,19 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	}
 
 	/**
-	 * Get the probability for index j. 
+	 * Get the probability for index {@code j}. 
 	 */
 	public double get(int j)
 	{
-		Double d;
-		d = (Double) map.get(j);
-		return d == null ? 0.0 : d.doubleValue();
+		return map.getOrDefault(j, 0.0);
 	}
 
 	/**
-	 * Returns true if index j is in the support of the distribution. 
+	 * Returns true if index {@code j} is in the support of the distribution. 
 	 */
 	public boolean contains(int j)
 	{
-		return map.get(j) != null;
+		return map.containsKey(j);
 	}
 
 	/**
@@ -145,11 +151,10 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	 */
 	public boolean isSubsetOf(BitSet set)
 	{
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			if (!set.get((Integer) e.getKey()))
+		for (Entry<Integer, Double> trans: this) {
+			if (!set.get(trans.getKey())) {
 				return false;
+			}
 		}
 		return true;
 	}
@@ -159,11 +164,10 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	 */
 	public boolean containsOneOf(BitSet set)
 	{
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			if (set.get((Integer) e.getKey()))
+		for (Entry<Integer, Double> trans : this) {
+			if (set.get((Integer) trans.getKey())) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -206,25 +210,22 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	public double sum()
 	{
 		double d = 0.0;
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			d += e.getValue();
+		for (double p : map.values()) {
+			d += p;
 		}
 		return d;
 	}
 
 	/**
-	 * Get the sum of all the probabilities in the distribution except for index j.
+	 * Get the sum of all the probabilities in the distribution except for index {@code j}.
 	 */
 	public double sumAllBut(int j)
 	{
 		double d = 0.0;
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			if (e.getKey() != j)
-				d += e.getValue();
+		for (Entry<Integer, Double> trans : this) {
+			if (trans.getKey() != j) {
+				d += trans.getValue();
+			}
 		}
 		return d;
 	}
@@ -233,31 +234,27 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	 * Create a new distribution, based on a mapping from the indices
 	 * used in this distribution to a different set of indices.
 	 */
-	public Distribution map(int map[])
+	public Distribution map(int permut[])
 	{
-		Distribution distrNew = new Distribution();
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			distrNew.add(map[e.getKey()], e.getValue());
-		}
-		return distrNew;
+		return new Distribution(this, permut);
 	}
 
 	@Override
 	public boolean equals(Object o)
 	{
-		Double d1, d2;
-		Distribution d = (Distribution) o;
-		if (d.size() != size())
+		if (!(o instanceof Distribution)) {
 			return false;
-		Iterator<Entry<Integer, Double>> i = iterator();
-		while (i.hasNext()) {
-			Map.Entry<Integer, Double> e = i.next();
-			d1 = e.getValue();
-			d2 = d.map.get(e.getKey());
-			if (d2 == null || !PrismUtils.doublesAreClose(d1, d2, 1e-12, false))
+		}
+		Distribution d = (Distribution) o;
+		if (d.size() != size()) {
+			return false;
+		}
+		for (Entry<Integer, Double> trans : this) {
+			Double d1 = trans.getValue();
+			Double d2 = d.map.get(trans.getKey());
+			if (d2 == null || !PrismUtils.doublesAreClose(d1, d2, 1e-12, false)) {
 				return false;
+			}
 		}
 		return true;
 	}
