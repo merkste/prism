@@ -398,7 +398,8 @@ public class LTLModelChecker extends PrismComponent
 	 * @param statesOfInterest the set of states for which values should be calculated (null = all states)
 	 * @return The product model
 	 */
-	 public <M extends Model> LTLProduct<M> constructProductModel(DA<BitSet,? extends AcceptanceOmega> da, M model, Vector<BitSet> labelBS, BitSet statesOfInterest) throws PrismException
+	@SuppressWarnings("unchecked")
+	public <M extends Model> LTLProduct<M> constructProductModel(DA<BitSet,? extends AcceptanceOmega> da, M model, Vector<BitSet> labelBS, BitSet statesOfInterest) throws PrismException
 	{
 		ModelType modelType = model.getModelType();
 		int daSize = da.size();
@@ -585,8 +586,14 @@ public class LTLModelChecker extends PrismComponent
 			prodModel.setStatesList(prodStatesList);
 		}
 
-		@SuppressWarnings("unchecked")
-		LTLProduct<M> product = new LTLProduct<M>((M) prodModel, model, null, daSize, invMap);
+		final M productModel;
+		if (prodModel instanceof MDPSimple) {
+			mainLog.println("Converting product model to MDPSparse");
+			productModel = (M) new MDPSparse((MDPSimple) prodModel);
+		} else {
+			productModel = (M) prodModel;
+		}
+		final LTLProduct<M> product = new LTLProduct<M>(productModel, model, null, daSize, invMap);;
 
 		// generate acceptance for the product model by lifting
 		product.setAcceptance(liftAcceptance(product, da.getAcceptance()));
