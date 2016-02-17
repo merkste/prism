@@ -51,15 +51,12 @@ public class ECComputerDefault extends ECComputer
 	/** The model to compute (M)ECs for **/
 	private NondetModel model;
 
-	/** Computed list of MECs **/
-	private List<BitSet> mecs = new ArrayList<BitSet>();
-
 	/**
 	 * Build (M)EC computer for a given model.
 	 */
-	public ECComputerDefault(PrismComponent parent, NondetModel model) throws PrismException
+	public ECComputerDefault(PrismComponent parent, NondetModel model, ECConsumer consumer) throws PrismException
 	{
-		super(parent);
+		super(parent, consumer);
 		this.model = model;
 	}
 
@@ -68,25 +65,19 @@ public class ECComputerDefault extends ECComputer
 	@Override
 	public void computeMECStates() throws PrismException
 	{
-		mecs = findEndComponents(null, null);
+		findEndComponents(null, null);
 	}
 
 	@Override
 	public void computeMECStates(BitSet restrict) throws PrismException
 	{
-		mecs = findEndComponents(restrict, null);
+		findEndComponents(restrict, null);
 	}
 
 	@Override
 	public void computeMECStates(BitSet restrict, BitSet accept) throws PrismException
 	{
-		mecs = findEndComponents(restrict, accept);
-	}
-
-	@Override
-	public List<BitSet> getMECStates()
-	{
-		return mecs;
+		findEndComponents(restrict, accept);
 	}
 
 	// Computation
@@ -99,9 +90,8 @@ public class ECComputerDefault extends ECComputer
 	 * If {@code accept} is null, the acceptance condition is trivially satisfied.
 	 * @param restrict BitSet for the set of states to restrict to
 	 * @param accept BitSet for the set of accepting states
-	 * @return a list of BitSets representing the MECs
 	 */
-	private List<BitSet> findEndComponents(BitSet restrict, BitSet accept) throws PrismException
+	private void findEndComponents(BitSet restrict, BitSet accept) throws PrismException
 	{
 		// If restrict is null, look within set of all reachable states
 		if (restrict == null) {
@@ -110,8 +100,10 @@ public class ECComputerDefault extends ECComputer
 		}
 		// Initialise L with set of all states to look in (if non-empty)
 		List<BitSet> L = new ArrayList<BitSet>();
-		if (restrict.isEmpty())
-			return L;
+		if (restrict.isEmpty()) {
+			consumer.notifyDone();
+			return;
+		}
 		L.add(restrict);
 		// Find MECs
 		boolean changed = true;
@@ -134,7 +126,10 @@ public class ECComputerDefault extends ECComputer
 				}
 			}
 		}
-		return L;
+		for (BitSet mec : L) {
+			consumer.notifyNextMEC(mec);
+		}
+		consumer.notifyDone();
 	}
 
 	private Set<BitSet> processedSCCs = new HashSet<BitSet>();

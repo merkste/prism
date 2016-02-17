@@ -43,18 +43,21 @@ public abstract class ECComputer extends PrismComponent
 	/**
 	 * Static method to create a new ECComputer object, depending on current settings.
 	 */
-	public static ECComputer createECComputer(PrismComponent parent, NondetModel model) throws PrismException
+	public static ECComputer createECComputer(PrismComponent parent, NondetModel model, ECConsumer consumer) throws PrismException
 	{
 		// Only one algorithm implemented currently
-		return new ECComputerDefault(parent, model);
+		return new ECComputerDefault(parent, model, consumer);
 	}
+
+	protected ECConsumer consumer;
 
 	/**
 	 * Base constructor.
 	 */
-	public ECComputer(PrismComponent parent) throws PrismException
+	public ECComputer(PrismComponent parent, ECConsumer consumer) throws PrismException
 	{
 		super(parent);
+		this.consumer = consumer;
 	}
 
 	public void setPredecessorRelation(PredecessorRelation pre)
@@ -88,9 +91,4 @@ public abstract class ECComputer extends PrismComponent
 	 * @param accept BitSet for the set of accepting states
 	 */
 	public abstract void computeMECStates(BitSet restrict, BitSet accept) throws PrismException;
-	
-	/**
-	 * Get the list of states for computed MECs.
-	 */
-	public abstract List<BitSet> getMECStates();
 }
