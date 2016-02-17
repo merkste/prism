@@ -41,6 +41,96 @@ public class IteratorTools
 		return false;
 	}
 
+	public static int maxIntegers(final Iterator<Integer> numbers)
+	{
+		return maxInteger(numbers, Integer.MIN_VALUE);
+	}
+
+	public static int maxInteger(final Iterator<Integer> numbers, final int value)
+	{
+		int max = value;
+		while (numbers.hasNext()) {
+			final int next = numbers.next();
+			max = next > max ? next : max; 
+		}
+		return max;
+	}
+
+	public static double maxDoubles(final Iterator<Double> numbers)
+	{
+		return maxDouble(numbers, Double.MIN_VALUE);
+	}
+
+	public static double maxDouble(final Iterator<Double> numbers, final double value)
+	{
+		double max = value;
+		while (numbers.hasNext()) {
+			final double next = numbers.next();
+			max = next > max ? next : max; 
+		}
+		return max;
+	}
+
+	public static float maxFloats(final Iterator<Float> numbers)
+	{
+		return maxFloat(numbers, Float.MIN_VALUE);
+	}
+
+	public static float maxFloat(final Iterator<Float> numbers, final float value)
+	{
+		float max = value;
+		while (numbers.hasNext()) {
+			final float next = numbers.next();
+			max = next > max ? next : max; 
+		}
+		return max;
+	}
+
+	public static int minIntegers(final Iterator<Integer> numbers)
+	{
+		return minInteger(numbers, Integer.MAX_VALUE);
+	}
+
+	public static int minInteger(final Iterator<Integer> numbers, final int value)
+	{
+		int min = value;
+		while (numbers.hasNext()) {
+			final int next = numbers.next();
+			min = next < min ? next : min; 
+		}
+		return min;
+	}
+
+	public static double minDoubles(final Iterator<Double> numbers)
+	{
+		return minDouble(numbers, Double.MAX_VALUE);
+	}
+
+	public static double minDouble(final Iterator<Double> numbers, final double value)
+	{
+		double min = value;
+		while (numbers.hasNext()) {
+			final double next = numbers.next();
+			min = next < min ? next : min; 
+		}
+		return min;
+	}
+
+	public static float minFloats(final Iterator<Float> numbers)
+	{
+		return minFloat(numbers, Float.MAX_VALUE);
+	}
+
+	public static float minFloat(final Iterator<Float> numbers, final float value)
+	{
+		float min = value;
+		while (numbers.hasNext()) {
+			final float next = numbers.next();
+			min = next < min ? next : min; 
+		}
+		return min;
+	}
+
 	public static int sumIntegers(final Iterator<Integer> numbers)
 	{
 		int sum = 0;
