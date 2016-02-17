@@ -500,6 +500,16 @@ public class StateValues implements StateVector
 	}
 	
 	/**
+	 * Modify the vector by applying 'andNot' with operand {@code sv}.
+	 */
+	public void andNot(StateValues sv) throws PrismException
+	{
+ 		if (!(type instanceof TypeBool) || !(sv.type instanceof TypeBool))
+			throw new PrismException("The operator andNot can only be applied to Boolean vectors");
+ 		valuesB.andNot(sv.valuesB);
+ 	}
+
+	/**
 	 * Modify the vector by applying 'equals' with operand {@code sv}.
 	 */
 	public void equals(StateValues sv) throws PrismException
