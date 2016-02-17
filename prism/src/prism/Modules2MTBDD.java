@@ -629,6 +629,10 @@ public class Modules2MTBDD
 		}
 
 		varorderConstraints = vtGlobal;
+		if (prism.getExtraDDInfo()) {
+			mainLog.println("Variable ordering constraints for the model:");
+			vtGlobal.print(mainLog, modelVariables.getDDVarNames());
+		}
 
 		// print out all mtbdd variables allocated
 //		mainLog.print("\nMTBDD variables:");
