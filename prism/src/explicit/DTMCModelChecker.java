@@ -170,6 +170,7 @@ public class DTMCModelChecker extends ProbModelChecker
 
 		// For LTL model checking routines
 		mcLtl = new LTLModelChecker(this);
+		mcLtl.disallowSimplificationsBasedOnModel();
 
 		// Build product of Markov chain and automaton
 		AcceptanceType[] allowedAcceptance = {

@@ -938,6 +938,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 		// For LTL model checking routines
 		mcLtl = new LTLModelChecker(prism);
+		mcLtl.disallowSimplificationsBasedOnModel();
 
 		// Model check maximal state formulas
 		labelDDs = new Vector<JDDNode>();
