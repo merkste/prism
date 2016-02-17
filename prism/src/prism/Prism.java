@@ -34,10 +34,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import jdd.JDDVarsTree;
+import jdd.MtrNode;
 import mtbdd.PrismMTBDD;
 import odd.ODDUtils;
 import param.BigRational;
@@ -54,6 +57,7 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.visitor.Reorder;
 import pta.DigitalClocks;
 import pta.PTAModelChecker;
 import simulator.GenerateSimulationPath;
@@ -270,6 +274,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 
 	// Has the CUDD library been initialised yet?
 	private boolean cuddStarted = false;
+
 
 	//------------------------------------------------------------------------------
 	// Constructors + options methods
@@ -610,6 +615,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		doReach = b;
 	}
+
 
 	public void setBSCCComp(boolean b) throws PrismException
 	{
@@ -1907,7 +1913,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void buildModel() throws PrismException
 	{
 		mainLog.printSeparator();
-		doBuildModel();
+		doBuildModel(false);
 	}
 
 	/**
@@ -1917,7 +1923,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void buildModelIfRequired() throws PrismException
 	{
 		if (!modelIsBuilt())
-			doBuildModel();
+			doBuildModel(false);
 	}
 
 	/**
@@ -1926,12 +1932,20 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * {@link #getBuiltModel()} or {@link #getBuiltModelExplicit()},
 	 * depending on the engine currently selected.
 	 */
-	private void doBuildModel() throws PrismException
+	private void doBuildModel(boolean skipReorder) throws PrismException
 	{
 		long l; // timer
-
+		boolean storedDoReachFlag = false;
+		
 		// Clear any existing built model(s)
 		clearBuiltModel();
+
+		boolean doReorder = !getExplicit() && getDoReorder() && !skipReorder;
+		if (doReorder && settings.getReorderOptions().contains("beforereach")) {
+			// temporily deactivate reachability
+			storedDoReachFlag = getDoReach();
+			setDoReach(false);
+		}
 
 		try {
 			if (currentModelType == ModelType.PTA) {
@@ -2049,10 +2063,23 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				mainLog.print(currentModelExpl.infoStringTable());
 			}
 
-			// Notify model listeners of build success
-			for (PrismModelListener listener : modelListeners) {
-				if (listener != null)
-					listener.notifyModelBuildSuccessful();
+			if (doReorder) {
+				doReorder();
+
+				if (settings.getReorderOptions().contains("beforereach")) {
+					// reset do reach setting
+					setDoReach(storedDoReachFlag);
+				}
+
+				mainLog.printSeparator();
+				mainLog.println("Rebuilding reordered model...");
+				doBuildModel(true);
+			} else {
+				// Notify model listeners of build success
+				for (PrismModelListener listener : modelListeners) {
+					if (listener != null)
+						listener.notifyModelBuildSuccessful();
+				}
 			}
 		} catch (PrismException e) {
 			// Notify model listeners of build failure
@@ -2099,6 +2126,82 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			sv.print(mainLog, 1);
 		}*/
 	}
+
+	private void doReorder() throws PrismException
+	{
+		JDDVarsTree varOrderConstraints = currentModel.getVarOrderConstraints();
+		if (varOrderConstraints == null) {
+			mainLog.println("Skipping reordering, no suitable variable constraints...");
+		}
+		MtrNode root = null;
+		try {
+			if (!settings.getReorderOptions().contains("noconstraints")) {
+				root = currentModel.getVarOrderConstraints().convertToMtrNode();
+				MtrNode.setCuddTree(root);
+			}
+
+			int transSizeBefore = JDD.GetNumNodes(currentModel.getTrans());
+			int nodeCountBefore = JDD.GetNumNodes();
+			//currentModel.printTransInfo(mainLog, true);
+			if (getExtraDDInfo()) {
+				JDD.statisticsForDD(new PrismFileLog("reorder.trans.pre.csv"), currentModel.getTrans(), currentModel.getDDVarNames());
+			}
+			mainLog.print("\nReordering");
+			if (settings.getReorderOptions().contains("noconstraints")) {
+				mainLog.print(" (without any variable order constraints)");
+			}
+			mainLog.print("... ");
+			mainLog.flush();
+			long reorderStart = System.currentTimeMillis();
+			JDD.reorder();
+			mainLog.println("done (took "+ ((System.currentTimeMillis()-reorderStart)/1000.0) +" seconds)");
+
+			int transSizeAfter = JDD.GetNumNodes(currentModel.getTrans());
+			int nodeCountAfter = JDD.GetNumNodes();
+			mainLog.println("MTBDD nodes of transition matrix: "
+			               +transSizeAfter
+			               +" ("+transSizeBefore+" before reordering, "
+			               +PrismUtils.formatPercent1dp((transSizeBefore - transSizeAfter)*1.0 / transSizeBefore)
+			               +" reduction)");
+			mainLog.println("Number of overall MTBDD nodes: "
+			               +nodeCountAfter
+			               +" ("+nodeCountBefore+" before reordering, "
+			               +PrismUtils.formatPercent1dp((nodeCountBefore - nodeCountAfter)*1.0 / nodeCountBefore)
+			               +" reduction)");
+
+			if (getExtraDDInfo()) {
+				JDD.statisticsForDD(new PrismFileLog("reorder.trans.post.csv"), currentModel.getTrans(), currentModel.getDDVarNames());
+				mainLog.println("\nVariable order:");
+				currentModel.getModelVariables().printOrder(mainLog);
+				mainLog.println();
+			}
+
+			if (currentModelSource == ModelSource.PRISM_MODEL &&
+					!settings.getReorderOptions().contains("noconstraints")) {
+				Reorder visitReorder = new Reorder(currentModel);
+				currentModulesFile.accept(visitReorder);
+
+				currentModulesFile.tidyUp();
+
+				if (getExportPrismReordered()) {
+					mainLog.print("\nExporting reordered PRISM source to "+getExportPrismReorderedFile().getPath()+" ...");
+					mainLog.flush();
+					PrismFileLog reordered = new PrismFileLog(getExportPrismReorderedFile().getPath());
+					reordered.println(currentModulesFile.toString());
+					reordered.close();
+					mainLog.println(" done.");
+				}
+			} else {
+				throw new PrismException("Can not reorder the PRISM source, have to abort model checking...");
+			}
+		} finally {
+			clearBuiltModel();
+			// resetting the CuddTree frees root as well
+			MtrNode.resetCuddTree();
+			JDD.resetVarOrder();
+		}
+	}
+
 
 	/**
 	 * Build a model from a PRISM modelling language description, storing it symbolically,
@@ -4009,6 +4112,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		loadBuiltModel(model);
 		doTransient(time, exportType, file, fileIn);
 	}
+
 }
 
 //------------------------------------------------------------------------------
