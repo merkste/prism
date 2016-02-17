@@ -627,6 +627,66 @@ public class NondetModel extends ProbModel
 		return result;
 	}
 	
+	public NondetModel getTransformed(final ProbModelTransformation transformation) throws PrismException
+	{
+		NondetModelTransformation ndTransformation = new NondetModelTransformation(this) {
+			@Override
+			public void clear() {
+				transformation.clear();
+			}
+
+			@Override
+			public int getExtraStateVariableCount()
+			{
+				return transformation.getExtraStateVariableCount();
+			}
+
+			@Override
+			public int getExtraActionVariableCount()
+			{
+				return 0;
+			}
+
+			@Override
+			public JDDNode getTransformedTrans() throws PrismException
+			{
+				return transformation.getTransformedTrans();
+			}
+
+			@Override
+			public JDDNode getTransformedStart() throws PrismException
+			{
+				return transformation.getTransformedStart();
+			}
+
+			@Override
+			public String getExtraStateVariableName()
+			{
+				return transformation.getExtraStateVariableName();
+			}
+
+			@Override
+			public void hookExtraStateVariableAllocation(JDDVars extraRowVars, JDDVars extraColVars)
+			{
+				transformation.hookExtraStateVariableAllocation(extraRowVars, extraColVars);
+			}
+
+			@Override
+			public JDDNode getTransformedStateReward(JDDNode oldReward) throws PrismException
+			{
+				return transformation.getTransformedStateReward(oldReward);
+			}
+
+			@Override
+			public JDDNode getTransformedTransReward(JDDNode oldReward) throws PrismException
+			{
+				return transformation.getTransformedTransReward(oldReward);
+			}
+		};
+
+		return getTransformed(ndTransformation);
+	}
+	
 	
 	public void dump(PrismLog log) throws PrismException {
 		super.dump(log);
