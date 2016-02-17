@@ -160,6 +160,13 @@ public class DTMCDisjointUnion extends DTMCView
 	{
 		return new UnionSet<>(model1.getLabels(), model2.getLabels());
 	}
+	
+	@Override
+	public boolean hasLabel(String name)
+	{
+		return model1.hasLabel(name) | model2.hasLabel(name);
+	}
+
 
 	@Override
 	public int getNumTransitions()
