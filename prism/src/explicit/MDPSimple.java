@@ -88,6 +88,41 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 	}
 
 	/**
+	 * Constructor: Build new MDPSimple from arbitrary MDP type.
+	 *
+	 * @param mdp some MDP
+	 */
+	public MDPSimple(final MDP mdp)
+	{
+		this(mdp.getNumStates());
+
+		setStatesList(mdp.getStatesList());
+		setConstantValues(mdp.getConstantValues());
+		for (String label : mdp.getLabels()) {
+			addLabel(label, mdp.getLabelStates(label));
+		}
+
+		for (int state = 0, numStates = mdp.getNumStates(); state < numStates; state++) {
+			if (mdp.isInitialState(state)) {
+				addInitialState(state);
+			}
+			if (mdp.isDeadlockState(state)) {
+				deadlocks.add(state);
+			}
+
+			for (int choice = 0, numChoices = mdp.getNumChoices(state); choice < numChoices; choice++) {
+				final Distribution dist = new Distribution(mdp.getTransitionsIterator(state, choice));
+				final Object action = mdp.getAction(state, choice);
+				if (action != null) {
+					addActionLabelledChoice(state, dist, action);
+				} else {
+					addChoice(state, dist);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Copy constructor.
 	 */
 	public MDPSimple(MDPSimple mdp)
