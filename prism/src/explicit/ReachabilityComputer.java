@@ -79,9 +79,18 @@ public class ReachabilityComputer
 	public BitSet computePre(final BitSet S)
 	{
 		final BitSet predecessors = new BitSet(S.size());
-		for (int state = 0; state < model.getNumStates(); state++) {
-			if (model.someSuccessorsInSet(state, S)) {
-				predecessors.set(state);
+		if (model.hasStoredPredecessorRelation()) {
+			final PredecessorRelation predecessorRelation = model.getPredecessorRelation(null, false);
+			for (int state : new IterableBitSet(S)) {
+				for (int pre : predecessorRelation.getPre(state)) {
+					predecessors.set(pre);
+				}
+			}
+		} else {
+			for (int state = 0, numStates = model.getNumStates(); state < numStates; state++) {
+				if (model.someSuccessorsInSet(state, S)) {
+					predecessors.set(state);
+				}
 			}
 		}
 		return predecessors;
