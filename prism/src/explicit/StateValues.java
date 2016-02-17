@@ -1268,7 +1268,7 @@ public class StateValues implements StateVector
 					// (otherwise, assume line i contains value for state index i)
 					if (s.contains("=")) {
 						hasIndices = true;
-						String ss[] = s.split("=");
+						String ss[] = s.split(":?=");
 						count = Integer.parseInt(ss[0]);
 						s = ss[1];
 					}
