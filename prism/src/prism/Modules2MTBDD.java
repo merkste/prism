@@ -362,6 +362,19 @@ public class Modules2MTBDD
 	
 	private void initializeViews() throws PrismException
 	{
+		for (int j = 0; j < modulesFile.getNumGlobalViews(); j++) {
+			Declaration decl = modulesFile.getGlobalView(j);
+			DeclarationIntView declType = (DeclarationIntView) decl.getDeclType();
+			viewList.add(decl);
+
+			for (ExpressionVar bit : declType.getBits()) {
+				String var = bit.getName();
+				if (variablesInView.add(var) == false) {
+					throw new PrismException("Variable "+var+" contained in multiple views");
+				}
+			}
+		}
+
 		for (int i = 0; i < numModules; i++) {
 			Module module = modulesFile.getModule(i);
 			for (int j = 0; j < module.getNumViewDeclarations(); j++) {
@@ -832,6 +845,14 @@ public class Modules2MTBDD
 			// build up range for whole system as we go
 			range = JDD.Apply(JDD.TIMES, range, varRangeDDs[i].copy());
 		}
+		// global view ranges
+		for (int j = 0; j < modulesFile.getNumGlobalViews(); j++) {
+			Declaration decl = modulesFile.getGlobalView(j);
+			JDDNode viewRangeDD = handleViewRange(decl);
+
+			range = JDD.Apply(JDD.TIMES, range, viewRangeDD.copy());
+			JDD.Deref(viewRangeDD);
+		}
 		// module ranges
 		moduleRangeDDs = new JDDNode[numModules];
 		for (i = 0; i < numModules; i++) {
@@ -842,25 +863,35 @@ public class Modules2MTBDD
 			for (int j = 0; j < module.getNumViewDeclarations(); j++) {
 				// handle view ranges
 				Declaration decl = module.getViewDeclaration(j);
-				DeclarationIntView declType = (DeclarationIntView) decl.getDeclType();
-
-				JDDNode valueRow = translateView(declType, true);
-				JDDNode viewRangeDD = JDD.LessThanEquals(valueRow.copy(), declType.getHigh().evaluateInt(constantValues));
-				viewRangeDD = JDD.And(viewRangeDD, JDD.GreaterThanEquals(valueRow.copy(), declType.getLow().evaluateInt(constantValues)));
-				JDD.Deref(valueRow);
-				viewRangeDDs.add(viewRangeDD);
-
-				JDDNode valueCol = translateView(declType, false);
-				JDDNode viewRangeColDD = JDD.LessThanEquals(valueCol.copy(), declType.getHigh().evaluateInt(constantValues));
-				viewRangeColDD = JDD.And(viewRangeColDD, JDD.GreaterThanEquals(valueCol.copy(), declType.getLow().evaluateInt(constantValues)));
-				JDD.Deref(valueCol);
-				viewColRangeDDs.add(viewRangeColDD);
+				JDDNode viewRangeDD = handleViewRange(decl);
 
 				range = JDD.Apply(JDD.TIMES, range, viewRangeDD.copy());
 				moduleRangeDDs[i] = JDD.Apply(JDD.TIMES, moduleRangeDDs[i], viewRangeDD.copy());
+				JDD.Deref(viewRangeDD);
 			}
 		}
 	}
+
+	/** Construct rangeDDs for the views, returns the rangeDD for the row variables */
+	private JDDNode handleViewRange(Declaration decl) throws PrismException
+	{
+		DeclarationIntView declType = (DeclarationIntView) decl.getDeclType();
+
+		JDDNode valueRow = translateView(declType, true);
+		JDDNode viewRangeDD = JDD.LessThanEquals(valueRow.copy(), declType.getHigh().evaluateInt(constantValues));
+		viewRangeDD = JDD.And(viewRangeDD, JDD.GreaterThanEquals(valueRow.copy(), declType.getLow().evaluateInt(constantValues)));
+		JDD.Deref(valueRow);
+		viewRangeDDs.add(viewRangeDD);
+
+		JDDNode valueCol = translateView(declType, false);
+		JDDNode viewRangeColDD = JDD.LessThanEquals(valueCol.copy(), declType.getHigh().evaluateInt(constantValues));
+		viewRangeColDD = JDD.And(viewRangeColDD, JDD.GreaterThanEquals(valueCol.copy(), declType.getLow().evaluateInt(constantValues)));
+		JDD.Deref(valueCol);
+		viewColRangeDDs.add(viewRangeColDD);
+
+		return viewRangeDD.copy();
+	}
+
 	// translate modules decription to dds
 	
 	private void translateModules() throws PrismException
@@ -2138,6 +2169,9 @@ public class Modules2MTBDD
 		for (ExpressionVar bit : decl.getBits()) {
 			tmp1 = JDD.Apply(JDD.TIMES, tmp1, JDD.Constant(2));
 			int bitVarIndex = bit.getIndex();
+			if (bitVarIndex == -1) {
+				throw new PrismException("Unknown variable "+bit.getName()+" in "+decl);
+			}
 			JDDNode bitDD = (row ? varDDRowVars[bitVarIndex] : varDDColVars[bitVarIndex]).getVar(0).copy();
 			tmp1 = JDD.Apply(JDD.PLUS, tmp1, bitDD);
 		}

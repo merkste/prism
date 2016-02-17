@@ -82,7 +82,7 @@ public class FindAllSynchedGlobalVarUpdates extends ASTTraverse
 		Command c;
 		Module m;
 		ModulesFile mf;
-		boolean isLocal, isGlobal;
+		boolean isLocal, isGlobal, isGlobalView;
 
 		// Determine containing command/module/model
 		// (mf should coincide with the stored modulesFile)
@@ -95,12 +95,28 @@ public class FindAllSynchedGlobalVarUpdates extends ASTTraverse
 			var = e.getVar(i);
 			isLocal = m.isLocalVariable(var);
 			isGlobal = isLocal ? false : mf.isGlobalVariable(var);
-			if (isGlobal && !c.getSynch().equals("")) {
-				if (globalVarToModule.containsKey(var) && globalVarToModule.get(var) != inModule.getName()) {
-					throw new PrismLangException("To update global variable "+var+", only one module may update (previously by "+globalVarToModule.get(var)+")",
-					                             e.getVarIdent(i));
+			isGlobalView = isLocal ? false : mf.isGlobalView(var);
+			if (!c.getSynch().equals("")) {
+				if (isGlobal) {
+					if (globalVarToModule.containsKey(var) && globalVarToModule.get(var) != inModule.getName()) {
+						throw new PrismLangException("To update global variable "+var+", only one module may update (previously by "+globalVarToModule.get(var)+")",
+								e.getVarIdent(i));
+					}
+					globalVarToModule.put(var, inModule.getName());
+				} else if (isGlobalView) {
+					// for an update to a global view, we add each underlying variable
+					// to the mapping
+					Declaration view = mf.getGlobalView(var);
+					DeclarationIntView viewType = (DeclarationIntView) view.getDeclType();
+					for (ExpressionVar bit : viewType.getBits()) {
+						String bitName = bit.getName();
+						if (globalVarToModule.containsKey(bitName) && globalVarToModule.get(bitName) != inModule.getName()) {
+							throw new PrismLangException("To update global view "+ var +", only one module may update " + bitName + " (previously by "+globalVarToModule.get(bitName)+")",
+							                             e.getVarIdent(i));
+						}
+						globalVarToModule.put(bitName, inModule.getName());
+					}
 				}
-				globalVarToModule.put(var, inModule.getName());
 			}
 		}
 	}
