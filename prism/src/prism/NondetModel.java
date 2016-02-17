@@ -202,6 +202,7 @@ public class NondetModel extends ProbModel
 
 	// do reachability
 
+	@Override
 	public void doReachability()
 	{
 		JDDNode tmp;
@@ -211,14 +212,11 @@ public class NondetModel extends ProbModel
 		tmp = JDD.MaxAbstract(trans01, allDDNondetVars);
 
 		// compute reachable states
-		reach = PrismMTBDD.Reachability(tmp, allDDRowVars, allDDColVars, start);
+		JDDNode reachable = PrismMTBDD.Reachability(tmp, allDDRowVars, allDDColVars, start);
 		JDD.Deref(tmp);
 
-		// work out number of reachable states
-		numStates = JDD.GetNumMinterms(reach, allDDRowVars.n());
-
-		// build odd
-		odd = ODDUtils.BuildODD(reach, allDDRowVars);
+		// set the reachable states and create the ODD etc
+		setReach(reachable);
 	}
 
 	// remove non-reachable states from various dds
