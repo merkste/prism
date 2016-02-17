@@ -153,12 +153,14 @@ public class BitSetTools
 	 */
 	public static int getIndexOfNthSetBit(final BitSet indices, final int fromIndex, final int n)
 	{
-		if (n < 1)
+		if (n < 1) {
 			throw new IllegalArgumentException("n < 1: " + n);
+		}
 		int count = 1;
 		for (int i = indices.nextSetBit(fromIndex); i >= 0; i = indices.nextSetBit(i + 1)) {
-			if (count == n)
+			if (count == n) {
 				return i;
+			}
 			count++;
 		}
 		//there are not enough bits set in indices
