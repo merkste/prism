@@ -1,9 +1,11 @@
 package common.iterable.collections;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
+
+import common.iterable.SingletonIterator;
 
 /**
  * @author Marcus Daum (mdaum@tcs.inf.tu-dresden.de)
@@ -25,31 +27,15 @@ public class SingletonSet<T> implements Set<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new Iterator<T>()
+		if (isEmpty()){
+			return Collections.emptyIterator();
+		}
+		return new SingletonIterator<T>(element)
 		{
-			private boolean hasNext = !isEmpty();
-
-			@Override
-			public boolean hasNext()
-			{
-				return hasNext;
-			}
-
-			@Override
-			public T next()
-			{
-				if (hasNext){
-					hasNext = false;
-					return element;
-				}
-				throw new NoSuchElementException();
-			}
-
 			@Override
 			public void remove()
 			{
-				element = null;
-				hasNext = false;
+				SingletonSet.this.element = null;
 			}
 		};
 	}
