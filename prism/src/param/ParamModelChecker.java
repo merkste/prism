@@ -521,7 +521,7 @@ final public class ParamModelChecker extends PrismComponent
 		}
 		
 		// Remember whether filter is for the initial state and, if so, whether there's just one
-		boolean filterInit = (filter instanceof ExpressionLabel && ((ExpressionLabel) filter).isInitLabel());
+		boolean filterInit = filter != null && filter.isInitLabel();
 		// Print out number of states satisfying filter
 		if (!filterInit) {
 			mainLog.println("\nStates satisfying filter " + filter + ": " + bsFilter.cardinality());
@@ -601,7 +601,7 @@ final public class ParamModelChecker extends PrismComponent
 
 		/*
 		// Remember whether filter is for the initial state and, if so, whether there's just one
-		filterInit = (filter instanceof ExpressionLabel && ((ExpressionLabel) filter).isInitLabel());
+		filterInit = (filter != null) && filter.isInitLabel();
 		filterInitSingle = filterInit & model.getNumInitialStates() == 1;
 		// Print out number of states satisfying filter
 		if (!filterInit)
