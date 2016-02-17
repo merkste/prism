@@ -38,6 +38,8 @@ import prism.PrismException;
  */
 public abstract class ECComputer extends PrismComponent
 {
+	protected PredecessorRelation pre;
+	
 	/**
 	 * Static method to create a new ECComputer object, depending on current settings.
 	 */
@@ -53,6 +55,11 @@ public abstract class ECComputer extends PrismComponent
 	public ECComputer(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+	}
+
+	public void setPredecessorRelation(PredecessorRelation pre)
+	{
+		this.pre = pre;
 	}
 
 	/**
