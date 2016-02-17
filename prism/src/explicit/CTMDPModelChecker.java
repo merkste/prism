@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import parser.ast.ExpressionTemporal;
+import parser.ast.TemporalOperatorBound;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
@@ -59,10 +60,22 @@ public class CTMDPModelChecker extends ProbModelChecker
 		ModelCheckerResult res = null;
 
 		// get info from bounded until
-		uTime = expr.bound == null ? null : expr.bound.getUpperBound().evaluateDouble(constantValues);
-		if (uTime < 0 || (uTime == 0 && expr.bound.upperBoundIsStrict())) {
-			String bound = (expr.bound.upperBoundIsStrict() ? "<" : "<=") + uTime;
-			throw new PrismException("Invalid upper bound " + bound + " in time-bounded until formula");
+		// get info from bounded until
+		if (expr.getBounds().hasStepBounds() ||
+		    expr.getBounds().hasRewardBounds()){
+			throw new PrismNotSupportedException("Step or reward-bounds are not supported for CTMDPs.");
+		}
+
+		if (expr.getBounds().countTimeBounds() > 1) {
+			throw new PrismNotSupportedException("Conjunctions of time bounds are not supported for CTMDPs.");
+		}
+
+		TemporalOperatorBound bound = expr.getBounds().getTimeBoundForContinuousTime();
+
+		uTime = bound == null ? null : bound.getUpperBound().evaluateDouble(constantValues);
+		if (uTime < 0 || (uTime == 0 && bound.upperBoundIsStrict())) {
+			String s = (bound.upperBoundIsStrict() ? "<" : "<=") + uTime;
+			throw new PrismException("Invalid upper bound " + s + " in time-bounded until formula");
 		}
 
 		// model check operands first for all states

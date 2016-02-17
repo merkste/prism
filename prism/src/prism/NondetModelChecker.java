@@ -56,6 +56,7 @@ import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
+import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -739,22 +740,31 @@ public class NondetModelChecker extends NonProbModelChecker
 		
 		// Check that the temporal/reward operator is supported, and store step bounds if present
 		int stepBound = 0;
+
 		if (exprProb != null) {
 			// F<=k is allowed
 			Expression expr = exprProb.getExpression();
 			if (expr.isSimplePathFormula() && Expression.isReach(expr)) {
 				ExpressionTemporal exprTemp = ((ExpressionTemporal) expr);
-				if (exprTemp.bound != null && exprTemp.bound.getLowerBound() != null) {
-					throw new PrismException("Lower time bounds are not supported in multi-objective queries");
+				if (exprTemp.getBounds().hasRewardBounds()) {
+					throw new PrismNotSupportedException("Reward bounds are not supported in multi-objective queries");
 				}
-				if (exprTemp.bound != null && exprTemp.bound.getUpperBound() != null) {
-					stepBound = exprTemp.bound.getUpperBound().evaluateInt(constantValues);
+				// Get single bound, throws exception if there are multiple
+				TemporalOperatorBound bound = exprTemp.getBounds().getStepBoundForDiscreteTime();
+				if (bound != null && bound.getLowerBound() != null) {
+					throw new PrismNotSupportedException("Lower time bounds are not supported in multi-objective queries");
+				}
+				if (bound != null) {
+					stepBound = bound.getUpperBound().evaluateInt(constantValues);
 				} else {
 					stepBound = -1;
 				}
 			} else {
+				if (Expression.containsTemporalRewardBounds(expr)) {
+					throw new PrismNotSupportedException("Reward bounds in multi-objective queries are not supported");
+				}
 				if (Expression.containsTemporalTimeBounds(expr)) {
-					throw new PrismException("Time bounds in multi-objective queries can only be on F or C operators");
+						throw new PrismNotSupportedException("Time bounds in multi-objective queries can only be on F or C operators");
 				} else {
 					stepBound = -1;
 				}
@@ -767,9 +777,16 @@ public class NondetModelChecker extends NonProbModelChecker
 				throw new PrismException("Only the C and C>=k reward operators are currently supported for multi-objective properties (not "
 						+ exprTemp.getOperatorSymbol() + ")");
 			}
+			if (exprTemp.getBounds().hasRewardBounds()) {
+				throw new PrismNotSupportedException("Reward bounds are not supported in multi-objective queries");
+			}
 			// R [ C<=k ]
-			if (exprTemp.bound != null && exprTemp.bound.getUpperBound() != null) {
-				stepBound = exprTemp.bound.getUpperBound().evaluateInt(constantValues);
+			TemporalOperatorBound bound = exprTemp.getBounds().getStepBoundForDiscreteTime();
+			if (bound != null && bound.getLowerBound() != null) {
+				throw new PrismNotSupportedException("Reward operator C with lower bound is not supported for multi-objective properties");
+			}
+			if (bound != null && bound.getUpperBound() != null) {
+				stepBound = bound.getUpperBound().evaluateInt(constantValues);
 			}
 			// R [ C ]
 			else {
@@ -1274,12 +1291,12 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// check that there is an upper time bound
-		if (expr.bound == null || expr.bound.getUpperBound() == null) {
+		if (!expr.hasBounds() || !expr.getBounds().getStepBoundForDiscreteTime().hasUpperBound()) {
 			throw new PrismException("Cumulative reward operator without time bound (C) is only allowed for multi-objective queries");
 		}
 
 		// get info from inst reward
-		time = expr.bound.getUpperBound().evaluateInt(constantValues);
+		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid time bound " + time + " in cumulative reward formula");
 		}
@@ -1320,7 +1337,7 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// get info from bounded until
-		time = expr.bound.getUpperBound().evaluateInt(constantValues);
+		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid bound " + time + " in instantaneous reward property");
 		}

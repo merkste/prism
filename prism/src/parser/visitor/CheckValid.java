@@ -59,31 +59,41 @@ public class CheckValid extends ASTTraverse
 			}
 		}
 		// PTA only support upper time bounds
-		if (e.bound != null && e.bound.getLowerBound() != null) {
-			if (modelType == ModelType.PTA) {
-				throw new PrismLangException("Only upper time bounds are allowed on the " + e.getOperatorSymbol()
-						+ " operator for PTAs");
+		if (modelType == ModelType.PTA) {
+			if (e.hasBounds()) {
+				if (e.getBounds().countBounds() > 1 || !e.getBounds().hasDefaultBound() ||
+				    e.getBounds().getDefaultBound().hasLowerBound()) {
+					throw new PrismLangException("Only upper time bounds are allowed on the " + e.getOperatorSymbol()
+					                             + " operator for PTAs");
+				}
 			}
 		}
+
+		// Don't allow lower bounds on weak until - does not have intuitive semantics
+		if (e.getOperator() == ExpressionTemporal.P_W) {
+			for (TemporalOperatorBound bound : e.getBounds().getBounds()) {
+				if (bound.hasLowerBound()) {
+					throw new PrismLangException("The weak until operator (W) with lower bounds is not yet supported");
+				}
+			}
+		}
+	}
+
+	public void visitPost(TemporalOperatorBound e) throws PrismLangException {
 		// Apart from CTMCs, we only support integer time bounds
-		if ((e.bound != null && e.bound.getUpperBound() != null && !(e.bound.getUpperBound().getType() instanceof TypeInt)) ||
-		    (e.bound != null && e.bound.getLowerBound() != null && !(e.bound.getLowerBound().getType() instanceof TypeInt))) {
+		if (!e.isIntegerValued() && !e.isRewardBound()) {
 			if (modelType == ModelType.DTMC) {
-				throw new PrismLangException("Time bounds on the " + e.getOperatorSymbol()
-						+ " operator must be integers for DTMCs");
+				throw new PrismLangException("Time bounds " + e
+						+ " must be integers for DTMCs");
 			}
 			if (modelType == ModelType.MDP) {
-				throw new PrismLangException("Time bounds on the " + e.getOperatorSymbol()
-						+ " operator must be integers for MDPs");
+				throw new PrismLangException("Time bounds " + e
+						+ " must be integers for MDPs");
 			}
 			if (modelType == ModelType.PTA) {
-				throw new PrismLangException("Time bounds on the " + e.getOperatorSymbol()
-						+ " operator must be integers for PTAs");
+				throw new PrismLangException("Time bounds " + e
+						+ " must be integers for PTAs");
 			}
-		}
-		// Don't allow lower bounds on weak until - does not have intuitive semantics
-		if (e.getOperator() == ExpressionTemporal.P_W && e.getBound().hasLowerBound()) {
-			throw new PrismLangException("The weak until operator (W) with lower bounds is not yet supported");
 		}
 	}
 

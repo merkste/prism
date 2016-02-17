@@ -421,7 +421,7 @@ public class ASTTraverseModify implements ASTVisitor
 		visitPre(e);
 		if (e.getOperand1() != null) e.setOperand1((Expression)(e.getOperand1().accept(this)));
 		if (e.getOperand2() != null) e.setOperand2((Expression)(e.getOperand2().accept(this)));
-		if (e.getBound() != null) e.setBound((TemporalOperatorBound) e.bound.accept(this));
+		e.setBounds((TemporalOperatorBounds) e.getBounds().accept(this));
 		visitPost(e);
 		return e;
 	}

@@ -36,6 +36,7 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.RewardStruct;
+import parser.ast.TemporalOperatorBound;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
@@ -142,14 +143,25 @@ public class FastAdaptiveUniformisationModelChecker extends PrismComponent
 			throw new PrismNotSupportedException("Fast adaptive uniformisation window model checking currently only supports simple until operators");
 		}
 
-		double timeLower = 0.0;
-		if (exprTemp.bound != null && exprTemp.bound.getLowerBound() != null) {
-			timeLower = exprTemp.bound.getLowerBound().evaluateDouble(constantValues);
+		if (exprTemp.getBounds().hasStepBounds() ||
+		    exprTemp.getBounds().hasRewardBounds()){
+			throw new PrismNotSupportedException("Step or reward-bounds are not supported for CTMCs.");
 		}
-		if (exprTemp.bound == null || exprTemp.bound.getUpperBound() == null) {
+
+		if (exprTemp.getBounds().countTimeBounds() > 1) {
+			throw new PrismNotSupportedException("Conjunctions of time bounds are not supported for CTMCs.");
+		}
+
+		TemporalOperatorBound bound = exprTemp.getBounds().getTimeBoundForContinuousTime();
+
+		double timeLower = 0.0;
+		if (bound != null && bound.hasLowerBound()) {
+			timeLower = bound.getLowerBound().evaluateDouble(constantValues);
+		}
+		if (bound == null || !bound.hasUpperBound()) {
 			throw new PrismNotSupportedException("Fast adaptive uniformisation window model checking currently requires an upper time bound");
 		}
-		double timeUpper = exprTemp.bound.getUpperBound().evaluateDouble(constantValues);
+		double timeUpper = bound.getUpperBound().evaluateDouble(constantValues);
 
 		if (!exprTemp.hasBounds()) {
 			throw new PrismNotSupportedException("Fast adaptive uniformisation window model checking currently only supports timed properties");
@@ -237,7 +249,7 @@ public class FastAdaptiveUniformisationModelChecker extends PrismComponent
 		default:
 			throw new PrismNotSupportedException("Currently only instantaneous or cumulative rewards are allowed.");
 		}
-		double time = temporal.bound.getUpperBound().evaluateDouble(constantValues);
+		double time = temporal.getBounds().getTimeBoundForContinuousTime().getUpperBound().evaluateDouble(constantValues);
 		RewardStruct rewStruct = expr.getRewardStructByIndexObject(modulesFile, constantValues);
 		fau.setRewardStruct(rewStruct);
 		fau.setConstantValues(constantValues);

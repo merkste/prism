@@ -82,19 +82,27 @@ public class StochModelChecker extends ProbModelChecker
 	protected StateValues checkProbBoundedUntil(ExpressionTemporal expr, JDDNode statesOfInterest) throws PrismException
 	{
 		double lTime, uTime; // time bounds
-		Expression exprTmp;
 		JDDNode b1, b2, tmp;
 		StateValues tmpProbs = null, probs = null;
 
 		JDD.Deref(statesOfInterest);
 
 		// get info from bounded until
+		if (expr.getBounds().hasStepBounds() ||
+		    expr.getBounds().hasRewardBounds()){
+			throw new PrismNotSupportedException("Step or reward-bounds are not supported for CTMCs.");
+		}
+
+		if (expr.getBounds().countTimeBounds() > 1) {
+			throw new PrismNotSupportedException("Conjunctions of time bounds are not supported for CTMCs.");
+		}
+
+		TemporalOperatorBound bound = expr.getBounds().getTimeBoundForContinuousTime();
 
 		// lower bound is 0 if not specified
 		// (i.e. if until is of form U<=t)
-		exprTmp = expr.bound == null ? null : expr.bound.getLowerBound();
-		if (exprTmp != null) {
-			lTime = exprTmp.evaluateDouble(constantValues);
+		if (bound != null && bound.hasLowerBound()) {
+			lTime = bound.getLowerBound().evaluateDouble(constantValues);
 			if (lTime < 0) {
 				throw new PrismException("Invalid lower bound " + lTime + " in time-bounded until formula");
 			}
@@ -103,12 +111,11 @@ public class StochModelChecker extends ProbModelChecker
 		}
 		// upper bound is -1 if not specified
 		// (i.e. if until is of form U>=t)
-		exprTmp = expr.bound == null ? null : expr.bound.getUpperBound();
-		if (exprTmp != null) {
-			uTime = exprTmp.evaluateDouble(constantValues);
-			if (uTime < 0 || (uTime == 0 && expr.bound.upperBoundIsStrict())) {
-				String bound = (expr.bound.upperBoundIsStrict() ? "<" : "<=") + uTime;
-				throw new PrismException("Invalid upper bound " + bound + " in time-bounded until formula");
+		if (bound != null && bound.hasUpperBound()) {
+			uTime = bound.getUpperBound().evaluateDouble(constantValues);
+			if (uTime < 0 || (uTime == 0 && bound.upperBoundIsStrict())) {
+				String s = (bound.upperBoundIsStrict() ? "<" : "<=") + uTime;
+				throw new PrismException("Invalid upper bound " + s + " in time-bounded until formula");
 			}
 			if (uTime < lTime) {
 				throw new PrismException("Upper bound must exceed lower bound in time-bounded until formula");
@@ -240,7 +247,7 @@ public class StochModelChecker extends ProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// get info from inst reward
-		time = expr.bound.getUpperBound().evaluateDouble(constantValues);
+		time = expr.getBounds().getTimeBoundForContinuousTime().getUpperBound().evaluateDouble(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid time bound " + time + " in cumulative reward formula");
 		}
@@ -274,7 +281,7 @@ public class StochModelChecker extends ProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// get info from inst reward
-		time = expr.bound.getUpperBound().evaluateDouble(constantValues);
+		time = expr.getBounds().getTimeBoundForContinuousTime().getUpperBound().evaluateDouble(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid bound " + time + " in instantaneous reward property");
 		}

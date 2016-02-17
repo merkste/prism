@@ -117,26 +117,38 @@ public class PropertiesSemanticCheck extends SemanticCheck
 		int op = e.getOperator();
 		Expression operand1 = e.getOperand1();
 		Expression operand2 = e.getOperand2();
-		Expression lBound = e.bound.getLowerBound();
-		Expression uBound = e.bound.getUpperBound();
-		if (lBound != null && !lBound.isConstant()) {
-			throw new PrismLangException("Lower bound in " + e.getOperatorSymbol() + " operator is not constant", lBound);
-		}
-		if (uBound != null && !uBound.isConstant()) {
-			throw new PrismLangException("Upper bound in " + e.getOperatorSymbol() + " operator is not constant", uBound);
-		}
+		boolean hasBounds = e.getBounds().countBounds() > 0;
+
 		// Other checks (which parser should never allow to occur anyway)
-		if (op == ExpressionTemporal.P_X && (operand1 != null || operand2 == null || lBound != null || uBound != null)) {
+		if (op == ExpressionTemporal.P_X && (operand1 != null || operand2 == null || hasBounds)) {
 			throw new PrismLangException("Cannot attach bounds to " + e.getOperatorSymbol() + " operator", e);
 		}
-		if (op == ExpressionTemporal.R_C && (operand1 != null || operand2 != null || lBound != null)) {
-			// NB: upper bound is optional (e.g. multi-objective allows R...[C] operator)
-			throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
+		if (op == ExpressionTemporal.R_C) {
+			boolean malformed = false;
+			if (operand1 != null || operand2 != null) { malformed = true;}
+			if (e.hasBounds()) {
+				if (e.getBounds().countBounds() > 1 || !e.getBounds().hasDefaultBound()) { malformed = true; }
+				else if (e.getBounds().getDefaultBound().hasLowerBound()) {
+					// NB: upper bound is optional (e.g. multi-objective allows R...[C] operator)
+					malformed = true;
+				}
+			}
+			if (malformed)
+				throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
 		}
-		if (op == ExpressionTemporal.R_I && (operand1 != null || operand2 != null || lBound != null || uBound == null)) {
-			throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
+		if (op == ExpressionTemporal.R_I) {
+			boolean malformed = false;
+			if (operand1 != null || operand2 != null) {malformed = true;}
+			if (e.hasBounds()) {
+				if (e.getBounds().countBounds() > 1 || !e.getBounds().hasDefaultBound()) { malformed = true; }
+				else if (e.getBounds().getDefaultBound().hasLowerBound() || !e.getBounds().getDefaultBound().hasUpperBound()) {
+					malformed = true;
+				}
+			}
+			if (malformed)
+				throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
 		}
-		if (op == ExpressionTemporal.R_S && (operand1 != null || operand2 != null || lBound != null || uBound != null)) {
+		if (op == ExpressionTemporal.R_S && (operand1 != null || operand2 != null || hasBounds)) {
 			throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
 		}
 	}

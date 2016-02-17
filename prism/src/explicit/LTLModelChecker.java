@@ -225,9 +225,13 @@ public class LTLModelChecker extends PrismComponent
 		DA<BitSet,? extends AcceptanceOmega> da;
 		long time;
 
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("Can not handle reward bounds via deterministic automata.");
+		}
+
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
-				throw new PrismException("Automaton construction for time-bounded operators not supported for " + model.getModelType()+".");
+				throw new PrismNotSupportedException("Automaton construction for time-bounded operators not supported for " + model.getModelType()+".");
 			}
 
 			if (!expr.isSimplePathFormula()) {

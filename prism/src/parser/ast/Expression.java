@@ -738,7 +738,7 @@ public abstract class Expression extends ASTElement
 	}
 
 	/**
-	 * Test if an expression contains time bounds on temporal operators 
+	 * Test if an expression contains time/step bounds on temporal operators
 	 */
 	public static boolean containsTemporalTimeBounds(Expression expr)
 	{
@@ -748,8 +748,35 @@ public abstract class Expression extends ASTElement
 			{
 				public void visitPre(ExpressionTemporal e) throws PrismLangException
 				{
-					if (e.hasBounds())
+					if (e.hasBounds()) {
+						TemporalOperatorBounds bounds = e.getBounds();
+						if (bounds.hasTimeBounds() ||
+						    bounds.hasStepBounds() ||
+						    bounds.hasDefaultBound()) {
+							throw new PrismLangException("");
+						}
+					}
+				}
+			});
+		} catch (PrismLangException e) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Test if an expression contains reward bounds on temporal operators
+	 */
+	public static boolean containsTemporalRewardBounds(Expression expr) {
+		try {
+			// check for reward bounds, don't recurse in P/R subformulas
+			expr.accept(new ExpressionTraverseNonNested()
+			{
+				public void visitPre(ExpressionTemporal e) throws PrismLangException
+				{
+					if (e.getBounds().hasRewardBounds()) {
 						throw new PrismLangException("");
+					}
 				}
 			});
 		} catch (PrismLangException e) {

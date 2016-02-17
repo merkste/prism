@@ -39,6 +39,7 @@ import parser.ast.ExpressionStrategy;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.RewardStruct;
+import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -616,6 +617,10 @@ public class ProbModelChecker extends NonProbModelChecker
 		boolean negated = false;
 		StateValues probs = null;
 
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("Can not handle reward bounds.");
+		}
+
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
 
 		// Negation
@@ -933,8 +938,12 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	protected StateValues checkRewardInstantaneous(Model model, Rewards modelRewards, ExpressionTemporal expr, MinMax minMax) throws PrismException
 	{
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismNotSupportedException("Instantaneous reward operator with reward bounds is not supported.");
+		}
+
 		// Get time bound
-		double t = expr.bound.getUpperBound().evaluateDouble(constantValues);
+		double t = expr.getBounds().getStandardBound(model.getModelType()).getUpperBound().evaluateDouble(constantValues);
 
 		// Compute/return the rewards
 		ModelCheckerResult res = null;
@@ -961,19 +970,23 @@ public class ProbModelChecker extends NonProbModelChecker
 		int timeInt = -1;
 		double timeDouble = -1;
 
-		// Check that there is an upper time bound
-		if (expr.bound == null || expr.bound.getUpperBound() == null) {
-			throw new PrismNotSupportedException("This is not a cumulative reward operator");
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismNotSupportedException("Cumulative reward operator with reward bounds is not supported.");
+		}
+
+		TemporalOperatorBound bound = expr.getBounds().getStandardBound(model.getModelType());
+		if (bound == null || bound.getUpperBound() == null) {
+			throw new PrismException("This is not a cumulative reward operator");
 		}
 
 		// Get time bound
 		if (model.getModelType().continuousTime()) {
-			timeDouble = expr.bound.getUpperBound().evaluateDouble(constantValues);
+			timeDouble = bound.getUpperBound().evaluateDouble(constantValues);
 			if (timeDouble < 0) {
 				throw new PrismException("Invalid time bound " + timeDouble + " in cumulative reward formula");
 			}
 		} else {
-			timeInt = expr.bound.getUpperBound().evaluateInt(constantValues);
+			timeInt = bound.getUpperBound().evaluateInt(constantValues);
 			if (timeInt < 0) {
 				throw new PrismException("Invalid time bound " + timeInt + " in cumulative reward formula");
 			}
@@ -1009,8 +1022,11 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	protected StateValues checkRewardTotal(Model model, Rewards modelRewards, ExpressionTemporal expr, MinMax minMax) throws PrismException
 	{
-		// Check that there is no upper time bound
-		if (expr.getBound().getUpperBound() != null) {
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismNotSupportedException("Cumulative reward operator with reward bounds is not supported.");
+		}
+
+		if (expr.hasBounds()) {
 			throw new PrismException("This is not a total reward operator");
 		}
 
