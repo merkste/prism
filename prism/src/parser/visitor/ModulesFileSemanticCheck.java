@@ -250,7 +250,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		String s, var;
 		Command c;
 		Module m;
-		boolean isLocal, isLocalView, isGlobal;
+		boolean isLocal, isLocalView, isGlobal, isGlobalView;
 
 		// Register the fact we are leaving an update
 		//inUpdate = null;
@@ -266,7 +266,8 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 			isLocal = m.isLocalVariable(var);
 			isLocalView = m.isLocalView(var);
 			isGlobal = isLocal ? false : modulesFile.isGlobalVariable(var);
-			if (!isLocal && !isLocalView && !isGlobal) {
+			isGlobalView = isLocal ? false : modulesFile.isGlobalView(var);
+			if (!isLocal && !isLocalView && !isGlobal && !isGlobalView) {
 				s = "Module \"" + m.getName() + "\" is not allowed to modify variable \"" + var + "\"";
 				throw new PrismLangException(s, e.getVarIdent(i));
 			}
