@@ -14,4 +14,15 @@ public abstract class AbstractPairMapping<R, S, T> implements PairMapping<R, S, 
 			}
 		};
 	}
+
+	public static <R, S, T> PairMapping<R, S, T> constant(final T value)
+	{
+		return new AbstractPairMapping<R, S, T>() {
+			@Override
+			public T get(final R element1, final S element2)
+			{
+				return value;
+			}
+		};
+	}
 }
