@@ -199,10 +199,10 @@ public class MDPRestricted extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		if (restriction == Restriction.TRANSITIVE_CLOSURE) {
-			return model.getSuccessorsIterator(mapStateToOriginalModel(state));
+		if (restriction == Restriction.STRICT) {
+			return super.getSuccessorsIterator(state);
 		}
-		return super.getSuccessorsIterator(state);
+		return model.getSuccessorsIterator(mapStateToOriginalModel(state));
 	}
 
 
@@ -213,7 +213,7 @@ public class MDPRestricted extends MDPView
 	public int getNumChoices(final int state)
 	{
 		final int originalState = mapStateToOriginalModel(state);
-		if (restriction == Restriction.TRANSITIVE_CLOSURE) {
+		if (restriction != Restriction.STRICT) {
 			return model.getNumChoices(originalState);
 		}
 		// FIXME ALG: consider caching
@@ -306,7 +306,7 @@ public class MDPRestricted extends MDPView
 	// FIXME ALG: similar method in MDPAlteredDistributions
 	public int mapChoiceToOriginalModel(final int state, final int choice)
 	{
-		if (restriction == Restriction.TRANSITIVE_CLOSURE) {
+		if (restriction != Restriction.STRICT) {
 			return choice;
 		}
 		// FIXME ALG: consider caching

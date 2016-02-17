@@ -203,15 +203,15 @@ public class DTMCRestricted extends DTMCView
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
 		final int originalState = mapStateToOriginalModel(state);
-		// FIXME ALG: performance bottleneck - at least for conditional transformations
-		if (restriction == Restriction.TRANSITIVE_CLOSURE || allSuccessorsIncluded(originalState)) {
-			return new MappingIterator<>(model.getTransitionsIterator(originalState), CallDTMCRestricted.mapTransitionToRestrictedModel().on(this));
+		if (restriction == Restriction.STRICT && ! allSuccessorsIncluded(originalState)) {
+			return Collections.emptyIterator();
 		}
-		return Collections.emptyIterator();
+		return new MappingIterator<>(model.getTransitionsIterator(originalState), CallDTMCRestricted.mapTransitionToRestrictedModel().on(this));
 	}
 
 	private boolean allSuccessorsIncluded(final int originalState)
 	{
+		// FIXME ALG: consider memoizing
 		return model.allSuccessorsInSet(originalState, states);
 	}
 
