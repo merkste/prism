@@ -9,4 +9,15 @@ public abstract class AbstractMappingFromInteger<T> extends AbstractMapping<Inte
 	{
 		return get(element.intValue());
 	}
+
+	public static <T> MappingFromInteger<T> constantFromInteger(final T value)
+	{
+		return new AbstractMappingFromInteger<T>() {
+			@Override
+			public T get(final int element)
+			{
+				return value;
+			}
+		};
+	}
 }

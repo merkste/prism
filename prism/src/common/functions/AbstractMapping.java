@@ -50,6 +50,17 @@ public abstract class AbstractMapping<S, T> implements Mapping<S, T>
 		};
 	}
 
+	public static <S, T> Mapping<S, T> constant(final T value)
+	{
+		return new AbstractMapping<S, T>() {
+			@Override
+			public T get(final S element)
+			{
+				return value;
+			}
+		};
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <T> Mapping<T, T> identity()
 	{
