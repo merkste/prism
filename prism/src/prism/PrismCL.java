@@ -1245,6 +1245,14 @@ public class PrismCL implements PrismModelListener
 						errorAndExit("No file/options specified for -" + sw + " switch");
 					}
 				}
+				else if (sw.equals("exportreordered")) {
+					if (i < args.length - 1) {
+						prism.setExportPrismReordered(true);
+						prism.setExportPrismReorderedFile(new File(args[++i]));
+					} else {
+						errorAndExit("No file/options specified for -" + sw + " switch");
+					}
+				}
 				// export model to explicit file(s)
 				else if (sw.equals("exportmodel")) {
 					if (i < args.length - 1) {
@@ -2237,6 +2245,7 @@ public class PrismCL implements PrismModelListener
 		mainLog.println("-exporttransient <file> ........ Export transient probabilities to a file");
 		mainLog.println("-exportprism <file> ............ Export final PRISM model to a file");
 		mainLog.println("-exportprismconst <file> ....... Export final PRISM model with expanded constants to a file");
+		mainLog.println("-exportreordered <file> ........ Export reordered PRISM model to a file");
 
 		PrismSettings.printHelp(mainLog);
 

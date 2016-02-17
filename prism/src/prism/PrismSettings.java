@@ -89,6 +89,8 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_TERM_CRIT						= "prism.termCrit";//"prism.termination";
 	public static final	String PRISM_TERM_CRIT_PARAM				= "prism.termCritParam";//"prism.terminationEpsilon";
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
+	public static final String PRISM_DO_REORDER						= "prism.doReorder";
+	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
 	
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
@@ -305,6 +307,12 @@ public class PrismSettings implements Observer
 																			"Maximum memory available to CUDD (underlying BDD/MTBDD library), e.g. 125k, 50m, 4g. Note: Restart PRISM after changing this." },
 			{ DOUBLE_TYPE,		PRISM_CUDD_EPSILON,						"CUDD epsilon",							"2.1",			new Double(1.0E-15),														"0.0,",																						
 																			"Epsilon value used by CUDD (underlying BDD/MTBDD library) for terminal cache comparisons." },
+			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
+																		"Perform reordering when building the model." },
+			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
+																		"Comma-separated options for reordering (beforereach, noconstraints)." },
+
+																		
 			// ADVERSARIES/COUNTEREXAMPLES:
 			{ CHOICE_TYPE,		PRISM_EXPORT_ADV,						"Adversary export",						"3.3",			"None",																	"None,DTMC,MDP",																
 																			"Type of adversary to generate and export during MDP model checking" },
@@ -860,6 +868,15 @@ public class PrismSettings implements Observer
 		return exportPropAutFilename;
 	}
 
+	public Set<String> getReorderOptions()
+	{
+		HashSet<String> opts = new HashSet<String>();
+		for (String option : getString(PRISM_REORDER_OPTIONS).split(",")) {
+			opts.add(option);
+		}
+		return opts;
+	}
+
 	/**
 	 * Set an option by parsing one or more command-line arguments.
 	 * Reads the ith argument (assumed to be in the form "-switch")
@@ -1261,6 +1278,25 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
+		} else if (sw.equals("reorder")) {
+			set(PRISM_DO_REORDER, true);
+		} else if (sw.equals("reorderoptions")) {
+			if (i < args.length - 1) {
+				String reorderArg = args[++i];
+				String[] reorderOptions = reorderArg.split(",");
+				for (String reorderOption : reorderOptions) {
+					switch (reorderOption) {
+					case "beforereach":
+					case "noconstraints":
+						break;
+					default:
+						throw new PrismException("Invalid option \""+reorderOption+"\" for -" + sw + " switch");
+					}
+				}
+				set(PRISM_REORDER_OPTIONS, reorderArg);
+			} else {
+				throw new PrismException("No options specified for -" + sw + " switch");
+			}
 		}
 		
 		// ADVERSARIES/COUNTEREXAMPLES:
@@ -1625,6 +1661,8 @@ public class PrismSettings implements Observer
 		mainLog.println("-exportadvmdp <file> ........... Export an adversary from MDP model checking (as an MDP)");
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
+		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
+		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");

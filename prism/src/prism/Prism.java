@@ -180,6 +180,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	protected File exportPrismFile = null;
 	protected boolean exportPrismConst = false;
 	protected File exportPrismConstFile = null;
+	protected boolean exportPrismReordered = false;
+	protected File exportPrismReorderedFile = null;
 	// Export digital clocks translation PRISM model?
 	protected boolean exportDigital = false;
 	protected File exportDigitalFile = null;
@@ -524,6 +526,18 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		exportPrismConstFile = f;
 	}
+	
+
+	public void setExportPrismReordered(boolean b) throws PrismException
+	{
+		exportPrismReordered = true;
+	}
+	
+	public void setExportPrismReorderedFile(File f) throws PrismException
+	{
+		exportPrismReorderedFile = f;
+	}
+
 
 	public void setExportDigital(boolean b) throws PrismException
 	{
@@ -853,6 +867,16 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		return exportPrismConstFile;
 	}
 
+	public boolean getExportPrismReordered()
+	{
+		return exportPrismReordered;
+	}
+
+	public File getExportPrismReorderedFile()
+	{
+		return exportPrismReorderedFile;
+	}
+
 	public boolean getExportTarget()
 	{
 		return exportTarget;
@@ -911,6 +935,12 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		return doReach;
 	}
+
+	public boolean getDoReorder()
+	{
+		return getSettings().getBoolean(PrismSettings.PRISM_DO_REORDER);
+	}
+
 
 	public boolean getBSCCComp()
 	{
