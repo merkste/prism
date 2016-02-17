@@ -310,7 +310,7 @@ public class PrismSettings implements Observer
 			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
 																		"Perform reordering when building the model." },
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
-																		"Comma-separated options for reordering (beforereach, noconstraints, optimizetrans)." },
+																		"Comma-separated options for reordering (beforereach, noconstraints, optimizetrans, converge)." },
 
 																		
 			// ADVERSARIES/COUNTEREXAMPLES:
@@ -1289,6 +1289,7 @@ public class PrismSettings implements Observer
 					case "beforereach":
 					case "noconstraints":
 					case "optimizetrans":
+					case "converge":
 						break;
 					default:
 						throw new PrismException("Invalid option \""+reorderOption+"\" for -" + sw + " switch");
@@ -1663,7 +1664,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
-		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans");
+		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans converge");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");
