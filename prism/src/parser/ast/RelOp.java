@@ -71,7 +71,7 @@ public enum RelOp
 			return GT;
 		}
 	},
-	EQ("=") {
+	COMPUTE_VALUES("=") {
 		@Override
 		public RelOp negate() throws PrismLangException
 		{

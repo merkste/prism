@@ -801,7 +801,7 @@ public class NondetModelChecker extends NonProbModelChecker
 			throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
 		}
 		Operator op = null;
-		if (relOp == RelOp.EQ) {
+		if (relOp == RelOp.COMPUTE_VALUES) {
 			if (exprQuant.getMinMax() != null) {
 				if (exprQuant.getMinMax().isMax()) {
 					op = (exprProb != null) ? Operator.P_MAX : Operator.R_MAX;

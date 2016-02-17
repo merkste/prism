@@ -99,13 +99,13 @@ public class CheckValid extends ASTTraverse
 
 	public void visitPost(ExpressionProb e) throws PrismLangException
 	{
-		if (modelType.nondeterministic() && e.getRelOp() == RelOp.EQ && e.getMinMax() == null)
+		if (modelType.nondeterministic() && e.getRelOp() == RelOp.COMPUTE_VALUES && e.getMinMax() == null)
 			throw new PrismLangException("Can't use \"P=?\" for nondeterministic models; use \"Pmin=?\" or \"Pmax=?\"");
 	}
 	
 	public void visitPost(ExpressionReward e) throws PrismLangException
 	{
-		if (modelType.nondeterministic() && e.getRelOp() == RelOp.EQ && e.getMinMax() == null)
+		if (modelType.nondeterministic() && e.getRelOp() == RelOp.COMPUTE_VALUES && e.getMinMax() == null)
 			throw new PrismLangException("Can't use \"R=?\" for nondeterministic models; use \"Rmin=?\" or \"Rmax=?\"");
 		if (e.getRewardStructIndexDiv() != null)
 			throw new PrismLangException("No support for ratio reward objectives yet");
