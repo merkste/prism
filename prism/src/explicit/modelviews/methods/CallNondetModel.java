@@ -18,7 +18,6 @@ public class CallNondetModel
 			extends AbstractTripleMapping<NondetModel, Integer, Integer, Object>
 			implements BinaryMethod<NondetModel, Integer, Integer, Object>
 	{
-		// FIXME ALG: consider primitive types
 		public PairMapping<Integer, Integer, Object> on(final NondetModel model)
 		{
 			return this.curry(model);

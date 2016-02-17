@@ -21,7 +21,6 @@ public class CallMDP
 			extends AbstractTripleMapping<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
 			implements BinaryMethod<MDP, Integer, Integer, Iterator<Entry<Integer, Double>>>
 	{
-		// FIXME ALG: consider primitive types
 		public PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> on(final MDP model)
 		{
 			return this.curry(model);

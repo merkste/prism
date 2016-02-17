@@ -94,7 +94,6 @@ public class CallMDPRestricted
 			extends AbstractPairMapping<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 			implements UnaryMethod<MDPRestricted, Entry<Integer, Double>, Entry<Integer, Double>>
 	{
-		// FIXME ALG: consider primitive types
 		@Override
 		public Mapping<Entry<Integer, Double>, Entry<Integer, Double>> on(final MDPRestricted model)
 		{
