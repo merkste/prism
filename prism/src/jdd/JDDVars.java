@@ -26,6 +26,8 @@
 
 package jdd;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -131,6 +133,19 @@ public class JDDVars implements Iterable<JDDNode>
 			result[i] = vararray[i].copy();
 		}
 		return result;
+	}
+
+
+	/**
+	 * Copy JDDNodes from another JDDVars, merge into the existing variables,
+	 * sorting by the variable indizes. Afterwards, this JDDVars container
+	 * is fully sorted by variable indizes, i.e., the existing variables are
+	 * sorted as well.
+	 * @param ddv the new variables
+	 */
+	public void mergeVarsFrom(JDDVars ddv) {
+		copyVarsFrom(ddv);
+		sortByIndex();
 	}
 
 	/**
@@ -345,6 +360,21 @@ public class JDDVars implements Iterable<JDDNode>
 			result = JDD.And(result, var.copy());
 		}
 		return result;
+	}
+
+	/** Sort the variables in this container by their variable index. */
+	public void sortByIndex()
+	{
+		if (arrayBuilt) DDV_FreeArray(array);
+		arrayBuilt = false;
+
+		Collections.sort(vars, new Comparator<JDDNode>() {
+			@Override
+			public int compare(JDDNode a, JDDNode b)
+			{
+				return new Integer(a.getIndex()).compareTo(b.getIndex());
+			}
+		});
 	}
 }
 
