@@ -149,6 +149,16 @@ public class JDDVars implements Iterable<JDDNode>
 	}
 
 	/**
+	 * Remove variable v from container. Does not decrease the refcount.
+	 */
+	public void removeVar(JDDNode v)
+	{
+		vars.remove(v);
+		if (arrayBuilt) DDV_FreeArray(array);
+		arrayBuilt = false;
+	}
+
+	/**
 	 * Removes the JDDNodes contained in ddv from this JDDVars container.
 	 * Does not decrease the refcount!
 	 */
