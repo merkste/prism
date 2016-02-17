@@ -1488,6 +1488,64 @@ public class JDD
 			throw new CuddOutOfMemoryException();
 	}
 
+
+	/**
+	 * write statistics about the different layers of a BDD (JDDNode) to a PrismLog.
+	 *
+	 * <br>[ DEREFS: <i>none</i> ]
+	 * @param log the PrismLog
+	 * @param dd the root of the BDD
+	 * @param varNames names for the variables for a given index (optional, may be {@code null})
+	 */
+	public static void statisticsForDD(PrismLog log, JDDNode dd, Vector<String> varNames)
+	{
+		HashSet<Long> seen = new HashSet<Long>();
+		HashMap<Integer, Integer> countPerIndex = new HashMap<Integer,Integer>();
+		int constantCount = 0;
+
+		Stack<JDDNode> todo = new Stack<JDDNode>();
+		todo.push(dd);
+
+		int maxIndex = 0;
+		while (!todo.isEmpty()) {
+			JDDNode cur = todo.pop();
+			if (seen.contains(cur.ptr()))
+				continue;
+			seen.add(cur.ptr());
+
+			if (cur.isConstant()) {
+				constantCount++;
+			} else {
+				int index = cur.getIndex();
+				maxIndex = Math.max(maxIndex, index);
+				if (countPerIndex.containsKey(index)) {
+					countPerIndex.put(index, countPerIndex.get(index)+1);
+				} else {
+					countPerIndex.put(index, 1);
+				}
+
+				todo.push(cur.getThen());
+				todo.push(cur.getElse());
+			}
+		}
+
+		for (int index=0;index<=maxIndex;index++) {
+			Integer count = countPerIndex.get(index);
+			if (count == null) count = 0;
+
+			String name = "";
+			try {
+				if (varNames != null)
+					name = varNames.get(index);
+			} catch (ArrayIndexOutOfBoundsException exception) {
+				// name does not exist, ignore
+			}
+
+			log.println(index+","+name+","+count);
+		}
+
+		log.println((maxIndex+1)+",constants,"+constantCount);
+	}
 }
 
 //------------------------------------------------------------------------------
