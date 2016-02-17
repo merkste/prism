@@ -291,6 +291,7 @@ public class ExpressionReward extends ExpressionQuant
 				else if (rewardStructIndexDiv instanceof String) s += "{\""+rewardStructIndexDiv+"\"}";
 			}
 		}
+		s += (getMinMax()==null) ? "" : getMinMax();
 		s += getRelOp();
 		s += (getBound()==null) ? "?" : getBound().toString();
 		s += " [ " + getExpression();
