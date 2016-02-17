@@ -147,6 +147,13 @@ public class MDPAdditionalStates extends MDPView
 	}
 
 	@Override
+	public boolean hasLabel(String name)
+	{
+		return model.hasLabel(name);
+	}
+
+
+	@Override
 	public int getNumTransitions()
 	{
 		return model.getNumTransitions();
