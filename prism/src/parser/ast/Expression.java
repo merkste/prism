@@ -726,6 +726,18 @@ public abstract class Expression extends ASTElement
 	}
 
 	/**
+	 * Test if an expression is either an ExpressionHOA or a negated ExpressionHOA.
+	 */
+	public static boolean isHOA(Expression expr) {
+		if (expr instanceof ExpressionHOA) return true;
+		if ( (isNot(expr) || isParenth(expr)) &&
+		     isHOA(((ExpressionUnaryOp)expr).getOperand())) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Test if an expression contains time bounds on temporal operators 
 	 */
 	public static boolean containsTemporalTimeBounds(Expression expr)
