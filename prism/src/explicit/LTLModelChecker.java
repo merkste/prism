@@ -41,8 +41,6 @@ import java.util.Vector;
 
 import parser.State;
 import parser.VarList;
-import parser.ast.Declaration;
-import parser.ast.DeclarationInt;
 import parser.ast.Expression;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionLabel;
@@ -403,22 +401,12 @@ public class LTLModelChecker extends PrismComponent
 		int prodNumStates = modelNumStates * daSize;
 		int s_1, s_2, q_1, q_2;
 		BitSet s_labels = new BitSet(numAPs);
-		List<State> prodStatesList = null, daStatesList = null;
+		List<State> prodStatesList = null;
 
 		VarList newVarList = null;
 
 		if (model.getVarList() != null) {
-			VarList varList = model.getVarList();
-			// Create a (new, unique) name for the variable that will represent DA states
-			String daVar = "_da";
-			while (varList.getIndex(daVar) != -1) {
-				daVar = "_" + daVar;
-			}
-
-			newVarList = (VarList) varList.clone();
-			// NB: if DA only has one state, we add an extra dummy state
-			Declaration decl = new Declaration(daVar, new DeclarationInt(Expression.Int(0), Expression.Int(Math.max(da.size() - 1, 1))));
-			newVarList.addVar(0, decl, 1, model.getConstantValues());
+			newVarList = (VarList) model.getVarList().clone();
 		}
 
 		// Create a (simple, mutable) model of the appropriate type
@@ -457,10 +445,6 @@ public class LTLModelChecker extends PrismComponent
 
 		if (model.getStatesList() != null) {
 			prodStatesList = new ArrayList<State>();
-			daStatesList = new ArrayList<State>(da.size());
-			for (int i = 0; i < da.size(); i++) {
-				daStatesList.add(new State(1).setValue(0, i));
-			}
 		}
 
 		// We need results for all states of the original model in statesOfInterest
@@ -493,7 +477,7 @@ public class LTLModelChecker extends PrismComponent
 			map[s_0 * daSize + q_0] = prodModel.getNumStates() - 1;
 			if (prodStatesList != null) {
 				// Store state information for the product
-				prodStatesList.add(new State(daStatesList.get(q_0), model.getStatesList().get(s_0)));
+				prodStatesList.add(model.getStatesList().get(s_0));
 			}
 		}
 
@@ -553,7 +537,7 @@ public class LTLModelChecker extends PrismComponent
 						map[s_2 * daSize + q_2] = prodModel.getNumStates() - 1;
 						if (prodStatesList != null) {
 							// Store state information for the product
-							prodStatesList.add(new State(daStatesList.get(q_2), model.getStatesList().get(s_2)));
+							prodStatesList.add(model.getStatesList().get(s_2));
 						}
 					}
 					switch (modelType) {
