@@ -875,7 +875,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		// Build rewards
 		RewardStruct rewStruct = expr.getRewardStructByIndexObject(modelInfo, constantValues);
 		mainLog.println("Building reward structure...");
-		Rewards rewards = constructRewards(model, rewStruct);
+		Rewards rewards = constructRewards(model, rewStruct, false);  // false = don't allow negative rewards
 
 		// Compute rewards
 		StateValues rews = checkRewardFormula(model, rewards, expr.getExpression(), minMax, statesOfInterest);
@@ -900,11 +900,17 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	/**
 	 * Construct rewards from a reward structure and a model.
+	 * <br>
+	 * If {@code allowNegativeRewards} is true, the rewards may be positive and negative, i.e., weights.
 	 */
-	protected Rewards constructRewards(Model model, RewardStruct rewStruct) throws PrismException
+	protected Rewards constructRewards(Model model, RewardStruct rewStruct, boolean allowNegativeRewards) throws PrismException
 	{
 		Rewards rewards;
 		ConstructRewards constructRewards = new ConstructRewards(mainLog);
+
+		if (allowNegativeRewards)
+			constructRewards.allowNegativeRewards();
+
 		switch (model.getModelType()) {
 		case CTMC:
 		case DTMC:

@@ -50,6 +50,9 @@ public class ConstructRewards
 {
 	protected PrismLog mainLog;
 
+	/** Allow negative rewards, i.e., weights. Defaults to false. */
+	protected boolean allowNegative = false;
+
 	public ConstructRewards()
 	{
 		this(new PrismFileLog("stdout"));
@@ -58,6 +61,12 @@ public class ConstructRewards
 	public ConstructRewards(PrismLog mainLog)
 	{
 		this.mainLog = mainLog;
+	}
+
+	/** Set flag that negative rewards are allowed, i.e., weights */
+	public void allowNegativeRewards()
+	{
+		allowNegative = true;
 	}
 
 	/**
@@ -100,6 +109,8 @@ public class ConstructRewards
 			double rew = rewStr.getReward(0).evaluateDouble(constantValues);
 			if (Double.isNaN(rew))
 				throw new PrismLangException("Reward structure evaluates to NaN (at any state)", rewStr.getReward(0));
+			if (!allowNegative && rew < 0)
+				throw new PrismLangException("Reward structure evaluates to " + rew + " (at any state), negative rewards not allowed", rewStr.getReward(0));
 			return new StateRewardsConstant(rew);
 		}
 		// Normal: state rewards
@@ -115,6 +126,8 @@ public class ConstructRewards
 						double rew = rewStr.getReward(i).evaluateDouble(constantValues, statesList.get(j));
 						if (Double.isNaN(rew))
 							throw new PrismLangException("Reward structure evaluates to NaN at state " + statesList.get(j), rewStr.getReward(i));
+						if (!allowNegative && rew < 0)
+							throw new PrismLangException("Reward structure evaluates to " + rew + " at state " + statesList.get(j) +", negative rewards not allowed", rewStr.getReward(i));
 						rewSA.addToStateReward(j, rew);
 					}
 				}
@@ -142,6 +155,8 @@ public class ConstructRewards
 			double rew = rewStr.getReward(0).evaluateDouble(constantValues);
 			if (Double.isNaN(rew))
 				throw new PrismLangException("Reward structure evaluates to NaN (at any state)", rewStr.getReward(0));
+			if (!allowNegative && rew < 0)
+				throw new PrismLangException("Reward structure evaluates to " + rew + " (at any state), negative rewards not allowed", rewStr.getReward(0));
 			return new StateRewardsConstant(rew);
 		}
 		// Normal: state and transition rewards
@@ -165,6 +180,8 @@ public class ConstructRewards
 									double rew = rewStr.getReward(i).evaluateDouble(constantValues, statesList.get(j));
 									if (Double.isNaN(rew))
 										throw new PrismLangException("Reward structure evaluates to NaN at state " + statesList.get(j), rewStr.getReward(i));
+									if (!allowNegative && rew < 0)
+										throw new PrismLangException("Reward structure evaluates to " + rew + " at state " + statesList.get(j) +", negative rewards not allowed", rewStr.getReward(i));
 									rewSimple.addToTransitionReward(j, k, rew);
 								}
 							}
@@ -174,6 +191,8 @@ public class ConstructRewards
 							double rew = rewStr.getReward(i).evaluateDouble(constantValues, statesList.get(j));
 							if (Double.isNaN(rew))
 								throw new PrismLangException("Reward structure evaluates to NaN at state " + statesList.get(j), rewStr.getReward(i));
+							if (!allowNegative && rew < 0)
+								throw new PrismLangException("Reward structure evaluates to " + rew + " at state " + statesList.get(j) +", negative rewards not allowed", rewStr.getReward(i));
 							rewSimple.addToStateReward(j, rew);
 						}
 					}
@@ -217,6 +236,10 @@ public class ConstructRewards
 						ss = s.split(" ");
 						i = Integer.parseInt(ss[0]);
 						reward = Double.parseDouble(ss[1]);
+						if (!allowNegative && reward < 0) {
+							in.close();
+							throw new PrismLangException("Found state reward " + reward + " at state " + i +", negative rewards not allowed");
+						}
 						rewSA.setStateReward(i, reward);
 					}
 					s = in.readLine();
@@ -272,6 +295,10 @@ public class ConstructRewards
 						ss = s.split(" ");
 						i = Integer.parseInt(ss[0]);
 						reward = Double.parseDouble(ss[1]);
+						if (!allowNegative && reward < 0) {
+							in.close();
+							throw new PrismLangException("Found state reward " + reward + " at state " + i +", negative rewards not allowed");
+						}
 						rs.setStateReward(i, reward);
 					}
 					s = in.readLine();
@@ -307,6 +334,10 @@ public class ConstructRewards
 						i = Integer.parseInt(ss[0]);
 						j = Integer.parseInt(ss[1]);
 						reward = Double.parseDouble(ss[3]);
+						if (!allowNegative && reward < 0) {
+							in.close();
+							throw new PrismLangException("Found transition reward " + reward + " at state " + i +", action " + j +", negative rewards not allowed");
+						}
 						rs.setTransitionReward(i, j, reward);
 					}
 					s = in.readLine();
@@ -323,4 +354,5 @@ public class ConstructRewards
 
 		return rs;
 	}
+
 }
