@@ -743,6 +743,7 @@ public abstract class Expression extends ASTElement
 	/**
 	 * Are expr1 and expr2 syntactically equal?
 	 */
+	// FIXME ALG: Why is this method static?
 	public static boolean areSyntacticallyEqual(Expression expr1, Expression expr2) throws PrismLangException
 	{
 		// Linearize both syntax trees
@@ -773,6 +774,7 @@ public abstract class Expression extends ASTElement
 				boolean match = e1.getElement().isMatchingElement(e2.getElement());
 				if (!match) return false;
 			} else {
+				// FIXME ALG: Should this better be an assertion?
 				throw new PrismLangException("Implementation error: All children of Expression elements should be Expression elements.");
 			}
 		}
@@ -950,6 +952,7 @@ public abstract class Expression extends ASTElement
 		return true;
 	}
 
+	// TODO ALG: check for code duplication
 	/**
 	 * Converts an Expression that is a simple path formula to a canonical form:
 	 * Either a single non-negated next-step operator
