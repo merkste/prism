@@ -326,7 +326,12 @@ public class ConstructModel extends PrismComponent
 		if (!justReach) {
 			switch (modelType) {
 			case DTMC:
-				model = sort ? new DTMCSimple(dtmc, permut) : (DTMCSimple) dtmc;
+				if (buildSparse) {
+					mainLog.println("Building DTMCSparse...");
+					model = sort ? new DTMCSparse(dtmc, permut) : new DTMCSparse(dtmc);
+				} else {
+					model = sort ? new DTMCSimple(dtmc, permut) : (DTMCSimple) dtmc;
+				}
 				break;
 			case CTMC:
 				model = sort ? new CTMCSimple(ctmc, permut) : (CTMCSimple) ctmc;
@@ -341,9 +346,7 @@ public class ConstructModel extends PrismComponent
 			case CTMDP:
 				model = sort ? new CTMDPSimple(ctmdp, permut) : mdp;
 				break;
-			case STPG:
-			case SMG:
-			case PTA:
+			default:
 				throw new PrismNotSupportedException("Model construction not supported for " + modelType + "s");
 			}
 			model.setStatesList(statesList);
