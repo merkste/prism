@@ -1075,10 +1075,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 
 	/**
 	 * Get an SCCComputer object for the explicit engine.
+	 * @param consumer the SCCConsumer
 	 */
-	public explicit.SCCComputer getExplicitSCCComputer(explicit.Model model) throws PrismException
+	public explicit.SCCComputer getExplicitSCCComputer(explicit.Model model, explicit.SCCConsumer consumer) throws PrismException
 	{
-		return explicit.SCCComputer.createSCCComputer(this, model);
+		return explicit.SCCComputer.createSCCComputer(this, model, consumer);
 	}
 
 	/**
@@ -2551,7 +2552,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		long l; // timer
 		PrismLog tmpLog;
 		SCCComputer sccComputer = null;
-		explicit.SCCComputer sccComputerExpl = null;
+		explicit.SCCConsumerStore sccConsumerExpl = null;
 		//Vector<JDDNode> bsccs;
 		//JDDNode not, bscc;
 
@@ -2572,8 +2573,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			sccComputer = getSCCComputer(currentModel);
 			sccComputer.computeBSCCs();
 		} else {
-			sccComputerExpl = getExplicitSCCComputer(currentModelExpl);
-			sccComputerExpl.computeBSCCs();
+			sccConsumerExpl = new explicit.SCCConsumerStore(this, currentModelExpl);
+			getExplicitSCCComputer(currentModelExpl, sccConsumerExpl).computeSCCs();
 		}
 		l = System.currentTimeMillis() - l;
 		mainLog.println("\nTime for BSCC computation: " + l / 1000.0 + " seconds.");
@@ -2601,7 +2602,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (!getExplicit()) {
 			n = sccComputer.getBSCCs().size();
 		} else {
-			n = sccComputerExpl.getBSCCs().size();
+			n = sccConsumerExpl.getBSCCs().size();
 		}
 		for (i = 0; i < n; i++) {
 			tmpLog.println();
@@ -2617,8 +2618,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(sccComputer.getBSCCs().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(sccComputer.getBSCCs().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(sccComputerExpl.getBSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB,
-						true, true);
+				explicit.StateValues.createFromBitSet(sccConsumerExpl.getBSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
 			}
 			if (exportType == EXPORT_MATLAB)
 				tmpLog.println("];");
@@ -2737,7 +2737,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		long l; // timer
 		PrismLog tmpLog;
 		SCCComputer sccComputer = null;
-		explicit.SCCComputer sccComputerExpl = null;
+		explicit.SCCConsumerStore sccConsumerExpl = null;
 
 		// no specific states format for MRMC
 		if (exportType == EXPORT_MRMC)
@@ -2756,8 +2756,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			sccComputer = getSCCComputer(currentModel);
 			sccComputer.computeSCCs();
 		} else {
-			sccComputerExpl = getExplicitSCCComputer(currentModelExpl);
-			sccComputerExpl.computeSCCs();
+			sccConsumerExpl = new explicit.SCCConsumerStore(this, currentModelExpl);
+			getExplicitSCCComputer(currentModelExpl, sccConsumerExpl).computeSCCs();
 		}
 		l = System.currentTimeMillis() - l;
 		mainLog.println("\nTime for SCC computation: " + l / 1000.0 + " seconds.");
@@ -2785,7 +2785,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (!getExplicit()) {
 			n = sccComputer.getSCCs().size();
 		} else {
-			n = sccComputerExpl.getSCCs().size();
+			n = sccConsumerExpl.getSCCs().size();
 		}
 		for (i = 0; i < n; i++) {
 			tmpLog.println();
@@ -2801,8 +2801,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(sccComputer.getSCCs().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(sccComputer.getSCCs().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(sccComputerExpl.getSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB,
-						true, true);
+				explicit.StateValues.createFromBitSet(sccConsumerExpl.getSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
 			}
 			if (exportType == EXPORT_MATLAB)
 				tmpLog.println("];");

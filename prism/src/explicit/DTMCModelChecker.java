@@ -336,9 +336,10 @@ public class DTMCModelChecker extends ProbModelChecker
 		mainLog.println("\nStarting total reward computation...");
 
 		// Compute bottom strongly connected components (BSCCs)
-		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc);
-		sccComputer.computeBSCCs();
-		List<BitSet> bsccs = sccComputer.getBSCCs();
+		SCCConsumerStore sccStore = new SCCConsumerStore(this, dtmc);
+		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc, sccStore);
+		sccComputer.computeSCCs();
+		List<BitSet> bsccs = sccStore.getBSCCs();
 		numBSCCs = bsccs.size();
 
 		// Find BSCCs with non-zero reward
@@ -1375,10 +1376,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		solnProbs = new double[n];
 
 		// Compute bottom strongly connected components (BSCCs)
-		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc);
-		sccComputer.computeBSCCs();
-		List<BitSet> bsccs = sccComputer.getBSCCs();
-		BitSet notInBSCCs = sccComputer.getNotInBSCCs();
+		SCCConsumerStore sccStore = new SCCConsumerStore(this, dtmc);
+		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc, sccStore);
+		sccComputer.computeSCCs();
+		List<BitSet> bsccs = sccStore.getBSCCs();
+		BitSet notInBSCCs = sccStore.getNotInBSCCs();
 		numBSCCs = bsccs.size();
 
 		// See which states in the initial distribution do *not* have non-zero prob
@@ -1466,10 +1468,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		n = dtmc.getNumStates();
 
 		// Compute bottom strongly connected components (BSCCs)
-		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc);
-		sccComputer.computeBSCCs();
-		List<BitSet> bsccs = sccComputer.getBSCCs();
-		BitSet notInBSCCs = sccComputer.getNotInBSCCs();
+		SCCConsumerStore sccStore = new SCCConsumerStore(this, dtmc);
+		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, dtmc, sccStore);
+		sccComputer.computeSCCs();
+		List<BitSet> bsccs = sccStore.getBSCCs();
+		BitSet notInBSCCs = sccStore.getNotInBSCCs();
 		numBSCCs = bsccs.size();
 
 		// Compute steady-state probability for each BSCC...
