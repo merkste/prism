@@ -6,6 +6,23 @@ import java.util.PrimitiveIterator;
 
 public abstract class EmptyIterator<T> implements Iterator<T>
 {
+	private static final Of<?> OF = new Of<>();
+	private static final OfInt OF_INT = new OfInt();
+	private static final OfDouble OF_DOUBLE = new OfDouble();
+
+	@SuppressWarnings("unchecked")
+	public static <T> Of<T> Of() {
+		return (Of<T>) OF;
+	}
+	
+	public static OfInt OfInt() {
+		return OF_INT;
+	}
+
+	public static OfDouble OfDouble() {
+		return OF_DOUBLE;
+	}
+
 	@Override
 	public boolean hasNext()
 	{
@@ -14,6 +31,8 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 
 	public static class Of<T> extends EmptyIterator<T>
 	{
+		private Of() {};
+
 		@Override
 		public T next()
 		{
@@ -23,6 +42,8 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 
 	public static class OfInt extends EmptyIterator<Integer> implements PrimitiveIterator.OfInt
 	{
+		private OfInt() {};
+
 		@Override
 		public int nextInt()
 		{
@@ -32,6 +53,8 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 
 	public static class OfDouble extends EmptyIterator<Double> implements PrimitiveIterator.OfDouble
 	{
+		private OfDouble() {};
+
 		@Override
 		public double nextDouble()
 		{
