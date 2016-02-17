@@ -685,6 +685,42 @@ public class LTLModelChecker extends PrismComponent
 		return modelProd;
 	}
 
+	public LTLProduct<NondetModel> constructProductMDP(NondetModelChecker mc, NondetModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException {
+		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
+		DA<BitSet, ? extends AcceptanceOmega> da;
+		NondetModel modelProduct;
+		JDDNode startMask;
+		JDDVars daDDRowVars, daDDColVars;
+		long l;
+
+		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+
+		// Build product of MDP and automaton
+		l = System.currentTimeMillis();
+		mainLog.println("\nConstructing MDP-"+da.getAutomataType()+" product...");
+		daDDRowVars = new JDDVars();
+		daDDColVars = new JDDVars();
+		modelProduct = constructProductMDP(da, model, labelDDs, daDDRowVars, daDDColVars);
+		l = System.currentTimeMillis() - l;
+		mainLog.println("Time for product construction: " + l / 1000.0 + " seconds.");
+		mainLog.println();
+		modelProduct.printTransInfo(mainLog, false);
+
+
+		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
+
+		startMask = buildStartMask(da, labelDDs, daDDRowVars);
+		JDD.Ref(model.getReach());
+		startMask = JDD.And(model.getReach(), startMask);
+
+		daDDColVars.derefAll();
+		for (int i = 0; i < labelDDs.size(); i++) {
+			JDD.Deref(labelDDs.get(i));
+		}
+
+		return new LTLProduct<NondetModel>(modelProduct, model, acceptance, startMask, daDDRowVars);
+	}
+
 	/**
 	 * Builds a (referenced) mask BDD representing all possible transitions in a product built with
 	 * DA {@code da}, i.e. all the transitions ((s,q),(s',q')) where q' = delta(q, label(s')) in the DA.
