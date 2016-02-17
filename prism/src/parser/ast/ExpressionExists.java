@@ -74,6 +74,12 @@ public class ExpressionExists extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		return (other instanceof ExpressionExists);
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate an E operator without a model");

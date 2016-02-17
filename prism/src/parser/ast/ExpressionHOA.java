@@ -75,6 +75,17 @@ public class ExpressionHOA extends Expression
 	}
 
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionHOA))
+			return false;
+
+		ExpressionHOA otherHOA = (ExpressionHOA) other;
+
+		return apRenames.equals(otherHOA.apRenames);
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate a HOA path operator without a path");

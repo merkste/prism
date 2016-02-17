@@ -101,6 +101,16 @@ public class ExpressionUnaryOp extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionUnaryOp))
+			return false;
+
+		ExpressionUnaryOp otherUnaryOp = (ExpressionUnaryOp) other;
+		return this.getOperator() == otherUnaryOp.getOperator();
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		switch (op) {

@@ -80,6 +80,20 @@ public class ExpressionLabel extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionLabel))
+			return false;
+
+		ExpressionLabel otherLabel = (ExpressionLabel) other;
+
+		if (this.getName() == null)
+			return (otherLabel.getName() == null);
+
+		return this.getName().equals(otherLabel.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate labels", this);

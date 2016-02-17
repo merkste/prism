@@ -415,6 +415,16 @@ public class ExpressionFilter extends Expression
 		return true;
 	}
 
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionFilter))
+			return false;
+
+		ExpressionFilter otherFilter = (ExpressionFilter)other;
+		return this.getOperatorType() == otherFilter.getOperatorType();
+	}
+
 	/**
 	 * Wrap a "default" ExpressionFilter around an Expression representing a property to be model checked,
 	 * in order to pick out a single value (the final result of model checking) from a vector of values for all states.

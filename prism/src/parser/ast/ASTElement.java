@@ -524,6 +524,25 @@ public abstract class ASTElement
 		}
 		return visitor.getString();
 	}
+
+	/**
+	 * Is {@code other} a matching ASTElement of this ASTElement, i.e., does
+	 * it have the same type and parameters? Does not take into account the
+	 * children in the AST.
+	 */
+	public boolean isMatchingElement(ASTElement other)
+	{
+		throw new UnsupportedOperationException("isMatchingElement is not yet implemented for: "+this.getClass().getName());
+	}
+
+	/**
+	 * Traverses the syntax tree and returns a list representation
+	 * @return the list ({@code null} if there was an error)
+	 */
+	public List<ASTToList.ElementWithParent> toList()
+	{
+		return ASTToList.toList(this);
+	}
 }
 
 // ------------------------------------------------------------------------------

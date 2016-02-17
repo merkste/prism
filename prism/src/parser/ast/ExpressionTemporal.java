@@ -136,6 +136,21 @@ public class ExpressionTemporal extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionTemporal))
+			return false;
+
+		ExpressionTemporal otherTemporal = (ExpressionTemporal) other;
+		if (this.getOperator() != otherTemporal.getOperator())
+			return false;
+
+		// bounds are done recursively
+
+		return true;
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate a temporal operator without a path");
