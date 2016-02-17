@@ -120,4 +120,31 @@ public abstract class ProbModelTransformation
 		JDD.Ref(oldReward);
 		return oldReward;
 	}
+
+	/**
+	 * Directly provide the set of reachable states in the transformed model (optional).
+	 * If the set of reachable states is not known, this function returns {@code null}
+	 * and normal reachability computations will be performed.
+	 * <br/>
+	 * Default implementation: return {@code null}
+	 * [ REFS: <i>result</i> ]
+	 */
+	public JDDNode getReachableStates() throws PrismException {
+		return null;
+	}
+
+	/**
+	 * Provide a set of states in the transformed model that is known to be reachable
+	 * for using as a seed in the subsequent reachability computation (speed-up).
+	 * If this transformation does not want to provide this information,
+	 * this function returns {@code null} and normal reachability computations
+	 * will be performed (from the start states).
+	 * <br/>
+	 * Default implementation: return {@code null}
+	 * [ REFS: <i>result</i> ]
+	 */
+	public JDDNode getReachableStateSeed() throws PrismException {
+		return null;
+	}
+
 }
