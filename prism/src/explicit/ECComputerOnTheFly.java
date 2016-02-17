@@ -126,7 +126,7 @@ public class ECComputerOnTheFly extends ECComputerDefault
 	 */
 	private BitSet translateStates(SubNondetModel submodel, BitSet states) {
 		BitSet result = new BitSet();
-		for (Integer j : IterableBitSet.getSetBits(states)) {
+		for (int j : IterableBitSet.getSetBits(states)) {
 			result.set(submodel.translateState(j));
 		}
 		return result;
@@ -140,9 +140,9 @@ public class ECComputerOnTheFly extends ECComputerDefault
 		if (b.isEmpty())
 			return false;
 
-		for (Integer state : IterableBitSet.getSetBits(b)) {
+		for (int state : IterableBitSet.getSetBits(b)) {
 			boolean atLeastOneAction = false;
-			for (int i = 0; i < model.getNumChoices(state); i++) {
+			for (int i = 0, numChoices = model.getNumChoices(state); i < numChoices; i++) {
 				if (model.allSuccessorsInSet(state, i, b)) {
 					atLeastOneAction = true;
 				}
