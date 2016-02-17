@@ -23,7 +23,6 @@ import common.iterable.collections.ChainedList;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
-import explicit.modelviews.methods.CallMDP;
 import explicit.modelviews.methods.CallNondetModel;
 import parser.State;
 import parser.Values;
@@ -38,12 +37,25 @@ public class MDPAlteredDistributions extends MDPView
 
 
 
+	/**
+	 * If {@code choices} returns {@code null} for a state and a choice, the original transitions are preserved.
+	 * 
+	 * @param model
+	 * @param choiceMapping
+	 */
 	public MDPAlteredDistributions(final MDP model, final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> choiceMapping)
 	{
 		this(model, choiceMapping, CallNondetModel.getAction().on(model));
 	}
 
-	// FIXME ALG: outline invariants of both mappings
+	/**
+	 * If {@code choices} returns {@code null} for a state and a choice, the original transitions are preserved.
+	 * If {@code actions} is {@code null}, the original actions are preserved.
+	 * 
+	 * @param model
+	 * @param choices
+	 * @param actions
+	 */
 	public MDPAlteredDistributions(final MDP model, final PairMapping<Integer, Integer, Iterator<Entry<Integer, Double>>> choices,
 			final PairMapping<Integer, Integer, Object> actions)
 	{
@@ -52,12 +64,12 @@ public class MDPAlteredDistributions extends MDPView
 		this.actions = actions;
 	}
 
-	public MDPAlteredDistributions(final MDPAlteredDistributions additional)
+	public MDPAlteredDistributions(final MDPAlteredDistributions altered)
 	{
-		super(additional);
-		model = additional.model;
-		choices = additional.choices;
-		actions = additional.actions;
+		super(altered);
+		model = altered.model;
+		choices = altered.choices;
+		actions = altered.actions;
 	}
 
 
@@ -164,7 +176,9 @@ public class MDPAlteredDistributions extends MDPView
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
 		final Iterator<Entry<Integer, Double>> transitions = choices.get(state, choice);
-		assert transitions.hasNext() : "non-empty transitions iterator expected";
+		if (transitions == null) {
+			return model.getTransitionsIterator(state, choice);
+		}
 		return transitions;
 	}
 
@@ -226,11 +240,11 @@ public class MDPAlteredDistributions extends MDPView
 			public List<Iterator<Entry<Integer, Double>>> get(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
-					return Collections.emptyList();
+					return null;
 				}
 				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
 				if (equivalenceClass == null) {
-					return Collections.emptyList();
+					return null;
 				}
 				final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> getOtherChoices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 				{
@@ -304,10 +318,10 @@ public class MDPAlteredDistributions extends MDPView
 			@Override
 			public Iterator<Entry<Integer, Double>> get(final Integer state, final Integer choice)
 			{
-				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state, choice);
 				if (reattached.allSuccessorsInSet(state, representatives)) {
-					return transitions;
+					return null;
 				}
+				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state, choice);
 				return new MappingIterator<>(transitions, redirectTransition);
 			}
 		};
@@ -358,15 +372,15 @@ public class MDPAlteredDistributions extends MDPView
 				if (state == 1 && choice == 1) {
 					distribution.set(2, 0.4);
 					distribution.set(3, 0.6);
-					return distribution.iterator();
 				} else if (state == 2) {
 					distribution.set(0, 0.25);
 					distribution.set(1, 0.25);
 					distribution.set(2, 0.25);
 					distribution.set(3, 0.25);
-					return distribution.iterator();
+				} else {
+					return null;
 				}
-				return original.getTransitionsIterator(state, choice);
+				return distribution.iterator();
 			}
 		};
 

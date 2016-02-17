@@ -1,6 +1,5 @@
 package explicit.modelviews;
 
-import java.util.AbstractMap;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
@@ -11,7 +10,7 @@ import java.util.Set;
 import common.BitSetTools;
 import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
-import common.iterable.ArrayIterator;
+import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -28,6 +27,14 @@ public class MDPAdditionalChoices extends MDPView
 
 
 
+	/**
+	 * If {@code choices} returns {@code null} for a state and a choice, no additional choice is added.
+	 * If {@code actions} is {@code null} or returns {@code null} for a state, no additional action is attached.
+	 *
+	 * @param model
+	 * @param choices
+	 * @param actions
+	 */
 	public MDPAdditionalChoices(final MDP model, final MappingFromInteger<List<Iterator<Entry<Integer, Double>>>> choices,
 			MappingFromInteger<List<Object>> actions)
 	{
@@ -130,24 +137,26 @@ public class MDPAdditionalChoices extends MDPView
 	@Override
 	public int getNumChoices(final int state)
 	{
-		return model.getNumChoices(state) + choices.get(state).size();
+		return model.getNumChoices(state) + getNumAdditionalChoices(state);
 	}
 
 	@Override
 	public Object getAction(final int state, final int choice)
 	{
-		final int originalNumChoices = model.getNumChoices(state);
-		if (choice < originalNumChoices) {
+		final int numOriginalChoices = model.getNumChoices(state);
+		if (choice < numOriginalChoices) {
 			return model.getAction(state, choice);
 		}
 		if (actions == null) {
-			final int numChoices = originalNumChoices + choices.get(state).size();
+			final int numChoices = numOriginalChoices + getNumAdditionalChoices(state);
 			if (choice < numChoices) {
 				return null;
 			}
 			throw new IndexOutOfBoundsException("choice index out of bounds");
 		}
-		return actions.get(state).get(choice - originalNumChoices);
+		
+		final List<Object> additional = actions.get(state);
+		return (additional == null) ?  null : additional.get(choice - numOriginalChoices);
 	}
 
 	@Override
@@ -163,11 +172,17 @@ public class MDPAdditionalChoices extends MDPView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
-		final int originalNumChoices = model.getNumChoices(state);
-		if (choice < originalNumChoices) {
+		final int numOriginalChoices = model.getNumChoices(state);
+		if (choice < numOriginalChoices) {
 			return model.getTransitionsIterator(state, choice);
 		}
-		return choices.get(state).get(choice - originalNumChoices);
+		try {
+			return choices.get(state).get(choice - numOriginalChoices);
+		} catch (NullPointerException | IndexOutOfBoundsException e)
+		{
+			// alter message of exception
+			throw new IndexOutOfBoundsException("choice index out of bounds");
+		}
 	}
 
 	//--- MDPView ---
@@ -191,6 +206,16 @@ public class MDPAdditionalChoices extends MDPView
 
 
 
+	//--- instance methods ---
+
+	private int getNumAdditionalChoices(final int state)
+	{
+		final List<Iterator<Entry<Integer, Double>>> additional = choices.get(state);
+		return (additional == null) ? 0 : additional.size();
+	}
+
+
+
 	//--- static methods ---
 
 	public static MDPView fixDeadlocks(final MDP model)
@@ -210,10 +235,9 @@ public class MDPAdditionalChoices extends MDPView
 			public List<Iterator<Entry<Integer, Double>>> get(final int state)
 			{
 				if (states.get(state)) {
-					final Entry<Integer, Double> loop = new AbstractMap.SimpleImmutableEntry<>(state, 1.0);
-					return Collections.<Iterator<Entry<Integer, Double>>> singletonList(new ArrayIterator<>(loop));
+					return Collections.singletonList(DiracDistribution.iterator(state));
 				}
-				return Collections.emptyList();
+				return null;
 			}
 		};
 		return new MDPAdditionalChoices(model, addSelfLoops, null);
@@ -267,7 +291,7 @@ public class MDPAdditionalChoices extends MDPView
 					distribution.set(3, 0.5);
 					break;
 				default:
-					return Collections.emptyList();
+					return null;
 				}
 				return Collections.singletonList(distribution.iterator());
 			}
