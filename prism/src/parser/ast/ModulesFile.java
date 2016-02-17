@@ -68,6 +68,11 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	private Vector<Declaration> varDecls;
 	private Vector<String> varNames;
 	private Vector<Type> varTypes;
+	// Lists of view info (declaration, name, type)
+	private Vector<Declaration> viewDecls;
+	private Vector<String> viewNames;
+	private Vector<Type> viewTypes;
+
 
 	// Values set for undefined constants (null if none)
 	private Values undefinedConstantValues;
@@ -97,6 +102,9 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		varDecls = new Vector<Declaration>();
 		varNames = new Vector<String>();
 		varTypes = new Vector<Type>();
+		viewDecls = new Vector<Declaration>();
+		viewNames = new Vector<String>();
+		viewTypes = new Vector<Type>();
 		undefinedConstantValues = null;
 		constantValues = null;
 	}
@@ -537,6 +545,11 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return varNames.indexOf(name);
 	}
 
+	public int getViewIndex(String name)
+	{
+		return viewNames.indexOf(name);
+	}
+
 	/**
 	 * Get the declaration of the ith variable.
 	 */
@@ -644,6 +657,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		checkVarNames();
 		// Find all instances of variables, replace identifiers with variables.
 		// Also check variables valid, store indices, etc.
+		findAllViews(viewNames, viewDecls);
 		findAllVars(varNames, varTypes);
 
 		// Find all instances of property refs
@@ -881,6 +895,19 @@ public class ModulesFile extends ASTElement implements ModelInfo
 					varDecls.add(module.getDeclaration(j));
 					varNames.add(s);
 					varTypes.add(module.getDeclaration(j).getType());
+				}
+			}
+
+			m = module.getNumViewDeclarations();
+			for (j = 0; j < m; j++) {
+				s = module.getViewDeclaration(j).getName();
+				if (isIdentUsed(s)) {
+					throw new PrismLangException("Duplicated identifier \"" + s + "\"", module.getViewDeclaration(j));
+				} else {
+					varIdents.add(s);
+					viewDecls.add(module.getViewDeclaration(j));
+					viewNames.add(s);
+					viewTypes.add(module.getViewDeclaration(j).getType());
 				}
 			}
 		}
@@ -1314,10 +1341,33 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		ret.varTypes = (varTypes == null) ? null : (Vector<Type>)varTypes.clone();
 		ret.constantValues = (constantValues == null) ? null : new Values(constantValues);
 
+		if (viewDecls != null) {
+			ret.viewDecls = new Vector<Declaration>();
+			for (Declaration d : viewDecls)
+				ret.viewDecls.add((Declaration) d.deepCopy());
+		}
+		ret.viewNames = ((viewNames == null) ? null : (Vector<String>) viewNames.clone());
+		ret.viewTypes = ((viewTypes == null) ? null : (Vector<Type>) viewTypes.clone());
+
 		// a Path is immutable, no need for deep-copy
 		ret.location = location;
 
 		return ret;
+	}
+
+	public Vector<Declaration> getViewDeclarations()
+	{
+		return viewDecls;
+	}
+	
+	public Declaration getViewDeclaration(int viewIndex)
+	{
+		return viewDecls.get(viewIndex);
+	}
+
+	public Vector<String> getViewNames()
+	{
+		return viewNames;
 	}
 }
 

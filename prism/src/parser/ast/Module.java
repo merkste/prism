@@ -38,6 +38,8 @@ public class Module extends ASTElement
 	private ExpressionIdent nameASTElement;
 	// Local variables
 	private ArrayList<Declaration> decls;
+	// Local views
+	private ArrayList<Declaration> views;
 	// Commands
 	private ArrayList<Command> commands;
 	// Invariant (PTA models only; optional)
@@ -53,6 +55,7 @@ public class Module extends ASTElement
 	{
 		name = n;
 		decls = new ArrayList<Declaration>();
+		views = new ArrayList<Declaration>();
 		commands = new ArrayList<Command>();
 		invariant = null;
 		parent = null;
@@ -80,7 +83,19 @@ public class Module extends ASTElement
 	{
 		decls.set(i, d);
 	}
-	
+
+	public void addViewDeclaration(Declaration d)
+	{
+		assert (d.isView());
+		views.add(d);
+	}
+
+	public void setViewDeclaration(int i, Declaration d)
+	{
+		assert (d.isView());
+		views.set(i, d);
+	}
+
 	public void addCommand(Command c)
 	{
 		commands.add(c);
@@ -142,13 +157,37 @@ public class Module extends ASTElement
 	}
 	
 	/**
-	 * Get the list of all local variable declarations. 
+	 * Get the list of all local view declarations.
+	 */
+	public ArrayList<Declaration> getViewDeclarations()
+	{
+		return views;
+	}
+
+	/**
+	 * Get the number of local view declarations.
+	 */
+	public int getNumViewDeclarations()
+	{
+		return views.size();
+	}
+
+	/**
+	 * Get the i-th local view declaration.
+	 */
+	public Declaration getViewDeclaration(int i)
+	{
+		return views.get(i);
+	}
+
+	/**
+	 * Get the list of all local variable declarations.
 	 */
 	public List<Declaration> getDeclarations()
 	{
 		return decls;
 	}
-	
+
 	/**
 	 * Check for the existence of a local variable (declaration).
 	 */
@@ -227,6 +266,14 @@ public class Module extends ASTElement
 		}
 		return false;
 	}
+	
+	public boolean isLocalView(String s)
+	{
+		for (Declaration decl : views) {
+			if (decl.getName().equals(s)) return true;
+		}
+		return false;
+	}
 
 	// Methods required for ASTElement:
 	
@@ -250,6 +297,11 @@ public class Module extends ASTElement
 		n = getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			s = s + "\t" + getDeclaration(i) + ";\n";
+		}
+		if (n > 0) s = s + "\n";
+		n = getNumViewDeclarations();
+		for (i = 0; i < n; i++) {
+			s = s + "\t" + getViewDeclaration(i) + ";\n";
 		}
 		if (n > 0) s = s + "\n";
 		if (invariant != null) {
@@ -276,6 +328,10 @@ public class Module extends ASTElement
 		n = getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			ret.addDeclaration((Declaration)getDeclaration(i).deepCopy());
+		}
+		n = getNumViewDeclarations();
+		for (i = 0; i < n; i++) {
+			ret.addViewDeclaration((Declaration)getViewDeclaration(i).deepCopy());
 		}
 		n = getNumCommands();
 		for (i = 0; i < n; i++) {

@@ -307,6 +307,7 @@ public class PropertiesFile extends ASTElement
 		checkPropertyNames();
 
 		// Find all instances of variables (i.e. locate idents which are variables).
+		findAllViews(modulesFile.getViewNames(), modulesFile.getViewDeclarations());
 		findAllVars(modelInfo.getVarNames(), modelInfo.getVarTypes());
 
 		// Find all instances of property refs

@@ -474,6 +474,7 @@ TOKEN :
 |	< SYSTEM:			"system" >
 |	< TRUE:				"true" >
 |	< U:				"U" >
+|	< VIEW:				"view" >
 |	< W:				"W" >
 	// Punctuation, etc.
 	// Note that "NOT" must be the first item of punctuation in this list
@@ -772,6 +773,8 @@ DeclarationType DeclarationVarType() :
 	Expression low = null, high = null;
 	DeclarationType declType, subtype;
 	Token begin = null;
+	List<ExpressionVar> viewBitVars = null;
+	String bitVar = null;
 }
 {
 	( { begin = getToken(1); } (
@@ -788,6 +791,19 @@ DeclarationType DeclarationVarType() :
 		{ declType = new DeclarationArray(low, high, subtype); } )
 		// TODO: sort initial values */
 	| ( <CLOCK> { declType = new DeclarationClock(); } )
+	| ( <VIEW> {viewBitVars = new ArrayList<ExpressionVar>(); }
+		<LPARENTH>
+		(bitVar = Identifier() {{ExpressionVar v = new ExpressionVar(bitVar, null); viewBitVars.add(v);}}
+		  (<COMMA> bitVar = Identifier() {{ExpressionVar v = new ExpressionVar(bitVar, null); viewBitVars.add(v);}})*
+		)?
+		<RPARENTH>
+		<IFF>
+		<LBRACKET> low = Expression(false, false) <DOTS> high = Expression(false, false) <RBRACKET>
+		{
+		  declType = new DeclarationIntView(low, high);
+		  ((DeclarationIntView)declType).setBits(viewBitVars);
+		}
+	  )
 	))
 	{ declType.setPosition(begin, getToken(0)); return declType; }
 }
@@ -805,7 +821,12 @@ Module Module() :
 }
 {
 	begin = <MODULE> name = IdentifierExpression() { module = new Module(name.getName()); }
-	( var = Declaration() { module.addDeclaration(var); } )*
+	( var = Declaration() { if (var.isView()) {
+	                             module.addViewDeclaration(var);
+	                         } else {
+	                         	module.addDeclaration(var);
+	                         }
+	                       } )*
 	( <INVARIANT> invar = Expression(false, false) <ENDINVARIANT> { module.setInvariant(invar); } )?
 	( comm = Command() { module.addCommand(comm); } )*
 	<ENDMODULE>

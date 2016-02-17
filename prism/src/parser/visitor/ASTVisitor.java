@@ -44,6 +44,7 @@ public interface ASTVisitor
 	public Object visit(DeclarationArray e) throws PrismLangException;
 	public Object visit(DeclarationClock e) throws PrismLangException;
 	public Object visit(DeclarationIntUnbounded e) throws PrismLangException;
+	public Object visit(DeclarationIntView e) throws PrismLangException;
 	public Object visit(Module e) throws PrismLangException;
 	public Object visit(Command e) throws PrismLangException;
 	public Object visit(Updates e) throws PrismLangException;
@@ -72,6 +73,7 @@ public interface ASTVisitor
 	public Object visit(ExpressionConstant e) throws PrismLangException;
 	public Object visit(ExpressionFormula e) throws PrismLangException;
 	public Object visit(ExpressionVar e) throws PrismLangException;
+	public Object visit(ExpressionViewVar expressionViewVar) throws PrismLangException;
 	public Object visit(ExpressionProb e) throws PrismLangException;
 	public Object visit(ExpressionReward e) throws PrismLangException;
 	public Object visit(ExpressionSS e) throws PrismLangException;
