@@ -685,6 +685,18 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 	public void visitPost(TemporalOperatorBound e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(TemporalOperatorBounds e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(TemporalOperatorBounds e) throws PrismLangException
+	{
+		visitPre(e);
+		for (int i = 0; i < e.getBounds().size(); i++) {
+			e.getBounds().set(i, (TemporalOperatorBound) e.getBounds().get(i).accept(this));
+		}
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(TemporalOperatorBounds e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(QuotedString e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(QuotedString e) throws PrismLangException
 	{
