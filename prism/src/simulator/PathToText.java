@@ -155,7 +155,7 @@ public class PathToText extends PathDisplayer
 		log.print(getColSep() + "0");
 		if (contTime && showTimeCumul)
 			log.print(getColSep() + "0.0");
-		lastState = new State(initialState.varValues.length);
+		lastState = new State(initialState.varValues.length, modulesFile);
 		displayState(initialState);
 		if (getShowRewards()) {
 			lastStateRewards = explicit.Utils.cloneDoubleArray(initialStateRewards);

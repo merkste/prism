@@ -517,7 +517,7 @@ public class Modules2PTA extends PrismComponent
 
 		// Store number of PC variables and get their initial values 
 		pcNumVars = pcVars.size();
-		pcInit = new State(pcNumVars);
+		pcInit = new State(pcNumVars, modulesFile);
 		for (i = 0; i < pcNumVars; i++) {
 			decl = modulesFile.getVarDeclaration(modulesFile.getVarIndex(pcVars.get(i)));
 			pcInit.setValue(i, decl.getStartOrDefault().evaluate(constantValues));

@@ -1066,7 +1066,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		}
 
 		// Create State object
-		initialState = new State(getNumVars());
+		initialState = new State(getNumVars(), this);
 		// Then add values for all globals and all locals, in that order
 		count = 0;
 		n = getNumGlobals();

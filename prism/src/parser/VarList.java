@@ -47,6 +47,7 @@ public class VarList
 	private Map<String, Integer> nameMap;
 	// Total number of bits needed  to encode
 	private int totalNumBits;
+	private ModulesFile modulesFile;
 
 	/**
 	 * Construct empty variable list.
@@ -64,6 +65,7 @@ public class VarList
 	public VarList(ModulesFile modulesFile) throws PrismLangException
 	{
 		this();
+		this.modulesFile = modulesFile;
 
 		int i, j, n, n2;
 		Module module;
@@ -443,7 +445,7 @@ public class VarList
 
 		int numVars = getNumVars();
 		allStates = new ArrayList<State>();
-		allStates.add(new State(numVars));
+		allStates.add(new State(numVars, modulesFile));
 		for (int i = 0; i < numVars; i++) {
 			if (getType(i) instanceof TypeBool) {
 				int n = allStates.size();
@@ -482,7 +484,7 @@ public class VarList
 	{
 		int i, n, j, var, val;
 		State state;
-		state = new State(getNumVars());
+		state = new State(getNumVars(), modulesFile);
 		var = val = j = 0;
 		n = totalNumBits;
 		for (i = 0; i < n; i++) {

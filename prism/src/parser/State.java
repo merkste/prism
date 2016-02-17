@@ -39,14 +39,16 @@ import prism.PrismLangException;
 public class State implements Comparable<State>
 {
 	public Object varValues[];
+	public ModelInfo modelInfo;
 
 	/**
 	 * Construct empty (uninitialised) state.
 	 * @param n Number of variables.
 	 */
-	public State(int n)
+	public State(int n, ModelInfo mi)
 	{
 		varValues = new Object[n];
+		this.modelInfo = mi;
 	}
 
 	/**
@@ -55,7 +57,7 @@ public class State implements Comparable<State>
 	 */
 	public State(State s)
 	{
-		this(s.varValues.length);
+		this(s.varValues.length, s.modelInfo);
 		copy(s);
 	}
 
@@ -72,6 +74,9 @@ public class State implements Comparable<State>
 			varValues[i] = arr1[i];
 		for (i = 0; i < arr2.length; i++)
 			varValues[arr1.length + i] = arr2[i];
+
+		this.modelInfo = s1.modelInfo;
+		assert(s1.modelInfo == s2.modelInfo);
 	}
 
 	/**
@@ -102,6 +107,8 @@ public class State implements Comparable<State>
 			}
 			varValues[i] = v.getValue(i);
 		}
+
+		this.modelInfo = modelInfo;
 	}
 
 	/**
