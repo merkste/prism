@@ -45,6 +45,7 @@ import prism.ModelInfo;
 import parser.visitor.*;
 import prism.ModelType;
 import prism.PrismLangException;
+import explicit.MinMax;
 
 @SuppressWarnings({"unused", "static-access", "serial"})
 public class PrismParser
@@ -1598,6 +1599,7 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	ExpressionIdent modifier = null;
 	int r;
 	String relOp = null;
+	MinMax minMax = null;
 	Expression prob = null;
 	Expression expr;
 	Filter filter = null;
@@ -1609,14 +1611,18 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	// This production is only allowed in expressions if the "prop" parameter is true
 	{ if (!prop) throw generateParseException(); }
 	// Various options for "P" keyword and attached symbols
-	(( begin = <P> ( <LPARENTH> modifier = IdentifierExpression() <RPARENTH> )? (
-			( r = LtGt() prob = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
-	       |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
-	       |( <MIN> <EQ> <QMARK> { relOp = "min="; isBool = false; } )
-	       |( <MAX> <EQ> <QMARK> { relOp = "max="; isBool = false; } )))
-	// These two are dupes of above but allow space to be omitted
-	|( begin = <PMIN> <EQ> <QMARK> { relOp = "min="; isBool = false; } )
-	|( begin = <PMAX> <EQ> <QMARK> { relOp = "max="; isBool = false; } ))
+	(
+	   ( begin = <P> ( <LPARENTH> modifier = IdentifierExpression() <RPARENTH> )?
+	     ((<MIN> { minMax = MinMax.min(); }) | (<MAX> {minMax = MinMax.max();} ))?
+	   )
+       // variants without whitespace between P and MIN/MAX:
+       | (begin = <PMIN> { minMax = MinMax.min();})
+       | (begin = <PMAX> { minMax = MinMax.max();})
+    )
+    (
+        ( r = LtGt() prob = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
+       |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
+	)
 	// Path formula, optional filter
 	<LBRACKET>
 	expr = PathSpecification(prop)
@@ -1625,6 +1631,7 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	{
 		ret.setModifier(modifier == null ? null : modifier.getName());
 		ret.setRelOp(relOp);
+		ret.setMinMax(minMax);
 		ret.setProb(prob);
 		ret.setExpression(expr);
 		ret.setFilter(filter);
@@ -1767,6 +1774,7 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	ExpressionIdent modifier = null;
 	int r;
 	String relOp = null;
+	MinMax minMax = null;
 	Expression rew = null;
 	Expression expr;
 	Filter filter = null;
@@ -1778,20 +1786,25 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	// This production is only allowed in expressions if the "prop" parameter is true
 	{ if (!prop) throw generateParseException(); }
 	// Various options for "R" keyword and attached symbols
-	(( begin = <R>
+	(
+	  ( begin = <R>
 		( <LPARENTH> modifier = IdentifierExpression() <RPARENTH> )?
 		(RewardSpecification(ret))?
-		(( r = LtGt() rew = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
+		((<MIN> {minMax = MinMax.min();}) | (<MAX> {minMax = MinMax.max();}))?
+	  )
+	  // These two are dupes of above but allow space to be omitted
+	  |( begin = <RMIN> { minMax = MinMax.min();})
+	  |( begin = <RMAX> { minMax = MinMax.max();})
+	)
+	(
+	    ( r = LtGt() rew = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
 	   |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
-	   |( <MIN> <EQ> <QMARK> { relOp = "min="; isBool = false; } )
-	   |( <MAX> <EQ> <QMARK> { relOp = "max="; isBool = false; } )))
-	// These two are dupes of above but allow space to be omitted
-	|( begin = <RMIN> <EQ> <QMARK> { relOp = "min="; isBool = false; } )
-	|( begin = <RMAX> <EQ> <QMARK> { relOp = "max="; isBool = false; } ))
+	)
 	// Path formula, optional filter
 	<LBRACKET> expr = ExpressionRewardContents(prop, pathprop) (filter = Filter())? <RBRACKET>
 	{
 		ret.setModifier(modifier == null ? null : modifier.getName());
+		ret.setMinMax(minMax);
 		ret.setRelOp(relOp);
 		ret.setReward(rew);
 		ret.setExpression(expr);
