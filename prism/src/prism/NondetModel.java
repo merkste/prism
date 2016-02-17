@@ -28,11 +28,15 @@ package prism;
 
 import java.io.*;
 import java.util.Vector;
+import java.util.Map.Entry;
 
 import jdd.*;
 import odd.*;
 import mtbdd.*;
 import parser.*;
+import parser.ast.Declaration;
+import parser.ast.DeclarationInt;
+import parser.ast.Expression;
 import sparse.*;
 
 /*
@@ -453,6 +457,176 @@ public class NondetModel extends ProbModel
 			JDD.Deref(transReln);
 	}
 
+	public NondetModel getTransformed(NondetModelTransformation transformation) throws PrismException
+	{
+		// New (product) model - dds, vars, etc.
+		JDDNode newTrans, newStart;
+		JDDVars newVarDDRowVars[], newVarDDColVars[];
+		JDDVars newAllDDRowVars, newAllDDColVars;
+		JDDVars newAllDDChoiceVars, newAllDDNondetVars;
+		JDDNode newStateRewards[], newTransRewards[];
+		ModelVariablesDD newModelVariables;
+		VarList newVarList;
+		String extraStateVar, extraActionVar;
+		// extra variable stuff
+		JDDVars extraDDRowVars, extraDDColVars, extraActionVars;
+		// Misc
+		int i, nStateVars, nActionVars;
+		boolean before;
+
+		// Create a (new, unique) name for the variable that will represent extra states
+		extraStateVar = transformation.getExtraStateVariableName();
+		while (varList.getIndex(extraStateVar) != -1) {
+			extraStateVar = "_" + extraStateVar;
+		}
+
+		// Create a (new, unique) name for the variable that will represent extra actions
+		extraActionVar = transformation.getExtraActionVariableName();
+		while (varList.getIndex(extraActionVar) != -1) {
+			extraActionVar = "_" + extraActionVar;
+		}
+
+		newModelVariables = this.getModelVariables().copy();
+
+		// See how many new dd vars will be needed for extra state variables
+		// and whether there is room to put them before rather than after the existing vars
+		nStateVars = transformation.getExtraStateVariableCount();
+		before = newModelVariables.canPrependExtraStateVariable(nStateVars);
+
+		extraDDRowVars = new JDDVars();
+		extraDDColVars = new JDDVars();
+		// Create the new dd state variables
+		JDDVars extraStateVars = newModelVariables.allocateExtraStateVariable(nStateVars, extraStateVar, before);
+		
+		for (i = 0; i < nStateVars; i++) {
+			extraDDRowVars.addVar(extraStateVars.getVar(2*i));
+			extraDDColVars.addVar(extraStateVars.getVar(2*i+1));
+		}
+
+		// notify the transformation about the allocated state vars
+		transformation.hookExtraStateVariableAllocation(extraDDRowVars.copy(), extraDDColVars.copy());
+
+		// allocate action vars
+		nActionVars = transformation.getExtraActionVariableCount();
+		extraActionVars = newModelVariables.allocateExtraActionVariable(nActionVars, extraActionVar);
+
+		// notify the transformation about the allocated action vars
+		transformation.hookExtraActionVariableAllocation(extraActionVars.copy());
+
+		// Generate new allDDChoiceVars and newAllDDNondetVars
+		newAllDDChoiceVars = new JDDVars();
+		newAllDDChoiceVars.copyVarsFrom(extraActionVars);
+		newAllDDChoiceVars.copyVarsFrom(this.allDDChoiceVars);
+
+		newAllDDNondetVars = new JDDVars();
+		newAllDDNondetVars.copyVarsFrom(extraActionVars);
+		newAllDDNondetVars.copyVarsFrom(this.allDDNondetVars);
+
+
+		// Create/populate new state variable lists
+		if (nStateVars == 0) {
+			// no additional state vars, we can just copy everything
+			newVarDDRowVars = JDDVars.copyArray(varDDRowVars);
+			newVarDDColVars = JDDVars.copyArray(varDDColVars);
+			newAllDDRowVars = allDDRowVars.copy();
+			newAllDDColVars = allDDColVars.copy();
+			newVarList = (VarList) varList.clone();
+		} else {
+			// insert new variable either before or after the other variables
+			newVarDDRowVars = new JDDVars[varDDRowVars.length + 1];
+			newVarDDColVars = new JDDVars[varDDRowVars.length + 1];
+			newVarDDRowVars[before ? 0 : varDDRowVars.length] = extraDDRowVars.copy();
+			newVarDDColVars[before ? 0 : varDDColVars.length] = extraDDColVars.copy();
+			for (i = 0; i < varDDRowVars.length; i++) {
+				newVarDDRowVars[before ? i + 1 : i] = varDDRowVars[i].copy();
+				newVarDDColVars[before ? i + 1 : i] = varDDColVars[i].copy();
+			}
+			if (before) {
+				newAllDDRowVars = extraDDRowVars.copy();
+				newAllDDColVars = extraDDColVars.copy();
+				newAllDDRowVars.copyVarsFrom(allDDRowVars);
+				newAllDDColVars.copyVarsFrom(allDDColVars);
+			} else {
+				newAllDDRowVars = allDDRowVars.copy();
+				newAllDDColVars = allDDColVars.copy();
+				newAllDDRowVars.copyVarsFrom(extraDDRowVars);
+				newAllDDColVars.copyVarsFrom(extraDDColVars);
+			}
+			newVarList = (VarList) varList.clone();
+			Declaration decl = new Declaration(extraStateVar, new DeclarationInt(Expression.Int(0), Expression.Int((1 << nStateVars) - 1)));
+			newVarList.addVar(before ? 0 : varList.getNumVars(), decl, 1, this.getConstantValues());
+		}
+
+		// Build transition matrix for transformed model
+		newTrans = transformation.getTransformedTrans(); 
+
+		// Build set of initial states for transformed model
+		newStart = transformation.getTransformedStart();
+
+		// Build transformed reward information
+		newStateRewards = new JDDNode[stateRewards.length];
+		for (i=0; i < stateRewards.length; i++) {
+			newStateRewards[i] = transformation.getTransformedStateReward(stateRewards[i]);
+		}
+		newTransRewards = new JDDNode[transRewards.length];
+		for (i=0; i < transRewards.length; i++) {
+			newTransRewards[i] = transformation.getTransformedTransReward(transRewards[i]);
+		}
+
+		// Create a new model model object to store the product model
+		NondetModel result = new NondetModel(
+		// New transition matrix/start state
+				newTrans, newStart,
+				// New reward information
+				newStateRewards,
+				newTransRewards,
+				this.rewardStructNames.clone(),
+				// New list of all row/col vars
+				newAllDDRowVars, newAllDDColVars,
+				// Nondet variables (unchanged)
+				this.getAllDDSchedVars().copy(), 
+				this.getAllDDSynchVars().copy(),
+				newAllDDChoiceVars,
+				newAllDDNondetVars,
+				// New model variables
+				newModelVariables,
+				// Module info (unchanged)
+				this.getNumModules(),
+				this.getModuleNames(),
+				JDDVars.copyArray(this.getModuleDDRowVars()),
+				JDDVars.copyArray(this.getModuleDDColVars()),
+				// New var info
+				newVarList.getNumVars(), newVarList, newVarDDRowVars, newVarDDColVars,
+				// Constants (no change)
+				this.getConstantValues());
+
+		// Set new transActions
+		result.setTransActions(transformation.getTransformedTransActions());
+
+		// Also need to copy set of action label strings
+		result.setSynchs(new Vector<String>(this.getSynchs()));
+
+		// lift labels
+		for (Entry<String, JDDNode> entry : labelsDD.entrySet()) {
+			result.labelsDD.put(entry.getKey(), entry.getValue().copy());
+		}
+
+		// Do reachability/etc. for the new model
+		result.doReachability();
+		result.filterReachableStates();
+		result.findDeadlocks(false);
+		if (result.getDeadlockStates().size() > 0) {
+			// Assuming original model has no deadlocks, neither should the transformed model
+			throw new PrismException("Transformed model product has deadlock states");
+		}
+
+		extraDDRowVars.derefAll();
+		extraDDColVars.derefAll();
+		extraActionVars.derefAll();
+
+		return result;
+	}
+	
 	
 	public void dump(PrismLog log) throws PrismException {
 		super.dump(log);
