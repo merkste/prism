@@ -587,11 +587,18 @@ public class LTLModelChecker extends PrismComponent
 		}
 
 		final M productModel;
-		if (prodModel instanceof MDPSimple) {
+		switch (modelType) {
+		case DTMC:
+			mainLog.println("Converting product model to DTMCSparse");
+			productModel = (M) new DTMCSparse((DTMCSimple) prodModel);
+			break;
+		case MDP:
 			mainLog.println("Converting product model to MDPSparse");
 			productModel = (M) new MDPSparse((MDPSimple) prodModel);
-		} else {
+			break;
+		default:
 			productModel = (M) prodModel;
+			break;
 		}
 		final LTLProduct<M> product = new LTLProduct<M>(productModel, model, null, daSize, invMap);;
 
