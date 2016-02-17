@@ -26,6 +26,8 @@
 
 package prism;
 
+import java.util.List;
+
 import parser.Values;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
@@ -249,6 +251,25 @@ public class IntegerBound
 		}
 	}
 	
+
+	/**
+	 * Returns the maximal interesting value when considering the conjunction of {@code bounds}.
+	 * @param bounds list of bounds
+	 * @return the maximum over the maximal interesting values of {@code bounds}
+	 */
+	public static int getMaximalInterestingValueForConjunction(List<IntegerBound> bounds) {
+		int saturation = 0;
+
+		for (IntegerBound bound : bounds) {
+			int bound_saturation = bound.getMaximalInterestingValue();
+			if (bound_saturation > saturation) {
+				saturation = bound_saturation;
+			}
+		}
+
+		return saturation;
+	}
+
 	public static void main(String args[])
 	{
 		System.out.println(new IntegerBound(1, true, 3, false));
