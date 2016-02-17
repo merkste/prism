@@ -11,6 +11,7 @@ import prism.ModelInfo;
 import parser.visitor.*;
 import prism.ModelType;
 import prism.PrismLangException;
+import explicit.MinMax;
 
 /** Token Manager. */
 public class PrismParserTokenManager implements PrismParserConstants
