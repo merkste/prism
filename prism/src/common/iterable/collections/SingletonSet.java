@@ -1,10 +1,10 @@
 package common.iterable.collections;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
+import common.iterable.EmptyIterator;
 import common.iterable.SingletonIterator;
 
 /**
@@ -28,7 +28,7 @@ public class SingletonSet<T> implements Set<T>
 	public Iterator<T> iterator()
 	{
 		if (isEmpty()){
-			return Collections.emptyIterator();
+			return EmptyIterator.Of();
 		}
 		return new SingletonIterator.Of<T>(element)
 		{

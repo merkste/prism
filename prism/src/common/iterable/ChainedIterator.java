@@ -28,7 +28,6 @@
 package common.iterable;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator;
@@ -77,7 +76,7 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 	public ChainedIterator(Iterator<? extends Iterator<? extends T>> iterators)
 	{
 		this.iterators = iterators;
-		current = iterators.hasNext() ? iterators.next() : Collections.<T> emptyIterator();
+		current = iterators.hasNext() ? iterators.next() : EmptyIterator.Of();
 	}
 
 	@Override
@@ -100,8 +99,8 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 		}
 		// there are no more iterators / elements
 		// free resources
-		iterators = Collections.emptyIterator();
-		current = Collections.emptyIterator();
+		iterators = EmptyIterator.Of();
+		current = EmptyIterator.Of();
 		return false;
 	}
 
