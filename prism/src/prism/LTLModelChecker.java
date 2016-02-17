@@ -31,6 +31,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Stack;
 import java.util.Vector;
 
 import acceptance.AcceptanceGenRabinDD;
@@ -38,6 +39,7 @@ import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceRabin;
 import acceptance.AcceptanceRabinDD;
+import acceptance.AcceptanceStreettDD;
 import acceptance.AcceptanceType;
 import automata.DA;
 import automata.LTL2DA;
@@ -818,6 +820,9 @@ public class LTLModelChecker extends PrismComponent
 			return findAcceptingECStatesForRabin((AcceptanceRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness);
 		case GENERALIZED_RABIN:
 			return findAcceptingECStatesForGeneralizedRabin((AcceptanceGenRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness);
+		case STREETT:
+			return findAcceptingECStatesForStreett((AcceptanceStreettDD) acceptance, model, fairness);
+		
 		default:
 			throw new PrismNotSupportedException("Computing the accepting EC states for "+acceptance.getTypeName()+" acceptance is not yet implemented (symbolic engine)");
 		}
@@ -1014,6 +1019,92 @@ public class LTLModelChecker extends PrismComponent
 			allAcceptingStates = JDD.Or(allAcceptingStates, acceptingStates);
 		}
 
+		return allAcceptingStates;
+	}
+
+	public JDDNode findAcceptingECStatesForStreett(AcceptanceStreettDD acceptance, NondetModel model, boolean fairness)
+			throws PrismException
+	{
+		class ECandPairs {
+			JDDNode ddMEC;
+			BitSet activePairs;
+
+			ECandPairs(JDDNode ddMEC, BitSet activePairs)
+			{
+				this.ddMEC = ddMEC;
+				this.activePairs = activePairs;
+			}
+
+			void clear()
+			{
+				JDD.Deref(ddMEC);
+			}
+		}
+
+		if (fairness) {
+			throw new PrismException("Currently, can not compute fair MECs for Streett (symbolic engine)");
+		}
+		
+		JDDNode allAcceptingStates = JDD.Constant(0);
+		BitSet allPairs = new BitSet();
+		allPairs.set(0, acceptance.size());
+
+		int steps = 0;
+		int accepting = 0;
+		
+		Stack<ECandPairs> todo = new Stack<ECandPairs>();
+		List<JDDNode> mecs = findMECStates(model, JDD.ONE);
+		for (JDDNode mec : mecs) {
+			ECandPairs ecp = new ECandPairs(mec, allPairs);
+			todo.push(ecp);
+		}
+
+		getLog().println("Found "+todo.size()+" global MECs");
+
+		while (!todo.empty()) {
+			ECandPairs ecp = todo.pop();
+
+			steps++;
+
+			BitSet newActivePairs = (BitSet)ecp.activePairs.clone();
+			JDDNode restrict = null;
+
+			// check for acceptance
+			boolean allAccepting = true;
+			for (int pair = ecp.activePairs.nextSetBit(0);
+				 pair != -1;
+				 pair = ecp.activePairs.nextSetBit(pair + 1)) {
+
+				if (!acceptance.get(pair).isBSCCAccepting(ecp.ddMEC)) {
+					// this pair is not accepting
+					if (restrict == null) {
+						restrict = ecp.ddMEC.copy();
+					}
+					restrict = JDD.And(restrict, JDD.Not(acceptance.get(pair).getR()));
+					newActivePairs.clear(pair);
+					allAccepting = false;
+				}
+			}
+
+			if (allAccepting) {
+				allAcceptingStates = JDD.Or(allAcceptingStates, ecp.ddMEC.copy());
+				accepting++;
+			} else if (restrict.equals(JDD.ZERO)) {
+				// nothing to do
+			} else {
+				mecs = findMECStates(model, restrict);
+				for (JDDNode mec : mecs) {
+					ECandPairs newEcp = new ECandPairs(mec, newActivePairs);
+					todo.push(newEcp);
+				}
+			}
+			// cleanup
+			ecp.clear();
+			if (restrict != null) JDD.Deref(restrict);
+		}
+
+		getLog().println("Tested "+steps+" potential (M)ECs, found "+accepting+" to be accepting.");
+		
 		return allAcceptingStates;
 	}
 
