@@ -27,6 +27,7 @@ import parser.VarList;
 import prism.PrismException;
 import explicit.DTMC;
 import explicit.DTMCSimple;
+import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.modelviews.methods.CallDTMC;
 
@@ -179,8 +180,7 @@ public class DTMCAlteredDistributions extends DTMCView
 			public Iterator<Entry<Integer, Double>> get(final int state)
 			{
 				if (states.get(state)) {
-					final Entry<Integer, Double> loop = new AbstractMap.SimpleImmutableEntry<>(state, 1.0);
-					return new ArrayIterator<>(loop);
+					return DiracDistribution.iterator(state);
 				}
 				return model.getTransitionsIterator(state);
 			}
