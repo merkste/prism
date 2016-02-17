@@ -33,7 +33,7 @@ public class ChainedList<T> extends AbstractList<T>
 	@Override
 	public int size()
 	{
-		return IteratorTools.sumIntegers(new MappingIterator<>(lists, CallCollection.size()));
+		return IteratorTools.sumInteger(new MappingIterator<>(lists, CallCollection.size()));
 	}
 
 	@Override
