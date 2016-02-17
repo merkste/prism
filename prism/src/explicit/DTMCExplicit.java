@@ -36,6 +36,8 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import common.iterable.IterableStateSet;
+import common.iterable.MappingIterator;
+import common.functions.AbstractMapping;
 import explicit.rewards.MCRewards;
 import prism.ModelType;
 import prism.Pair;
@@ -135,14 +137,15 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 			throw new PrismException("Could not export " + getModelType() + " to file \"" + filename + "\"" + e);
 		}
 	}
-	
+
 	// Accessors (for DTMC)
-	
+
 	@Override
-	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(int s)
+	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(int state)
 	{
-		// Default implementation: extend iterator, setting all actions to null
-		return new AddDefaultActionToTransitionsIterator(getTransitionsIterator(s), null);
+		final Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state);
+		final Object defaultAction = null;
+		return new MappingIterator<>(transitions, new AttachAction(defaultAction));
 	}
 
 	@Override
@@ -183,37 +186,21 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 		}
 	}
 
-	public class AddDefaultActionToTransitionsIterator implements Iterator<Map.Entry<Integer, Pair<Double, Object>>>
+	public static final class AttachAction extends AbstractMapping<Entry<Integer, Double>, Entry<Integer, Pair<Double, Object>>>
 	{
-		private Iterator<Entry<Integer, Double>> transIter;
-		private Object defaultAction;
-		private Entry<Integer, Double> next;
+		private final Object action;
 
-		public AddDefaultActionToTransitionsIterator(Iterator<Entry<Integer, Double>> transIter, Object defaultAction)
+		public AttachAction(final Object action)
 		{
-			this.transIter = transIter;
-			this.defaultAction = defaultAction;
+			this.action = action;
 		}
 
 		@Override
-		public Entry<Integer, Pair<Double, Object>> next()
+		public Entry<Integer, Pair<Double, Object>> get(Entry<Integer, Double> element)
 		{
-			next = transIter.next();
-			final Integer state = next.getKey();
-			final Double probability = next.getValue();
-			return new AbstractMap.SimpleImmutableEntry<>(state, new Pair<>(probability, defaultAction));
-		}
-
-		@Override
-		public boolean hasNext()
-		{
-			return transIter.hasNext();
-		}
-
-		@Override
-		public void remove()
-		{
-			// Do nothing: read-only
+			final Integer state = element.getKey();
+			final Double probability = element.getValue();
+			return new AbstractMap.SimpleImmutableEntry<>(state, new Pair<>(probability, action));
 		}
 	}
 }
