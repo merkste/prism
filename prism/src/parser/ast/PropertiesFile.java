@@ -26,6 +26,7 @@
 
 package parser.ast;
 
+import java.nio.file.Path;
 import java.util.*;
 
 import parser.*;
@@ -54,6 +55,9 @@ public class PropertiesFile extends ASTElement
 
 	// actual values of (some or all) constants
 	private Values constantValues;
+
+	/** (Optional) The location (file) from which this PropertiesFile was obtained */
+	private Path location;
 
 	// Constructor
 
@@ -588,6 +592,25 @@ public class PropertiesFile extends ASTElement
 		return constantValues;
 	}
 
+	/**
+	 * Sets the path to the file underlying this PropertiesFile,
+	 * or {@code null} to designate "unknown".
+	 */
+	public void setLocation(Path location)
+	{
+		// System.err.println("Properties: " + location);
+		this.location = location;
+	}
+
+	/**
+	 * Returns the path to the file underlying this PropertiesFile, if known.
+	 * Returns {@code null} otherwise.
+	 */
+	public Path getLocation()
+	{
+		return location;
+	}
+
 	// Methods required for ASTElement:
 
 	/**
@@ -653,6 +676,9 @@ public class PropertiesFile extends ASTElement
 		// Copy other (generated) info
 		ret.allIdentsUsed = (allIdentsUsed == null) ? null : (Vector<String>) allIdentsUsed.clone();
 		ret.constantValues = (constantValues == null) ? null : new Values(constantValues);
+
+		// a Path is immutable, no need for deep-copy
+		ret.location = location;
 
 		return ret;
 	}
