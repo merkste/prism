@@ -170,6 +170,19 @@ public class AcceptanceRabinDD
 		return false;
 	}
 
+	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		JDDNode result = JDD.Constant(0);
+		for (RabinPairDD pair : this) {
+			JDDNode accepting = JDD.And(singleton_bsccs.copy(), JDD.Not(pair.getL()));
+			accepting = JDD.And(accepting, pair.getK());
+			result = JDD.Or(result, accepting);
+		}
+
+		return result;
+	}
+
 	/**
 	 * Get the Streett acceptance condition that is the dual of this Rabin acceptance condition, i.e.,
 	 * any word that is accepted by this condition is rejected by the returned Streett condition.
@@ -250,4 +263,5 @@ public class AcceptanceRabinDD
 	public String getTypeName() {
 		return getType().getName();
 	}
+
 }

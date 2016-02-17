@@ -144,6 +144,38 @@ public class AcceptanceGenericDD implements AcceptanceOmegaDD {
 	}
 
 	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		switch(kind) {
+		case TRUE:
+			return singleton_bsccs.copy();
+		case FALSE:
+			return JDD.Constant(0);
+		case AND:
+			return JDD.And(left.getAcceptingSingletonBSCCs(singleton_bsccs), right.getAcceptingSingletonBSCCs(singleton_bsccs));
+		case OR:
+			return JDD.Or(left.getAcceptingSingletonBSCCs(singleton_bsccs), right.getAcceptingSingletonBSCCs(singleton_bsccs));
+		case INF:
+			// bscc |= G F states?
+			// there exists a state in bscc and states
+			return JDD.And(states, singleton_bsccs.copy());
+		case INF_NOT:
+			// bscc_state |= G F !states?
+			// the BSCC intersects Not(states)
+			return JDD.And(JDD.Not(states.copy()), singleton_bsccs.copy());
+		case FIN:
+			// bscc |= F G !states?
+			// the BSCC consists only of !states
+			return JDD.And(singleton_bsccs.copy(), JDD.Not(states.copy()));
+		case FIN_NOT:
+			// bscc |= F G states?
+			// the BSCC consists entirely of states
+			return JDD.And(singleton_bsccs.copy(), states.copy());
+		}
+		throw new UnsupportedOperationException("Unsupported operator in generic acceptance expression");
+	}
+
+	@Override
 	public String getSizeStatistics() {
 		return "generic acceptance with " + countAcceptanceSets() + " acceptance sets";
 	}
