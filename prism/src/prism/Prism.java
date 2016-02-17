@@ -3565,8 +3565,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	private void clearBuiltModel()
 	{
-		if (currentModel != null)
+		if (currentModel != null) {
 			currentModel.clear();
+			currentModel = null;
+		}
 		/*if (currentModelExpl != null)
 			currentModelExpl.clear();*/
 	}
