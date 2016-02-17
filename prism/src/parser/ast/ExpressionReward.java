@@ -187,9 +187,9 @@ public class ExpressionReward extends ExpressionQuant
 	{
 		if (getBound() != null) {
 			double boundValue = getBound().evaluateDouble(constantValues);
-			return new OpRelOpBound("R", getRelOp(), boundValue);
+			return new OpRelOpBound("R", minMax, getRelOp(), boundValue);
 		} else {
-			return new OpRelOpBound("R", getRelOp(), null);
+			return new OpRelOpBound("R", minMax, getRelOp(), null);
 		}
 	}
 	
@@ -219,8 +219,10 @@ public class ExpressionReward extends ExpressionQuant
 		// For R=? properties, use name of reward structure where applicable
 		if (getBound() == null) {
 			String s = "E";
-			if (getRelOp() == RelOp.MIN) s = "Minimum e";
-			else if (getRelOp() == RelOp.MAX) s = "Maximum e";
+			if (minMax != null) {
+				if (minMax.isMin()) s = "Minimum e";
+				else s = "Maximum e";
+			}
 			else s = "E";
 			if (rewardStructIndex instanceof String) {
 				if (rewardStructIndexDiv instanceof String)
@@ -260,6 +262,7 @@ public class ExpressionReward extends ExpressionQuant
 		ExpressionReward expr = new ExpressionReward();
 		expr.setExpression(getExpression() == null ? null : getExpression().deepCopy());
 		expr.setRelOp(getRelOp());
+		expr.setMinMax(minMax == null ? null : minMax.clone() );
 		expr.setBound(getBound() == null ? null : getBound().deepCopy());
 		if (rewardStructIndex != null && rewardStructIndex instanceof Expression) expr.setRewardStructIndex(((Expression)rewardStructIndex).deepCopy());
 		else expr.setRewardStructIndex(rewardStructIndex);

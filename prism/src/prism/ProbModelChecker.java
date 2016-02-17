@@ -178,7 +178,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		// Print a warning if Pmin/Pmax used
-		if (opInfo.getRelOp() == RelOp.MIN || opInfo.getRelOp() == RelOp.MAX) {
+		if (opInfo.hasExplicitMinMax()) {
 			mainLog.printWarning("\"Pmin=?\" and \"Pmax=?\" operators are identical to \"P=?\" for DTMCs/CTMCs");
 		}
 
@@ -221,7 +221,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDDNode transRewards = getTransitionRewardsByIndexObject(rs, model, constantValues);
 
 		// Print a warning if Rmin/Rmax used
-		if (opInfo.getRelOp() == RelOp.MIN || opInfo.getRelOp() == RelOp.MAX) {
+		if (opInfo.hasExplicitMinMax()) {
 			mainLog.printWarning("\"Rmin=?\" and \"Rmax=?\" operators are identical to \"R=?\" for DTMCs/CTMCs");
 		}
 

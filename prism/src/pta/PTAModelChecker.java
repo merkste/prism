@@ -194,7 +194,9 @@ public class PTAModelChecker extends PrismComponent
 		if (expr.getProb() != null) {
 			throw new PrismException("PTA model checking currently only supports Pmin=? and Pmax=? properties (try the digital clocks engine instead)");
 		}
-		min = relOp.isLowerBound() || relOp.isMin();
+		// Get info from P operator
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		min = opInfo.getMinMax(ModelType.PTA).isMin();
 
 		// Check this is a F path property (only case allowed at the moment)
 		if (!(expr.getExpression() instanceof ExpressionTemporal))

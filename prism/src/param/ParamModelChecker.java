@@ -84,6 +84,7 @@ import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
 import prism.ModelType;
+import prism.OpRelOpBound;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLog;
@@ -871,7 +872,9 @@ final public class ParamModelChecker extends PrismComponent
 			if (p.compareTo(0) == -1 || p.compareTo(1) == 1)
 				throw new PrismException("Invalid probability bound " + p + " in P operator");
 		}
-		min = relOp.isLowerBound() || relOp.isMin();
+		// Get info from P operator
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		min = opInfo.getMinMax(modelType).isMin();
 
 		// Compute probabilities
 		if (!expr.getExpression().isSimplePathFormula()) {
@@ -981,7 +984,9 @@ final public class ParamModelChecker extends PrismComponent
 			if (r.compareTo(0) == -1)
 				throw new PrismException("Invalid reward bound " + r + " in R[] formula");
 		}
-		min = relOp.isLowerBound() || relOp.isMin();
+		// Get info from R operator
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		min = opInfo.getMinMax(model.getModelType()).isMin();
 
 		ParamRewardStruct rew = constructRewards(model, rewStruct, constantValues);
 		mainLog.println("Building reward structure...");
@@ -1116,7 +1121,9 @@ final public class ParamModelChecker extends PrismComponent
 			if (p.compareTo(0) == -1 || p.compareTo(1) == 1)
 				throw new PrismException("Invalid probability bound " + p + " in P operator");
 		}
-		min = relOp.isLowerBound() || relOp.isMin();
+		// Get info from SS operator
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		min = opInfo.getMinMax(modelType).isMin();
 
 		// Compute probabilities
 		probs = checkProbSteadyState(model, expr.getExpression(), min, needStates);

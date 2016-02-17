@@ -82,6 +82,24 @@ public class MinMax
 		return neg;
 	}
 	
+	public String toString()
+	{
+		if (min) {
+			return "min";
+		} else {
+			return "max";
+		}
+	}
+	
+	public MinMax clone()
+	{
+		MinMax result = new MinMax();
+		result.min = min;
+		result.min1 = min1;
+		result.min2 = min2;
+		return result;
+	}
+	
 	// Utility methods to create instances of this class
 	
 	public static MinMax blank()
