@@ -1329,6 +1329,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			try {
 				// parse file
 				modulesFile = prismParser.parseModulesFile(strModel, typeOverride);
+
+				if (modulesFile != null)
+					modulesFile.setLocation(file.toPath().toAbsolutePath());
+
 			} finally {
 				// release prism parser
 				releasePrismParser();
@@ -1425,7 +1429,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		PrismLanguageTranslator importer = createPrismLanguageTranslator(lang);
 		importer.load(file);
 		String prismModelString = importer.translateToString();
-		return parseModelString(prismModelString);
+		ModulesFile result = parseModelString(prismModelString);
+		if (result != null)
+			result.setLocation(file.toPath().toAbsolutePath());
+		return result;
 	}
 
 	/**
@@ -1476,7 +1483,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		}
 
 		// Parse string as PRISM model and return
-		return parseModelString(modelString);
+		ModulesFile result = parseModelString(modelString);
+		if (result != null)
+			result.setLocation(file.toPath().toAbsolutePath());
+
+		return result;
 	}
 
 	/**
@@ -1515,6 +1526,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			try {
 				// parse file
 				propertiesFile = prismParser.parsePropertiesFile(modelInfo, strProperties);
+				if (propertiesFile != null)
+					propertiesFile.setLocation(file.toPath().toAbsolutePath());
 			} finally {
 				// release prism parser
 				releasePrismParser();
