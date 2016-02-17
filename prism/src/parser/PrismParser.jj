@@ -1901,6 +1901,8 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 {
 	ExpressionFilter expr = null;
 	String op = null;
+	QuotedString qs = null;
+	List<QuotedString> operatorArguments = null;
 	Expression filter = null;
 	Expression expr2 = null;
 	Token begin = null;
@@ -1915,13 +1917,26 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 	( <MIN> { op = "min"; } | <MAX> { op = "max"; }
 	| <PLUS> { op = "+"; } | <AND> { op = "&"; } | <OR> { op = "|"; }
 	| op = Identifier() )
+	// operator arguments
+	(
+	  <LPARENTH>
+	  qs = QuotedString() { operatorArguments = new ArrayList<QuotedString>(); operatorArguments.add(qs); }
+	  ( <COMMA> qs = QuotedString() { operatorArguments.add(qs); } )*
+	  <RPARENTH>
+	)?
 	// operand
 	<COMMA> expr2 = Expression(prop, pathprop)
 	// (optional filter expression)
 	[ <COMMA> filter = Expression(prop, pathprop) ]
 	// )
 	<RPARENTH>
-	{ expr = new ExpressionFilter(op, expr2, filter); expr.setPosition(begin, getToken(0)); return expr; }
+	{
+	   expr = new ExpressionFilter(op, expr2, filter);
+	   expr.setPosition(begin, getToken(0));
+	   expr.setOperatorArguments(operatorArguments);
+
+	   return expr;
+	}
 }
 
 //-----------------------------------------------------------------------------------
