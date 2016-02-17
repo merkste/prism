@@ -405,11 +405,13 @@ public class LTLModelChecker extends PrismComponent
 			throw new PrismException("Model-"+da.getAutomataType()+" product has deadlock states");
 		}
 
+		/*
 		// Reset initial state
 		newStart = buildStartMask(da, labelDDs, daDDRowVars);
 		JDD.Ref(model.getStart());
 		newStart = JDD.And(model.getStart(), newStart);
 		modelProd.setStart(newStart);
+*/
 
 		// if possible, return copies of the DA DD variables via the method parameters
 		if (daDDRowVarsCopy != null)
@@ -602,12 +604,14 @@ public class LTLModelChecker extends PrismComponent
 			throw new PrismException("Model-DA product has deadlock states");
 		}
 
+		/*
 		// Reset initial state
 		newStart = buildStartMask(da, labelDDs, daDDRowVars);
 		JDD.Ref(init != null ? init : model.getStart());
 		newStart = JDD.And(init != null ? init : model.getStart(), newStart);
 		modelProd.setStart(newStart);
-
+		 */
+		
 		//try { prism.exportStatesToFile(modelProd, Prism.EXPORT_PLAIN, new java.io.File("prod.sta")); }
 		//catch (java.io.FileNotFoundException e) {}
 
