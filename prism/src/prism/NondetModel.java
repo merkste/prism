@@ -637,7 +637,17 @@ public class NondetModel extends ProbModel
 		}
 
 		// Do reachability/etc. for the new model
-		result.doReachability();
+		JDDNode S;
+		if ( (S = transformation.getReachableStates()) != null) {
+			// the transformation knows the reachable state set
+			result.setReach(S);
+		} else if ( (S = transformation.getReachableStateSeed()) != null ) {
+			// the transformation knows a seed for the reachability computation
+			result.doReachability(S);
+		} else {
+			// otherwise: do standard reachability
+			result.doReachability();
+		}
 		result.filterReachableStates();
 		result.findDeadlocks(false);
 		if (result.getDeadlockStates().size() > 0) {
