@@ -135,7 +135,8 @@ public class Distribution implements Iterable<Entry<Integer, Double>>
 	 */
 	public double get(int j)
 	{
-		return map.getOrDefault(j, 0.0);
+		final Double probability = map.get(j);
+		return probability == null ? 0.0 : probability;
 	}
 
 	/**
