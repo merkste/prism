@@ -110,8 +110,9 @@ public abstract class ModelView implements Model
 				deadlockStates.set(state);
 			}
 		}
-		if (fix) {
+		if (fix && !fixedDeadlocks) {
 			fixDeadlocks();
+			fixedDeadlocks = true;
 		}
 	}
 
@@ -221,7 +222,7 @@ public abstract class ModelView implements Model
 
 	//--- instance methods ---
 
-	protected abstract ModelView fixDeadlocks();
+	protected abstract void fixDeadlocks();
 
 	/**
 	 * Tell whether the receiver is a virtual or explicit model.

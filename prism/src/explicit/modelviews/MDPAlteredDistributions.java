@@ -173,16 +173,13 @@ public class MDPAlteredDistributions extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPAlteredDistributions fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = MDPAdditionalChoices.fixDeadlocks(this.clone());
-		choices = CallMDP.getTransitionsIterator().on(model);
+		choices = AbstractPairMapping.constant(null);
 		actions = null;
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

@@ -254,11 +254,10 @@ public class MDPDisjointUnion extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPDisjointUnion fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		try {
 			model1.findDeadlocks(false);
 			model2.findDeadlocks(false);
@@ -267,8 +266,6 @@ public class MDPDisjointUnion extends MDPView
 		}
 		model1 = MDPAdditionalChoices.fixDeadlocks(model1);
 		model2 = MDPAdditionalChoices.fixDeadlocks(model2);
-		fixedDeadlocks = true;
-		return this;
 	}
 
 
