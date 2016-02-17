@@ -108,6 +108,27 @@ JNIEXPORT void JNICALL Java_jdd_JDD_DD_1CloseDownCUDD(JNIEnv *env, jclass cls, j
 
 //------------------------------------------------------------------------------
 
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1Reorder(JNIEnv * env, jclass cls)
+{
+	Cudd_ReduceHeap(ddman, CUDD_REORDER_SIFT_CONVERGE, 0);
+}
+
+//------------------------------------------------------------------------------
+
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1ResetVarOrder(JNIEnv * env, jclass cls)
+{
+	int numVars = Cudd_ReadSize(ddman);
+	int* permutation = new int[numVars];
+	for (unsigned int i = 0; i < numVars; i++) {
+		// shuffle variable i to level i
+		permutation[i] = i;
+	}
+	Cudd_ShuffleHeap(ddman, permutation);
+	delete[] permutation;
+}
+
+//------------------------------------------------------------------------------
+
 
 JNIEXPORT void JNICALL Java_jdd_JDD_DD_1Ref(JNIEnv *env, jclass cls, jlong __jlongpointer dd)
 {

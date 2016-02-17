@@ -49,6 +49,8 @@ public class JDD
 	private static native void DD_Deref(long dd);
 	private static native void DD_PrintCacheInfo();
 	private static native boolean DD_GetErrorFlag();
+	private static native void DD_Reorder();
+	private static native void DD_ResetVarOrder();
 	// dd_basics
 	private static native long DD_Create();
 	private static native long DD_Constant(double value);
@@ -1488,6 +1490,26 @@ public class JDD
 			throw new CuddOutOfMemoryException();
 	}
 
+	/**
+	 * Starts a CUDD reordering (group sifting) operation.
+	 * <br>
+	 * <b>Note:</b> After reordering, various default assumptions
+	 * of PRISM are severely violated and it is not safe to
+	 * continue with symbolic calculations. In the worst case,
+	 * PRISM will crash. To restore the default, safe variable
+	 * ordering, resetVarOrder() can be called.
+	 */
+	public static void reorder() {
+		DD_Reorder();
+	}
+
+	/**
+	 * Reset the variable order to the default, canonical one,
+	 * where index and level of the variables coincides.
+	 */
+	public static void resetVarOrder() {
+		DD_ResetVarOrder();
+	}
 
 	/**
 	 * write statistics about the different layers of a BDD (JDDNode) to a PrismLog.

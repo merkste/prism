@@ -153,6 +153,22 @@ JNIEXPORT jboolean JNICALL Java_jdd_JDD_DD_1GetErrorFlag
 
 /*
  * Class:     jdd_JDD
+ * Method:    DD_Reorder
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1Reorder
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jdd_JDD
+ * Method:    DD_ResetVarOrder
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1ResetVarOrder
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jdd_JDD
  * Method:    DD_Create
  * Signature: ()J
  */
