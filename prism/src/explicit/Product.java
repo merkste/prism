@@ -39,9 +39,15 @@ import prism.PrismNotSupportedException;
  * Base class for the results of a product operation between a model and
  * an automaton. Provides infrastructure for converting information on the
  * states between the original model, the automaton and the product model.
- *
+ * <br>
  * The mapping between product states and the constituent parts is
  * specified via the (abstract) functions getModelState() and getAutomatonState().
+ * <br>
+ * By default it is assumed that each initial state in the product corresponds
+ * to exactly one lifted state of interest in the original model,
+ * allowing a mapping between product and original model state values.
+ * If this assumption is not correct, overload {@code projectToOriginalModel} and
+ * {@code getTransformedStatesOfInterest}.
  *
  * @param <M> The type of the product model, e.g, DTMC, MDP, ...
  */
@@ -176,4 +182,13 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 		return result;
 	}
 
+	@Override
+	public BitSet getTransformedStatesOfInterest()
+	{
+		BitSet productStatesOfInterest = new BitSet();
+		for (int initial : productModel.getInitialStates()) {
+			productStatesOfInterest.set(initial);
+		}
+		return productStatesOfInterest;
+	}
 }

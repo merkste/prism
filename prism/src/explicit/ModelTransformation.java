@@ -26,6 +26,8 @@
 
 package explicit;
 
+import java.util.BitSet;
+
 import prism.PrismException;
 
 /**
@@ -46,4 +48,9 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	 * @return a corresponding {@code StateValues} object for the original model.
 	 **/
 	public StateValues projectToOriginalModel(StateValues svTransformedModel) throws PrismException;
+
+	/**
+	 * Get the transformed set of states of interest.
+	 **/
+	public BitSet getTransformedStatesOfInterest();
 }
