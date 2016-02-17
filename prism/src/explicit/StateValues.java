@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
+import common.IterableBitSet;
+
 import parser.State;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionFunc;
@@ -1545,6 +1547,29 @@ public class StateValues implements StateVector
 		throw new PrismException("Can't take average over a vector of type " + type);
 	}
 
+	public boolean matchesOverBitSet(StateValues other, BitSet filter) throws PrismException
+	{
+		if (!type.equals(other.type)) {
+			throw new PrismException("Can not match between two value vectors of different type");
+		}
+	
+		for (int i : IterableBitSet.getSetBits(filter)) {
+			if (type instanceof TypeInt) {
+				if (valuesI[i] != other.valuesI[i])
+					return false;
+			} else if (type instanceof TypeDouble) {
+				if (!PrismUtils.doublesAreEqual(valuesD[i], other.valuesD[i])) {
+					return false;
+				}
+			} else {
+				throw new PrismException("Can not match between values vector of type "+type);
+			}
+		}
+
+		return true;
+
+	}
+	
 	// PRINTING STUFF
 
 	/**
