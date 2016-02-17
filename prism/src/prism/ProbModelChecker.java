@@ -54,6 +54,7 @@ import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
+import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
@@ -470,14 +471,39 @@ public class ProbModelChecker extends NonProbModelChecker
 
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
 		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
-		if (exprTemp.getBounds().hasRewardBounds()) {
-			throw new PrismException("Reward bounds are currently not supported with the symbolic engine");
+
+		if (exprTemp.getBounds().hasRewardBounds() ||
+		    exprTemp.getBounds().countTimeBoundsDiscrete() > 1) {
+			// We have reward bounds or multiple time / step bounds
+			// transform model and expression and recurse
+			
+			if (model.getModelType().continuousTime()) {
+				throw new PrismNotSupportedException("Reward bounds for continuous time not supported yet");
+			}
+			
+			List<TemporalOperatorBound> boundsToReplace = exprTemp.getBounds().getStepBoundsForDiscreteTime();
+			if (!boundsToReplace.isEmpty()) {
+				// exempt first time bound, is handled by standard simple path formula procedure
+				boundsToReplace.remove(0);
+			}
+			boundsToReplace.addAll(exprTemp.getBounds().getRewardBounds());
+
+			ModelExpressionTransformation<ProbModel, ProbModel> transformed = 
+			    CounterTransformation.replaceBoundsWithCounters(this, model, expr, boundsToReplace, statesOfInterest);
+			mainLog.println("\nPerforming actual calculations for\n");
+			mainLog.println("DTMC:  ");
+			transformed.getTransformedModel().printTransInfo(mainLog);
+			mainLog.println("Formula: "+transformed.getTransformedExpression() +"\n");
+
+			ProbModelChecker transformedMC = createNewModelChecker(prism, transformed.getTransformedModel(), propertiesFile);
+			StateValues svTransformed = transformedMC.checkProbPathFormulaSimple(transformed.getTransformedExpression(), qual, transformed.getTransformedStatesOfInterest());
+			StateValues svOriginal = transformed.projectToOriginalModel(svTransformed);
+			transformed.clear();
+			return svOriginal;
 		}
-		
-		if (exprTemp.getBounds().countTimeBoundsDiscrete() > 1) {
-			throw new PrismException("Multiple time / step bounds are currently not supported with the symbolic engine");
-		}
-		
+
+		// handle straighforwardly
+
 		// Negation		
 		if (expr instanceof ExpressionUnaryOp &&
 		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {

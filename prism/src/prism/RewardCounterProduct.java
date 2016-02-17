@@ -75,6 +75,25 @@ public class RewardCounterProduct<M extends Model> extends Product<M>
 		return new RewardCounterProduct<NondetModel>(originalModel, transformedModel, transform, productStatesOfInterest, transform.getExtraRowVars().copy());
 	}
 
+	/**
+	 * Generate the product of a DTMC with an accumulated reward counter.
+	 * The counter has the range [0,limit], with saturation semantics for accumulated
+	 * rewards >=limit.
+	 * @param originalModel the DTMC
+	 * @param rewards integer MCRewards
+	 * @param limit the saturation value for the counter
+	 * @param statesOfInterest the set of state of interest, the starting point for the counters
+	 * @return
+	 * @throws PrismException
+	 */
+	static public RewardCounterProduct<ProbModel> generate(PrismComponent parent, ProbModel originalModel, JDDNode trRewards, int limit, JDDNode statesOfInterest) throws PrismException {
+		TransitionsByRewardsInfo info = new TransitionsByRewardsInfo(parent, originalModel, trRewards);
+		RewardCounterTransformationAdd transform = new RewardCounterTransformationAdd(originalModel, info, limit, statesOfInterest);
+	
+		ProbModel transformedModel = originalModel.getTransformed(transform);
+		JDDNode productStatesOfInterest = transformedModel.getStart().copy();
+		return new RewardCounterProduct<ProbModel>(originalModel, transformedModel, transform, productStatesOfInterest, transform.getExtraRowVars().copy());
+	}
 
 	/**
 	 * Get the states in the product DTMC inside the conjunction of integer bound.
