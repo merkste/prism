@@ -29,8 +29,10 @@ package explicit;
 
 import java.util.BitSet;
 
+import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismSettings;
 
 /**
  * Abstract class for (explicit) classes that compute (B)SCCs,
@@ -59,8 +61,14 @@ public abstract class SCCComputer extends PrismComponent
 	 */
 	public static SCCComputer createSCCComputer(PrismComponent parent, Model model, SCCConsumer consumer) throws PrismException
 	{
-		// Only one algorithm implemented currently
-		return new SCCComputerTarjan(parent, model, consumer);
+		switch (parent.getSettings().getChoice(PrismSettings.PRISM_SCC_METHOD_EXPLICIT)) {
+		case Prism.TARJAN_RECURSIVE:
+			return new SCCComputerTarjan(parent, model, consumer);
+		case Prism.TARJAN_STACK:
+			return new SCCComputerTarjanNonRecursive(parent, model, consumer);
+			default:
+			throw new PrismException("Unknown SCC decompositon method");
+		}
 	}
 
 	/**
