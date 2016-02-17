@@ -583,29 +583,39 @@ public class StateValuesMTBDD implements StateValues
 	@Override
 	public void print(PrismLog log, boolean printSparse, boolean printMatlab, boolean printStates, boolean printIndices) throws PrismException
 	{
-		// Because non-sparse output from MTBDD requires a bit more effort...
-		if (printSparse) print(log);
-		else throw new PrismException("Not supported");
-		// Note we also ignore printMatlab/printStates/printIndices due to laziness
+		// Note we ignore printMatlab/printStates/printIndices due to laziness
+		if (printSparse) {
+			print(log);
+		} else {
+			printFiltered(log, model.getReach(), printSparse, printMatlab, printStates);
+		}
+
 	}
 
 	/**
-	 * Recursive part of print method.
-	 * 
-	 * (NB: this would be very easy - i.e. not even
-	 *  any recursion - if we didn't want to print
-	 *  out the values of the module variables as well
-	 *  which requires traversal of the odd as well
-	 *  as the vector)
-	 * (NB2: traversal of vector/odd is still quite simple;
-	 *  tricky bit is keeping track of variable values
-	 *  throughout traversal - we want to be efficient
-	 *  and not compute the values from scratch each
-	 *  time, but we also want to avoid passing arrays
-	 *  into the recursive method)
+	 * Recursive part of print method (non-zero entries only).
+	 *
+	 * @param dd the current node in the DD
+	 * @param level the current variable level
+	 * @param o the current node in the ODD
+	 * @param n the current state index
 	 */
 	private void printRec(JDDNode dd, int level, ODDNode o, long n)
 	{
+		/*
+		 * (NB: this would be very easy - i.e. not even
+		 *  any recursion - if we didn't want to print
+		 *  out the values of the module variables as well
+		 *  which requires traversal of the odd as well
+		 *  as the vector)
+		 * (NB2: traversal of vector/odd is still quite simple;
+		 *  tricky bit is keeping track of variable values
+		 *  throughout traversal - we want to be efficient
+		 *  and not compute the values from scratch each
+		 *  time, but we also want to avoid passing arrays
+		 *  into the recursive method)
+		 */
+
 		int i, j;
 		JDDNode e, t;
 
@@ -653,19 +663,111 @@ public class StateValuesMTBDD implements StateValues
 		varValues[currentVar] -= (1 << (varSizes[currentVar]-1-currentVarLevel));
 	}
 
+	/**
+	 * Recursive part of print method (all elements,
+	 * including where the value is zero).
+	 *
+	 * @param ddFilter the states for which values should be printed
+	 * @param ddValue the values for the states (has to be zero for all states not in ddFilter)
+	 * @param level the current variable level
+	 * @param o the current node in the ODD
+	 * @param n the current state index
+	 */
+	private void printRecNonSparse(JDDNode ddFilter, JDDNode ddValue, int level, ODDNode o, long n)
+	{
+		/*
+		 * (NB: this would be very easy - i.e. not even
+		 *  any recursion - if we didn't want to print
+		 *  out the values of the module variables as well
+		 *  which requires traversal of the odd as well
+		 *  as the vector)
+		 * (NB2: traversal of vector/odd is still quite simple;
+		 *  tricky bit is keeping track of variable values
+		 *  throughout traversal - we want to be efficient
+		 *  and not compute the values from scratch each
+		 *  time, but we also want to avoid passing arrays
+		 *  into the recursive method)
+		 */
+
+		int i, j;
+		JDDNode eFilter, tFilter, eValue, tValue;
+
+		// ddFilter is zero - bottom out of recursion
+		if (ddFilter.equals(JDD.ZERO)) return;
+
+		// base case - at bottom (nonzero terminal)
+		if (level == numVars) {
+
+			outputLog.print(n + ":(");
+			j = varList.getNumVars();
+			for (i = 0; i < j; i++) {
+				// integer variable
+				if (varList.getType(i) instanceof TypeInt) {
+					outputLog.print(varValues[i]+varList.getLow(i));
+				}
+				// boolean variable
+				else {
+					outputLog.print(varValues[i] == 1);
+				}
+				if (i < j-1) outputLog.print(",");
+			}
+			outputLog.print(")=" + ddValue.getValue());
+			outputLog.println();
+			return;
+		}
+
+		// select 'else' and 'then' branches ( filter dd )
+		if (ddFilter.getIndex() > vars.getVarIndex(level)) {
+			eFilter = tFilter = ddFilter;
+		} else {
+			eFilter = ddFilter.getElse();
+			tFilter = ddFilter.getThen();
+		}
+
+		// select 'else' and 'then' branches ( value dd )
+		if (ddValue.getIndex() > vars.getVarIndex(level)) {
+			eValue = tValue = ddValue;
+		} else {
+			eValue = ddValue.getElse();
+			tValue = ddValue.getThen();
+		}
+
+		// then recurse...
+		currentVarLevel++; if (currentVarLevel == varSizes[currentVar]) { currentVar++; currentVarLevel=0; }
+		printRecNonSparse(eFilter, eValue, level+1, o.getElse(), n);
+		currentVarLevel--; if (currentVarLevel == -1) { currentVar--; currentVarLevel=varSizes[currentVar]-1; }
+		varValues[currentVar] += (1 << (varSizes[currentVar]-1-currentVarLevel));
+		currentVarLevel++; if (currentVarLevel == varSizes[currentVar]) { currentVar++; currentVarLevel=0; }
+		printRecNonSparse(tFilter, tValue, level+1, o.getThen(), n+o.getEOff());
+		currentVarLevel--; if (currentVarLevel == -1) { currentVar--; currentVarLevel=varSizes[currentVar]-1; }
+		varValues[currentVar] -= (1 << (varSizes[currentVar]-1-currentVarLevel));
+	}
+
 	@Override
 	public void printFiltered(PrismLog log, JDDNode filter) throws PrismException
 	{
+		printFiltered(log, filter, true);
+	}
+
+	/**
+	 * Print part of a vector to a log/file.
+	 * <br>[ DEREFS: <i>none</i> ]
+	 * @param log The log
+	 * @param filter A BDD specifying which states to print for.
+	 * @param printSparse Print non-zero elements only?
+	 */
+	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse) throws PrismException
+	{
 		int i;
 		JDDNode tmp;
-		
+
 		// filter out
 		JDD.Ref(values);
 		JDD.Ref(filter);
 		tmp = JDD.Apply(JDD.TIMES, values, filter);
-		
+
 		// check if all zero
-		if (tmp.equals(JDD.ZERO)) {
+		if (printSparse && tmp.equals(JDD.ZERO)) {
 			JDD.Deref(tmp);
 			log.println("(all zero)");
 			return;
@@ -678,7 +780,11 @@ public class StateValuesMTBDD implements StateValues
 		}
 		currentVar = 0;
 		currentVarLevel = 0;
-		printRec(tmp, 0, odd, 0);
+		if (printSparse) {
+			printRec(tmp, 0, odd, 0);
+		} else {
+			printRecNonSparse(filter, tmp, 0, odd, 0);
+		}
 		//log.println();
 		JDD.Deref(tmp);
 	}
@@ -686,10 +792,8 @@ public class StateValuesMTBDD implements StateValues
 	@Override
 	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse, boolean printMatlab, boolean printStates) throws PrismException
 	{
-		// Because non-sparse output from MTBDD requires a bit more effort... 
-		if (printSparse) printFiltered(log, filter);
-		else throw new PrismException("Not supported");
-		// Note we also ignore printMatlab/printStates due to laziness
+		// Note we ignore printMatlab/printStates due to laziness
+		printFiltered(log, filter, printSparse);
 	}
 	
 	/**

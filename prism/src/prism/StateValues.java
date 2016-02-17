@@ -228,7 +228,7 @@ public interface StateValues extends StateVector
 	void printFiltered(PrismLog log, JDDNode filter) throws PrismException;
 
 	/**
-	 * Print part of a vector to a log/file (non-zero entries only).
+	 * Print part of a vector to a log/file.
 	 * <br>[ DEREFS: <i>none</i> ]
 	 * @param log The log
 	 * @param filter A BDD specifying which states to print for.
