@@ -97,6 +97,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
 	public static final	String PRISM_CUDD_MAX_GROWTH				= "prism.cuddMaxGrowth";
+	public static final	String PRISM_DD_EXTRA_STATE_VARS				= "prism.ddExtraStateVars";
 	public static final	String PRISM_NUM_SB_LEVELS					= "prism.numSBLevels";//"prism.hybridNumLevels";
 	public static final	String PRISM_SB_MAX_MEM						= "prism.SBMaxMem";//"prism.hybridMaxMemory";
 	public static final	String PRISM_NUM_SOR_LEVELS					= "prism.numSORLevels";//"prism.hybridSORLevels";
@@ -319,6 +320,8 @@ public class PrismSettings implements Observer
 			{ DOUBLE_TYPE,		PRISM_CUDD_MAX_GROWTH,					"CUDD reordering max growth",							"4.3",			new Double(1.2),														"0.0,",																						
 																		"The max growth factor for CUDD reordering (e.g. 1.2 = maximal growth of 20%)." },
 
+			{ INTEGER_TYPE,		PRISM_DD_EXTRA_STATE_VARS,				"Extra DD state var allocation",		"4.3",			new Integer(20),														"",
+																			"Number of extra DD state variables preallocated for use in model transformation." },
 			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
 																		"Perform reordering when building the model." },
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
@@ -1310,6 +1313,19 @@ public class PrismSettings implements Observer
 				} else {
 					throw new PrismException("No value specified for -" + sw + " switch");
 				}
+		} else if (sw.equals("ddextrastatevars")) {
+			if (i < args.length - 1) {
+				try {
+					int v = Integer.parseInt(args[++i]);
+					if (v < 0)
+						throw new NumberFormatException("");
+					set(PRISM_DD_EXTRA_STATE_VARS, v);
+				} catch (NumberFormatException e) {
+					throw new PrismException("Invalid value for -" + sw + " switch");
+				}
+			} else {
+				throw new PrismException("No value specified for -" + sw + " switch");
+			}
 		} else if (sw.equals("reorder")) {
 			set(PRISM_DO_REORDER, true);
 		} else if (sw.equals("reorderoptions")) {
@@ -1721,6 +1737,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-gsmax <n> (or sormax <n>) ..... Set memory limit (KB) for hybrid GS/SOR [default: 1024]");
 		mainLog.println("-cuddmaxmem <n> ................ Set max memory for CUDD package, e.g. 125k, 50m, 4g [default: 1g]");
 		mainLog.println("-cuddepsilon <x> ............... Set epsilon value for CUDD package [default: 1e-15]");
+		mainLog.println("-ddextrastatevars <n> .......... Set the number of preallocated state vars [default: 20]");
 		mainLog.println();
 		mainLog.println("PARAMETRIC MODEL CHECKING OPTIONS:");
 		mainLog.println("-param <vals> .................. Do parametric model checking with parameters (and ranges) <vals>");
