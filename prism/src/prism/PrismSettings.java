@@ -107,6 +107,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_EXTRA_DD_INFO					= "prism.extraDDInfo";
 	public static final	String PRISM_EXTRA_REACH_INFO				= "prism.extraReachInfo";
 	public static final String PRISM_SCC_METHOD						= "prism.sccMethod";
+	public static final String PRISM_EC_METHOD						= "prism.ecMethod";
 	public static final String PRISM_SYMM_RED_PARAMS					= "prism.symmRedParams";
 	public static final	String PRISM_EXACT_ENABLED					= "prism.exact.enabled";
 	public static final String PRISM_PTA_METHOD					= "prism.ptaMethod";
@@ -275,6 +276,8 @@ public class PrismSettings implements Observer
 																			"Use steady-state detection during CTMC transient probability computation." },
 			{ CHOICE_TYPE,		PRISM_SCC_METHOD,						"SCC decomposition method",				"3.2",			"Lockstep",																	"Xie-Beerel,Lockstep,SCC-Find",																
 																			"Which algorithm to use for (symbolic) decomposition of a graph into strongly connected components (SCCs)." },
+			{ CHOICE_TYPE,		PRISM_EC_METHOD,						"End-component computation method",				"4.2.1",			"Default",																	"Default,On-The-Fly",																
+																			"Which algorithm to use for end-component calculations." },
 			{ STRING_TYPE,		PRISM_SYMM_RED_PARAMS,					"Symmetry reduction parameters",		"3.2",			"",																	"",																
 																			"Parameters for symmetry reduction (format: \"i j\" where i and j are the number of modules before and after the symmetric ones; empty string means symmetry reduction disabled)." },
 			{ STRING_TYPE,		PRISM_AR_OPTIONS,						"Abstraction refinement options",		"3.3",			"",																	"",																
@@ -1120,6 +1123,20 @@ public class PrismSettings implements Observer
 					set(PRISM_SCC_METHOD, "SCC-Find");
 				else
 					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: xiebeerel, lockstep, sccfind)");
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+		}
+		// SCC computation algorithm
+		else if (sw.equals("ecmethod")) {
+			if (i < args.length - 1) {
+				s = args[++i];
+				if (s.equals("default"))
+					set(PRISM_EC_METHOD, "Default");
+				else if (s.equals("onthefly"))
+					set(PRISM_EC_METHOD, "On-The-Fly");
+				else
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: default,onthefly)");
 			} else {
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}
