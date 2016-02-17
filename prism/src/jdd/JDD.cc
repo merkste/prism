@@ -591,6 +591,13 @@ JNIEXPORT void JNICALL Java_jdd_JDD_DD_1PrintTerminalsAndNumbers(JNIEnv *env, jc
 	DD_PrintTerminalsAndNumbers(ddman, jlong_to_DdNode(dd), num_vars);
 }
 
+//------------------------------------------------------------------------------
+
+JNIEXPORT jint JNICALL Java_jdd_JDD_DD_1ReadNodeCount(JNIEnv *env, jclass cls)
+{
+	return Cudd_ReadNodeCount(ddman);
+}
+
 //==============================================================================
 //
 //	Wrapper functions for dd_matrix
