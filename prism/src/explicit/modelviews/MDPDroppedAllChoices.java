@@ -38,7 +38,7 @@ public class MDPDroppedAllChoices extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPDroppedAllChoices clone()

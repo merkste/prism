@@ -33,7 +33,7 @@ public class MDPFromDTMC extends MDPView
 
 
 
-	//--- Clonable ---
+	//--- Cloneable ---
 
 	@Override
 	public MDPFromDTMC clone()
