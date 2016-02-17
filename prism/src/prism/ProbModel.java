@@ -479,9 +479,41 @@ public class ProbModel implements Model
 	}
 
 	/**
+	 * Add a label with corresponding JDDNode state set, ensuring a unique, non-existing label.
+	 * The label will be either "X" or "X_i" where X is the content of the {@code prefix} argument
+	 * and i is a non-negative integer.
+	 * <br>
+	 * Note that a stored label takes preference over the on-the-fly calculation
+	 * of an ExpressionLabel, cf. {@link prism.StateModelChecker#checkExpressionLabel}
+	 *
+	 * <br>[ STORES: labelDD, deref on later call to clear() ]
+	 * @param prefix the prefix for the unique label
+	 * @param labelDD the JDDNode with the state set for the label
+	 * @return the generated unique label
+	 */
+	public String addUniqueLabelDD(String prefix, JDDNode labelDD)
+	{
+		String label;
+		if (!hasLabelDD(prefix)) {
+			label = prefix;
+		} else {
+			int i = 0;
+			while (true) {
+				if (!hasLabelDD(prefix+"_"+i)) {
+					label = prefix+"_"+i;
+					break;
+				}
+				i++;
+			}
+		}
+
+		addLabelDD(label, labelDD);
+		return label;
+	}
+
+	/**
 	 * Reset transition matrix DD
 	 */
-
 	public void resetTrans(JDDNode trans)
 	{
 		if (this.trans != null)
