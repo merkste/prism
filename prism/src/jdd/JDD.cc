@@ -796,6 +796,13 @@ JNIEXPORT jint JNICALL Java_jdd_JDDNode_DDN_1GetIndex(JNIEnv *env, jclass cls, j
 
 //------------------------------------------------------------------------------
 
+JNIEXPORT jint JNICALL Java_jdd_JDDNode_DDN_1GetLevel(JNIEnv *env, jclass cls, jlong __jlongpointer dd)
+{
+	return Cudd_ReadPerm(ddman, (jlong_to_DdNode(dd))->index);
+}
+
+//------------------------------------------------------------------------------
+
 
 JNIEXPORT jdouble JNICALL Java_jdd_JDDNode_DDN_1GetValue(JNIEnv *env, jclass cls, jlong __jlongpointer dd)
 {

@@ -33,6 +33,14 @@ JNIEXPORT jdouble JNICALL Java_jdd_JDDNode_DDN_1GetValue
 
 /*
  * Class:     jdd_JDDNode
+ * Method:    DDN_GetLevel
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL Java_jdd_JDDNode_DDN_1GetLevel
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     jdd_JDDNode
  * Method:    DDN_GetThen
  * Signature: (J)J
  */
