@@ -469,8 +469,16 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues probs = null;
 
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
-
-		// Negation
+		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
+		if (exprTemp.getBounds().hasRewardBounds()) {
+			throw new PrismException("Reward bounds are currently not supported with the symbolic engine");
+		}
+		
+		if (exprTemp.getBounds().countTimeBoundsDiscrete() > 1) {
+			throw new PrismException("Multiple time / step bounds are currently not supported with the symbolic engine");
+		}
+		
+		// Negation		
 		if (expr instanceof ExpressionUnaryOp &&
 		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {
 			negated = true;
@@ -478,7 +486,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		if (expr instanceof ExpressionTemporal) {
-			ExpressionTemporal exprTemp = (ExpressionTemporal) expr;
+			exprTemp = (ExpressionTemporal) expr;
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
 				probs = checkProbNext(exprTemp, statesOfInterest);
@@ -768,6 +776,10 @@ public class ProbModelChecker extends NonProbModelChecker
 	{
 		int time; // time
 		StateValues rewards = null;
+		
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Cumulative reward operator does not support reward bounds");
+		}
 
 		JDD.Deref(statesOfInterest);
 		
@@ -816,6 +828,10 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues rewards = null;
 
 		JDD.Deref(statesOfInterest);
+
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Instantaneous reward operator does not support reward bounds");
+		}
 
 		// get info from inst reward
 		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
@@ -896,7 +912,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		long l;
 
 		JDD.Deref(statesOfInterest);
-		
+
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismException("Can not handle reward bounds via deterministic automata.");
+		}
+
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");

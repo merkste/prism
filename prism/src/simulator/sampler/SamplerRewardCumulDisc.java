@@ -48,6 +48,10 @@ public class SamplerRewardCumulDisc extends SamplerDouble
 		if (expr.getOperator() != ExpressionTemporal.R_C)
 			throw new PrismException("Error creating Sampler");
 		
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Cumulative reward operator does not support reward bounds");
+		}
+		
 		timeBound = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt();
 		this.rewardStructIndex = rewardStructIndex;
 		// Initialise sampler info

@@ -901,8 +901,17 @@ public class NondetModelChecker extends NonProbModelChecker
 		StateValues probs = null;
 
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
+		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
+		if (exprTemp.getBounds().hasRewardBounds()) {
+			throw new PrismException("Reward bounds are currently not supported with the symbolic engine");
+		}
 
-		// Negation
+		if (exprTemp.getBounds().countTimeBoundsDiscrete() > 1) {
+			throw new PrismException("Multiple time / step bounds are currently not supported with the symbolic engine");
+		}
+
+		
+		// Negation		
 		if (expr instanceof ExpressionUnaryOp &&
 		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {
 			// mark as negated, switch from min to max and vice versa
@@ -912,7 +921,7 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 
 		if (expr instanceof ExpressionTemporal) {
-			ExpressionTemporal exprTemp = (ExpressionTemporal) expr;
+			exprTemp = (ExpressionTemporal) expr;
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
 				probs = checkProbNext(exprTemp, min, statesOfInterest);
@@ -1290,6 +1299,10 @@ public class NondetModelChecker extends NonProbModelChecker
 
 		JDD.Deref(statesOfInterest);
 
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Cumulative reward operator does not support reward bounds");
+		}
+		
 		// check that there is an upper time bound
 		if (!expr.hasBounds() || !expr.getBounds().getStepBoundForDiscreteTime().hasUpperBound()) {
 			throw new PrismException("Cumulative reward operator without time bound (C) is only allowed for multi-objective queries");
@@ -1336,6 +1349,10 @@ public class NondetModelChecker extends NonProbModelChecker
 
 		JDD.Deref(statesOfInterest);
 
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Instantaneous reward operator does not support reward bounds");
+		}
+		
 		// get info from bounded until
 		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
