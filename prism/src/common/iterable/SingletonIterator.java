@@ -2,6 +2,7 @@ package common.iterable;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 public class SingletonIterator<T> implements Iterator<T>
 {
@@ -9,6 +10,7 @@ public class SingletonIterator<T> implements Iterator<T>
 
 	public SingletonIterator(final T element)
 	{
+		Objects.requireNonNull(element);
 		this.element = element;
 	}
 
