@@ -439,6 +439,15 @@ public class JDD
 	}
 	
 	/**
+	 * equivalence of dd1, dd2
+	 * [ REFS: <i>result</i>, DEREFS: dd1, dd2 ]
+	 */
+	public static JDDNode Equiv(JDDNode dd1, JDDNode dd2)
+	{
+		return Not(Xor(dd1, dd2));
+	}
+	
+	/**
 	 * generic apply operation
 	 * <br>[ REFS: <i>result</i>, DEREFS: dd1, dd2 ]
 	 */
