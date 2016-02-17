@@ -198,7 +198,7 @@ public class ExpressionReward extends ExpressionQuant
 			double boundValue = getBound().evaluateDouble(constantValues);
 			return new OpRelOpBound("R", minMax, getRelOp(), boundValue);
 		} else {
-			return new OpRelOpBound("R", minMax, getRelOp(), null);
+			return new OpRelOpBound("R", minMax);
 		}
 	}
 	

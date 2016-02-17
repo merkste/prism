@@ -14,6 +14,16 @@ public class OpRelOpBound
 	protected boolean numeric;
 	protected double bound;
 
+	/** Constructor, unbounded */
+	public OpRelOpBound(String op, MinMax minMax)
+	{
+		this.op = op;
+		this.minMax = minMax;
+		this.relOp = RelOp.COMPUTE_VALUES;
+		numeric = true;
+	}
+
+	/** Constructor, with relOp and bound */
 	public OpRelOpBound(String op, MinMax minMax, RelOp relOp, Double boundObject)
 	{
 		this.op = op;
