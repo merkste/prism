@@ -750,7 +750,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// until (unbounded): b1/b2 are bdds for until operands
 
-	protected StateValues checkProbUntil(JDDNode b1, JDDNode b2, boolean qual) throws PrismException
+	public StateValues checkProbUntil(JDDNode b1, JDDNode b2, boolean qual) throws PrismException
 	{
 		StateValues probs = null;
 
