@@ -453,6 +453,11 @@ public class NondetModel extends ProbModel
 			JDD.Deref(transReln);
 	}
 
+	
+	public void dump(PrismLog log) throws PrismException {
+		super.dump(log);
+		log.println("allDDNondetVars = "+allDDNondetVars);
+	}
 }
 
 //------------------------------------------------------------------------------

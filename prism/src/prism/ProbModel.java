@@ -1048,4 +1048,15 @@ public class ProbModel implements Model
 			varOrderConstraints.clear();
 	}
 
+	public void dump(PrismLog log) throws PrismException
+	{
+		JDD.PrintMinterms(log, trans.copy(), "trans");
+		JDD.PrintMinterms(log, trans01.copy(), "trans01");
+		JDD.PrintMinterms(log, start.copy(), "start");
+		JDD.PrintMinterms(log, reach.copy(), "reach");
+		JDD.PrintMinterms(log, transActions.copy(), "transActions");
+		log.println("allDDRowVars = " + allDDRowVars);
+		log.println("allDDColVars = " + allDDColVars);
+	}
 }
+
