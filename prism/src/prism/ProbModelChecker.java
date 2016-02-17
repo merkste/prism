@@ -526,8 +526,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDDVars daDDRowVars, daDDColVars;
 		int i;
 
-		JDD.Deref(statesOfInterest);
-
 		AcceptanceType[] allowedAcceptance = {
 				AcceptanceType.RABIN,
 				AcceptanceType.REACH,
@@ -541,7 +539,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
 		daDDRowVars = new JDDVars();
 		daDDColVars = new JDDVars();
-		modelProduct = mcLtl.constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars);
+		modelProduct = mcLtl.constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		mainLog.println();
 		modelProduct.printTransInfo(mainLog, prism.getExtraDDInfo());
 		// Output product, if required
@@ -902,7 +900,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		LTLModelChecker mcLtl;
 		StateValues rewardsProduct = null, rewards = null;
 		Expression ltl;
-		Vector<JDDNode> labelDDs;
+		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
 		DA<BitSet, ? extends AcceptanceOmega> da;
 		ProbModel modelProduct;
 		ProbModelChecker mcProduct;
@@ -971,7 +969,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		daDDRowVars = new JDDVars();
 		daDDColVars = new JDDVars();
 		l = System.currentTimeMillis();
-		modelProduct = mcLtl.constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars);
+		modelProduct = mcLtl.constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		l = System.currentTimeMillis() - l;
 		mainLog.println("Time for product construction: " + l / 1000.0 + " seconds.");
 		mainLog.println();
@@ -1017,6 +1015,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		mcProduct = createNewModelChecker(prism, modelProduct, null);
 		rewardsProduct = mcProduct.computeReachRewards(modelProduct.getTrans(), modelProduct.getTrans01(), stateRewardsProduct, transRewardsProduct, acc);
 
+		// TODO(JK): FIX via LTLProduct!
+		
 		// Convert reward vector to original model
 		// First, filter over DRA start states
 		startMask = mcLtl.buildStartMask(da, labelDDs, daDDRowVars);
