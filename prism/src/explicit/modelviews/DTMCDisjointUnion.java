@@ -30,8 +30,8 @@ public class DTMCDisjointUnion extends DTMCView
 	private DTMC model1;
 	private DTMC model2;
 	public final int offset;
-	private final Shift shiftStateRight;
-	private final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> shiftTransitionRight;
+	private final Shift shiftStateUp;
+	private final Mapping<Entry<Integer, Double>, Entry<Integer, Double>> shiftTransitionUp;
 
 
 
@@ -40,8 +40,8 @@ public class DTMCDisjointUnion extends DTMCView
 		this.model1 = model1;
 		this.model2 = model2;
 		offset = model1.getNumStates();
-		shiftStateRight = new Shift(offset);
-		shiftTransitionRight = new TransitionShift(offset);
+		shiftStateUp = new Shift(offset);
+		shiftTransitionUp = new TransitionShift(offset);
 	}
 
 	public DTMCDisjointUnion(final DTMCDisjointUnion union)
@@ -50,8 +50,8 @@ public class DTMCDisjointUnion extends DTMCView
 		this.model1 = union.model1;
 		this.model2 = union.model2;
 		this.offset = union.offset;
-		this.shiftStateRight = union.shiftStateRight;
-		this.shiftTransitionRight = union.shiftTransitionRight;
+		this.shiftStateUp = union.shiftStateUp;
+		this.shiftTransitionUp = union.shiftTransitionUp;
 
 	}
 
@@ -86,7 +86,7 @@ public class DTMCDisjointUnion extends DTMCView
 	{
 		final Iterable<Integer> initials1 = model1.getInitialStates();
 		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable<>(initials1, new MappingIterable<>(initials2, shiftStateRight));
+		return new ChainedIterable<>(initials1, new MappingIterable<>(initials2, shiftStateUp));
 	}
 
 	@Override
@@ -176,7 +176,7 @@ public class DTMCDisjointUnion extends DTMCView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator<>(model2.getSuccessorsIterator(state - offset), shiftStateRight);
+		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
 	}
 
 	@Override
@@ -205,7 +205,7 @@ public class DTMCDisjointUnion extends DTMCView
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
 		return (state < offset) ? model1.getTransitionsIterator(state)
-				: new MappingIterator<>(model2.getTransitionsIterator(state - offset), shiftTransitionRight);
+				: new MappingIterator<>(model2.getTransitionsIterator(state - offset), shiftTransitionUp);
 	}
 
 
