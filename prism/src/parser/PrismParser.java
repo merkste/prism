@@ -434,7 +434,11 @@ public class PrismParser implements PrismParserConstants {
       case GLOBAL:
         // Global variable
                 global = GlobalDecl();
-                                mf.addGlobal(global);
+                if (global.isView()) {
+                        mf.addGlobalView(global);
+                } else {
+                        mf.addGlobal(global);
+                }
         break;
       default:
         jj_la1[1] = jj_gen;
@@ -3734,16 +3738,6 @@ public class PrismParser implements PrismParserConstants {
     finally { jj_save(20, xla); }
   }
 
-  static private boolean jj_3R_165() {
-    if (jj_scan_token(FALSE)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_164() {
-    if (jj_scan_token(TRUE)) return true;
-    return false;
-  }
-
   static private boolean jj_3R_232() {
     Token xsp;
     xsp = jj_scanpos;
@@ -5472,6 +5466,16 @@ public class PrismParser implements PrismParserConstants {
 
   static private boolean jj_3R_171() {
     if (jj_scan_token(MAX)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_165() {
+    if (jj_scan_token(FALSE)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_164() {
+    if (jj_scan_token(TRUE)) return true;
     return false;
   }
 
