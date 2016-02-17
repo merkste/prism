@@ -31,8 +31,8 @@ public class MDPDisjointUnion extends MDPView
 	private MDP model1;
 	private MDP model2;
 	private final int offset;
-	private final Shift shiftStateRight;
-	private final TransitionShift shiftTransitionRight;
+	private final Shift shiftStateUp;
+	private final TransitionShift shiftTransitionUp;
 
 
 
@@ -41,8 +41,8 @@ public class MDPDisjointUnion extends MDPView
 		this.model1 = model1;
 		this.model2 = model2;
 		offset = model1.getNumStates();
-		shiftStateRight = new Shift(offset);
-		shiftTransitionRight = new TransitionShift(offset);
+		shiftStateUp = new Shift(offset);
+		shiftTransitionUp = new TransitionShift(offset);
 	}
 
 	public MDPDisjointUnion(final MDPDisjointUnion union)
@@ -51,8 +51,8 @@ public class MDPDisjointUnion extends MDPView
 		model1 = union.model1;
 		model2 = union.model2;
 		offset = union.offset;
-		shiftStateRight = union.shiftStateRight;
-		shiftTransitionRight = union.shiftTransitionRight;
+		shiftStateUp = union.shiftStateUp;
+		shiftTransitionUp = union.shiftTransitionUp;
 	}
 
 
@@ -86,7 +86,7 @@ public class MDPDisjointUnion extends MDPView
 	{
 		final Iterable<Integer> initials1 = model1.getInitialStates();
 		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable<>(initials1, new MappingIterable<>(initials2, shiftStateRight));
+		return new ChainedIterable<>(initials1, new MappingIterable<>(initials2, shiftStateUp));
 	}
 
 	@Override
@@ -176,7 +176,7 @@ public class MDPDisjointUnion extends MDPView
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)
 	{
-		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator<>(model2.getSuccessorsIterator(state - offset), shiftStateRight);
+		return (state < offset) ? model1.getSuccessorsIterator(state) : new MappingIterator<>(model2.getSuccessorsIterator(state - offset), shiftStateUp);
 	}
 
 	@Override
@@ -235,7 +235,7 @@ public class MDPDisjointUnion extends MDPView
 	public Iterator<Integer> getSuccessorsIterator(int state, int choice)
 	{
 		return (state < offset) ? model1.getSuccessorsIterator(state, choice)
-				: new MappingIterator<>(model2.getSuccessorsIterator(state - offset, choice), shiftStateRight);
+				: new MappingIterator<>(model2.getSuccessorsIterator(state - offset, choice), shiftStateUp);
 	}
 
 
@@ -246,7 +246,7 @@ public class MDPDisjointUnion extends MDPView
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
 		return (state < offset) ? model1.getTransitionsIterator(state, choice)
-				: new MappingIterator<>(model2.getTransitionsIterator(state - offset, choice), shiftTransitionRight);
+				: new MappingIterator<>(model2.getTransitionsIterator(state - offset, choice), shiftTransitionUp);
 	}
 
 
