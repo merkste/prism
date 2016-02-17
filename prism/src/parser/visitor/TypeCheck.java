@@ -636,6 +636,9 @@ public class TypeCheck extends ASTTraverse
 		case PRINT:
 		case PRINTALL:
 		case STATE:
+		case MATCH:
+		case WRITE:
+		case MATCHORWRITE:
 			// Anything goes
 			break;
 		default:
@@ -666,6 +669,11 @@ public class TypeCheck extends ASTTraverse
 		case ARGMAX:
 		case FORALL:
 		case EXISTS:
+			e.setType(TypeBool.getInstance());
+			break;
+		case MATCH:
+		case WRITE:
+		case MATCHORWRITE:
 			e.setType(TypeBool.getInstance());
 			break;
 		}

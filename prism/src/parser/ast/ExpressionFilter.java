@@ -68,7 +68,13 @@ public class ExpressionFilter extends Expression
 		/** Print all (including zero) values to the log */
 		PRINTALL ("printall"),
 		/** Value for the single filter state (if there is more than one, this is an error) */
-		STATE ("state");
+		STATE ("state"),
+		/** match("file"): Values for states match the values stored in the file */
+		MATCH("match"),
+		/** write("file"): Writes the values for the states match to the file, true if successful */
+		WRITE("write"),
+		/** matchorwrite("file"): If file exists, behaves like match("file"), otherwise like write("file") */
+		MATCHORWRITE("matchorwrite");
 		public final String keyword;
 		FilterOperator(final String keyword) {
 			this.keyword = keyword;
@@ -141,6 +147,13 @@ public class ExpressionFilter extends Expression
 			}
 			return;
 		}
+		case MATCH:
+		case MATCHORWRITE:
+		case WRITE:
+			if (opArguments.size() != 1) {
+				throw new PrismLangException("Filter operator " + opName + " requires exactly one argument, the filename", this);
+			}
+			return;
 		}
 		throw new IllegalArgumentException("Implementation error, filter " + opName + " not handled!");
 	}

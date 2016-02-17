@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import common.PathUtil;
 import parser.State;
 import parser.Values;
 import parser.ast.Expression;
@@ -58,6 +60,7 @@ import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
 import parser.ast.Property;
+import parser.type.Type;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
@@ -69,6 +72,7 @@ import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismFileLog;
 import prism.PrismLangException;
 import prism.PrismLog;
 import prism.PrismNotSupportedException;
@@ -1060,6 +1064,35 @@ public class StateModelChecker extends PrismComponent
 			}
 			mainLog.println("\n" + resultExpl + ": " + resObj);
 			break;
+		case MATCH:
+		case WRITE:
+		case MATCHORWRITE : {
+			String filename = expr.getOperatorArguments().get(0).getText();
+			File file = getRessourceFileLocation(filename);
+
+			boolean rv;
+			boolean match =
+				(op == ExpressionFilter.FilterOperator.MATCH) ||
+				(op ==ExpressionFilter.FilterOperator.MATCHORWRITE && file.exists() && file.isFile());
+			
+			if (match) {
+				mainLog.print("Matching values against file '" + file + "' ...");
+				mainLog.flush();
+				rv = filterMatch(model, vals, bsFilter, file);
+				mainLog.println(rv ? " OK" : " FAILED");
+				resultExpl = "Successful match?";
+			} else {
+				mainLog.print("Writing values to file '" + file + "' ...");
+				mainLog.flush();
+				rv = filterWrite(vals, bsFilter, file);
+				mainLog.println(rv ? " OK" : " FAILED");
+				resultExpl = "Successful write?";
+			}
+			// Store as object/vector
+			resObj = rv;
+			resVals = new StateValues(expr.getType(), resObj, model);
+			break;
+		}
 		default:
 			throw new PrismException("Unrecognised filter type \"" + expr.getOperatorName() + "\"");
 		}
@@ -1131,6 +1164,54 @@ public class StateModelChecker extends PrismComponent
 		}
 		// rename the labels
 		return (Expression) exprNew.accept(new ReplaceLabels(labelReplacements));
+	}
+	
+	private File getRessourceFileLocation(String filename)
+	{
+		Path resourceDirectory = PathUtil.getDirectoryForRelativePropertyResource(modulesFile, propertiesFile);
+
+		File file = new File(filename);
+		if (!file.isAbsolute()) {
+			if (resourceDirectory == null) {
+				mainLog.printWarning("Resolving path for file \""+filename+"\" relative to current working directory...");
+			}
+			file = PathUtil.resolvePath(resourceDirectory, file.toPath()).toFile();
+		}
+
+		return file;
+	}
+
+	protected boolean filterMatchOrWrite(Model model, StateValues sv, BitSet states, File file) throws PrismException
+	{
+		if (file.exists()) {
+			return filterMatch(model, sv, states, file);
+		} else {
+			return filterWrite(sv, states, file);
+		}
+	}
+	
+	protected boolean filterMatch(Model model, StateValues sv, BitSet states, File file) throws PrismException
+	{
+		StateValues other = filterRead(model, sv.type, file);
+		return sv.matchesOverBitSet(other, states);
+	}
+
+	protected boolean filterWrite(StateValues sv, BitSet states, File file)
+	{
+		try (PrismFileLog out = PrismFileLog.create(file.toString(), false)) {
+			sv.printFiltered(out, states, false, false, false, true);
+		} catch (PrismException e) {
+			mainLog.println("Error: Could not write values to file " + file);
+			return false;
+		}
+		return true;
+	}
+
+	protected StateValues filterRead(Model model, Type type, File file) throws PrismException
+	{
+		StateValues sv = new StateValues(type, model);
+		sv.readFromFile(file);
+		return sv;
 	}
 
 	/**
