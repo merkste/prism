@@ -15,7 +15,6 @@ import common.functions.Predicate;
 import common.functions.Relation;
 import common.functions.primitive.AbstractMappingFromInteger;
 import common.functions.primitive.MappingFromInteger;
-import common.iterable.ArrayIterator;
 import common.iterable.ChainedIterator;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableBitSet;
@@ -40,6 +39,12 @@ public class DTMCAlteredDistributions extends DTMCView
 
 
 
+	/**
+	 * If {@code mapping} returns {@code null} for a state, the original transitions are preserved.
+	 *
+	 * @param model a DTMC
+	 * @param mapping from states to (new) distributions or null
+	 */
 	public DTMCAlteredDistributions(final DTMC model, final MappingFromInteger<Iterator<Entry<Integer, Double>>> mapping)
 	{
 		this.model = model;
@@ -140,7 +145,11 @@ public class DTMCAlteredDistributions extends DTMCView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
-		return new FilteringIterator<>(mapping.get(state), nonZero);
+		final Iterator<Entry<Integer, Double>> transitions = mapping.get(state);
+		if (transitions == null) {
+			return model.getTransitionsIterator(state);
+		}
+		return new FilteringIterator<>(transitions, nonZero);
 	}
 
 
@@ -171,7 +180,7 @@ public class DTMCAlteredDistributions extends DTMCView
 
 	public static DTMCAlteredDistributions addSelfLoops(final DTMC model, final BitSet states)
 	{
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> addSelfLoops = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
+		final MappingFromInteger<Iterator<Entry<Integer, Double>>> addLoops = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> get(final int state)
@@ -179,10 +188,10 @@ public class DTMCAlteredDistributions extends DTMCView
 				if (states.get(state)) {
 					return DiracDistribution.iterator(state);
 				}
-				return model.getTransitionsIterator(state);
+				return null;
 			}
 		};
-		return new DTMCAlteredDistributions(model, addSelfLoops);
+		return new DTMCAlteredDistributions(model, addLoops);
 	}
 
 	public static DTMCRestricted identifyStates(final DTMC model, final Iterable<BitSet> equivalenceClasses)
@@ -201,7 +210,7 @@ public class DTMCAlteredDistributions extends DTMCView
 				}
 				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
 				if (equivalenceClass == null) {
-					return model.getTransitionsIterator(state);
+					return null;
 				}
 				final MappingIterator<Integer, Iterator<Entry<Integer, Double>>> transitionIterators =
 						new MappingIterator<>(new IterableBitSet(equivalenceClass), CallDTMC.getTransitionsIterator().on(model));
@@ -231,10 +240,10 @@ public class DTMCAlteredDistributions extends DTMCView
 			@Override
 			public Iterator<Entry<Integer, Double>> get(final int state)
 			{
-				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state);
 				if (reattached.allSuccessorsInSet(state, representatives)) {
-					return transitions;
+					return null;
 				}
+				final Iterator<Entry<Integer, Double>> transitions = reattached.getTransitionsIterator(state);
 				final Iterator<Entry<Integer, Double>> redirected = new MappingIterator<>(transitions, redirectTransition);
 				// use Distribution to dedupe successors
 				return new Distribution(redirected).iterator();
@@ -244,23 +253,6 @@ public class DTMCAlteredDistributions extends DTMCView
 
 		// 3. drop equivalence classes except for the representatives
 		return new DTMCRestricted(redirected, representatives, Restriction.STRICT);
-	}
-
-	public static DTMCAlteredDistributions makeAbsorbing(final DTMC model, final BitSet states)
-	{
-		final MappingFromInteger<Iterator<Entry<Integer, Double>>> loops = new AbstractMappingFromInteger<Iterator<Entry<Integer, Double>>>()
-		{
-			@Override
-			public Iterator<Entry<Integer, Double>> get(final int state)
-			{
-				if (states.get(state)) {
-					return new ArrayIterator<Entry<Integer, Double>>(new AbstractMap.SimpleImmutableEntry<>(state, 1.0));
-				} else {
-					return model.getTransitionsIterator(state);
-				}
-			}
-		};
-		return new DTMCAlteredDistributions(model, loops);
 	}
 
 	public static void main(final String[] args) throws PrismException
@@ -301,7 +293,7 @@ public class DTMCAlteredDistributions extends DTMCView
 					distribution.set(2, 1.0);
 					distribution.set(3, 0.0);
 				} else {
-					return original.getTransitionsIterator(state);
+					return null;
 				}
 				return distribution.iterator();
 			}
