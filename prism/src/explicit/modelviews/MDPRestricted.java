@@ -17,6 +17,7 @@ import common.iterable.FilteringIterable;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
+import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -53,7 +54,6 @@ public class MDPRestricted extends MDPView
 		this.states = restriction.getStateSet(model, include);
 
 		isStateIncluded = new BitSetPredicate(states);
-		//FIXME ALG: duplication, see ConditionalNextTransformer
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[states.cardinality()];
 		for (int state = 0, index = 0, numStates = model.getNumStates(); state < numStates; state++) {
@@ -353,6 +353,12 @@ public class MDPRestricted extends MDPView
 
 
 	//--- static methods ---
+
+	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states)
+	{
+		final MDPRestricted restricted = new MDPRestricted(model, states);
+		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
+	}
 
 	public static void main(final String[] args) throws PrismException
 	{

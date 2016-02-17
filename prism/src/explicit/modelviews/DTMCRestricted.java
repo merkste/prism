@@ -75,7 +75,6 @@ public class DTMCRestricted extends DTMCView
 		this.states = restriction.getStateSet(model, include);
 
 		isStateIncluded = new BitSetPredicate(states);
-		//FIXME ALG: duplication, see ConditionalNextTransformer
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[states.cardinality()];
 		for (int state = 0, index = 0, numStates = model.getNumStates(); state < numStates; state++) {
