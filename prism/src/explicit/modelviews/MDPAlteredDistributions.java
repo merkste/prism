@@ -317,7 +317,7 @@ public class MDPAlteredDistributions extends MDPView
 		final MDPAlteredDistributions redirected = new MDPAlteredDistributions(reattached, redirectChoice);
 
 		// 4. drop equivalence classes except for the representatives
-		return new MDPRestricted(redirected, representatives, Restriction.STRICT);
+		return new MDPRestricted(redirected, representatives, Restriction.TRANSITIVE_CLOSURE_SAFE);
 	}
 
 	public static void main(final String[] args) throws PrismException
