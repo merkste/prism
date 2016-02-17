@@ -15,9 +15,9 @@ import common.functions.Mapping;
 import common.functions.PairMapping;
 import common.functions.primitive.AbstractPairPredicateIntegerInteger;
 import common.functions.primitive.PairPredicateIntegerInteger;
-import common.iterable.ArrayIterator;
 import common.iterable.Interval;
 import common.iterable.MappingIterator;
+import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
@@ -61,8 +61,7 @@ public class ChoicesToStates
 				if (state < offset) {
 					// redirect to choice replica
 					final int target = state + (offset * (choice + 1));
-					final Entry<Integer, Double> transition = new AbstractMap.SimpleImmutableEntry<>(target, 1.0);
-					return new ArrayIterator<>(transition);
+					return DiracDistribution.iterator(target);
 				}
 				// redirect to original model
 				final Iterator<Entry<Integer, Double>> transitions = union.getTransitionsIterator(state, choice);
