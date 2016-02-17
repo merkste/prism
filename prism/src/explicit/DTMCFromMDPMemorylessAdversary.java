@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import common.iterable.MappingIterator;
 import parser.State;
 import parser.Values;
 import prism.ModelType;
@@ -191,8 +192,7 @@ public class DTMCFromMDPMemorylessAdversary extends DTMCExplicit
 		if (adv[s] >= 0) {
 			return mdp.getTransitionsIterator(s, adv[s]);
 		} else {
-			// Empty iterator
-			return Collections.<Entry<Integer,Double>>emptyIterator(); 
+			return Collections.emptyIterator(); 
 		}
 	}
 
@@ -200,10 +200,12 @@ public class DTMCFromMDPMemorylessAdversary extends DTMCExplicit
 	public Iterator<Entry<Integer, Pair<Double, Object>>> getTransitionsAndActionsIterator(int s)
 	{
 		if (adv[s] >= 0) {
-			return new DTMCExplicit.AddDefaultActionToTransitionsIterator(mdp.getTransitionsIterator(s, adv[s]), mdp.getAction(s, adv[s]));
+			final int choice = adv[s];
+			final Iterator<Entry<Integer, Double>> transitions = mdp.getTransitionsIterator(s, choice);
+			final Object action = mdp.getAction(s, choice);
+			return new MappingIterator<>(transitions, new DTMCExplicit.AttachAction(action));
 		} else {
-			// Empty iterator
-			return Collections.<Entry<Integer,Pair<Double, Object>>>emptyIterator(); 
+			return Collections.emptyIterator(); 
 		}
 	}
 
