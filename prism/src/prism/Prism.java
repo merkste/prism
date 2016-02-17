@@ -2422,15 +2422,15 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		// Build model, if necessary
 		buildModelIfRequired();
 
-		// print message
-		mainLog.print("\nExporting transition matrix ");
-		mainLog.print(getStringForExportType(exportType) + " ");
-		mainLog.println(getDestinationStringForFile(file));
-
-		// do export
 		if (!getExplicit()) {
-			currentModel.exportToFile(exportType, ordered, file);
+			exportTransToFile(currentModel, ordered, exportType, file);
 		} else {
+			// print message
+			mainLog.print("\nExporting transition matrix ");
+			mainLog.print(getStringForExportType(exportType) + " ");
+			mainLog.println(getDestinationStringForFile(file));
+
+			// do export
 			PrismLog tmpLog = getPrismLogForFile(file);
 			switch (exportType) {
 			case Prism.EXPORT_PLAIN:
@@ -2449,19 +2449,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				throw new PrismNotSupportedException("Export not yet supported");
 			}
 			tmpLog.close();
-		}
-
-		// for export to dot with states, need to do a bit more
-		if (!getExplicit() && exportType == EXPORT_DOT_STATES) {
-			// open (appending to) existing new file log or use main log
-			PrismLog tmpLog = getPrismLogForFile(file, true);
-			// insert states info into dot file
-			currentModel.getReachableStates().printDot(tmpLog);
-			// print footer
-			tmpLog.println("}");
-			// tidy up
-			if (file != null)
-				tmpLog.close();
 		}
 	}
 
@@ -3972,8 +3959,45 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	public void exportTransToFile(Model model, boolean ordered, int exportType, File file) throws FileNotFoundException, PrismException
 	{
-		loadBuiltModel(model);
-		exportTransToFile(ordered, exportType, file);
+		// can only do ordered version of export for MDPs
+		if (model.getModelType() == ModelType.MDP) {
+			if (!ordered)
+				mainLog.printWarning("Cannot export unordered transition matrix for MDPs; using ordered.");
+			ordered = true;
+		}
+		// can only do ordered version of export for MRMC
+		if (exportType == EXPORT_MRMC) {
+			if (!ordered)
+				mainLog.printWarning("Cannot export unordered transition matrix in MRMC format; using ordered.");
+			ordered = true;
+		}
+		// can only do ordered version of export for rows format
+		if (exportType == EXPORT_ROWS) {
+			if (!ordered)
+				mainLog.printWarning("Cannot export unordered transition matrix in rows format; using ordered.");
+			ordered = true;
+		}
+
+		// print message
+		mainLog.print("\nExporting transition matrix ");
+		mainLog.print(getStringForExportType(exportType) + " ");
+		mainLog.println(getDestinationStringForFile(file));
+
+		// do export
+		model.exportToFile(exportType, ordered, file);
+
+		// for export to dot with states, need to do a bit more
+		if (exportType == EXPORT_DOT_STATES) {
+			// open (appending to) existing new file log or use main log
+			PrismLog tmpLog = getPrismLogForFile(file, true);
+			// insert states info into dot file
+			model.getReachableStates().printDot(tmpLog);
+			// print footer
+			tmpLog.println("}");
+			// tidy up
+			if (file != null)
+				tmpLog.close();
+		}
 	}
 
 	/**
