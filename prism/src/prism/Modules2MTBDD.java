@@ -437,7 +437,7 @@ public class Modules2MTBDD
 
 			// create arrays/etc. first
 
-			modelVariables.preallocateExtraActionVariables(20);
+			modelVariables.preallocateExtraActionVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_ACTION_VARS));
 			JDDVars vActionVars = modelVariables.getExtraActionVariables().copy();
 
 			// nondeterministic variables
@@ -565,10 +565,8 @@ public class Modules2MTBDD
 		// ordering: (a ... a) (l ... l) (s r c ... r c) (s r c ... r c) ...
 
 			// create arrays/etc. first
-
-			modelVariables.preallocateExtraActionVariables(20);	
+			modelVariables.preallocateExtraActionVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_ACTION_VARS));
 			JDDVars vActionAndChoiceVars = modelVariables.getExtraActionVariables().copy();
-
 			// nondeterministic variables
 			if (modelType == ModelType.MDP) {
 				// synchronizing action variables
