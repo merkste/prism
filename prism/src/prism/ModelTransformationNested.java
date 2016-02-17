@@ -47,7 +47,7 @@ public class ModelTransformationNested<OriginalModel extends Model, Intermediate
 	}
 
 	@Override
-	public TransformedModel getTransformedModel() throws PrismException
+	public TransformedModel getTransformedModel()
 	{
 		return outerTransformation.getTransformedModel();
 	}
@@ -74,7 +74,7 @@ public class ModelTransformationNested<OriginalModel extends Model, Intermediate
 	}
 
 	@Override
-	public JDDNode getTransformedStatesOfInterest() throws PrismException
+	public JDDNode getTransformedStatesOfInterest()
 	{
 		return outerTransformation.getTransformedStatesOfInterest();
 	}

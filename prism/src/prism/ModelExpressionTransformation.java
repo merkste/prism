@@ -28,7 +28,6 @@
 package prism;
 
 import parser.ast.Expression;
-import prism.PrismException;
 
 /**
  * Interface for a model and expression transformation.<br>
@@ -47,9 +46,9 @@ public interface ModelExpressionTransformation<OriginalModel extends Model, Tran
        extends ModelTransformation<OriginalModel, TransformedModel> {
 
 	/** Get the transformed expression. */
-	public Expression getTransformedExpression() throws PrismException;
+	public Expression getTransformedExpression();
 
 	/** Get the original expression. */
-	public Expression getOriginalExpression() throws PrismException;
+	public Expression getOriginalExpression();
 
 }

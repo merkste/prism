@@ -37,18 +37,18 @@ public class ModelExpressionTransformationNested<OriginalModel extends Model, In
 	protected ModelExpressionTransformation<IntermediateModel,TransformedModel> outerTransformation;
 
 	public ModelExpressionTransformationNested(ModelExpressionTransformation<OriginalModel, IntermediateModel> innerTransformation,
-			ModelExpressionTransformation<IntermediateModel, TransformedModel> outerTransformation) throws PrismException
+			ModelExpressionTransformation<IntermediateModel, TransformedModel> outerTransformation)
 	{
 		this.innerTransformation = innerTransformation;
 		this.outerTransformation = outerTransformation;
 
 		if (innerTransformation.getTransformedModel() != outerTransformation.getOriginalModel()) {
-			throw new PrismException("Trying to nest unrelated ModelExpressionTransformations.");
+			throw new IllegalArgumentException("Trying to nest unrelated ModelExpressionTransformations.");
 		}
 	}
 
 	@Override
-	public TransformedModel getTransformedModel() throws PrismException
+	public TransformedModel getTransformedModel()
 	{
 		return outerTransformation.getTransformedModel();
 	}
@@ -62,7 +62,7 @@ public class ModelExpressionTransformationNested<OriginalModel extends Model, In
 	}
 
 	@Override
-	public Expression getTransformedExpression() throws PrismException
+	public Expression getTransformedExpression()
 	{
 		return outerTransformation.getTransformedExpression();
 	}
@@ -73,13 +73,13 @@ public class ModelExpressionTransformationNested<OriginalModel extends Model, In
 	}
 
 	@Override
-	public Expression getOriginalExpression() throws PrismException
+	public Expression getOriginalExpression()
 	{
 		return innerTransformation.getOriginalExpression();
 	}
 
 	@Override
-	public JDDNode getTransformedStatesOfInterest() throws PrismException
+	public JDDNode getTransformedStatesOfInterest()
 	{
 		return outerTransformation.getTransformedStatesOfInterest();
 	}

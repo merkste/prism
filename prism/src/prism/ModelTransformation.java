@@ -38,7 +38,7 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	public OriginalModel getOriginalModel();
 
 	/** Get the transformed model. */
-	public TransformedModel getTransformedModel() throws PrismException;
+	public TransformedModel getTransformedModel();
 
 	/** Clear the transformed model and all other intermediate BDD information.
 	 *  Should be called when the transformation is not needed anymore. Does not clear the
@@ -58,5 +58,5 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	public StateValues projectToOriginalModel(StateValues svTransformedModel) throws PrismException;
 
 	/** Get the transformed set of states of interest (referenced JDDNode) */
-	public JDDNode getTransformedStatesOfInterest() throws PrismException;
+	public JDDNode getTransformedStatesOfInterest();
 }
