@@ -143,36 +143,36 @@ public class NondetModelChecker extends NonProbModelChecker
 	// Model checking functions
 
 	@Override
-	public StateValues checkExpression(Expression expr) throws PrismException
+	public StateValues checkExpression(Expression expr, JDDNode statesOfInterest) throws PrismException
 	{
 		StateValues res;
 
 		// <<>> or [[]] operator
 		if (expr instanceof ExpressionStrategy) {
-			res = checkExpressionStrategy((ExpressionStrategy) expr);
+			res = checkExpressionStrategy((ExpressionStrategy) expr, statesOfInterest);
 		}
 		// P operator
 		else if (expr instanceof ExpressionProb) {
-			res = checkExpressionProb((ExpressionProb) expr);
+			res = checkExpressionProb((ExpressionProb) expr, statesOfInterest);
 		}
 		// R operator
 		else if (expr instanceof ExpressionReward) {
-			res = checkExpressionReward((ExpressionReward) expr);
+			res = checkExpressionReward((ExpressionReward) expr, statesOfInterest);
 		}
 		// Multi-objective
 		else if (expr instanceof ExpressionFunc) {
 			// Detect "multi" function
 			if (((ExpressionFunc) expr).getName().equals("multi")) {
-				res = checkExpressionMultiObjective((ExpressionFunc) expr);
+				res = checkExpressionMultiObjective((ExpressionFunc) expr, statesOfInterest);
 			}
 			// For any other function, check as normal
 			else {
-				res = super.checkExpression(expr);
+				res = super.checkExpression(expr, statesOfInterest);
 			}
 		}
 		// Otherwise, use the superclass
 		else {
-			res = super.checkExpression(expr);
+			res = super.checkExpression(expr, statesOfInterest);
 		}
 
 		// Filter out non-reachable states from solution
@@ -186,7 +186,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Model check a <<>> or [[]] operator expression and return the values for all states.
 	 */
-	protected StateValues checkExpressionStrategy(ExpressionStrategy expr) throws PrismException
+	protected StateValues checkExpressionStrategy(ExpressionStrategy expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Will we be quantifying universally or existentially over strategies/adversaries?
 		boolean forAll = !expr.isThereExists();
@@ -207,26 +207,26 @@ public class NondetModelChecker extends NonProbModelChecker
 		// Pass onto relevant method:
 		// Single P operator
 		if (exprs.size() == 1 && exprs.get(0) instanceof ExpressionProb) {
-			return checkExpressionProb((ExpressionProb) exprs.get(0), forAll);
+			return checkExpressionProb((ExpressionProb) exprs.get(0), forAll, statesOfInterest);
 		}
 		// Single R operator
 		else if (exprs.size() == 1 && exprs.get(0) instanceof ExpressionReward) {
-			return checkExpressionReward((ExpressionReward) exprs.get(0), forAll);
+			return checkExpressionReward((ExpressionReward) exprs.get(0), forAll, statesOfInterest);
 		}
 		// Anything else is treated as multi-objective 
 		else {
-			return checkExpressionMultiObjective(exprs, forAll);
+			return checkExpressionMultiObjective(exprs, forAll, statesOfInterest);
 		}
 	}
 	
 	/**
 	 * Model check a P operator expression and return the values for all states.
 	 */
-	protected StateValues checkExpressionProb(ExpressionProb expr) throws PrismException
+	protected StateValues checkExpressionProb(ExpressionProb expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Use the default semantics for a standalone P operator
 		// (i.e. quantification over all strategies)
-		return checkExpressionProb(expr, true);
+		return checkExpressionProb(expr, true, statesOfInterest);
 	}
 	
 	/**
@@ -234,7 +234,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * @param expr The P operator expression
 	 * @param forAll Are we checking "for all strategies" (true) or "there exists a strategy" (false)? [irrelevant for numerical (=?) queries] 
 	 */
-	protected StateValues checkExpressionProb(ExpressionProb expr, boolean forAll) throws PrismException
+	protected StateValues checkExpressionProb(ExpressionProb expr, boolean forAll, JDDNode statesOfInterest) throws PrismException
 	{
 		// Get info from P operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
@@ -244,15 +244,17 @@ public class NondetModelChecker extends NonProbModelChecker
 		if (opInfo.isTriviallyTrue()) {
 			mainLog.printWarning("Checking for probability " + opInfo.relOpBoundString() + " - formula trivially satisfies all states");
 			JDD.Ref(reach);
+			JDD.Deref(statesOfInterest);
 			return new StateValuesMTBDD(reach, model);
 		} else if (opInfo.isTriviallyFalse()) {
 			mainLog.printWarning("Checking for probability " + opInfo.relOpBoundString() + " - formula trivially satisfies no states");
+			JDD.Deref(statesOfInterest);
 			return new StateValuesMTBDD(JDD.Constant(0), model);
 		}
 
 		// Compute probabilities
 		boolean qual = opInfo.isQualitative() && precomp && prob0 && prob1;
-		StateValues probs = checkProbPathFormula(expr.getExpression(), qual, minMax.isMin());
+		StateValues probs = checkProbPathFormula(expr.getExpression(), qual, minMax.isMin(), statesOfInterest);
 
 		// Print out probabilities
 		if (verbose) {
@@ -279,11 +281,11 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Model check n R operator expression and return the values for all states.
 	 */
-	protected StateValues checkExpressionReward(ExpressionReward expr) throws PrismException
+	protected StateValues checkExpressionReward(ExpressionReward expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Use the default semantics for a standalone R operator
 		// (i.e. quantification over all strategies)
-		return checkExpressionReward(expr, true);
+	    return checkExpressionReward(expr, true, statesOfInterest);
 	}
 	
 	/**
@@ -291,7 +293,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * @param expr The R operator expression
 	 * @param forAll Are we checking "for all strategies" (true) or "there exists a strategy" (false)? [irrelevant for numerical (=?) queries] 
 	 */
-	protected StateValues checkExpressionReward(ExpressionReward expr, boolean forAll) throws PrismException
+	protected StateValues checkExpressionReward(ExpressionReward expr, boolean forAll, JDDNode statesOfInterest) throws PrismException
 	{
 		// Get info from R operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
@@ -310,17 +312,17 @@ public class NondetModelChecker extends NonProbModelChecker
 			switch (exprTemp.getOperator()) {
 			case ExpressionTemporal.R_C:
 				if (exprTemp.hasBounds()) {
-					rewards = checkRewardCumul(exprTemp, stateRewards, transRewards, minMax.isMin());
+					rewards = checkRewardCumul(exprTemp, stateRewards, transRewards, minMax.isMin(), statesOfInterest);
 				} else {
-					rewards = checkRewardTotal(exprTemp, stateRewards, transRewards, minMax.isMin());
+					rewards = checkRewardTotal(exprTemp, stateRewards, transRewards, minMax.isMin(), statesOfInterest);
 				}
 				break;
 			case ExpressionTemporal.R_I:
-				rewards = checkRewardInst(exprTemp, stateRewards, transRewards, minMax.isMin());
+				rewards = checkRewardInst(exprTemp, stateRewards, transRewards, minMax.isMin(), statesOfInterest);
 				break;
 			}
 		} else if (expr2.getType() instanceof TypePathBool || expr2.getType() instanceof TypeBool) {
-			rewards = checkRewardPathFormula(expr2, stateRewards, transRewards, minMax.isMin());
+			rewards = checkRewardPathFormula(expr2, stateRewards, transRewards, minMax.isMin(), statesOfInterest);
 		}
 
 		if (rewards == null)
@@ -353,15 +355,18 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * Return the result as a StateValues object (usually this gives values for all states,
 	 * but for a multi-objective query, we just give a single value, usually for the initial state).
 	 * @param exprs The list of Expressions specifying the objectives
-	 * @param forAll Are we checking "for all strategies" (true) or "there exists a strategy" (false)? [irrelevant for numerical (=?) queries] 
+	 * @param forAll Are we checking "for all strategies" (true) or "there exists a strategy" (false)? [irrelevant for numerical (=?) queries]
+	 * @param statesOfInterest the states of interest
 	 */
-	protected StateValues checkExpressionMultiObjective(List<Expression> exprs, boolean forAll) throws PrismException
+	protected StateValues checkExpressionMultiObjective(List<Expression> exprs, boolean forAll, JDDNode statesOfInterest) throws PrismException
 	{
 		// For now, just support a single expression (which may encode a Boolean combination of objectives)
 		if (exprs.size() > 1) {
 			throw new PrismException("Cannot currently check strategy operators with lists of expressions");
 		}
 		Expression exprSub = exprs.get(0);
+
+		JDD.Deref(statesOfInterest);
 
 		// Boolean
 		if (exprSub.getType() instanceof TypeBool) {
@@ -409,12 +414,12 @@ public class NondetModelChecker extends NonProbModelChecker
 			}
 			// Handle negation
 			if (forAll) {
-				return checkExpression(Expression.Not(exprMulti));
+				return checkExpression(Expression.Not(exprMulti), model.getReach().copy());
 			} else {
-				return checkExpressionMultiObjective(exprMulti);
+				return checkExpressionMultiObjective(exprMulti, model.getReach().copy());
 			}
 		} else if (exprSub.getType() instanceof TypeDouble) {
-			return checkExpressionMultiObjective(exprs);
+			return checkExpressionMultiObjective(exprs, model.getReach().copy());
 		} else {
 			throw new PrismException("Multi-objective model checking not supported for: " + exprSub);
 		}
@@ -424,7 +429,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * Model check a multi-objective expression and return the result.
 	 * For multi-objective queries, we only find the value for one state.
 	 */
-	protected StateValues checkExpressionMultiObjective(ExpressionFunc expr) throws PrismException
+	protected StateValues checkExpressionMultiObjective(ExpressionFunc expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Extract objective list from 'multi' function
 		List<Expression> exprs = new ArrayList<Expression>();
@@ -432,14 +437,14 @@ public class NondetModelChecker extends NonProbModelChecker
 		for (int i = 0; i < n; i++) {
 			exprs.add(expr.getOperand(i));
 		}
-		return checkExpressionMultiObjective(exprs);
+		return checkExpressionMultiObjective(exprs, statesOfInterest);
 	}
 	
 	/**
 	 * Model check a multi-objective expression and return the result.
 	 * For multi-objective queries, we only find the value for one state.
 	 */
-	protected StateValues checkExpressionMultiObjective(List<Expression> exprs) throws PrismException
+	protected StateValues checkExpressionMultiObjective(List<Expression> exprs, JDDNode statesOfInterest) throws PrismException
 	{
 		// Objective/target info
 		List<JDDNode> multitargetDDs = null;
@@ -458,6 +463,10 @@ public class NondetModelChecker extends NonProbModelChecker
 		int conflictformulae = 0;
 		boolean hasMaxReward = false;
 		//boolean hasLTLconstraint = false;
+
+		JDD.Deref(statesOfInterest);
+		
+		// TODO (JK): Switch below to statesOfInterest
 
 		// Make sure we are only expected to compute a value for a single state
 		// Assuming yes, determine index of state of interest and build BDD
@@ -604,7 +613,7 @@ public class NondetModelChecker extends NonProbModelChecker
 				// (not used currently)
 				// Fixme: maybe not efficient
 				if (pathFormulas.get(i) != null) {
-					JDDNode dd = checkExpressionDD(pathFormulas.get(i));
+					JDDNode dd = checkExpressionDD(pathFormulas.get(i), model.getReach().copy());
 					JDD.Ref(modelProduct.getReach());
 					dd = JDD.And(dd, modelProduct.getReach());
 					targetDDs.add(dd);
@@ -845,7 +854,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute probabilities for the contents of a P operator.
 	 */
-	protected StateValues checkProbPathFormula(Expression expr, boolean qual, boolean min) throws PrismException
+	protected StateValues checkProbPathFormula(Expression expr, boolean qual, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		// Test whether this is a simple path formula (i.e. PCTL)
 		// and whether we want to use the corresponding algorithms
@@ -860,16 +869,16 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 
 		if (useSimplePathAlgo) {
-			return checkProbPathFormulaSimple(expr, qual, min);
+			return checkProbPathFormulaSimple(expr, qual, min, statesOfInterest);
 		} else {
-			return checkProbPathFormulaLTL(expr, qual, min);
+			return checkProbPathFormulaLTL(expr, qual, min, statesOfInterest);
 		}
 	}
 
 	/**
 	 * Compute probabilities for a simple, non-LTL path operator.
 	 */
-	protected StateValues checkProbPathFormulaSimple(Expression expr, boolean qual, boolean min) throws PrismException
+	protected StateValues checkProbPathFormulaSimple(Expression expr, boolean qual, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		boolean negated = false;
 		StateValues probs = null;
@@ -889,14 +898,14 @@ public class NondetModelChecker extends NonProbModelChecker
 			ExpressionTemporal exprTemp = (ExpressionTemporal) expr;
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
-				probs = checkProbNext(exprTemp, min);
+				probs = checkProbNext(exprTemp, min, statesOfInterest);
 			}
 			// Until
 			else if (exprTemp.getOperator() == ExpressionTemporal.P_U) {
 				if (exprTemp.hasBounds()) {
-					probs = checkProbBoundedUntil(exprTemp, min);
+					probs = checkProbBoundedUntil(exprTemp, min, statesOfInterest);
 				} else {
-					probs = checkProbUntil(exprTemp, qual, min);
+					probs = checkProbUntil(exprTemp, qual, min, statesOfInterest);
 				}
 			}
 		}
@@ -915,13 +924,15 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute probabilities for a next operator.
 	 */
-	protected StateValues checkProbNext(ExpressionTemporal expr, boolean min) throws PrismException
+	protected StateValues checkProbNext(ExpressionTemporal expr, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b;
 		StateValues probs = null;
 
-		// model check operand first
-		b = checkExpressionDD(expr.getOperand2());
+		JDD.Deref(statesOfInterest);
+
+		// model check operand first, statesOfInterest = all
+		b = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 
 		// print out some info about num states
 		// mainLog.print("\nb = " + JDD.GetNumMintermsString(b,
@@ -939,7 +950,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute probabilities for a bounded until operator.
 	 */
-	protected StateValues checkProbBoundedUntil(ExpressionTemporal expr, boolean min) throws PrismException
+	protected StateValues checkProbBoundedUntil(ExpressionTemporal expr, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b1, b2;
 		StateValues probs = null;
@@ -947,13 +958,15 @@ public class NondetModelChecker extends NonProbModelChecker
 		IntegerBound bounds;
 		int i;
 
+		JDD.Deref(statesOfInterest);
+
 		// get and check bounds information
 		bounds = IntegerBound.fromExpressionTemporal(expr, constantValues, true);
 
-		// model check operands first
-		b1 = checkExpressionDD(expr.getOperand1());
+		// model check operands first, statesOfInterest = all
+		b1 = checkExpressionDD(expr.getOperand1(), model.getReach().copy());
 		try {
-			b2 = checkExpressionDD(expr.getOperand2());
+			b2 = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 		} catch (PrismException e) {
 			JDD.Deref(b1);
 			throw e;
@@ -1020,15 +1033,17 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * Compute probabilities for an (unbounded) until operator.
 	 * Note: This method is split into two steps so that the LTL model checker can use the second part directly.
 	 */
-	protected StateValues checkProbUntil(ExpressionTemporal expr, boolean qual, boolean min) throws PrismException
+	protected StateValues checkProbUntil(ExpressionTemporal expr, boolean qual, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b1, b2;
 		StateValues probs = null;
 
+		JDD.Deref(statesOfInterest);
+
 		// model check operands first
-		b1 = checkExpressionDD(expr.getOperand1());
+		b1 = checkExpressionDD(expr.getOperand1(), model.getReach().copy());
 		try {
-			b2 = checkExpressionDD(expr.getOperand2());
+			b2 = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 		} catch (PrismException e) {
 			JDD.Deref(b1);
 			throw e;
@@ -1139,7 +1154,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute probabilities for an LTL path formula
 	 */
-	protected StateValues checkProbPathFormulaLTL(Expression expr, boolean qual, boolean min) throws PrismException
+	protected StateValues checkProbPathFormulaLTL(Expression expr, boolean qual, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		LTLModelChecker mcLtl;
 		StateValues probsProduct = null, probs = null;
@@ -1151,6 +1166,8 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDDVars daDDRowVars, daDDColVars;
 		int i;
 		long l;
+
+		JDD.Deref(statesOfInterest);
 
 		// For min probabilities, need to negate the formula
 		// (But check fairness setting since this may affect min/max)
@@ -1249,10 +1266,12 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute rewards for a cumulative reward operator.
 	 */
-	protected StateValues checkRewardCumul(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardCumul(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		int time; // time
 		StateValues rewards = null;
+
+		JDD.Deref(statesOfInterest);
 
 		// check that there is an upper time bound
 		if (expr.getUpperBound() == null) {
@@ -1283,8 +1302,9 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute rewards for a total reward operator.
 	 */
-	protected StateValues checkRewardTotal(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardTotal(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
+		JDD.Deref(statesOfInterest);
 		StateValues rewards = computeTotalRewards(trans, trans01, stateRewards, transRewards, min);
 		return rewards;
 	}
@@ -1292,10 +1312,12 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute rewards for an instantaneous reward operator.
 	 */
-	protected StateValues checkRewardInst(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardInst(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		int time; // time bound
 		StateValues rewards = null;
+
+		JDD.Deref(statesOfInterest);
 
 		// get info from bounded until
 		time = expr.getUpperBound().evaluateInt(constantValues);
@@ -1312,31 +1334,34 @@ public class NondetModelChecker extends NonProbModelChecker
 	/**
 	 * Compute rewards for a reachability reward operator.
 	 */
-	protected StateValues checkRewardPathFormula(Expression expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardPathFormula(Expression expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		if (Expression.isReach(expr)) {
-			return checkRewardReach((ExpressionTemporal) expr, stateRewards, transRewards, min);
+			return checkRewardReach((ExpressionTemporal) expr, stateRewards, transRewards, min, statesOfInterest);
 		}
 		else if (Expression.isCoSafeLTLSyntactic(expr, true)) {
-			return checkRewardCoSafeLTL(expr, stateRewards, transRewards, min);
+			return checkRewardCoSafeLTL(expr, stateRewards, transRewards, min, statesOfInterest);
 		}
+		JDD.Deref(statesOfInterest);
 		throw new PrismException("R operator contains a path formula that is not syntactically co-safe: " + expr);
 	}
 	
 	// reach reward
 
-	protected StateValues checkRewardReach(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardReach(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b;
 		StateValues rewards = null;
+
+		JDD.Deref(statesOfInterest);
 
 		// No time bounds allowed
 		if (expr.hasBounds()) {
 			throw new PrismNotSupportedException("R operator cannot contain a bounded F operator: " + expr);
 		}
 		
-		// model check operand first
-		b = checkExpressionDD(expr.getOperand2());
+		// model check operand first, statesOfInterest = all
+		b = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 
 		// print out some info about num states
 		// mainLog.print("\nb = " + JDD.GetNumMintermsString(b,
@@ -1358,7 +1383,7 @@ public class NondetModelChecker extends NonProbModelChecker
 
 	// co-safe LTL reward
 
-	protected StateValues checkRewardCoSafeLTL(Expression expr, JDDNode stateRewards, JDDNode transRewards, boolean min) throws PrismException
+	protected StateValues checkRewardCoSafeLTL(Expression expr, JDDNode stateRewards, JDDNode transRewards, boolean min, JDDNode statesOfInterest) throws PrismException
 	{
 		LTLModelChecker mcLtl;
 		StateValues rewardsProduct = null, rewards = null;
@@ -1371,6 +1396,8 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDDVars daDDRowVars, daDDColVars;
 		int i;
 		long l;
+
+		JDD.Deref(statesOfInterest);
 
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {

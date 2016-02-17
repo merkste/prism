@@ -124,26 +124,26 @@ public class ProbModelChecker extends NonProbModelChecker
 	// -----------------------------------------------------------------------------------
 
 	// Check expression (recursive)
-
-	public StateValues checkExpression(Expression expr) throws PrismException
+	@Override
+	public StateValues checkExpression(Expression expr, JDDNode statesOfInterest) throws PrismException
 	{
 		StateValues res;
 
 		// P operator
 		if (expr instanceof ExpressionProb) {
-			res = checkExpressionProb((ExpressionProb) expr);
+			res = checkExpressionProb((ExpressionProb) expr, statesOfInterest);
 		}
 		// R operator
 		else if (expr instanceof ExpressionReward) {
-			res = checkExpressionReward((ExpressionReward) expr);
+			res = checkExpressionReward((ExpressionReward) expr, statesOfInterest);
 		}
 		// S operator
 		else if (expr instanceof ExpressionSS) {
-			res = checkExpressionSteadyState((ExpressionSS) expr);
+			res = checkExpressionSteadyState((ExpressionSS) expr, statesOfInterest);
 		}
 		// Otherwise, use the superclass
 		else {
-			res = super.checkExpression(expr);
+			res = super.checkExpression(expr, statesOfInterest);
 		}
 
 		// Filter out non-reachable states from solution
@@ -160,7 +160,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// P operator
 
-	protected StateValues checkExpressionProb(ExpressionProb expr) throws PrismException
+	protected StateValues checkExpressionProb(ExpressionProb expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Get info from P operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
@@ -169,9 +169,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		if (opInfo.isTriviallyTrue()) {
 			mainLog.printWarning("Checking for probability " + opInfo.relOpBoundString() + " - formula trivially satisfies all states");
 			JDD.Ref(reach);
+			JDD.Deref(statesOfInterest);
 			return new StateValuesMTBDD(reach, model);
 		} else if (opInfo.isTriviallyFalse()) {
 			mainLog.printWarning("Checking for probability " + opInfo.relOpBoundString() + " - formula trivially satisfies no states");
+			JDD.Deref(statesOfInterest);
 			return new StateValuesMTBDD(JDD.Constant(0), model);
 		}
 
@@ -182,7 +184,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 		// Compute probabilities
 		boolean qual = opInfo.isQualitative() && precomp && prob0 && prob1;
-		StateValues probs = checkProbPathFormula(expr.getExpression(), qual);
+		StateValues probs = checkProbPathFormula(expr.getExpression(), qual, statesOfInterest);
 
 		// Print out probabilities
 		if (prism.getVerbose()) {
@@ -208,7 +210,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// R operator
 
-	protected StateValues checkExpressionReward(ExpressionReward expr) throws PrismException
+	protected StateValues checkExpressionReward(ExpressionReward expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// Get info from R operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
@@ -231,20 +233,20 @@ public class ProbModelChecker extends NonProbModelChecker
 			switch (exprTemp.getOperator()) {
 			case ExpressionTemporal.R_C:
 				if (exprTemp.hasBounds()) {
-					rewards = checkRewardCumul(exprTemp, stateRewards, transRewards);
+					rewards = checkRewardCumul(exprTemp, stateRewards, transRewards, statesOfInterest);
 				} else {
-					rewards = checkRewardTotal(exprTemp, stateRewards, transRewards);
+					rewards = checkRewardTotal(exprTemp, stateRewards, transRewards, statesOfInterest);
 				}
 				break;
 			case ExpressionTemporal.R_I:
-				rewards = checkRewardInst(exprTemp, stateRewards, transRewards);
+				rewards = checkRewardInst(exprTemp, stateRewards, transRewards, statesOfInterest);
 				break;
 			case ExpressionTemporal.R_S:
-				rewards = checkRewardSS(exprTemp, stateRewards, transRewards);
+				rewards = checkRewardSS(exprTemp, stateRewards, transRewards, statesOfInterest);
 				break;
 			}
 		} else if (expr2.getType() instanceof TypePathBool || expr2.getType() instanceof TypeBool) {
-			rewards = checkRewardPathFormula(expr2, stateRewards, transRewards);
+			rewards = checkRewardPathFormula(expr2, stateRewards, transRewards, statesOfInterest);
 		}
 		
 		if (rewards == null)
@@ -274,7 +276,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// S operator
 
-	protected StateValues checkExpressionSteadyState(ExpressionSS expr) throws PrismException
+	protected StateValues checkExpressionSteadyState(ExpressionSS expr, JDDNode statesOfInterest) throws PrismException
 	{
 		// BSCC stuff
 		List<JDDNode> bsccs = null;
@@ -285,6 +287,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues probs = null, totalProbs = null;
 		int i, numBSCCs = 0;
 		double d, probBSCCs[];
+
+		JDD.Deref(statesOfInterest);
 
 		// Get info from S operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
@@ -300,8 +304,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		try {
-			// Model check argument
-			b = checkExpressionDD(expr.getExpression());
+			// Model check argument with stateOfInterest = all
+			b = checkExpressionDD(expr.getExpression(), model.getReach().copy());
 
 			// Compute bottom strongly connected components (BSCCs)
 			if (bsccComp) {
@@ -438,7 +442,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// Contents of a P operator
 
-	protected StateValues checkProbPathFormula(Expression expr, boolean qual) throws PrismException
+	protected StateValues checkProbPathFormula(Expression expr, boolean qual, JDDNode statesOfInterest) throws PrismException
 	{
 		// Test whether this is a simple path formula (i.e. PCTL)
 		// and whether we want to use the corresponding algorithms
@@ -453,13 +457,13 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		if (useSimplePathAlgo) {
-			return checkProbPathFormulaSimple(expr, qual);
+			return checkProbPathFormulaSimple(expr, qual, statesOfInterest);
 		} else {
-			return checkProbPathFormulaLTL(expr, qual);
+			return checkProbPathFormulaLTL(expr, qual, statesOfInterest);
 		}
 	}
 
-	protected StateValues checkProbPathFormulaSimple(Expression expr, boolean qual) throws PrismException
+	protected StateValues checkProbPathFormulaSimple(Expression expr, boolean qual, JDDNode statesOfInterest) throws PrismException
 	{
 		boolean negated = false;
 		StateValues probs = null;
@@ -477,14 +481,14 @@ public class ProbModelChecker extends NonProbModelChecker
 			ExpressionTemporal exprTemp = (ExpressionTemporal) expr;
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
-				probs = checkProbNext(exprTemp);
+				probs = checkProbNext(exprTemp, statesOfInterest);
 			}
 			// Until
 			else if (exprTemp.getOperator() == ExpressionTemporal.P_U) {
 				if (exprTemp.hasBounds()) {
-					probs = checkProbBoundedUntil(exprTemp);
+					probs = checkProbBoundedUntil(exprTemp, statesOfInterest);
 				} else {
-					probs = checkProbUntil(exprTemp, qual);
+					probs = checkProbUntil(exprTemp, qual, statesOfInterest);
 				}
 			}
 		}
@@ -502,7 +506,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// LTL-like path formula for P operator
 
-	protected StateValues checkProbPathFormulaLTL(Expression expr, boolean qual) throws PrismException
+	protected StateValues checkProbPathFormulaLTL(Expression expr, boolean qual, JDDNode statesOfInterest) throws PrismException
 	{
 		LTLModelChecker mcLtl;
 		StateValues probsProduct = null, probs = null;
@@ -513,6 +517,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDDNode startMask;
 		JDDVars daDDRowVars, daDDColVars;
 		int i;
+
+		JDD.Deref(statesOfInterest);
 
 		AcceptanceType[] allowedAcceptance = {
 				AcceptanceType.RABIN,
@@ -589,13 +595,15 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// next
 
-	protected StateValues checkProbNext(ExpressionTemporal expr) throws PrismException
+	protected StateValues checkProbNext(ExpressionTemporal expr, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b;
 		StateValues probs = null;
 
-		// model check operand first
-		b = checkExpressionDD(expr.getOperand2());
+		JDD.Deref(statesOfInterest);
+
+		// model check operand first, stateOfInterest = all
+		b = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 
 		// print out some info about num states
 		// mainLog.print("\nb = " + JDD.GetNumMintermsString(b,
@@ -612,7 +620,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// bounded until
 
-	protected StateValues checkProbBoundedUntil(ExpressionTemporal expr) throws PrismException
+	protected StateValues checkProbBoundedUntil(ExpressionTemporal expr, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b1, b2;
 		StateValues probs = null;
@@ -620,13 +628,15 @@ public class ProbModelChecker extends NonProbModelChecker
 		IntegerBound bounds;
 		int i;
 
+		JDD.Deref(statesOfInterest);
+
 		// get and check bounds information
 		bounds = IntegerBound.fromExpressionTemporal(expr, constantValues, true);
 
-		// model check operands first
-		b1 = checkExpressionDD(expr.getOperand1());
+		// model check operands first, statesOfInterest = all
+		b1 = checkExpressionDD(expr.getOperand1(), model.getReach().copy());
 		try {
-			b2 = checkExpressionDD(expr.getOperand2());
+			b2 = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 		} catch (PrismException e) {
 			JDD.Deref(b1);
 			throw e;
@@ -693,15 +703,17 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// this method is split into two steps so that the LTL model checker can use the second part directly
 
-	protected StateValues checkProbUntil(ExpressionTemporal expr, boolean qual) throws PrismException
+	protected StateValues checkProbUntil(ExpressionTemporal expr, boolean qual, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b1, b2;
 		StateValues probs = null;
 
-		// model check operands first
-		b1 = checkExpressionDD(expr.getOperand1());
+		JDD.Deref(statesOfInterest);
+
+		// model check operands first, statesOfInterest = all
+		b1 = checkExpressionDD(expr.getOperand1(), model.getReach().copy());
 		try {
-			b2 = checkExpressionDD(expr.getOperand2());
+			b2 = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 		} catch (PrismException e) {
 			JDD.Deref(b1);
 			throw e;
@@ -752,11 +764,13 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// cumulative reward
 
-	protected StateValues checkRewardCumul(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardCumul(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		int time; // time
 		StateValues rewards = null;
 
+		JDD.Deref(statesOfInterest);
+		
 		// check that there is an upper time bound
 		if (expr.getUpperBound() == null) {
 			throw new PrismException("Cumulative reward operator without time bound (C) is only allowed for multi-objective queries");
@@ -787,18 +801,21 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// cumulative reward
 
-	protected StateValues checkRewardTotal(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardTotal(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
+		JDD.Deref(statesOfInterest);
 		StateValues rewards = computeTotalRewards(trans, trans01, stateRewards, transRewards);
 		return rewards;
 	}
 
 	// inst reward
 
-	protected StateValues checkRewardInst(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardInst(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		int time; // time
 		StateValues rewards = null;
+
+		JDD.Deref(statesOfInterest);
 
 		// get info from inst reward
 		time = expr.getUpperBound().evaluateInt(constantValues);
@@ -815,23 +832,26 @@ public class ProbModelChecker extends NonProbModelChecker
 	/**
 	 * Compute rewards for a reachability reward operator.
 	 */
-	protected StateValues checkRewardPathFormula(Expression expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardPathFormula(Expression expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		if (Expression.isReach(expr)) {
-			return checkRewardReach((ExpressionTemporal) expr, stateRewards, transRewards);
+			return checkRewardReach((ExpressionTemporal) expr, stateRewards, transRewards, statesOfInterest);
 		}
 		else if (Expression.isCoSafeLTLSyntactic(expr, true)) {
-			return checkRewardCoSafeLTL(expr, stateRewards, transRewards);
+			return checkRewardCoSafeLTL(expr, stateRewards, transRewards, statesOfInterest);
 		}
+		JDD.Deref(statesOfInterest);
 		throw new PrismException("R operator contains a path formula that is not syntactically co-safe: " + expr);
 	}
 	
 	// reach reward
 
-	protected StateValues checkRewardReach(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+    protected StateValues checkRewardReach(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		JDDNode b;
 		StateValues rewards = null;
+
+		JDD.Deref(statesOfInterest);
 
 		// No time bounds allowed
 		if (expr.hasBounds()) {
@@ -839,7 +859,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 		
 		// model check operand first
-		b = checkExpressionDD(expr.getOperand2());
+		b = checkExpressionDD(expr.getOperand2(), model.getReach().copy());
 
 		// print out some info about num states
 		// mainLog.print("\nb = " + JDD.GetNumMintermsString(b,
@@ -861,7 +881,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// co-safe LTL reward
 
-	protected StateValues checkRewardCoSafeLTL(Expression expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardCoSafeLTL(Expression expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		LTLModelChecker mcLtl;
 		StateValues rewardsProduct = null, rewards = null;
@@ -875,6 +895,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		int i;
 		long l;
 
+		JDD.Deref(statesOfInterest);
+		
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");
@@ -1001,7 +1023,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// steady state reward
 
-	protected StateValues checkRewardSS(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards) throws PrismException
+	protected StateValues checkRewardSS(ExpressionTemporal expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
 		// bscc stuff
 		List<JDDNode> vectBSCCs;
@@ -1012,6 +1034,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues probs = null, rewards = null;
 		int i, numBSCCs;
 		double d, rewBSCCs[];
+
+		JDD.Deref(statesOfInterest);
 
 		// compute rewards corresponding to each state
 		JDD.Ref(trans);
