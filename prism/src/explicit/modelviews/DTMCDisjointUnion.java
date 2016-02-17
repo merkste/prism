@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import common.BitSetTools;
-import common.functions.AbstractMapping;
 import common.functions.Mapping;
 import common.functions.Shift;
 import common.iterable.ChainedIterable;
@@ -258,19 +257,19 @@ public class DTMCDisjointUnion extends DTMCView
 	public static DTMCRestricted DTMCUnion(final DTMC model1, final DTMC model2, final Map<Integer, Integer> identify)
 	{
 		final DTMCDisjointUnion union = new DTMCDisjointUnion(model1, model2);
-		final Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new AbstractMapping<Entry<Integer, Integer>, BitSet>()
-		{
 
-			@Override
-			public final BitSet get(final Entry<Integer, Integer> id)
-			{
-				final BitSet equivalentStates = new BitSet();
-				equivalentStates.set(id.getKey());
-				equivalentStates.set(union.offset + id.getValue());
-				return equivalentStates;
+		final HashMap<Integer, BitSet> equivalenceClasses = new HashMap<>();
+		for (Entry<Integer, Integer> entry : identify.entrySet()) {
+			int lifted = union.offset + entry.getValue();
+			if (equivalenceClasses.containsKey(lifted)) {
+				// add state from mode 1 to eq class of state in mode 2
+				equivalenceClasses.get(lifted).set(entry.getKey());
+			} else {
+				// create new eq class and add state from mode 1 and mode 2
+				equivalenceClasses.put(lifted, BitSetTools.asBitSet(entry.getKey(), lifted));
 			}
-		};
-		return DTMCAlteredDistributions.identifyStates(union, new MappingIterable<>(identify.entrySet(), equivalenceClass));
+		}
+		return DTMCAlteredDistributions.identifyStates(union, equivalenceClasses.values());
 	}
 
 	public static void main(final String[] args) throws PrismException
