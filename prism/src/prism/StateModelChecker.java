@@ -982,6 +982,10 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			dd = start;
 			JDD.Ref(dd);
 			return new StateValuesMTBDD(dd, model);
+		} else if (model.hasLabelDD(expr.getName())) {
+			dd = model.getLabelDD(expr.getName());
+			JDD.Ref(dd);
+			return new StateValuesMTBDD(dd, model);
 		} else {
 			// get expression associated with label
 			ll = propertiesFile.getCombinedLabelList();

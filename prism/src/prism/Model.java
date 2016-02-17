@@ -51,6 +51,29 @@ public interface Model
 	int getVarRange(int i);
 	Values getConstantValues();
 	List<String> getSynchs();
+
+	/**
+	 * Returns the JDDNode for the state set (over the row variables)
+	 * associated with the given label.
+	 *
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
+	 * @param label the label
+	 * @returns JDDNode for the label, {@code null} if none is stored
+	 */
+	JDDNode getLabelDD(String label);
+
+	/**
+	 * Returns true if a JDDNode state set for the given label
+	 * is stored in the model.
+	 */
+	boolean hasLabelDD(String label);
+
+	/**
+	 * Get the labels that are (optionally) stored.
+	 * Returns an empty set if there are no labels.
+	 */
+	Set<String> getLabels();
+
 	String globalToLocal(long x);
 	int globalToLocal(long x, int l);
 	State convertBddToState(JDDNode dd);
@@ -116,6 +139,23 @@ public interface Model
 	ODDNode getODD();
 
 	void setSynchs(List<String> synchs);
+
+	/**
+	 * Stores a JDDNode state set (over the row variables)
+	 * for the given label.<br>
+	 * If the label already exists, the old state set is dereferenced
+	 * and overwritten.
+	 * <br>
+	 * Note that a stored label takes precedence over the on-the-fly calculation
+	 * of an ExpressionLabel, cf. {@link prism.StateModelChecker#checkExpressionLabel}
+	 *
+	 * <br>[ STORES: labelDD, deref on later call to clear() ]
+	 * @param label the label name
+	 * @param labelDD the JDDNode with the state set for the label
+	 * @return the generated unique label
+	*/
+	void addLabelDD(String label, JDDNode labelDD);
+
 	void resetTrans(JDDNode trans);
 	void resetTransRewards(int i, JDDNode transRewards);
 	void doReachability();
