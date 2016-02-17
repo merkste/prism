@@ -92,8 +92,12 @@ public class IterableStateSet implements Iterable<Integer>
 	 */
 	public IterableStateSet(BitSet setOfStates, int numStates, boolean complement)
 	{
-		if (setOfStates == null) {
+		if (setOfStates == null || (setOfStates.length() == numStates && setOfStates.cardinality() == numStates)) {
+			// all states
 			this.setOfStates = complement ? Collections.<Integer> emptyList() : new Interval(numStates);
+		} else if (setOfStates.isEmpty()) {
+			// no states
+			this.setOfStates = complement ? new Interval(numStates) : Collections.<Integer> emptyList();
 		} else {
 			// build appropriate IterableBitSet with maxIndex = numStates-1
 			this.setOfStates = new IterableBitSet(setOfStates, numStates - 1, complement);
