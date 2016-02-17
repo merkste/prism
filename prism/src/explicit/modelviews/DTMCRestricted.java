@@ -220,11 +220,10 @@ public class DTMCRestricted extends DTMCView
 	//--- DTMCView ---
 
 	@Override
-	protected DTMCRestricted fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = DTMCAlteredDistributions.fixDeadlocks(this.clone());
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
@@ -246,10 +245,6 @@ public class DTMCRestricted extends DTMCView
 			mappingToOriginalModel[state] = state;
 			mappingToRestrictedModel[state] = state;
 		}
-
-		//		mapTargetState = AbstractMapping.identity();
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

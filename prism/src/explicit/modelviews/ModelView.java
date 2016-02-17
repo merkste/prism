@@ -110,8 +110,9 @@ public abstract class ModelView implements Model
 				deadlockStates.set(state);
 			}
 		}
-		if (fix) {
+		if (fix && !fixedDeadlocks) {
 			fixDeadlocks();
+			fixedDeadlocks = true;
 		}
 	}
 
@@ -278,7 +279,7 @@ public abstract class ModelView implements Model
 
 	protected abstract void exportTransitionsToDotFile(final int state, final PrismLog out);
 
-	protected abstract ModelView fixDeadlocks();
+	protected abstract void fixDeadlocks();
 
 	/**
 	 * Tell whether the receiver is a virtual or explicit model.

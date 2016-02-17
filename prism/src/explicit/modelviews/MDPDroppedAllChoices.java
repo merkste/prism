@@ -175,15 +175,12 @@ public class MDPDroppedAllChoices extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPDroppedAllChoices fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = MDPAdditionalChoices.fixDeadlocks((MDP) this.clone());
 		states = new BitSet();
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

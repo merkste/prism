@@ -267,11 +267,10 @@ public class MDPRestricted extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPRestricted fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = MDPAdditionalChoices.fixDeadlocks(this.clone());
 		states = new BitSet();
 		states.flip(0, model.getNumStates());
@@ -293,10 +292,6 @@ public class MDPRestricted extends MDPView
 			mappingToOriginalModel[state] = state;
 			mappingToRestrictedModel[state] = state;
 		}
-
-		//		mapTargetState = AbstractMapping.identity();
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

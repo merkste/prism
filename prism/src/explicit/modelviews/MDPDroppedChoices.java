@@ -166,11 +166,10 @@ public class MDPDroppedChoices extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPDroppedChoices fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = MDPAdditionalChoices.fixDeadlocks((MDP) this.clone());
 		preserved = new AbstractPairPredicateIntegerInteger()
 		{
@@ -180,8 +179,6 @@ public class MDPDroppedChoices extends MDPView
 				return true;
 			}
 		};
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

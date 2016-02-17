@@ -213,11 +213,10 @@ public class DTMCDisjointUnion extends DTMCView
 	//--- DTMCView ---
 
 	@Override
-	protected DTMCDisjointUnion fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		try {
 			model1.findDeadlocks(false);
 			model2.findDeadlocks(false);
@@ -226,8 +225,6 @@ public class DTMCDisjointUnion extends DTMCView
 		}
 		model1 = DTMCAlteredDistributions.fixDeadlocks(model1);
 		model2 = DTMCAlteredDistributions.fixDeadlocks(model2);
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

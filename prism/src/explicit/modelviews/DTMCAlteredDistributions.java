@@ -148,15 +148,12 @@ public class DTMCAlteredDistributions extends DTMCView
 	//--- DTMCView ---
 
 	@Override
-	protected DTMCAlteredDistributions fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = fixDeadlocks(this.clone());
-		mapping = CallDTMC.getTransitionsIterator().on(model);
-		fixedDeadlocks = true;
-		return this;
+		mapping = AbstractMappingFromInteger.constantFromInteger(null);
 	}
 
 

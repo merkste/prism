@@ -174,19 +174,16 @@ public class MDPFromDTMC extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPFromDTMC fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		try {
 			model.findDeadlocks(false);
 		} catch (final PrismException e) {
 			assert false : "no attempt to fix deadlocks";
 		}
 		model = DTMCAlteredDistributions.fixDeadlocks(model);
-		fixedDeadlocks = true;
-		return this;
 	}
 
 

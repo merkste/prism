@@ -173,23 +173,20 @@ public class MDPAdditionalChoices extends MDPView
 	//--- MDPView ---
 
 	@Override
-	protected MDPView fixDeadlocks()
+	protected void fixDeadlocks()
 	{
-		if (fixedDeadlocks) {
-			return this;
-		}
+		assert !fixedDeadlocks : "deadlocks already fixed";
+
 		model = fixDeadlocks((MDP) this.clone());
 		choices = new AbstractMappingFromInteger<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> get(int element)
 			{
-				return Collections.emptyList();
+				return null;
 			}
 		};
 		actions = null;
-		fixedDeadlocks = true;
-		return this;
 	}
 
 
