@@ -31,13 +31,13 @@ public class BitSetTools
 		return result;
 	}
 
-	public static BitSet shiftLeft(final BitSet indices, final int offset)
+	public static BitSet shiftDown(final BitSet indices, final int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
 		return indices.get(offset, indices.length());
 	}
 
-	public static BitSet shiftRight(final BitSet indices, final int offset)
+	public static BitSet shiftUp(final BitSet indices, final int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
 		// FIXME ALG: check performance
