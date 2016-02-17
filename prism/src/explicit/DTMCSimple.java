@@ -64,6 +64,31 @@ public class DTMCSimple extends DTMCExplicit implements ModelSimple
 	}
 
 	/**
+	 * Constructor: Build new DTMCSimple from arbitrary DTMC type.
+	 */
+	public DTMCSimple(final DTMC dtmc)
+	{
+		this(dtmc.getNumStates());
+		for (int state = 0; state < numStates; state++) {
+			for (Iterator<Entry<Integer, Double>> transitions = dtmc.getTransitionsIterator(state); transitions.hasNext();) {
+				final Entry<Integer, Double> transition = transitions.next();
+				setProbability(state, transition.getKey(), transition.getValue());
+			}
+			if (dtmc.isInitialState(state)) {
+				addInitialState(state);
+			}
+			if (dtmc.isDeadlockState(state)) {
+				addDeadlockState(state);
+			}
+		}
+		setStatesList(dtmc.getStatesList());
+		setConstantValues(dtmc.getConstantValues());
+		for (String label : dtmc.getLabels()) {
+			labels.put(label, dtmc.getLabelStates(label));
+		}
+	}
+
+	/**
 	 * Copy constructor.
 	 */
 	public DTMCSimple(DTMCSimple dtmc)
