@@ -13,7 +13,7 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 	private final Expression transformedExpression;
 	private final BitSet transformedStatesOfInterest;
 
-	public BasicModelExpressionTransformation(final BasicModelTransformation<OM, TM> transformation, final Expression originalExpression,
+	public BasicModelExpressionTransformation(final ModelTransformation<OM, TM> transformation, final Expression originalExpression,
 			final Expression transformedExpression, final BitSet statesOfInterest)
 	{
 		super(transformation);
@@ -22,12 +22,12 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 		this.transformedStatesOfInterest = mapToTransformedModel(statesOfInterest);
 	}
 
-	public BasicModelExpressionTransformation(final BasicModelExpressionTransformation<OM, TM> transformation)
+	public BasicModelExpressionTransformation(final ModelExpressionTransformation<OM, TM> transformation)
 	{
 		super(transformation);
-		this.originalExpression = transformation.originalExpression;
-		this.transformedExpression = transformation.transformedExpression;
-		this.transformedStatesOfInterest = transformation.transformedStatesOfInterest;
+		this.originalExpression = transformation.getOriginalExpression();
+		this.transformedExpression = transformation.getTransformedExpression();
+		this.transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 	}
 
 	@Override
