@@ -37,7 +37,8 @@ public class ConditionalLTLTransformer extends PrismComponent
 			throws PrismException
 	{
 		// 1. create LTL product
-		final LTLProduct<DTMC> ltlProduct = ltlTransformer.transform(model, ltlFormula, statesOfInterest, AcceptanceType.RABIN);
+		// FIXME ALG: other acceptance types? Generic, Streett
+		final LTLProduct<DTMC> ltlProduct = ltlTransformer.transform(model, ltlFormula, statesOfInterest, AcceptanceType.RABIN, AcceptanceType.REACH);
 		final BitSet goal = ltlTransformer.getGoalStates(ltlProduct);
 
 		// 2. create reachability transformation
