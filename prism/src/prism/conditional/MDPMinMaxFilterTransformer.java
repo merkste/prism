@@ -10,7 +10,6 @@ import parser.ast.ExpressionFilter.FilterOperator;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
-import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.ModelType;
 import prism.NondetModel;
@@ -18,7 +17,6 @@ import prism.NondetModelChecker;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.SingleInitialStateTransformation;
-import prism.StateListMTBDD;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
@@ -115,7 +113,7 @@ public class MDPMinMaxFilterTransformer
 		final NondetModel transformedModel;
 		final Expression transformedExpression;
 
-		SingleInitialStateTransformation transform = new SingleInitialStateTransformation(modelChecker.getPrism(), model, ddFilter);
+		SingleInitialStateTransformation transform = new SingleInitialStateTransformation(model, ddFilter);
 
 		transformedModel = model.getTransformed(transform);
 		String stateLabel = transformedModel.addUniqueLabelDD("newInitial", transformedModel.getStart().copy());

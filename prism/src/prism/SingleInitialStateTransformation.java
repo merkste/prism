@@ -41,8 +41,6 @@ import jdd.JDDVars;
  */
 public class SingleInitialStateTransformation extends NondetModelTransformation
 {
-	private Prism prism;
-
 	/** The set of states that serve as the initial choices */
 	private JDDNode S;
 
@@ -51,10 +49,9 @@ public class SingleInitialStateTransformation extends NondetModelTransformation
 	/** Flag for "produce BDD for the column variables" */
 	private final static boolean COL = false;
 
-	public SingleInitialStateTransformation(Prism prism, NondetModel model, JDDNode S)
+	public SingleInitialStateTransformation(NondetModel model, JDDNode S)
 	{
 		super(model);
-		this.prism = prism;
 		this.S = S;
 	}
 
