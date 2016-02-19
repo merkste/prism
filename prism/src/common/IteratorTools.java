@@ -4,9 +4,14 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.function.BinaryOperator;
 import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoublePredicate;
 import java.util.function.IntBinaryOperator;
+import java.util.function.IntPredicate;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
 import common.iterable.FilteringIterator;
@@ -14,6 +19,7 @@ import common.iterable.MappingIterator;
 
 import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
+import java.util.PrimitiveIterator.OfLong;
 
 public class IteratorTools
 {
@@ -24,9 +30,48 @@ public class IteratorTools
 
 	public static int count(final Iterator<?> iterator)
 	{
-		int count = 0;
-		while (iterator.hasNext()) {
-			iterator.next();
+		if (iterator instanceof OfInt) {
+			return count((OfInt) iterator);
+		}
+		if (iterator instanceof OfLong) {
+			return count((OfLong) iterator);
+		}
+		if (iterator instanceof OfDouble) {
+			return count((OfDouble) iterator);
+		}
+
+		int count=0;
+		for (; iterator.hasNext(); iterator.next()) {
+			count++;
+		}
+		return count;
+	}
+
+	// call nextInt to avoid unnecessary boxing
+	public static int count(final OfInt iterator)
+	{
+		int count=0;
+		for (; iterator.hasNext(); iterator.nextInt()) {
+			count++;
+		}
+		return count;
+	}
+
+	// call nextLong to avoid unnecessary boxing
+	public static int count(final OfLong iterator)
+	{
+		int count=0;
+		for (; iterator.hasNext(); iterator.nextLong()) {
+			count++;
+		}
+		return count;
+	}
+
+	// call nextDouble to avoid unnecessary boxing
+	public static int count(final OfDouble iterator)
+	{
+		int count=0;
+		for (; iterator.hasNext(); iterator.nextDouble()) {
 			count++;
 		}
 		return count;
@@ -39,6 +84,16 @@ public class IteratorTools
 
 	public static <T> int count(final Iterator<T> iterator, final Predicate<? super T> predicate)
 	{
+		if (iterator instanceof OfInt && predicate instanceof IntPredicate) {
+			return count(new FilteringIterator.OfInt((OfInt) iterator, (IntPredicate) predicate));
+		}
+		if (iterator instanceof OfLong && predicate instanceof LongPredicate) {
+			return count(new FilteringIterator.OfLong((OfLong) iterator, (LongPredicate) predicate));
+		}
+		if (iterator instanceof OfDouble && predicate instanceof DoublePredicate) {
+			return count(new FilteringIterator.OfDouble((OfDouble) iterator, (DoublePredicate) predicate));
+		}
+
 		return count(new FilteringIterator.Of<>(iterator, predicate));
 	}
 
@@ -80,6 +135,24 @@ public class IteratorTools
 		return OptionalInt.of(max);
 	}
 
+	public static OptionalLong maxLong(final Iterator<Long> numbers)
+	{
+		return max(MappingIterator.toLong(FilteringIterator.nonNull(numbers)));
+	}
+
+	public static OptionalLong max(final OfLong numbers)
+	{
+		if(! numbers.hasNext()) {
+			return OptionalLong.empty();
+		}
+		long max = numbers.nextLong();
+		while (numbers.hasNext()) {
+			final long next = numbers.next();
+			max = next > max ? next : max; 
+		}
+		return OptionalLong.of(max);
+	}
+
 	public static OptionalDouble maxDouble(final Iterator<Double> numbers)
 	{
 		return max(MappingIterator.toDouble(FilteringIterator.nonNull(numbers)));
@@ -116,6 +189,24 @@ public class IteratorTools
 		return OptionalInt.of(min);
 	}
 
+	public static OptionalLong minLong(final Iterator<Long> numbers)
+	{
+		return min(MappingIterator.toLong(FilteringIterator.nonNull(numbers)));
+	}
+
+	public static OptionalLong min(final OfLong numbers)
+	{
+		if(! numbers.hasNext()) {
+			return OptionalLong.empty();
+		}
+		long min = numbers.nextLong();
+		while (numbers.hasNext()) {
+			final long next = numbers.nextLong();
+			min = next < min ? next : min; 
+		}
+		return OptionalLong.of(min);
+	}
+
 	public static OptionalDouble minDouble(final Iterator<Double> numbers)
 	{
 		return min(MappingIterator.toDouble(FilteringIterator.nonNull(numbers)));
@@ -148,6 +239,20 @@ public class IteratorTools
 		return sum;
 	}
 
+	public static long sumLong(final Iterator<Long> numbers)
+	{
+		return sum(MappingIterator.toLong(numbers));
+	}
+
+	public static long sum(final OfLong numbers)
+	{
+		long sum = 0;
+		while (numbers.hasNext()) {
+			sum += numbers.nextLong();
+		}
+		return sum;
+	}
+
 	public static double sumDouble(final Iterator<Double> numbers)
 	{
 		return sum(MappingIterator.toDouble(numbers));
@@ -170,21 +275,24 @@ public class IteratorTools
 		return Optional.of(reduce(iterator, iterator.next(), accumulator));
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> T reduce(Iterator<T> iterator, T identity, BinaryOperator<T> accumulator)
 	{
+		if (iterator instanceof OfInt && identity instanceof Integer && accumulator instanceof IntBinaryOperator) {
+			return (T)(Integer) reduce((OfInt) iterator, (Integer) identity, (IntBinaryOperator) accumulator);
+		}
+		if (iterator instanceof OfLong && identity instanceof Long && accumulator instanceof LongBinaryOperator) {
+			return (T)(Long) reduce((OfLong) iterator, (Long) identity, (LongBinaryOperator) accumulator);
+		}
+		if (iterator instanceof OfDouble && identity instanceof Double && accumulator instanceof DoubleBinaryOperator) {
+			return (T)(Double) reduce((OfDouble) iterator, (Double) identity, (DoubleBinaryOperator) accumulator);
+		}
+
 		T result = identity;
 		while(iterator.hasNext()) {
 			result = accumulator.apply(result, iterator.next());
 		}
 		return result;
-	}
-
-	public static OptionalInt reduce(OfInt iterator, IntBinaryOperator accumulator)
-	{
-		if (! iterator.hasNext()) {
-			return OptionalInt.empty();
-		}
-		return OptionalInt.of(reduce(iterator, iterator.nextInt(), accumulator));
 	}
 
 	public static int reduce(OfInt iterator, int identity, IntBinaryOperator accumulator)
@@ -196,12 +304,13 @@ public class IteratorTools
 		return result;
 	}
 
-	public static OptionalDouble reduce(OfDouble iterator, DoubleBinaryOperator accumulator)
+	public static long reduce(OfLong iterator, long identity, LongBinaryOperator accumulator)
 	{
-		if (! iterator.hasNext()) {
-			return OptionalDouble.empty();
+		long result = identity;
+		while(iterator.hasNext()) {
+			result = accumulator.applyAsLong(result, iterator.nextLong());
 		}
-		return OptionalDouble.of(reduce(iterator, iterator.nextDouble(), accumulator));
+		return result;
 	}
 
 	public static double reduce(OfDouble iterator, double identity, DoubleBinaryOperator accumulator)
