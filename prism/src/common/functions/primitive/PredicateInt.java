@@ -12,6 +12,9 @@ import common.functions.Predicate;
 @FunctionalInterface
 public interface PredicateInt extends Predicate<Integer>, IntPredicate
 {
+	public static final PredicateInt TRUE  = n -> true;
+	public static final PredicateInt FALSE = n -> false;
+
 	public boolean test(int element);
 
 	default boolean test(Integer element)

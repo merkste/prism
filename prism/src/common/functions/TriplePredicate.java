@@ -5,6 +5,9 @@ import java.util.Objects;
 @FunctionalInterface
 public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean>
 {
+	public static final TriplePredicate<?, ?, ?> TRUE  = (element1, element2, element3) -> true;
+	public static final TriplePredicate<?, ?, ?> FALSE = (element1, element2, element3) -> false;
+
 	public boolean test(Q element1, R element2, S element3);
 
 	@Override
@@ -70,5 +73,11 @@ public interface TriplePredicate<Q, R, S> extends TripleMapping<Q, R, S, Boolean
 		Objects.requireNonNull(function1);
 		Objects.requireNonNull(function2);
 		return (element1, element2, element3) -> test(element1, element2, element3) ? function1.apply(element1, element2, element3) : function2.apply(element1, element2, element3);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Predicate<T> constant(boolean value)
+	{
+		return (Predicate<T>) (value ?  TRUE : FALSE);
 	}
 }

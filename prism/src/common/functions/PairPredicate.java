@@ -7,6 +7,9 @@ import java.util.function.BiPredicate;
 @FunctionalInterface
 public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredicate<R, S>
 {
+	public static final PairPredicate<?, ?> TRUE  = (element1, element2) -> true;
+	public static final PairPredicate<?, ?> FALSE = (element1, element2) -> false;
+
 	@Override
 	default Boolean apply(R element1, S element2)
 	{
@@ -71,5 +74,11 @@ public interface PairPredicate<R, S> extends PairMapping<R, S, Boolean>, BiPredi
 		Objects.requireNonNull(function1);
 		Objects.requireNonNull(function2);
 		return (element1, element2) -> test(element1, element2) ? function1.apply(element1, element2) : function2.apply(element1, element2);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Predicate<T> constant(boolean value)
+	{
+		return (Predicate<T>) (value ?  TRUE : FALSE);
 	}
 }

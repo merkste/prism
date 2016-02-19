@@ -7,6 +7,9 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Predicate<T>
 {
+	public static final Predicate<?> TRUE  = element -> true;
+	public static final Predicate<?> FALSE = element -> false;
+
 	@Override
 	default Boolean apply(T element)
 	{
@@ -84,5 +87,11 @@ public interface Predicate<T> extends Mapping<T, Boolean>, java.util.function.Pr
 		Objects.requireNonNull(function1);
 		Objects.requireNonNull(function2);
 		return element -> test(element) ? function1.apply(element) : function2.apply(element);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> Predicate<T> constant(boolean value)
+	{
+		return (Predicate<T>) (value ?  TRUE : FALSE);
 	}
 }
