@@ -4,7 +4,10 @@ import java.io.File;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PrimitiveIterator.OfInt;
+import java.util.function.IntConsumer;
 
+import common.iterable.FilteringIterable;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
@@ -107,15 +110,18 @@ public abstract class ModelView implements Model
 	@Override
 	public void findDeadlocks(final boolean fix) throws PrismException
 	{
-		for (int state : new IterableStateSet(getNumStates())) {
-			if (!getSuccessorsIterator(state).hasNext()) {
-				deadlockStates.set(state);
-			}
-		}
+		findDeadlocks(null).forEach((IntConsumer) deadlockStates::set);
+
 		if (fix && !fixedDeadlocks) {
 			fixDeadlocks();
 			fixedDeadlocks = true;
 		}
+	}
+
+	public IterableInt findDeadlocks(final BitSet except)
+	{
+		IterableInt states = new IterableStateSet(except, getNumStates(), true);
+		return new FilteringIterable.OfInt(states, state -> !getSuccessorsIterator(state).hasNext());
 	}
 
 	@Override
@@ -127,14 +133,9 @@ public abstract class ModelView implements Model
 	@Override
 	public void checkForDeadlocks(final BitSet except) throws PrismException
 	{
-		if (except == null) {
-			checkForDeadlocks(new BitSet());
-			return;
-		}
-		for (int state : new IterableStateSet(except, getNumStates(), true)) {
-			if (!getSuccessorsIterator(state).hasNext()) {
-				throw new PrismException(getModelType() + " has a deadlock in state " + state);
-			}
+		OfInt deadlocks = findDeadlocks(except).iterator();
+		if (deadlocks.hasNext()) {
+			throw new PrismException(getModelType() + " has a deadlock in state " + deadlocks.nextInt());
 		}
 	}
 
