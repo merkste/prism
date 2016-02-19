@@ -7,6 +7,9 @@ import common.functions.TriplePredicate;
 @FunctionalInterface
 public interface TriplePredicateDouble extends TriplePredicate<Double, Double, Double>
 {
+	public static final TriplePredicateDouble TRUE  = (element1, element2, element3) -> true;
+	public static final TriplePredicateDouble FALSE = (element1, element2, element3) -> false;
+
 	public boolean test(double element1, double element2, double element3);
 
 	@Override

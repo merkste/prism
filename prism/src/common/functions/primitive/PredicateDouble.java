@@ -12,6 +12,9 @@ import common.functions.Predicate;
 @FunctionalInterface
 public interface PredicateDouble extends Predicate<Double>, DoublePredicate
 {
+	public static final PredicateDouble TRUE  = n -> true;
+	public static final PredicateDouble FALSE = n -> false;
+
 	public boolean test(double element);
 
 	@Override

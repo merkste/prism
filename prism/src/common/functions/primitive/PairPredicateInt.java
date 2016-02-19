@@ -7,6 +7,9 @@ import common.functions.PairPredicate;
 @FunctionalInterface
 public interface PairPredicateInt extends PairPredicate<Integer, Integer>
 {
+	public static final PairPredicateInt TRUE  = (element1, element2) -> true;
+	public static final PairPredicateInt FALSE = (element1, element2) -> false;
+
 	public abstract boolean test(int element1, int element2);
 
 	@Override
