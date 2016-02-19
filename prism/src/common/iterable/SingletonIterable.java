@@ -36,6 +36,22 @@ public abstract class SingletonIterable<T> implements Iterable<T>
 		}
 	}
 
+	public static class OfLong extends SingletonIterable<Long> implements IterableLong
+	{
+		final long element;
+
+		public OfLong(long theElement)
+		{
+			element = theElement;
+		}
+
+		@Override
+		public SingletonIterator.OfLong iterator()
+		{
+			return new SingletonIterator.OfLong(element);
+		}
+	}
+
 	public static class OfDouble extends SingletonIterable<Double> implements IterableDouble
 	{
 		final double element;

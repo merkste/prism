@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
 
 public abstract class SingletonIterator<T> implements Iterator<T>
@@ -53,6 +54,30 @@ public abstract class SingletonIterator<T> implements Iterator<T>
 			OptionalInt result = element;
 			element = OptionalInt.empty();
 			return result.getAsInt();
+		}
+	}
+
+	public static class OfLong extends SingletonIterator<Long> implements PrimitiveIterator.OfLong
+	{
+		private OptionalLong element;
+
+		public OfLong(Long element)
+		{
+			this.element = OptionalLong.of(element);
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			return element.isPresent();
+		}
+
+		@Override
+		public long nextLong()
+		{
+			OptionalLong result = element;
+			element = OptionalLong.empty();
+			return result.getAsLong();
 		}
 	}
 

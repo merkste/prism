@@ -6,17 +6,22 @@ import java.util.PrimitiveIterator;
 
 public abstract class EmptyIterator<T> implements Iterator<T>
 {
-	private static final Of<?> OF = new Of<>();
-	private static final OfInt OF_INT = new OfInt();
+	private static final Of<?> OF           = new Of<>();
+	private static final OfInt OF_INT       = new OfInt();
+	private static final OfLong OF_LONG     = new OfLong();
 	private static final OfDouble OF_DOUBLE = new OfDouble();
 
 	@SuppressWarnings("unchecked")
 	public static <T> Of<T> Of() {
 		return (Of<T>) OF;
 	}
-	
+
 	public static OfInt OfInt() {
 		return OF_INT;
+	}
+
+	public static OfLong OfLong() {
+		return OF_LONG;
 	}
 
 	public static OfDouble OfDouble() {
@@ -46,6 +51,17 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 
 		@Override
 		public int nextInt()
+		{
+			throw new NoSuchElementException();
+		}
+	}
+
+	public static class OfLong extends EmptyIterator<Long> implements PrimitiveIterator.OfLong
+	{
+		private OfLong() {};
+
+		@Override
+		public long nextLong()
 		{
 			throw new NoSuchElementException();
 		}

@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
 public abstract class FilteringIterable<T> implements Iterable<T>
@@ -55,6 +56,23 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 		public PrimitiveIterator.OfInt iterator()
 		{
 			return new FilteringIterator.OfInt((IterableInt) iterable, predicate);
+		}
+	}
+
+	public static class OfLong extends FilteringIterable<Long> implements IterableLong
+	{
+		private LongPredicate predicate;
+
+		public OfLong(IterableLong iterable, LongPredicate predicate)
+		{
+			super(iterable);
+			this.predicate = predicate;
+		}
+
+		@Override
+		public PrimitiveIterator.OfLong iterator()
+		{
+			return new FilteringIterator.OfLong((IterableLong) iterable, predicate);
 		}
 	}
 

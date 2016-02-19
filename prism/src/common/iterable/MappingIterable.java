@@ -3,6 +3,7 @@ package common.iterable;
 import java.util.Iterator;
 import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
+import java.util.PrimitiveIterator.OfLong;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleUnaryOperator;
@@ -12,6 +13,7 @@ import java.util.function.IntToDoubleFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 public abstract class MappingIterable<S, T> implements Iterable<T>
 {
@@ -87,6 +89,31 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		public OfDouble iterator()
 		{
 			return new MappingIterator.ToDouble<>(iterable, function);
+		}
+	}
+
+	public static IterableLong toLong(Iterable<Long> iterable)
+	{
+		if (iterable instanceof IterableLong) {
+			return (IterableLong) iterable;
+		}
+		return new ToLong<>(iterable, Long::intValue);
+	}
+
+	public static class ToLong<S> extends MappingIterable<S, Long> implements IterableLong
+	{
+		protected ToLongFunction<? super S> function;
+
+		public ToLong(Iterable<S> iterable, ToLongFunction<? super S> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public OfLong iterator()
+		{
+			return new MappingIterator.ToLong<>(iterable, function);
 		}
 	}
 
