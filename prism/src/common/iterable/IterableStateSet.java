@@ -90,10 +90,10 @@ public class IterableStateSet implements IterableInt
 	{
 		if (setOfStates == null || (setOfStates.length() == numStates && setOfStates.cardinality() == numStates)) {
 			// all states
-			this.setOfStates = complement ? new Interval(0, 0) : new Interval(numStates);
+			this.setOfStates = complement ? EmptyIterable.OfInt() : new Interval(numStates);
 		} else if (setOfStates.isEmpty()) {
 			// no states
-			this.setOfStates = complement ? new Interval(numStates) : new Interval(0, 0);
+			this.setOfStates = complement ? new Interval(numStates) : EmptyIterable.OfInt();
 		} else {
 			// build appropriate IterableBitSet with maxIndex = numStates-1
 			this.setOfStates = new IterableBitSet(setOfStates, numStates - 1, complement);
