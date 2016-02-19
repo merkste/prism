@@ -8,6 +8,7 @@ import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
 public abstract class FilteringIterator<T> implements Iterator<T>
@@ -61,6 +62,12 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 	{
 		final Set<Integer> elements = new HashSet<>();
 		return new FilteringIterator.OfInt(iterator, (IntPredicate) elements::add);
+	}
+
+	public static OfLong dedupe(final PrimitiveIterator.OfLong iterator)
+	{
+		final Set<Long> elements = new HashSet<>();
+		return new FilteringIterator.OfLong(iterator, (LongPredicate) elements::add);
 	}
 
 	public static OfDouble dedupe(final PrimitiveIterator.OfDouble iterator)
@@ -139,6 +146,45 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		{
 			while (iterator.hasNext()) {
 				next = ((PrimitiveIterator.OfInt) iterator).nextInt();
+				if (predicate.test(next)) {
+					hasNext = true;
+					return;
+				}
+			}
+			hasNext = false;
+		}
+	}
+
+	public static class OfLong extends FilteringIterator<Long> implements PrimitiveIterator.OfLong
+	{
+		protected final LongPredicate predicate;
+		private long next;
+
+		public OfLong(IterableLong iterable, LongPredicate predicate)
+		{
+			this(iterable.iterator(), predicate);
+		}
+
+		public OfLong(PrimitiveIterator.OfLong iterator, LongPredicate predicate)
+		{
+			super(iterator);
+			this.predicate = predicate;
+			seekNext();
+		}
+
+		@Override
+		public long nextLong()
+		{
+			requireNext();
+			long current = next;
+			seekNext();
+			return current;
+		}
+
+		private void seekNext()
+		{
+			while (iterator.hasNext()) {
+				next = ((PrimitiveIterator.OfLong) iterator).nextLong();
 				if (predicate.test(next)) {
 					hasNext = true;
 					return;

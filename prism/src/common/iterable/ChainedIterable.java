@@ -62,6 +62,27 @@ public abstract class ChainedIterable<T> implements Iterable<T>
 		}
 	}
 
+	public static class OfLong extends ChainedIterable<Long> implements IterableLong
+	{
+		@SafeVarargs
+		public OfLong(IterableLong... iterables)
+		{
+			super(iterables);
+		}
+
+		public OfLong(Iterable<IterableLong> iterables)
+		{
+			super(iterables);
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public PrimitiveIterator.OfLong iterator()
+		{
+			return new ChainedIterator.OfLong(new MappingIterator.From<>((Iterable<IterableLong>) iterables, IterableLong::iterator));
+		}
+	}
+
 	public static class OfDouble extends ChainedIterable<Double> implements IterableDouble
 	{
 		@SafeVarargs

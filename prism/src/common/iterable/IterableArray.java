@@ -68,6 +68,30 @@ public abstract class IterableArray<T> implements Iterable<T>
 		}
 	}
 
+	public static class OfLong extends IterableArray<Long> implements IterableLong
+	{
+		protected final long[] elements;
+
+		@SafeVarargs
+		public OfLong(long... elements)
+		{
+			super(0, elements.length);
+			this.elements = elements;
+		}
+
+		public OfLong(long[] elements, int fromIndex, int toIndex)
+		{
+			super(fromIndex, toIndex);
+			this.elements = elements;
+		}
+
+		@Override
+		public PrimitiveIterator.OfLong iterator()
+		{
+			return Arrays.stream(elements, fromIndex, toIndex).iterator();
+		}
+	}
+
 	public static class OfDouble extends IterableArray<Double> implements IterableDouble
 	{
 		protected final double[] elements;

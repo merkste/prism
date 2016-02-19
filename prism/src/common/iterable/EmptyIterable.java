@@ -43,6 +43,17 @@ public abstract class EmptyIterable<T> implements Iterable<T>
 		}
 	}
 
+	public static class OfLong extends EmptyIterable<Long> implements IterableLong
+	{
+		private OfLong() {};
+
+		@Override
+		public EmptyIterator.OfLong iterator()
+		{
+			return EmptyIterator.OfLong();
+		}
+	}
+
 	public static class OfDouble extends EmptyIterable<Double> implements IterableDouble
 	{
 		private OfDouble() {};

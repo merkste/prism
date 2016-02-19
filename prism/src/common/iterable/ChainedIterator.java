@@ -163,6 +163,33 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 		}
 	}
 
+	public static class OfLong extends ChainedIterator<Long> implements PrimitiveIterator.OfLong
+	{
+		@SafeVarargs
+		public OfLong(PrimitiveIterator.OfLong... iterators)
+		{
+			super(iterators);
+		}
+
+		public OfLong(Iterable<? extends PrimitiveIterator.OfLong> iterators)
+		{
+			super(iterators);
+		}
+
+		public OfLong(Iterator<? extends PrimitiveIterator.OfLong> iterators)
+		{
+			super(iterators);
+		}
+
+		@Override
+		public long nextLong()
+		{
+			requireNext();
+			return ((PrimitiveIterator.OfLong) current).nextLong();
+		}
+	}
+
+
 	public static class OfDouble extends ChainedIterator<Double> implements PrimitiveIterator.OfDouble
 	{
 		@SafeVarargs
