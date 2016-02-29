@@ -119,8 +119,6 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 
 	public BitSet getTerminal(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated)
 	{
-		// (!strict) let terminal states be all states with prob = 1;
-
 		if (!negated) {
 			return goal;
 		}
