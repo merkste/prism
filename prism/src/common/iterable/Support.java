@@ -52,7 +52,7 @@ public class Support implements PredicateInt, IterableInt
 	@Override
 	public final boolean test(final int index)
 	{
-		return 0 <= index && index <= values.length && predicate.test(values[index]);
+		return 0 <= index && index < values.length && predicate.test(values[index]);
 	}
 
 	public BitSet asBitSet()
