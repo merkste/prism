@@ -54,20 +54,17 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		return transformModel(model, expression, statesOfInterest, !requiresSecondMode(expression));
+		Expression condition = expression.getCondition();
+		return transformModel(model, condition, statesOfInterest, !requiresSecondMode(expression));
 	}
 
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest,
+	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression condition, final BitSet statesOfInterest,
 			final boolean absorbing) throws PrismException
 	{
-		if (absorbing && requiresSecondMode(expression)) {
-			throw new IllegalArgumentException("Cannot make terminal states absorbing, second mode required for: " + expression);
-		}
-
-		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
-		final BitSet remain = getRemainStates(model, condition);
-		final BitSet goal = getGoalStates(model, condition);
-		final boolean negated = condition instanceof ExpressionUnaryOp;
+		final Expression until = ExpressionInspector.normalizeExpression(condition);
+		final BitSet remain = getRemainStates(model, until);
+		final BitSet goal = getGoalStates(model, until);
+		final boolean negated = until instanceof ExpressionUnaryOp;
 		final boolean collapse = !absorbing;
 
 		// 1. create mode 1 == conditional part
