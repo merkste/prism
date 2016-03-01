@@ -570,6 +570,8 @@ public class PrismCL implements PrismModelListener
 			}
 		} catch (FileNotFoundException e) {
 			errorAndExit("File \"" + modelFilename + "\" not found");
+		} catch (IOException e) {
+			errorAndExit("Could not read file \"" + modelFilename);
 		} catch (PrismException e) {
 			errorAndExit(e.getMessage());
 		}
@@ -623,6 +625,8 @@ public class PrismCL implements PrismModelListener
 			}
 		} catch (FileNotFoundException e) {
 			errorAndExit("File \"" + propertiesFilename + "\" not found");
+		} catch (IOException e) {
+			errorAndExit("Could not read file \"" + propertiesFilename);
 		} catch (PrismException e) {
 			errorAndExit(e.getMessage());
 		}

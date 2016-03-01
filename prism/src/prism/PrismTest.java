@@ -85,7 +85,7 @@ public class PrismTest
 			// Close down
 			prism.closeDown();
 		}
-		catch (FileNotFoundException e) {
+		catch (IOException e) {
 			System.out.println("Error: " + e.getMessage());
 			System.exit(1);
 		}

@@ -76,12 +76,16 @@ public class LoadPropertiesThread extends Thread
 				props = pri.parsePropertiesFile(mf, file, false);
 			}
 			//If there was a problem with the loading, notify the interface.
-			catch (FileNotFoundException e) {
+			catch (IOException e) {
 				SwingUtilities.invokeAndWait(new Runnable() { public void run() {
 					parent.stopProgress(); 
 					parent.notifyEventListeners(new GUIComputationEvent(GUIComputationEvent.COMPUTATION_ERROR, parent));
 					parent.setTaskBarText("Loading properties... error.");
-					parent.error("Could not open file \"" + file + "\"");
+					if (e instanceof FileNotFoundException) {
+						parent.error("Could not find file \"" + file + "\"");
+					} else {
+						parent.error("Could not read file \"" + file + "\"");
+					}
 				}});
 				return;
 			}

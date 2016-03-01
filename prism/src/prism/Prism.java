@@ -32,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -1351,7 +1352,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Parse a PRISM model from a file.
 	 * @param file File to read in
 	 */
-	public ModulesFile parseModelFile(File file) throws FileNotFoundException, PrismLangException
+	public ModulesFile parseModelFile(File file) throws IOException, PrismLangException
 	{
 		return parseModelFile(file, null);
 	}
@@ -1361,33 +1362,28 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param file File to read in
 	 * @param typeOverride Optionally, override model type here (null if unused)
 	 */
-	public ModulesFile parseModelFile(File file, ModelType typeOverride) throws FileNotFoundException, PrismLangException
+	public ModulesFile parseModelFile(File file, ModelType typeOverride) throws IOException, PrismLangException
 	{
-		FileInputStream strModel;
 		PrismParser prismParser;
-		ModulesFile modulesFile = null;
-
-		// open file
-		strModel = new FileInputStream(file);
-
 		try {
 			// obtain exclusive access to the prism parser
 			// (don't forget to release it afterwards)
 			prismParser = getPrismParser();
-			try {
-				// parse file
-				modulesFile = prismParser.parseModulesFile(strModel, typeOverride);
-
-				if (modulesFile != null)
-					modulesFile.setLocation(file.toPath().toAbsolutePath());
-
-			} finally {
-				// release prism parser
-				releasePrismParser();
-			}
 		} catch (InterruptedException ie) {
 			throw new PrismLangException("Concurrency error in parser");
 		}
+
+		ModulesFile modulesFile;
+		try (FileInputStream strModel = new FileInputStream(file)) {
+			// parse file
+			modulesFile = prismParser.parseModulesFile(strModel, typeOverride);
+		} finally {
+			// release prism parser
+			releasePrismParser();
+		}
+
+		if (modulesFile != null)
+			modulesFile.setLocation(file.toPath().toAbsolutePath());
 
 		modulesFile.tidyUp();
 
@@ -1544,7 +1540,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param modelInfo Accompanying model info (null if not needed)
 	 * @param file File to read in
 	 */
-	public PropertiesFile parsePropertiesFile(ModelInfo modelInfo, File file) throws FileNotFoundException, PrismLangException
+	public PropertiesFile parsePropertiesFile(ModelInfo modelInfo, File file) throws IOException, PrismLangException
 	{
 		return parsePropertiesFile(modelInfo, file, true);
 	}
@@ -1558,30 +1554,26 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param file File to read in
 	 * @param tidy Whether or not to do "tidy" (post-parse checks and processing)
 	 */
-	public PropertiesFile parsePropertiesFile(ModelInfo modelInfo, File file, boolean tidy) throws FileNotFoundException, PrismLangException
+	public PropertiesFile parsePropertiesFile(ModelInfo modelInfo, File file, boolean tidy) throws IOException, PrismLangException
 	{
-		FileInputStream strProperties;
 		PrismParser prismParser;
-		PropertiesFile propertiesFile = null;
-
-		// open file
-		strProperties = new FileInputStream(file);
-
 		try {
 			// obtain exclusive access to the prism parser
 			// (don't forget to release it afterwards)
 			prismParser = getPrismParser();
-			try {
-				// parse file
-				propertiesFile = prismParser.parsePropertiesFile(modelInfo, strProperties);
-				if (propertiesFile != null)
-					propertiesFile.setLocation(file.toPath().toAbsolutePath());
-			} finally {
-				// release prism parser
-				releasePrismParser();
-			}
 		} catch (InterruptedException ie) {
 			throw new PrismLangException("Concurrency error in parser");
+		}
+
+		PropertiesFile propertiesFile;
+		try (FileInputStream strProperties = new FileInputStream(file)) {
+			// parse file
+			propertiesFile = prismParser.parsePropertiesFile(modelInfo, strProperties);
+			if (propertiesFile != null)
+				propertiesFile.setLocation(file.toPath().toAbsolutePath());
+		} finally {
+			// release prism parser
+			releasePrismParser();
 		}
 
 		if (tidy)

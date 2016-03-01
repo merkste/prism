@@ -27,7 +27,7 @@
 package explicit;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 import parser.State;
@@ -347,7 +347,7 @@ public class QuantAbstractRefineExample extends QuantAbstractRefine
 			boolean min = true;
 			abstractRefine.abstractRefine(min);
 			
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			System.out.println("Error: " + e.getMessage());
 			System.exit(1);
 		} catch (PrismException e) {

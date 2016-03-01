@@ -28,7 +28,7 @@
 package explicit;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -408,7 +408,7 @@ public class ConstructModel extends PrismComponent
 			simulator.ModulesFileModelGenerator modelGen = new simulator.ModulesFileModelGenerator(modulesFile, constructModel);
 			Model model = constructModel.constructModel(modelGen);
 			model.exportToPrismExplicitTra(args[1]);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			System.out.println("Error: " + e.getMessage());
 			System.exit(1);
 		} catch (PrismException e) {
