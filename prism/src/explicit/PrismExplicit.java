@@ -28,6 +28,7 @@ package explicit;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import parser.ast.Expression;
 import parser.ast.ModulesFile;
@@ -376,6 +377,7 @@ public class PrismExplicit extends PrismComponent
 		if (fileOut != null) {
 			tmpLog = new PrismFileLog(fileOut.getPath());
 			if (!tmpLog.ready()) {
+				tmpLog.close();
 				throw new PrismException("Could not open file \"" + fileOut + "\" for output");
 			}
 		} else {
@@ -441,7 +443,7 @@ public class PrismExplicit extends PrismComponent
 			pe.modelCheck(modelExpl, modulesFile, propertiesFile, propertiesFile.getProperty(0));
 		} catch (PrismException e) {
 			System.out.println(e);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			System.out.println(e);
 		}
 	}
@@ -469,7 +471,7 @@ public class PrismExplicit extends PrismComponent
 			pe.modelCheck(modelExplicit, null, propertiesFile, propertiesFile.getProperty(0));
 		} catch (PrismException e) {
 			System.out.println(e);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			System.out.println(e);
 		}
 	}
