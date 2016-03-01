@@ -46,7 +46,6 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
-		getObjectiveGoal(expression);
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
