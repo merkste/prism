@@ -406,7 +406,7 @@ public class StochModelChecker extends ProbModelChecker
 
 	// compute probabilities for next
 	@Override
-	protected StateValues computeNextProbs(JDDNode tr, JDDNode b)
+	public StateValues computeNextProbs(JDDNode tr, JDDNode b)
 	{
 		JDDNode diags, emb;
 		StateValues probs = null;

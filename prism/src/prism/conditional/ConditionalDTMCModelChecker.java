@@ -76,11 +76,28 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 
 		// System.out.println(types);
-
-		if (types.contains(DtmcTransformerType.Ltl)) {
-			if(new MCLTLTransformer(mc, prism).canHandle(model, expression)) {
-				return new MCLTLTransformer(mc, prism);
+		for (DtmcTransformerType type : types) {
+			ConditionalTransformer<ProbModelChecker, ProbModel> transformer;
+			switch (type) {
+//			case Quotient:
+//				transformer = new MCQuotientTransformer(mc);
+//				break;
+			case Until:
+				transformer = new MCUntilTransformer(mc, prism);
+				break;
+			case Next:
+				transformer = new MCNextTransformer(mc, prism);
+				break;
+			case Ltl:
+				transformer = new MCLTLTransformer(mc, prism);
+				break;
+			default:
+				continue;
 			}
+			if (transformer.canHandle(model, expression)) {
+				return transformer;
+			}
+			;
 		}
 
 		return null;

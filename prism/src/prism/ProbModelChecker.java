@@ -1368,7 +1368,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// compute probabilities for next
 
-	protected StateValues computeNextProbs(JDDNode tr, JDDNode b)
+	public StateValues computeNextProbs(JDDNode tr, JDDNode b)
 	{
 		JDDNode tmp;
 		StateValues probs = null;
