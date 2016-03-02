@@ -278,6 +278,21 @@ public class MDPRestricted extends MDPView
 		return mappingToOriginalModel[state];
 	}
 
+	public BitSet mapStatesToOriginalModel(final BitSet restrictedStates)
+	{
+		Objects.requireNonNull(restrictedStates);
+
+		final int length = restrictedStates.length();
+		if (length == 0){
+			return new BitSet();
+		}
+		final BitSet originalStates = new BitSet(mappingToOriginalModel[length-1]);
+		for (int restrictedState : new IterableStateSet(restrictedStates, mappingToOriginalModel.length)) {
+			originalStates.set(mappingToOriginalModel[restrictedState]);
+		}
+		return originalStates;
+	}
+
 	public Integer mapStateToRestrictedModel(final int state)
 	{
 		return mappingToRestrictedModel[state];
@@ -287,6 +302,11 @@ public class MDPRestricted extends MDPView
 	{
 		Objects.requireNonNull(originalStates);
 
+		final int length = originalStates.length();
+		if (length == 0){
+			return new BitSet();
+		}
+		//XXX: consider allocating a BitSet in a suited size
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
 			final Integer state = mappingToRestrictedModel[originalState];
@@ -337,7 +357,7 @@ public class MDPRestricted extends MDPView
 		dist.add(2, 0.7);
 		original.addActionLabelledChoice(2, dist, "a");
 
-		MDP restricted;
+		MDPRestricted restricted;
 
 		System.out.println("Original Model:");
 		System.out.print(original.infoStringTable());
@@ -356,6 +376,15 @@ public class MDPRestricted extends MDPView
 		System.out.println("Initials:    " + BitSetTools.asBitSet(restricted.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(restricted.getDeadlockStates()));
 		System.out.println(restricted);
+		BitSet restrictedStates = new BitSet();
+		restrictedStates.set(0);
+		restrictedStates.set(1);
+		System.out.println("original states to " + restrictedStates + ": " + restricted.mapStatesToOriginalModel(restrictedStates));
+		BitSet originalStates = new BitSet();
+		originalStates.set(0);
+		originalStates.set(1);
+		originalStates.set(3);
+		System.out.println("restricted states to " + originalStates + ": " + restricted.mapStatesToRestrictedModel(originalStates));
 
 		System.out.println();
 
@@ -366,5 +395,16 @@ public class MDPRestricted extends MDPView
 		System.out.println("Initials:    " + BitSetTools.asBitSet(restricted.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(restricted.getDeadlockStates()));
 		System.out.println(restricted);
+		restrictedStates = new BitSet();
+		restrictedStates.set(0);
+		restrictedStates.set(1);
+		restrictedStates.set(2);
+		System.out.println("original states to " + restrictedStates + ": " + restricted.mapStatesToOriginalModel(restrictedStates));
+		originalStates = new BitSet();
+		originalStates.set(0);
+		originalStates.set(1);
+		originalStates.set(2);
+		originalStates.set(3);
+		System.out.println("restricted states to " + originalStates + ": " + restricted.mapStatesToRestrictedModel(originalStates));
 	}
 }
