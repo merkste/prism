@@ -7,6 +7,7 @@ import explicit.Distribution;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 
+@Deprecated
 public abstract class MDPConditionalTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
 {
 	public MDPConditionalTransformer(final MDPModelChecker modelChecker)
