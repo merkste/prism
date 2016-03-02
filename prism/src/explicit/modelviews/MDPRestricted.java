@@ -52,12 +52,10 @@ public class MDPRestricted extends MDPView
 
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[states.cardinality()];
-		for (int state = 0, index = 0, numStates = model.getNumStates(); state < numStates; state++) {
-			if (states.get(state)) {
-				mappingToRestrictedModel[state] = index;
-				mappingToOriginalModel[index] = state;
-				index++;
-			}
+		for (int state = states.nextSetBit(0), index = 0; state >= 0; state = states.nextSetBit(state+1)) {
+			mappingToRestrictedModel[state] = index;
+			mappingToOriginalModel[index] = state;
+			index++;
 		}
 	}
 
