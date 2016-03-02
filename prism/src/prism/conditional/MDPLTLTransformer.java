@@ -15,13 +15,13 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.LTLModelChecker;
 import prism.LTLModelChecker.LTLProduct;
-import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
 import prism.Prism;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
@@ -32,7 +32,7 @@ import acceptance.AcceptanceStreettDD;
 import acceptance.AcceptanceStreettDD.StreettPairDD;
 import acceptance.AcceptanceType;
 
-public class MDPLTLTransformer extends ConditionalTransformer<NondetModelChecker, NondetModel> {
+public class MDPLTLTransformer extends MDPConditionalTransformer {
 	boolean debug = false;
 	boolean useNormalFormTransformation = false;
 
@@ -41,20 +41,20 @@ public class MDPLTLTransformer extends ConditionalTransformer<NondetModelChecker
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression) throws PrismException
+	protected boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
 	{
-		if (!LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression.getCondition()))
-			return false;
+		final Expression condition = expression.getCondition();
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
+	}
 
-		if (!(expression.getObjective() instanceof ExpressionProb)) {
+	@Override
+	protected boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	{
+		if (!super.canHandleObjective(model, expression)) {
 			return false;
 		}
-
-		final ExpressionProb objective = (ExpressionProb)expression.getObjective();
-		if (!LTLModelChecker.isSupportedLTLFormula(model.getModelType(), objective.getExpression()))
-			return false;
-
-		return true;
+		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), objective.getExpression());
 	}
 
 	@Override

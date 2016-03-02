@@ -13,17 +13,17 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
-import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
 import prism.Prism;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MDPFinallyTransformer extends ConditionalTransformer<NondetModelChecker, NondetModel> {
+public class MDPFinallyTransformer extends MDPConditionalTransformer {
 	private boolean debug = false;
 	
 	public MDPFinallyTransformer(NondetModelChecker modelChecker, Prism prism)
@@ -32,16 +32,20 @@ public class MDPFinallyTransformer extends ConditionalTransformer<NondetModelChe
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression)
+	protected boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression)
 	{
-		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		if (!ExpressionInspector.isSimpleFinallyFormula(normalized)) return false;
+		final Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
+		return ExpressionInspector.isSimpleFinallyFormula(normalized);
+	}
 
-		if (!(expression.getObjective() instanceof ExpressionProb)) {
+	@Override
+	protected boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	{
+		if (!super.canHandleObjective(model, expression)) {
 			return false;
 		}
-		final ExpressionProb objective = (ExpressionProb)expression.getObjective();
-		normalized = ExpressionInspector.normalizeExpression(objective.getExpression());
+		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		final Expression normalized = ExpressionInspector.normalizeExpression(objective.getExpression());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
