@@ -61,7 +61,7 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 		final MDPRestricted restrictedModel = restriction.getTransformedModel();
 		final BitSet restrictedBadStates = restriction.mapToTransformedModel(badStatesTransformation.getBadStates());
 		final BitSet restrictedStatesOfInterest = restriction.mapToTransformedModel(badStatesTransformation.mapToTransformedModel(statesOfInterest));
-		final MDPResetTransformer reset = new MDPResetStateTransformer(modelChecker);
+		final MDPResetTransformer reset = new MDPResetTransformer(modelChecker);
 		final ResetTransformation<MDP> resetTransformation = reset.transformModel(restrictedModel, restrictedBadStates, restrictedStatesOfInterest);
 
 		// 3) Flatten Nested Transformation
