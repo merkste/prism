@@ -19,7 +19,7 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	boolean debug = false;
 	
 	/**
-	 * <br>[ REFS: <i>none</i>, DEREFS: <i>probReachGoal</i> ]
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>probReachGoal, statesOfInterest</i> ]
 	 */
 	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode probReachGoal, final JDDNode statesOfInterest) throws PrismException {
 		this.originalModel = originalModel;
