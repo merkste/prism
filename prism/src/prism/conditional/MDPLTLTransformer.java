@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 
 import mtbdd.PrismMTBDD;
 import common.StopWatch;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;

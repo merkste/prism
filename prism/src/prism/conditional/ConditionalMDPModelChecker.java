@@ -2,11 +2,10 @@ package prism.conditional;
 
 import explicit.MinMax;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.SortedSet;
 
 import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
