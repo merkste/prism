@@ -1,6 +1,9 @@
 package prism.conditional;
 
 import explicit.MinMax;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.SortedSet;
 
 import explicit.conditional.transformer.MdpTransformerType;
@@ -101,8 +104,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 	
 	private ModelExpressionTransformation<NondetModel,NondetModel> transformModel(final ConditionalTransformer<NondetModelChecker, NondetModel> transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		// Debug output
-		// ModelPrinter.exportToDotFile(model, "../conditional/conditional_mc_original.dot", target);
 		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for " + expression);
 		long timer = System.currentTimeMillis();
 		final ModelExpressionTransformation<NondetModel, NondetModel> transformation = 
@@ -111,8 +112,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		prism.getLog().println("Time for model transformation: " + timer / 1000.0 + " seconds.");
 		prism.getLog().println("Transformed model information:");
 		transformation.getTransformedModel().printTransInfo(prism.getLog(), false);
-		// Debug output
-		// ModelPrinter.exportToDotFile(this, "../conditional/conditional_mc_transformed.dot", untilTransforamtion.mapStates(target));
 		return transformation;
 	}
 
