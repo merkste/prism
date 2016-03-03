@@ -419,13 +419,8 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 		// cleanup
 
 		transform.clear();
-		JDD.Deref(badStates);
-		JDD.Deref(conditionMaxProbs);
-		JDD.Deref(objectiveMaxProbs);
-		JDD.Deref(objectiveGoalStates);
-		JDD.Deref(conditionGoalStates);
-		JDD.Deref(conditionGoalStatesClean);
-		JDD.Deref(statesOfInterest);
+		JDD.Deref(badStates, conditionMaxProbs, objectiveMaxProbs, objectiveGoalStates,
+		          conditionGoalStates, conditionGoalStatesClean, statesOfInterest);
 		
 		return new ModelExpressionTransformation<NondetModel, NondetModel>() {
 

@@ -110,11 +110,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), liftedProbs.copy());
 //		new StateValuesMTBDD(liftedProbs.copy(), pivotModel).print(prism.getLog());
 
-		JDD.Deref(remain);
-		JDD.Deref(goal);
-		JDD.Deref(prob0);
-		JDD.Deref(prob1);
-		JDD.Deref(probs);
+		JDD.Deref(remain, goal, prob0, prob1, probs);
 
 		ProbModel pivotModel = pivotTransformation.getTransformedModel();
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
@@ -138,9 +134,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //			e.printStackTrace();
 //		}
 
-		JDD.Deref(liftedProbs);
-		JDD.Deref(statesOfInterest);
-		JDD.Deref(pivotStatesOfInterest);
+		JDD.Deref(liftedProbs, statesOfInterest, pivotStatesOfInterest);
 
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}

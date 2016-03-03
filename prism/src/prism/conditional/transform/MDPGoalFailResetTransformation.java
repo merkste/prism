@@ -90,10 +90,7 @@ public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 		// call underlying clear
 		super.clear();
 		// clear stored JDDNodes
-		JDD.Deref(goalFailStates);
-		JDD.Deref(probGoal);
-		JDD.Deref(resetStates);
-		JDD.Deref(resetTarget);
+		JDD.Deref(goalFailStates, probGoal, resetStates, resetTarget);
 	}
 
 	/**

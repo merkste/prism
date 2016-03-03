@@ -63,8 +63,7 @@ public class MDPResetTransformation extends NondetModelTransformation {
 		// call underlying clear
 		super.clear();
 		// clear stored JDDNodes
-		JDD.Deref(resetStates);
-		JDD.Deref(resetTarget);
+		JDD.Deref(resetStates, resetTarget);
 	}
 
 	/** Returns a JDDNode for the reset target (column variables)

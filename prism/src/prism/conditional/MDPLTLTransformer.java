@@ -111,8 +111,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 		if (svOriginal.maxOverBDD(statesOfInterest) == 1.0) {
 			// clean-up
 			svOriginal.clear();
-			JDD.Deref(statesOfInterest);
-			JDD.Deref(conditionGoalStates);
+			JDD.Deref(statesOfInterest, conditionGoalStates);
 			conditionProduct.clear();
 
 			throw new UndefinedTransformationException("condition is not satisfiable");
@@ -271,11 +270,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 		transform.clear();
 		conditionProduct.clear();
 		objectiveAndConditionProduct.clear();
-		JDD.Deref(objectiveAndConditionGoalStates);
-		JDD.Deref(badStates);
-		JDD.Deref(conditionGoalStates);
-
-		JDD.Deref(statesOfInterest);
+		JDD.Deref(objectiveAndConditionGoalStates, badStates, conditionGoalStates, statesOfInterest);
 
 		return new ModelExpressionTransformation<NondetModel, NondetModel>() {
 			// references (and clears) the following variables:

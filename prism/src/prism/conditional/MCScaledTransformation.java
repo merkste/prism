@@ -75,8 +75,7 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		*/
 		validStates = JDD.And(reachGoal01, statesOfInterest);
 
-		JDD.Deref(newTrans);
-		JDD.Deref(newStart);
+		JDD.Deref(newTrans, newStart);
 		scalingTransformation.clear();
 	}
 

@@ -91,8 +91,7 @@ public class MCDeadlockTransformation implements ModelTransformation<ProbModel, 
 		public void clear()
 		{
 			super.clear();
-			JDD.Deref(deadlockStates);
-			JDD.Deref(statesOfInterest);
+			JDD.Deref(deadlockStates, statesOfInterest);
 		}
 	
 		@Override

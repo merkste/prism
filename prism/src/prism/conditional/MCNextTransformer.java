@@ -151,9 +151,7 @@ public class MCNextTransformer extends ConditionalTransformer<ProbModelChecker, 
 //			e.printStackTrace();
 //		}
 
-		JDD.Deref(liftedProbs);
-		JDD.Deref(statesOfInterest);
-		JDD.Deref(pivotStatesOfInterest);
+		JDD.Deref(liftedProbs, statesOfInterest, pivotStatesOfInterest);
 
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}

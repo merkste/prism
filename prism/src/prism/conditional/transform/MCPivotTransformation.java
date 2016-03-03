@@ -130,8 +130,7 @@ public class MCPivotTransformation implements ModelTransformation<ProbModel, Pro
 		public void clear()
 		{
 			super.clear();
-			JDD.Deref(pivotStates);
-			JDD.Deref(statesOfInterest);
+			JDD.Deref(pivotStates, statesOfInterest);
 		}
 
 		@Override
