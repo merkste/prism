@@ -27,6 +27,7 @@ import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.PredecessorRelation;
 import explicit.conditional.transformer.TerminalTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 
@@ -66,6 +67,10 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		final BitSet prob0 = modelChecker.prob0(model, remain, goal, pre);
 		final BitSet prob1 = modelChecker.prob1(model, remain, goal, pre);
 		final double[] probabilities = computeProbabilities(model, remain, goal, prob0, prob1, negated);
+
+		if (BitSetTools.minus(statesOfInterest, prob0).isEmpty()) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
 
 		// 2. identify terminal states
 		final BitSet terminal;

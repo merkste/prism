@@ -22,6 +22,7 @@ import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.conditional.transformer.TerminalTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;
@@ -44,6 +45,10 @@ public class ConditionalNextTransformer extends PrismComponent
 			final BitSet statesOfInterest) throws PrismException
 	{
 		final double[] probabilities = computeProbabilities(model, goal, negated);
+		if (! statesOfInterest.intersects(new Support(probabilities).asBitSet())) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
+
 		final BitSet terminal = getTerminal(model, goal, negated);
 
 		// 1. union model
