@@ -3,6 +3,7 @@ package prism.conditional;
 import java.util.Objects;
 
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -69,6 +70,10 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		final JDDNode prob0 = computeProb0(model, remain, goal);
 		final JDDNode prob1 = computeProb1(model, remain, goal, prob0);
 		final JDDNode probs = computeProbabilities(model, remain, goal, prob0, prob1, negated);
+
+		if (JDD.IsContainedIn(statesOfInterest, prob0)) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
 
 //>>> Debug: print probabilities
 //		prism.getLog().println("Probs:");

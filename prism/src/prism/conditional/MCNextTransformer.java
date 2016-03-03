@@ -3,6 +3,7 @@ package prism.conditional;
 import java.util.Objects;
 
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -95,6 +96,13 @@ public class MCNextTransformer extends ConditionalTransformer<ProbModelChecker, 
 		final boolean negated = next instanceof ExpressionUnaryOp;
 
 		final JDDNode probs = computeProbabilities(model, goal, negated);
+
+		final JDDNode support = JDD.Apply(JDD.GREATERTHAN, probs.copy(), JDD.ZERO.copy());
+		final boolean satisfiable = JDD.AreIntersecting(support, statesOfInterest);
+		JDD.Deref(support);
+		if (! satisfiable) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
 
 //>>> Debug: print probabilities
 //		prism.getLog().println("Probs:");

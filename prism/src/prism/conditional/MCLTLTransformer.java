@@ -4,6 +4,7 @@ import jdd.JDD;
 import jdd.JDDNode;
 import acceptance.AcceptanceType;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import acceptance.AcceptanceReachDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -74,6 +75,13 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 		JDDNode probReachGoal = probsProductMTBDD.getJDDNode().copy();
 		//StateValuesMTBDD.print(prism.getLog(), probReachGoal.copy(), ltlProduct.getProductModel(), "probReachGoal");
 		probsProductMTBDD.clear();
+
+		final JDDNode support = JDD.Apply(JDD.GREATERTHAN, probReachGoal.copy(), JDD.ZERO.copy());
+		final boolean satisfiable = JDD.AreIntersecting(support, statesOfInterest);
+		JDD.Deref(support);
+		if (! satisfiable) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
 
 		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, ltlProduct.getTransformedModel(), probReachGoal, statesOfInterest.copy());
 
