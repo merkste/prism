@@ -83,9 +83,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 		if (debug)
 			JDD.PrintMinterms(prism.getLog(), conditionGoalStates.copy(), "conditionGoalStates");
 		
-		// compute B aka "bad states" == {s | Pmin=0(<> (E or C))}
-		JDDNode targetStates = JDD.Or(objectiveGoalStates.copy(), conditionGoalStates.copy());
-		final JDDNode badStates = PrismMTBDD.Prob0E(model.getTrans01(),
+		// compute bad states == {s | Pmin=0[<> Condition]}
+		JDDNode targetStates = conditionGoalStates.copy();
+		JDDNode prob0E = PrismMTBDD.Prob0E(model.getTrans01(),
 		                                            model.getReach(),
 		                                            model.getNondetMask(),
 		                                            model.getAllDDRowVars(),
@@ -94,6 +94,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 		                                            JDD.ONE,
 		                                            targetStates);
 		JDD.Deref(targetStates);
+		final JDDNode badStates = JDD.And(prob0E, JDD.Not(objectiveGoalStates.copy()));
 
 		// compute Pmax(<>E | C)
 		time = System.currentTimeMillis();
@@ -144,7 +145,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 				               JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 			}
 
-			public JDDNode goal(boolean row) {
+			public JDDNode fail(boolean row) {
 				JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
 				                         JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 
@@ -155,7 +156,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 				return result;
 			}
 
-			public JDDNode fail(boolean row) {
+			public JDDNode stop(boolean row) {
 				JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
 				                         (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
@@ -166,7 +167,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 				return result;
 			}
 			
-			public JDDNode stop(boolean row) {
+			public JDDNode goal(boolean row) {
 				JDDNode result = JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
 				                         (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
@@ -278,18 +279,6 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 					JDD.PrintMinterms(prism.getLog(), condition_to_stop.copy(), "condition_to_stop");
 
 				time = System.currentTimeMillis();
-				JDDNode bad_to_fail =
-					JDD.Times(normal(true),
-					          tau(),
-					          badStates.copy(),
-					          fail(false));
-				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" bad_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(bad_to_fail));
-				if (debug) {
-					JDD.PrintMinterms(prism.getLog(), bad_to_fail.copy(), "bad_to_fail");
-				}
-
-				time = System.currentTimeMillis();
 				JDDNode goal_self_loop =
 					JDD.Times(goal(true),
 					          tau(),
@@ -305,6 +294,20 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 						                     originalModel.getAllDDRowVars(),
 						                     originalModel.getAllDDColVars());
 
+				time = System.currentTimeMillis();
+				JDDNode bad_reset =
+					JDD.Times(badStates.copy(),
+					          normal(true),
+					          tau(),
+					          startCol.copy(),
+					          normal(false));
+				time = System.currentTimeMillis() - time;
+				prism.getLog().println(" bad_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(bad_reset));
+				if (debug) {
+					JDD.PrintMinterms(prism.getLog(), bad_reset.copy(), "bad_reset");
+				}
+
+				time = System.currentTimeMillis();
 				JDDNode fail_reset =
 					JDD.Times(fail(true),
 					          tau(),
@@ -358,7 +361,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 				prism.getLog().println("  |= condition_to_stop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 				
 				time = System.currentTimeMillis();
-				newTrans = JDD.Apply(JDD.MAX, newTrans, bad_to_fail);
+				newTrans = JDD.Apply(JDD.MAX, newTrans, bad_reset);
 				time = System.currentTimeMillis() - time;
 				prism.getLog().println("  |= bad_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
