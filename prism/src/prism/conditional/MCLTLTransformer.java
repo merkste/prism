@@ -3,29 +3,39 @@ package prism.conditional;
 import jdd.JDD;
 import jdd.JDDNode;
 import acceptance.AcceptanceType;
+import explicit.conditional.ExpressionInspector;
 import acceptance.AcceptanceReachDD;
+import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
-import prism.Model;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.Prism;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MCLTLTransformer extends ConditionalTransformer<ProbModelChecker, ProbModel> {
+public class MCLTLTransformer extends MCConditionalTransformer {
 
 	public MCLTLTransformer(ProbModelChecker modelChecker, Prism prism) {
 		super(modelChecker, prism);
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression) {
-		// TODO better check
-		return true;
+	protected boolean canHandleCondition(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	{
+		final Expression condition = expression.getCondition();
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
+	}
+
+	@Override
+	protected boolean canHandleObjective(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	{
+		// cannot handle steady state computation yet
+		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));
 	}
 
 	@Override

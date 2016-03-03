@@ -9,11 +9,9 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
-import prism.Model;
 import prism.ModelChecker;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
-import prism.NondetModel;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -27,22 +25,13 @@ import jdd.JDDNode;
 import jdd.JDDVars;
 import mtbdd.PrismMTBDD;
 
-public class MCUntilTransformer extends ConditionalTransformer<ProbModelChecker, ProbModel>
+public class MCUntilTransformer extends MCConditionalTransformer
 {
 	public MCUntilTransformer(ProbModelChecker modelChecker, Prism prism) {
 		super(modelChecker, prism);
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression) throws PrismException
-	{
-		if (!(model instanceof ProbModel) || (model instanceof NondetModel)) {
-			return false;
-		}
-		final ProbModel mc = (ProbModel) model;
-		return canHandleCondition(mc, expression) && canHandleObjective(mc, expression);
-	}
-
 	protected boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
