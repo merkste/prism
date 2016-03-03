@@ -1,8 +1,8 @@
 package common;
 
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 import common.iterable.IterableArray;
@@ -11,12 +11,17 @@ public class BitSetTools
 {
 	public static BitSet asBitSet(final int... indices)
 	{
-		return asBitSet(Arrays.stream(indices));
+		final BitSet result = new BitSet();
+		for (int i : indices) {
+			result.set(i);
+		}
+		return result;
 	}
 
 	public static BitSet asBitSet(final Iterable<Integer> indices)
 	{
-		return asBitSet(indices.iterator());
+		Iterator<Integer> iter = indices.iterator();
+		return (iter instanceof OfInt) ? asBitSet((OfInt) iter) : asBitSet(iter);
 	}
 
 	public static BitSet asBitSet(final IntStream indices)
@@ -29,6 +34,15 @@ public class BitSetTools
 		final BitSet result = new BitSet();
 		while (indices.hasNext()) {
 			result.set(indices.next());
+		}
+		return result;
+	}
+
+	public static BitSet asBitSet(final OfInt indices)
+	{
+		final BitSet result = new BitSet();
+		while (indices.hasNext()) {
+			result.set(indices.nextInt());
 		}
 		return result;
 	}
@@ -83,15 +97,19 @@ public class BitSetTools
 	public static BitSet minus(final BitSet set, final BitSet... sets)
 	{
 		final BitSet difference = (BitSet) set.clone();
-		for (int i = 0; i < sets.length; i++) {
-			difference.andNot(sets[i]);
+		for (BitSet each : sets) {
+			difference.andNot(each);
 		}
 		return difference;
 	}
 
 	public static BitSet union(final BitSet... sets)
 	{
-		return union(Arrays.asList(sets));
+		BitSet union = new BitSet();
+		for (BitSet set : sets) {
+			union.or(set);
+		}
+		return union;
 	}
 
 	public static BitSet union(final Iterable<BitSet> sets)
