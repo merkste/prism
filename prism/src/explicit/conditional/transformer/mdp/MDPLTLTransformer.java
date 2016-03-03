@@ -138,9 +138,12 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			// 5) BadStates Transformation
 			//    bad states == {s | Pmin=0[<> Condition]}
 			final BitSet badStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, conditionAcceptanceLifted.complementToRabin());
-			// reset only from r-states of streett acceptance to reduce number of transitions 
+			// reduce number of transitions, i.e.
+			// - reset only from r-states of streett acceptance
+			// - do not reset from goal states
 			final BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptanceLifted, StreettPair::getR));
 			badStates.and(rStates);
+			badStates.andNot(objectiveAndConditionGoalStates);
 
 			badStatesTransformation = new BadStatesTransformation(objectiveAndConditionProduct, objectiveAndConditionGoalStates, badStates);
 		}

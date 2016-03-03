@@ -74,6 +74,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		// 2) Bad States Transformation
 		//    bad states == {s | Pmin=0[<> Condition]}
 		final BitSet badStates = modelChecker.prob0(model, null, conditionGoalStates, true, null);
+		// reduce number of transitions, i.e.
+		// - do not reset from goal states
+		badStates.andNot(objectiveGoalStates);
 		// reset from fail state as well
 		badStates.set(normalFormTransformation.getFailState());
 
