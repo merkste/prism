@@ -218,13 +218,14 @@ public class DTMCRestricted extends DTMCView
 		assert !fixedDeadlocks : "deadlocks already fixed";
 
 		model = DTMCAlteredDistributions.fixDeadlocks(this.clone());
-		states = new BitSet();
-		states.flip(0, model.getNumStates());
-		restriction = Restriction.TRANSITIVE_CLOSURE;
+		int numStates = model.getNumStates();
+		states = new BitSet(numStates);
+		states.set(0, numStates);
+		restriction = Restriction.TRANSITIVE_CLOSURE_SAFE;
 		// FIXME ALG: extract identity array generation
-		mappingToOriginalModel = new int[model.getNumStates()];
-		mappingToRestrictedModel = new Integer[model.getNumStates()];
-		for (int state = 0; state < mappingToOriginalModel.length; state++) {
+		mappingToOriginalModel = new int[numStates];
+		mappingToRestrictedModel = new Integer[numStates];
+		for (int state = 0; state < numStates; state++) {
 			mappingToOriginalModel[state] = state;
 			mappingToRestrictedModel[state] = state;
 		}
