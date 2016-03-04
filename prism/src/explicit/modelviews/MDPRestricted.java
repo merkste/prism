@@ -286,7 +286,7 @@ public class MDPRestricted extends MDPView
 		if (length == 0){
 			return new BitSet();
 		}
-		final BitSet originalStates = new BitSet(mappingToOriginalModel[length-1]);
+		final BitSet originalStates = new BitSet(mappingToOriginalModel[length-1]+1);
 		for (int restrictedState : new IterableStateSet(restrictedStates, mappingToOriginalModel.length)) {
 			originalStates.set(mappingToOriginalModel[restrictedState]);
 		}
