@@ -54,13 +54,13 @@ import parser.ast.ExpressionSS;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
-import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
 import sparse.PrismSparse;
 import dv.DoubleVector;
+import explicit.MinMax;
 import prism.conditional.ConditionalDTMCModelChecker;
 
 /*
@@ -450,10 +450,22 @@ public class ProbModelChecker extends NonProbModelChecker
 	// Model checking functions
 	
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		if (model.getModelType() != ModelType.DTMC) {
+		switch (model.getModelType()) {
+		case DTMC:
+			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+			    && (expression.getObjective() instanceof ExpressionProb)) {
+				NondetModel mdp = NondetModel.fromProbModel(model);
+				ExpressionProb objective = (ExpressionProb) expression.getObjective();
+				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
+				NondetModelChecker mc = new NondetModelChecker(prism, mdp, getPropertiesFile());
+				return mc.checkExpression(new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
+			}
+		case CTMC:
+			// treat a CTMC as DTMC
+			return new ConditionalDTMCModelChecker(this, prism).checkExpression((ProbModel) model, expression, statesOfInterest);
+		default:
 			throw new PrismException("Cannot model check model type " + model.getModelType());
 		}
-		return new ConditionalDTMCModelChecker(this, prism).checkExpression((ProbModel) model, expression, statesOfInterest);
 	}
 
 	// Contents of a P operator
