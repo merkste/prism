@@ -40,6 +40,7 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
+import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -72,21 +73,23 @@ public class DTMCModelChecker extends ProbModelChecker
 
 	@Override
 	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
-		if (!(model instanceof DTMC)) {
+		switch (model.getModelType()) {
+		case DTMC:
+			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+			    && (expression.getObjective() instanceof ExpressionProb)) {
+				MDP mdp = new MDPFromDTMC((DTMC) model);
+				ExpressionProb objective = (ExpressionProb) expression.getObjective();
+				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
+				StateModelChecker mc = createModelChecker(ModelType.MDP, this);
+				mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
+				return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
+			}
+		case CTMC:
+			// treat a CTMC as DTMC
+			return new ConditionalDTMCModelChecker(this).checkExpression((DTMC) model, expression, statesOfInterest);
+		default:
 			throw new PrismException("Cannot model check model type " + model.getModelType());
 		}
-		final DTMC dtmc = (DTMC) model;
-		if (!(dtmc instanceof CTMC)
-			&& (expression.getObjective() instanceof ExpressionProb)
-			&& settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)) {
-			final MDP mdp = new MDPFromDTMC(dtmc);
-			final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-			final ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
-			final MDPModelChecker mc = new MDPModelChecker(this);
-			mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
-			return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
-		}
-		return new ConditionalDTMCModelChecker(this).checkExpression(dtmc, expression, statesOfInterest);
 	}
 
 	@Override
