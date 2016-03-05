@@ -721,8 +721,101 @@ public class NondetModel extends ProbModel
 
 		return getTransformed(ndTransformation);
 	}
-	
-	
+
+	public static NondetModel fromProbModel(ProbModel model) throws PrismException
+	{
+		// New (product) model - dds, vars, etc.
+		JDDVars newVarDDRowVars[], newVarDDColVars[];
+		JDDVars newAllDDRowVars, newAllDDColVars;
+		JDDVars newAllDDSchedVars, newAllDDSynchVars, newAllDDChoiceVars, newAllDDNondetVars;
+		JDDNode newStateRewards[], newTransRewards[];
+		ModelVariablesDD newModelVariables;
+		VarList newVarList;
+		// Misc
+		int i;
+
+		if (model.getModelType() != ModelType.DTMC) {
+			throw new PrismException("Can only convert DTMC to MDP");
+		}
+
+		newModelVariables = model.getModelVariables().copy();
+
+		// Generate empty allDDChoiceVars and newAllDDNondetVars
+		newAllDDSchedVars = new JDDVars();
+		newAllDDSynchVars = new JDDVars();
+		newAllDDChoiceVars = new JDDVars();
+		newAllDDNondetVars = new JDDVars();
+
+		// Create/populate new state variable lists
+		// no additional state vars, we can just copy everything
+		newVarDDRowVars = JDDVars.copyArray(model.varDDRowVars);
+		newVarDDColVars = JDDVars.copyArray(model.varDDColVars);
+		newAllDDRowVars = model.allDDRowVars.copy();
+		newAllDDColVars = model.allDDColVars.copy();
+		newVarList = (VarList) model.varList.clone();
+
+		// Build transformed reward information
+		newStateRewards = new JDDNode[model.stateRewards.length];
+		for (i=0; i < model.stateRewards.length; i++) {
+			newStateRewards[i] = model.stateRewards[i].copy();
+		}
+		newTransRewards = new JDDNode[model.transRewards.length];
+		for (i=0; i < model.transRewards.length; i++) {
+			newTransRewards[i] = model.transRewards[i].copy();
+		}
+
+		// Create a new model model object to store the product model
+		NondetModel result = new NondetModel(
+		// New transition matrix/start state
+				model.getTrans().copy(),
+				model.getStart().copy(),
+				// New reward information
+				newStateRewards,
+				newTransRewards,
+				model.rewardStructNames.clone(),
+				// New list of all row/col vars
+				newAllDDRowVars, newAllDDColVars,
+				// Nondet variables (unchanged)
+				newAllDDSchedVars,
+				newAllDDSynchVars,
+				newAllDDChoiceVars,
+				newAllDDNondetVars,
+				// New model variables
+				newModelVariables,
+				// Module info (unchanged)
+				model.getNumModules(),
+				model.getModuleNames(),
+				JDDVars.copyArray(model.getModuleDDRowVars()),
+				JDDVars.copyArray(model.getModuleDDColVars()),
+				// New var info
+				newVarList.getNumVars(), newVarList, newVarDDRowVars, newVarDDColVars,
+				// Constants (no change)
+				model.getConstantValues());
+
+		// Set new transActions: all actions have index 0
+		result.setTransActions(JDD.Constant(0));
+
+		// Also need to copy set of action label strings
+		result.setSynchs(new Vector<String>());
+
+		// lift labels
+		for (Entry<String, JDDNode> entry : model.labelsDD.entrySet()) {
+			result.labelsDD.put(entry.getKey(), entry.getValue().copy());
+		}
+
+		// Do reachability/etc. for the new model
+		// we know the reachable state set
+		result.setReach(model.getReach().copy());
+		result.filterReachableStates();
+		result.findDeadlocks(false);
+		if (result.getDeadlockStates().size() > 0) {
+			// Assuming original model has no deadlocks, neither should the transformed model
+			throw new PrismException("Transformed model product has deadlock states");
+		}
+
+		return result;
+	}
+
 	public void dump(PrismLog log) throws PrismException {
 		super.dump(log);
 		log.println("allDDNondetVars = "+allDDNondetVars);
