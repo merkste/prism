@@ -454,7 +454,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		case DTMC:
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
 			    && (expression.getObjective() instanceof ExpressionProb)) {
+				prism.getLog().println("\nConverting DTMC to MDP");
+				long buildTime = System.currentTimeMillis();
 				NondetModel mdp = NondetModel.fromProbModel(model);
+				buildTime = System.currentTimeMillis() - buildTime;
+				prism.getLog().println("Time for converting: " + buildTime / 1000.0 + " seconds.");
 				ExpressionProb objective = (ExpressionProb) expression.getObjective();
 				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
 				NondetModelChecker mc = new NondetModelChecker(prism, mdp, getPropertiesFile());
