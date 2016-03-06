@@ -77,7 +77,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		case DTMC:
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
 			    && (expression.getObjective() instanceof ExpressionProb)) {
-				MDP mdp = new MDPFromDTMC((DTMC) model);
+				mainLog.println("\nConverting DTMC to MDPSparse");
+				long buildTime = System.currentTimeMillis();
+				MDP mdp = new MDPSparse(new MDPFromDTMC((DTMC) model));
+				buildTime = System.currentTimeMillis() - buildTime;
+				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
 				ExpressionProb objective = (ExpressionProb) expression.getObjective();
 				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
 				StateModelChecker mc = createModelChecker(ModelType.MDP, this);
