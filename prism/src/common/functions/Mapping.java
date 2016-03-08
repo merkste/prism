@@ -4,7 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.DoubleFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.LongFunction;
+
+import common.functions.primitive.MappingDouble;
+import common.functions.primitive.MappingInt;
+import common.functions.primitive.MappingLong;
 
 @FunctionalInterface
 public interface Mapping<S, T> extends Function<S, T>
@@ -14,6 +21,24 @@ public interface Mapping<S, T> extends Function<S, T>
 	 */
 	@Override
 	default <P> Mapping<P, T> compose(Function<? super P, ? extends S> function)
+	{
+		Objects.requireNonNull(function);
+		return element -> apply(function.apply(element));
+	}
+
+	default <P> MappingInt<T> compose(IntFunction<? extends S> function)
+	{
+		Objects.requireNonNull(function);
+		return element -> apply(function.apply(element));
+	}
+
+	default <P> MappingLong<T> compose(LongFunction<? extends S> function)
+	{
+		Objects.requireNonNull(function);
+		return element -> apply(function.apply(element));
+	}
+
+	default <P> MappingDouble<T> compose(DoubleFunction<? extends S> function)
 	{
 		Objects.requireNonNull(function);
 		return element -> apply(function.apply(element));
