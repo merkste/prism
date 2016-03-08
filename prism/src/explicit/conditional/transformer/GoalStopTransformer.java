@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.mdp;
+package explicit.conditional.transformer;
 
 import java.util.BitSet;
 import java.util.Iterator;
@@ -7,40 +7,35 @@ import java.util.Map.Entry;
 import prism.PrismException;
 import common.BitSetTools;
 import common.functions.primitive.MappingInt;
+import explicit.DTMCModelChecker;
 import explicit.DiracDistribution;
 import explicit.Distribution;
-import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
-import explicit.conditional.transformer.BinaryRedistribution;
 
-public class GoalStopTransformer extends ConditionalNormalFormTransformer
+public interface GoalStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
 	public static final int STOP = 1;
 
-	public GoalStopTransformer(final MDPModelChecker modelChecker)
+	@Override
+	default GoalStopTransformation<M> transformModel(final M model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
 	{
-		super(modelChecker, 2);
+		return new GoalStopTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveStates, conditionStates));
 	}
 
 	@Override
-	public GoalStopTransformation<MDP> transformModel(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	default public int getNumTrapStates()
 	{
-		return new GoalStopTransformation<>(super.transformModel(model, objectiveStates, conditionStates));
-	}
+		return 2;
+	};
 
 	@Override
-	protected BitSet getTerminalStates(final BitSet objectiveStates, final BitSet conditionStates)
-	{
-		return conditionStates;
-	}
-
-	@Override
-	protected MappingInt<Iterator<Entry<Integer, Double>>> getDistributions(final MDP model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveStates, BitSet conditionStates)
+			throws PrismException
 	{
 		// compute Pmax(<> Objective)
-		final double[] objectiveMaxProbs = modelChecker.computeReachProbs(model, objectiveStates, false).soln;
+		final double[] objectiveMaxProbs = computeReachProbs(model, objectiveStates);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
@@ -64,6 +59,54 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 			}
 		};
 	}
+
+
+
+	public static final class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalStopTransformer<explicit.DTMC>
+	{
+		public DTMC(DTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+	}
+
+
+
+	public static final class MDP extends ConditionalNormalFormTransformer.MDP implements GoalStopTransformer<explicit.MDP>
+	{
+		public MDP(MDPModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		protected BitSet getTerminalStates(final BitSet objectiveStates, final BitSet conditionStates)
+		{
+			return conditionStates;
+		}
+	}
+
+
+
+	public static class GoalStopTransformation<M extends Model> extends NormalFormTransformation<M>
+	{
+		public GoalStopTransformation(final M originalModel, final M transformedModel)
+		{
+			super(originalModel, transformedModel);
+		}
+
+		public GoalStopTransformation(final NormalFormTransformation<M> transformation)
+		{
+			super(transformation);
+		}
+
+		public int getStopState()
+		{
+			return numberOfStates + STOP;
+		}
+	}
+
+
 
 	public static void main(final String[] args) throws PrismException
 	{
@@ -95,7 +138,7 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 		System.out.println(original);
 		System.out.println();
 
-		final GoalStopTransformer transformer = new GoalStopTransformer(new MDPModelChecker(null));
+		final GoalStopTransformer.MDP transformer = new GoalStopTransformer.MDP(new MDPModelChecker(null));
 		final BitSet objectiveStates = BitSetTools.asBitSet(1);
 		final BitSet conditionStates = BitSetTools.asBitSet(2);
 		final BitSet statesOfInterest = BitSetTools.asBitSet(1);
@@ -104,30 +147,10 @@ public class GoalStopTransformer extends ConditionalNormalFormTransformer
 
 		System.out.println("Conditional Model, normal form, objectiveStates=" + objectiveStates + ", conditionStates=" + conditionStates + ", statesOfInterest="
 				+ statesOfInterest + ":");
-		final MDP transformed = transformer.transformModel(original, objectiveStates, conditionStates).getTransformedModel();
+		final explicit.MDP transformed = transformer.transformModel(original, objectiveStates, conditionStates).getTransformedModel();
 		System.out.print(transformed.infoStringTable());
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));
 		System.out.println(transformed);
-	}
-
-
-
-	public static class GoalStopTransformation<M extends Model> extends NormalFormTransformation<M>
-	{
-		public GoalStopTransformation(final M originalModel, final M transformedModel)
-		{
-			super(originalModel, transformedModel);
-		}
-
-		public GoalStopTransformation(final NormalFormTransformation<M> transformation)
-		{
-			super(transformation);
-		}
-
-		public int getStopState()
-		{
-			return numberOfStates + STOP;
-		}
 	}
 }

@@ -14,9 +14,10 @@ import explicit.MDPModelChecker;
 import explicit.ModelTransformationNested;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.GoalStopTransformer;
+import explicit.conditional.transformer.GoalStopTransformer.GoalStopTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
-import explicit.conditional.transformer.mdp.GoalStopTransformer.GoalStopTransformation;
 import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 
 // FIXME ALG: prove correctness of transformation
@@ -103,7 +104,7 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 	protected BadStatesTransformation transformBadStates(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates) throws PrismException
 	{
 		// 1) Normal Form Transformation
-		final GoalStopTransformer normalFormTransformer = new GoalStopTransformer(modelChecker);
+		final GoalStopTransformer.MDP normalFormTransformer = new GoalStopTransformer.MDP(modelChecker);
 		final GoalStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
 
 		// 2) Bad States Transformation

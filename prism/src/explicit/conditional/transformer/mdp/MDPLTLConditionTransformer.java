@@ -19,9 +19,10 @@ import explicit.MDPModelChecker;
 import explicit.ModelTransformationNested;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.GoalFailTransformer;
+import explicit.conditional.transformer.GoalFailTransformer.GoalFailTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
-import explicit.conditional.transformer.mdp.GoalFailTransformer.GoalFailTransformation;
 import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 
 public class MDPLTLConditionTransformer extends MDPConditionalTransformer
@@ -110,7 +111,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		final MDP model = product.getTransformedModel();
 
 		// 1) Normal Form Transformation
-		final GoalFailTransformer normalFormTransformer = new GoalFailTransformer(modelChecker);
+		final GoalFailTransformer.MDP normalFormTransformer = new GoalFailTransformer.MDP(modelChecker);
 		final GoalFailTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
 
 		// 2) Bad States Transformation

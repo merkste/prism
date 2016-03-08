@@ -7,8 +7,9 @@ import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.ModelTransformation;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.GoalFailStopTransformer;
+import explicit.conditional.transformer.GoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.transformer.ReachabilityTransformation;
-import explicit.conditional.transformer.mdp.GoalFailStopTransformer.GoalFailStopTransformation;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -68,7 +69,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		checkSatisfiability(model, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal Form Transformation
-		final GoalFailStopTransformer normalFormTransformer = new GoalFailStopTransformer(modelChecker);
+		final GoalFailStopTransformer.MDP normalFormTransformer = new GoalFailStopTransformer.MDP(modelChecker);
 		final GoalFailStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
 
 		// 2) Bad States Transformation
