@@ -1,7 +1,13 @@
 package common.functions.primitive;
 
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.function.LongToDoubleFunction;
+import java.util.function.LongToIntFunction;
+import java.util.function.LongUnaryOperator;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 
@@ -27,6 +33,28 @@ public interface MappingLong<T> extends Mapping<Long, T>, LongFunction<T>
 	{
 		Objects.requireNonNull(function);
 		return (element1, element2) -> apply(function.applyAsLong(element1, element2));
+	}
+
+	@Override
+	default <V> MappingLong<V> andThen(Function<? super T, ? extends V> after)
+	{
+		Objects.requireNonNull(after);
+		return i -> after.apply(apply(i));
+	}
+
+	default LongToIntFunction andThen(ToIntFunction<? super T> after)
+	{
+		return i -> after.applyAsInt(apply(i));
+	}
+
+	default LongUnaryOperator andThen(ToLongFunction<? super T> after)
+	{
+		return i -> after.applyAsLong(apply(i));
+	}
+
+	default LongToDoubleFunction andThen(ToDoubleFunction<? super T> after)
+	{
+		return i -> after.applyAsDouble(apply(i));
 	}
 
 	public static <T> MappingLong<T> constant(T value)
