@@ -13,9 +13,10 @@ import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.Model;
 import explicit.conditional.transformer.ConditionalTransformer;
+import explicit.conditional.transformer.ResetTransformer;
+import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
-import explicit.conditional.transformer.mdp.MDPResetTransformer.ResetTransformation;
 import explicit.modelviews.MDPRestricted;
 
 public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
@@ -61,7 +62,7 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<M
 		final MDPRestricted restrictedModel = restriction.getTransformedModel();
 		final BitSet restrictedBadStates = restriction.mapToTransformedModel(badStatesTransformation.getBadStates());
 		final BitSet restrictedStatesOfInterest = restriction.mapToTransformedModel(badStatesTransformation.mapToTransformedModel(statesOfInterest));
-		final MDPResetTransformer reset = new MDPResetTransformer(modelChecker);
+		final ResetTransformer.MDP reset = new ResetTransformer.MDP(modelChecker);
 		final ResetTransformation<MDP> resetTransformation = reset.transformModel(restrictedModel, restrictedBadStates, restrictedStatesOfInterest);
 
 		// 3) Flatten Nested Transformation
