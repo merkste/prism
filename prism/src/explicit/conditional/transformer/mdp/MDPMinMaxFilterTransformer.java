@@ -91,7 +91,7 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 			throws PrismException
 	{
 		if (!canHandle(model, expression)) {
-			throw new PrismException("Cannot perform model tranformation for " + expression + " and " + model.infoString());
+			throw new PrismException("Cannot perform model transformation for " + expression + " and " + model.infoString());
 		}
 		final ExpressionFilter expressionFilter = (ExpressionFilter) ExpressionInspector.trimUnaryOperations(expression);
 

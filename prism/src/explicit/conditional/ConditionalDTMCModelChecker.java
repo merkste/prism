@@ -50,13 +50,13 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		long overallTime = System.currentTimeMillis();
 		BasicModelExpressionTransformation<DTMC, DTMC> transformation = transformer.transform(model, expression, statesOfInterest);
 		long transformationTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("Time for model transformation: " + transformationTime / 1000.0 + " seconds.");
+		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
 		if (isVirtualModel(transformation.getTransformedModel())) {
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
 				mainLog.println("Using virtual model");
 			} else {
-				mainLog.println("Converting virtual model to " + DTMCSparse.class.getSimpleName());
+				mainLog.println("\nConverting virtual model to " + DTMCSparse.class.getSimpleName());
 				long buildTime = System.currentTimeMillis();
 				final DTMC transformedModel = new DTMCSparse(transformation.getTransformedModel());
 				buildTime = System.currentTimeMillis() - buildTime;
@@ -69,7 +69,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		}
 
 		overallTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("Overall time for model transformation: " + overallTime / 1000.0 + " seconds.");
+		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
 		mainLog.print("Transformed model has ");
 		mainLog.println(transformation.getTransformedModel().infoString());
 		return transformation;
@@ -147,7 +147,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		long timer = System.currentTimeMillis();
 		final StateValues result = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
 		timer = System.currentTimeMillis() - timer;
-		mainLog.println("\nTime for property checking in transformed model: " + timer / 1000.0 + " seconds.");
+		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return result;
 	}

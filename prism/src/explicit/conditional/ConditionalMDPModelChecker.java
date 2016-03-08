@@ -113,7 +113,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 	public ConditionalReachabilitiyTransformation<MDP, MDP> transformModel(final MDPConditionalTransformer transformer, final MDP model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException
 	{
-		mainLog.println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
+		mainLog.println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for " + expression);
 		long overallTime = System.currentTimeMillis();
 		ConditionalReachabilitiyTransformation<MDP, MDP> transformation = transformer.transform(model, expression, statesOfInterest);
 		long transformationTime = System.currentTimeMillis() - overallTime;
@@ -156,7 +156,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		long timer = System.currentTimeMillis();
 		final ModelCheckerResult result = modelChecker.computeReachProbs(transformedModel, goalStates, false);
 		timer = System.currentTimeMillis() - timer;
-		mainLog.println("\nTime for property checking in transformed model: " + timer / 1000.0 + " seconds.");
+		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return StateValues.createFromDoubleArray(result.soln, transformedModel);
 	}
