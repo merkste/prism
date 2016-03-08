@@ -336,6 +336,18 @@ public class NondetModel extends ProbModel
 		}
 	}
 
+	/** compact model info string similar to explicit models **/
+	public String infoString() {
+		return super.infoString()
+		       + ", " + getNumChoicesString() + " choices";
+	}
+
+	/** compact matrix info string **/
+	public String matrixInfoString() {
+		return super.matrixInfoString()
+		       + "/" + getNumDDNondetVars() + "nd";
+		}
+
 	public void printTransInfo(PrismLog log, boolean extra)
 	{
 		int i, j, n;

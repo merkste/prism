@@ -109,8 +109,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 				(ModelExpressionTransformation<NondetModel, NondetModel>) transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("Time for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().println("Transformed model information:");
-		transformation.getTransformedModel().printTransInfo(prism.getLog(), false);
+		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
+		prism.getLog().print("Transformed model has ");
+		prism.getLog().println(transformation.getTransformedModel().infoString());
+		prism.getLog().print("Transformed matrix has ");
+		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
 		return transformation;
 	}
 
@@ -144,7 +147,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		
 		final StateValues resultProduct = mcTransformed.checkExpression(transformedExpression, transformation.getTransformedStatesOfInterest());
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("Time for model checking in transformed model: " + timer / 1000.0 + " seconds.");
+		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return resultProduct;
 	}

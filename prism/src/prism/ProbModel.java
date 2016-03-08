@@ -745,6 +745,21 @@ public class ProbModel implements Model
 		//		JDD.PrintMatrix(trans01, allDDRowVars, allDDColVars, JDD.ZERO_ONE);
 	}
 
+	/** compact model info string similar to explicit models **/
+	public String infoString() {
+		return getNumStatesString() + " states"
+		       + " (" + getNumStartStatesString() + " initial)"
+		       + ", " + getNumTransitionsString() + " transitions";
+	}
+
+	/** compact matrix info string **/
+	public String matrixInfoString() {
+		return JDD.GetInfoString(trans, getNumDDVarsInTrans())
+		       + ", vars: "
+		       + getNumDDRowVars() + "r/"
+		       + getNumDDColVars() + "c";
+	}
+
 	public void printTransInfo(PrismLog log)
 	{
 		printTransInfo(log, false);

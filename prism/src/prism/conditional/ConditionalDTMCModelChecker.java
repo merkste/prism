@@ -57,17 +57,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 	}
 
 	private ModelTransformation<ProbModel, ProbModel> transformModel(final ConditionalTransformer<ProbModelChecker, ProbModel> transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		// Debug output
-		// ModelPrinter.exportToDotFile(model, "../conditional/conditional_mc_original.dot", target);
 		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
 		long timer = System.currentTimeMillis();
 		final ModelTransformation<ProbModel, ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("Time for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().print("Transformed model has\n");
-		transformation.getTransformedModel().printTransInfo(prism.getLog());
-		// Debug output
-		// ModelPrinter.exportToDotFile(this, "../conditional/conditional_mc_transformed.dot", untilTransforamtion.mapStates(target));
+		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
+		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
+		prism.getLog().print("Transformed model has ");
+		prism.getLog().println(transformation.getTransformedModel().infoString());
+		prism.getLog().print("Transformed matrix has ");
+		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
 		return transformation;
 	}
 
@@ -114,7 +113,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		
 		final StateValues result = mcTransformed.checkExpression(transformedExpression, JDD.Constant(1));
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("Time for property checking in transformed model: " + timer / 1000.0 + " seconds.");
+		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return result;
 	}

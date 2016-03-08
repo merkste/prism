@@ -157,7 +157,7 @@ public class SingleInitialStateTransformation extends NondetModelTransformation
 
 		// JDD.PrintMinterms(prism.getLog(), Scol.copy(), "Scol");
 
-		// map the extra action vars to the corresponding sucessor state
+		// map the extra action vars to the corresponding successor state
 		JDDVars stateActionVars = new JDDVars();
 		for (int i=1; i < extraActionVars.getNumVars(); i++) {
 			stateActionVars.addVar(extraActionVars.getVar(i).copy());
