@@ -14,12 +14,19 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 
 	public EquivalenceRelationInteger(final Iterable<BitSet> equivalenceClasses)
 	{
+		this(equivalenceClasses, true);
+	}
+
+	public EquivalenceRelationInteger(final Iterable<BitSet> equivalenceClasses, final boolean dropSingletonClasses)
+	{
 		for (BitSet equivalenceClass : equivalenceClasses) {
 			switch (equivalenceClass.cardinality()) {
 			case 0:
 				throw new IllegalArgumentException("expected non-empty classes");
 			case 1:
-				continue;
+				if (dropSingletonClasses){
+					continue;
+				}
 			default:
 				for (Integer i : new IterableBitSet(equivalenceClass)) {
 					if (classes.put(i, equivalenceClass) != null) {
