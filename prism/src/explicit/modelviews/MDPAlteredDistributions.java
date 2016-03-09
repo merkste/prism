@@ -221,7 +221,7 @@ public class MDPAlteredDistributions extends MDPView
 		return new MDPAlteredDistributions(model, normalize, model::getAction);
 	}
 
-	public static MDP identifyStates(final MDP model, final Iterable<BitSet> equivalenceClasses)
+	public static MDPRestricted identifyStates(final MDP model, final Iterable<BitSet> equivalenceClasses)
 	{
 		final EquivalenceRelationInteger identify = new EquivalenceRelationInteger(equivalenceClasses);
 		final BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
