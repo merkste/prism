@@ -40,7 +40,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 	{
 		// 1. create LTL product
 		final LTLProduct<DTMC> ltlProduct = ltlTransformer.transform(model, ltlFormula, statesOfInterest, ACCEPTANCE_TYPES);
-		final BitSet goal = ltlTransformer.getGoalStates(ltlProduct);
+		final BitSet goal = ltlTransformer.findAcceptingStates(ltlProduct);
 
 		// 2. create reachability transformation
 		final BitSet ltlStatesOfInterest = ltlProduct.getTransformedStatesOfInterest();

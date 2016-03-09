@@ -85,7 +85,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			final LTLProduct<MDP> objectiveProduct = ltlTransformer.constructProduct(model, objectiveDA, statesOfInterest);
 			product = objectiveProduct;
 			final MDP objectiveModel = objectiveProduct.getTransformedModel();
-			final BitSet objectiveGoalStates = ltlTransformer.getGoalStates(objectiveProduct);
+			final BitSet objectiveGoalStates = ltlTransformer.findAcceptingStates(objectiveProduct);
 			final BitSet transformedStatesOfInterest = objectiveProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
@@ -96,7 +96,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			final LTLProduct<MDP> conditionProduct = ltlTransformer.constructProduct(model, conditionDA, statesOfInterest);
 			product = conditionProduct;
 			final MDP conditionModel = conditionProduct.getTransformedModel();
-			final BitSet conditionGoalStates = ltlTransformer.getGoalStates(conditionProduct);
+			final BitSet conditionGoalStates = ltlTransformer.findAcceptingStates(conditionProduct);
 			final BitSet transformedStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
@@ -110,7 +110,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			final LTLProduct<MDP> conditionProduct = ltlTransformer.constructProduct(model, conditionDA, statesOfInterest);
 			product = conditionProduct;
 			final MDP conditionModel = conditionProduct.getProductModel();
-			final BitSet conditionGoalStates = ltlTransformer.getGoalStates(conditionProduct);
+			final BitSet conditionGoalStates = ltlTransformer.findAcceptingStates(conditionProduct);
 			final BitSet conditionStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
 			checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);

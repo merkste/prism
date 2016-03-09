@@ -72,10 +72,13 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		return product;
 	}
 
-	public BitSet getGoalStates(final LTLProduct<M> product) throws PrismException
+	public BitSet findAcceptingStates(final LTLProduct<M> product) throws PrismException
 	{
-		final M productModel = product.getProductModel();
-		final AcceptanceOmega acceptance = product.getAcceptance();
+		return findAcceptingStates(product.getProductModel(), product.getAcceptance());
+	}
+
+	protected BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance) throws PrismException
+	{
 		if (acceptance.getType() == AcceptanceType.REACH) {
 			return ((AcceptanceReach) acceptance).getGoalStates();
 		}

@@ -77,7 +77,7 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 
 		// 1) LTL Product Transformation for Objective
 		final LTLProduct<MDP> product = ltlTransformer.constructProduct(model, objectiveDA, statesOfInterest);
-		final BitSet objectiveGoalStates = ltlTransformer.getGoalStates(product);
+		final BitSet objectiveGoalStates = ltlTransformer.findAcceptingStates(product);
 		final MDP objectiveModel = product.getProductModel();
 		final BitSet conditionGoalStatesLifted = product.liftFromModel(conditionGoalStates);
 
