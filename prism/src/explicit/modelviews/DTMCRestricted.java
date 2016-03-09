@@ -22,6 +22,7 @@ import parser.State;
 import parser.Values;
 import parser.VarList;
 import prism.PrismException;
+import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCSimple;
 
@@ -289,6 +290,12 @@ public class DTMCRestricted extends DTMCView
 
 
 	//--- static methods ---
+
+	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final BitSet states)
+	{
+		final DTMCRestricted restricted = new DTMCRestricted(model, states);
+		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
+	}
 
 	public static void main(final String[] args) throws PrismException
 	{
