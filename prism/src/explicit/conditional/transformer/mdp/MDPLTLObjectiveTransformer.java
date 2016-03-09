@@ -80,17 +80,17 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 		final BitSet objectiveGoalStates = ltlTransformer.findAcceptingStates(product);
 		final MDP objectiveModel = product.getProductModel();
 		final BitSet conditionGoalStatesLifted = product.liftFromModel(conditionGoalStates);
+		final BitSet transformedStatesOfInterest = product.getTransformedStatesOfInterest();
 
 		// 2) Bad States Transformation
 		final BadStatesTransformation badStatesTransformation;
 		switch (product.getAcceptance().getType()) {
 		case REACH:
-			final BitSet transformedStatesOfInterest = product.getTransformedStatesOfInterest();
 			final MDPFinallyTransformer finallyTransformer = new MDPFinallyTransformer(modelChecker);
 			badStatesTransformation = finallyTransformer.transformBadStates(objectiveModel, objectiveGoalStates, conditionGoalStatesLifted, transformedStatesOfInterest);
 			break;
 		case STREETT:
-			badStatesTransformation = transformBadStates(objectiveModel, objectiveGoalStates, conditionGoalStatesLifted);
+			badStatesTransformation = transformBadStates(objectiveModel, objectiveGoalStates, conditionGoalStatesLifted, transformedStatesOfInterest);
 			break;
 		default:
 			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
@@ -101,11 +101,11 @@ public class MDPLTLObjectiveTransformer extends MDPConditionalTransformer
 		return new BadStatesTransformation(transformation, badStatesTransformation.getGoalStates(), badStatesTransformation.getBadStates());
 	}
 
-	protected BadStatesTransformation transformBadStates(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates) throws PrismException
+	protected BadStatesTransformation transformBadStates(final MDP model, final BitSet objectiveGoalStates, final BitSet conditionGoalStates, final BitSet statesOfInterest) throws PrismException
 	{
 		// 1) Normal Form Transformation
 		final GoalStopTransformer.MDP normalFormTransformer = new GoalStopTransformer.MDP(modelChecker);
-		final GoalStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
+		final GoalStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
 
 		// 2) Bad States Transformation
 		//    bad states == {s | Pmin=0[<> Condition]}

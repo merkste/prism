@@ -70,7 +70,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		// 1) Normal Form Transformation
 		final GoalFailStopTransformer.MDP normalFormTransformer = new GoalFailStopTransformer.MDP(modelChecker);
-		final GoalFailStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
+		final GoalFailStopTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
 
 		// 2) Bad States Transformation
 		//    bad states == {s | Pmin=0[<> Condition]}

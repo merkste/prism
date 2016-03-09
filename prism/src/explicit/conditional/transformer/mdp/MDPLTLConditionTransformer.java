@@ -112,7 +112,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		// 1) Normal Form Transformation
 		final GoalFailTransformer.MDP normalFormTransformer = new GoalFailTransformer.MDP(modelChecker);
-		final GoalFailTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates);
+		final GoalFailTransformation<MDP> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, product.getTransformedStatesOfInterest());
 
 		// 2) Bad States Transformation
 		//    bad states == {s | Pmin=0[<> Condition]}

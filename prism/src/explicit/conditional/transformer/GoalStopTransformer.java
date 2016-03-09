@@ -19,9 +19,10 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 	public static final int STOP = 1;
 
 	@Override
-	default GoalStopTransformation<M> transformModel(final M model, final BitSet objectiveStates, final BitSet conditionStates) throws PrismException
+	default GoalStopTransformation<M> transformModel(M model, BitSet objectiveStates, BitSet conditionStates, BitSet statesOfInterest)
+			throws PrismException
 	{
-		return new GoalStopTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveStates, conditionStates));
+		return new GoalStopTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveStates, conditionStates, statesOfInterest));
 	}
 
 	@Override
@@ -90,9 +91,9 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 	public static class GoalStopTransformation<M extends Model> extends NormalFormTransformation<M>
 	{
-		public GoalStopTransformation(final M originalModel, final M transformedModel)
+		public GoalStopTransformation(M originalModel, M transformedModel, BitSet transformedStatesOfInterest)
 		{
-			super(originalModel, transformedModel);
+			super(originalModel, transformedModel, transformedStatesOfInterest);
 		}
 
 		public GoalStopTransformation(final NormalFormTransformation<M> transformation)
@@ -147,7 +148,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 		System.out.println("Conditional Model, normal form, objectiveStates=" + objectiveStates + ", conditionStates=" + conditionStates + ", statesOfInterest="
 				+ statesOfInterest + ":");
-		final explicit.MDP transformed = transformer.transformModel(original, objectiveStates, conditionStates).getTransformedModel();
+		final explicit.MDP transformed = transformer.transformModel(original, objectiveStates, conditionStates, statesOfInterest).getTransformedModel();
 		System.out.print(transformed.infoStringTable());
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));

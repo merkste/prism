@@ -26,13 +26,13 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 
 
 
-	default NormalFormTransformation<M> transformModel(M model, BitSet objectiveStates, BitSet conditionStates)
+	default NormalFormTransformation<M> transformModel(M model, BitSet objectiveStates, BitSet conditionStates, BitSet statesOfInterest)
 			throws PrismException
 	{
 		M trapStatesModel = addTrapStates(model, getNumTrapStates());
 		M redirectedModel = normalizeTransitions(model, trapStatesModel, objectiveStates, conditionStates);
 
-		return new NormalFormTransformation<>(model, redirectedModel);
+		return new NormalFormTransformation<>(model, redirectedModel, statesOfInterest);
 	}
 
 	public M addTrapStates(M model, int numTrapStates);
@@ -138,14 +138,18 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 
 	public static class NormalFormTransformation<M extends Model> extends BasicModelTransformation<M, M> implements ReachabilityTransformation<M, M>
 	{
-		public NormalFormTransformation(final M originalModel, final M transformedModel)
+		protected BitSet transformedStatesOfInterest;
+
+		public NormalFormTransformation(M originalModel, M transformedModel, BitSet transformedStatesOfInterest)
 		{
 			super(originalModel, transformedModel);
+			this.transformedStatesOfInterest = transformedStatesOfInterest;
 		}
 
-		public NormalFormTransformation(final NormalFormTransformation<M> transformation)
+		public NormalFormTransformation(NormalFormTransformation<M> transformation)
 		{
 			super(transformation);
+			transformedStatesOfInterest = transformation.transformedStatesOfInterest;
 		}
 
 		@Override
@@ -162,9 +166,7 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		@Override
 		public BitSet getTransformedStatesOfInterest()
 		{
-			final BitSet result = new BitSet(numberOfStates);
-			result.set(0, numberOfStates);
-			return result;
+			return transformedStatesOfInterest;
 		}
 	}
 }
