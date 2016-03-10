@@ -20,14 +20,14 @@ import explicit.MinMax;
 import explicit.ModelCheckerResult;
 import explicit.ModelTransformation;
 import explicit.StateValues;
+import explicit.conditional.transformer.ConditionalTransformer;
+import explicit.conditional.transformer.FinallyFinallyTransformer;
+import explicit.conditional.transformer.LtlConditionTransformer;
+import explicit.conditional.transformer.LtlLtlTransformer;
+import explicit.conditional.transformer.LtlObjectiveTransformer;
 import explicit.conditional.transformer.MdpTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
-import explicit.conditional.transformer.mdp.MDPConditionalTransformer;
-import explicit.conditional.transformer.mdp.MDPFinallyTransformer;
-import explicit.conditional.transformer.mdp.MDPLTLConditionTransformer;
-import explicit.conditional.transformer.mdp.MDPLTLObjectiveTransformer;
-import explicit.conditional.transformer.mdp.MDPLTLTransformer;
 import explicit.modelviews.ModelView;
 
 //FIXME ALG: add comment
@@ -69,7 +69,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 	private StateValues checkExpressionMax(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		final MDPConditionalTransformer transformer = selectModelTransformer(model, expression);
+		final ConditionalTransformer<MDP> transformer = selectModelTransformer(model, expression);
 		StateValues result;
 		try {
 			final ConditionalReachabilitiyTransformation<MDP, MDP> transformation = transformModel(transformer, model, expression, statesOfInterest);
@@ -110,12 +110,14 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return modelChecker.checkExpression(model, inverseExpression, statesOfInterest);
 	}
 
-	public ConditionalReachabilitiyTransformation<MDP, MDP> transformModel(final MDPConditionalTransformer transformer, final MDP model, final ExpressionConditional expression,
+	public ConditionalReachabilitiyTransformation<MDP, MDP> transformModel(final ConditionalTransformer<MDP> transformer, final MDP model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException
 	{
-		mainLog.println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for " + expression);
+		Class<?> type = transformer.getClass();
+		type = type.getEnclosingClass() == null ? type : type.getEnclosingClass();
+		mainLog.println("\nTransforming model (using " + type.getSimpleName() + ") for " + expression);
 		long overallTime = System.currentTimeMillis();
-		ConditionalReachabilitiyTransformation<MDP, MDP> transformation = transformer.transform(model, expression, statesOfInterest);
+		ConditionalReachabilitiyTransformation<MDP, MDP> transformation = (ConditionalReachabilitiyTransformation<MDP, MDP>) transformer.transform(model, expression, statesOfInterest);
 		long transformationTime = System.currentTimeMillis() - overallTime;
 		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
@@ -161,12 +163,12 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return StateValues.createFromDoubleArray(result.soln, transformedModel);
 	}
 
-	public MDPConditionalTransformer selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
+	public ConditionalTransformer<MDP> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
 	{
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_MDP);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
-		MDPConditionalTransformer transformer;
+		ConditionalTransformer<MDP> transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_TRANSFORMATIONS)) {
 			for (MdpTransformerType type : types) {
 				switch (type) {
@@ -191,16 +193,16 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
-					transformer = new MDPFinallyTransformer(modelChecker);
+					transformer = new FinallyFinallyTransformer.MDP(modelChecker);
 					break;
 				case LtlFinally:
-					transformer = new MDPLTLObjectiveTransformer(modelChecker);
+					transformer = new LtlObjectiveTransformer.MDP(modelChecker);
 					break;
 				case FinallyLtl:
-					transformer = new MDPLTLConditionTransformer(modelChecker);
+					transformer = new LtlConditionTransformer.MDP(modelChecker);
 					break;
 				case LtlLtl:
-					transformer = new MDPLTLTransformer(modelChecker);
+					transformer = new LtlLtlTransformer.MDP(modelChecker);
 					break;
 				default:
 					continue;
