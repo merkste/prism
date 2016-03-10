@@ -4,18 +4,26 @@ import java.util.BitSet;
 
 import common.iterable.IterableBitSet;
 import explicit.Distribution;
+import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.Model;
+import explicit.conditional.transformer.ConditionalTransformer;
+import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
+import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionProb;
+import prism.OpRelOpBound;
+import prism.PrismException;
+import prism.PrismLangException;
 
 @Deprecated
-public abstract class MDPConditionalTransformer extends explicit.conditional.transformer.mdp.MDPConditionalTransformer
+public abstract class MDPConditionalTransformer extends ConditionalTransformer.Basic<MDP, MDPModelChecker>
 {
 	public MDPConditionalTransformer(final MDPModelChecker modelChecker)
 	{
 		super(modelChecker);
 	}
 
-	@Deprecated
 	protected void redirectChoices(final MDPSimple model, final BitSet states, final int target1, final int target2, final double[] probabilities)
 	{
 		for (Integer state : new IterableBitSet(states)) {
@@ -32,7 +40,6 @@ public abstract class MDPConditionalTransformer extends explicit.conditional.tra
 		}
 	}
 
-	@Deprecated
 	protected void addDiracChoice(final MDPSimple transformedModel, final Integer from, final int to, final String action)
 	{
 		final Distribution distribution = new Distribution();
@@ -43,4 +50,35 @@ public abstract class MDPConditionalTransformer extends explicit.conditional.tra
 			transformedModel.addActionLabelledChoice(from, distribution, action);
 		}
 	}
+
+	@Override
+	public boolean canHandle(final Model model, final ExpressionConditional expression) throws PrismLangException
+	{
+		if (!(model instanceof MDP)) {
+			return false;
+		}
+		final MDP mdp = (MDP) model;
+		return canHandleCondition(mdp, expression) && canHandleObjective(mdp, expression);
+	}
+
+	protected boolean canHandleObjective(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	{
+		if (!(expression.getObjective() instanceof ExpressionProb)) {
+			return false;
+		}
+		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		final OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
+		// can handle maximal probabilities only
+		return oprel.getMinMax(model.getModelType()).isMax();
+	}
+
+	protected abstract boolean canHandleCondition(final MDP model, final ExpressionConditional expression) throws PrismLangException;
+
+	/**
+	 * Override to specify return type.
+	 * 
+	 * @see explicit.conditional.transformer.ConditionalTransformer#transform ConditionalTransformer
+	 **/
+	@Override
+	public abstract ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException;
 }

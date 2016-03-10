@@ -5,40 +5,64 @@ import java.util.BitSet;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
+import explicit.StateModelChecker;
 import parser.ast.ExpressionConditional;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLangException;
 
-//FIXME ALG: add comment
-public abstract class ConditionalTransformer<MC extends ProbModelChecker, M extends Model> extends PrismComponent
+// FIXME ALG: add comment
+public interface ConditionalTransformer<M extends Model>
 {
-	protected MC modelChecker;
-
-	public ConditionalTransformer(final MC modelChecker)
-	{
-		super(modelChecker);
-		this.modelChecker = modelChecker;
-	}
-
 	/**
-	 * Test whether the transformer can handle a  model and conditional expression.
+	 * Test whether the transformer can handle a model and a conditional expression.
 	 * 
 	 * @return True iff this transformation type can handle the expression.
 	 * @throws PrismLangException if the expression is broken
 	 */
-	public abstract boolean canHandle(final Model model, final ExpressionConditional expression) throws PrismLangException;
-
-	public abstract ModelTransformation<M, M> transform(final M model, final ExpressionConditional expression, final BitSet statesOfInterest)
-			throws PrismException;
+	boolean canHandle(Model model, ExpressionConditional expression)
+			throws PrismLangException;
 
 	/**
-	 * Throw an exception, iff the transformation cannot handle the model and expression.
+	 * Throw an exception, iff the transformer cannot handle the model and expression.
 	 */
-	public void checkCanHandle(final Model model, final ExpressionConditional expression) throws PrismException
+	default void checkCanHandle(Model model, ExpressionConditional expression) throws PrismException
 	{
 		if (! canHandle(model, expression)) {
 			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
+		}
+	}
+
+	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+			throws PrismException;
+
+	LTLProductTransformer<M> getLtlTransformer();
+
+	StateModelChecker getModelChecker();
+
+
+
+	public static abstract class Basic<M extends Model, MC extends ProbModelChecker> extends PrismComponent implements ConditionalTransformer<M>
+	{
+		protected MC modelChecker;
+		protected LTLProductTransformer<M> ltlTransformer;
+
+		public Basic(MC modelChecker) {
+			super(modelChecker);
+			this.modelChecker = modelChecker;
+		}
+
+		public MC getModelChecker()
+		{
+			return modelChecker;
+		}
+
+		public LTLProductTransformer<M> getLtlTransformer()
+		{
+			if (ltlTransformer == null) {
+				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
+			}
+			return ltlTransformer;
 		}
 	}
 }

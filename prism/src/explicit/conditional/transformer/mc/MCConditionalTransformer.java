@@ -13,7 +13,7 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.conditional.transformer.ConditionalTransformer;
 
-public abstract class MCConditionalTransformer extends ConditionalTransformer<DTMCModelChecker, DTMC>
+public abstract class MCConditionalTransformer extends ConditionalTransformer.Basic<DTMC, DTMCModelChecker>
 {
 	public MCConditionalTransformer(final DTMCModelChecker modelChecker)
 	{

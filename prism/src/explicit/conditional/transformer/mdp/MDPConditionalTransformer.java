@@ -19,7 +19,7 @@ import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.MDPFinallyTransformer.BadStatesTransformation;
 import explicit.modelviews.MDPRestricted;
 
-public abstract class MDPConditionalTransformer extends ConditionalTransformer<MDPModelChecker, MDP>
+public abstract class MDPConditionalTransformer extends ConditionalTransformer.Basic<MDP, MDPModelChecker>
 {
 	public MDPConditionalTransformer(final MDPModelChecker modelChecker)
 	{
