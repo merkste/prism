@@ -27,6 +27,7 @@ import prism.PrismException;
 
 public class MDPRestricted extends MDPView
 {
+	private static final Restriction STANDARD_RESTRICTION = Restriction.TRANSITIVE_CLOSURE;
 	private MDP model;
 	// FIXME ALG: consider using a predicate instead
 	private BitSet states;
@@ -39,7 +40,7 @@ public class MDPRestricted extends MDPView
 
 	public MDPRestricted(final MDP model, final BitSet states)
 	{
-		this(model, states, Restriction.TRANSITIVE_CLOSURE);
+		this(model, states, STANDARD_RESTRICTION);
 	}
 
 	public MDPRestricted(final MDP model, final BitSet include, final Restriction restriction)
@@ -331,7 +332,12 @@ public class MDPRestricted extends MDPView
 
 	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states)
 	{
-		final MDPRestricted restricted = new MDPRestricted(model, states);
+		return transform(model, states, STANDARD_RESTRICTION);
+	}
+
+	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states, final Restriction restriction)
+	{
+		final MDPRestricted restricted = new MDPRestricted(model, states, restriction);
 		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
 	}
 
@@ -389,7 +395,7 @@ public class MDPRestricted extends MDPView
 
 		System.out.println();
 
-		System.out.println("Restricted Model " + include + " " + Restriction.TRANSITIVE_CLOSURE);
+		System.out.println("Restricted Model " + include + " " + STANDARD_RESTRICTION);
 		restricted = new MDPRestricted(original, include);
 		//		restricted.findDeadlocks(true);
 		System.out.print(restricted.infoStringTable());

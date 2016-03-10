@@ -28,6 +28,7 @@ import explicit.DTMCSimple;
 
 public class DTMCRestricted extends DTMCView
 {
+	private static final Restriction STANDARD_RESTRICTION = Restriction.TRANSITIVE_CLOSURE;
 	private DTMC model;
 	// FIXME ALG: consider using a predicate instead
 	private BitSet states;
@@ -40,7 +41,7 @@ public class DTMCRestricted extends DTMCView
 
 	public DTMCRestricted(final DTMC model, final Iterable<Integer> states)
 	{
-		this(model, states, Restriction.TRANSITIVE_CLOSURE);
+		this(model, states, STANDARD_RESTRICTION);
 	}
 
 	public DTMCRestricted(final DTMC model, final Iterable<Integer> states, final Restriction restriction)
@@ -50,12 +51,12 @@ public class DTMCRestricted extends DTMCView
 
 	public DTMCRestricted(final DTMC model, final BitSet states)
 	{
-		this(model, states, Restriction.TRANSITIVE_CLOSURE);
+		this(model, states, STANDARD_RESTRICTION);
 	}
 
 	public DTMCRestricted(final DTMC model, final IntPredicate states)
 	{
-		this(model, states, Restriction.TRANSITIVE_CLOSURE);
+		this(model, states, STANDARD_RESTRICTION);
 	}
 
 	public DTMCRestricted(final DTMC model, final IntPredicate states, final Restriction restriction)
@@ -293,7 +294,12 @@ public class DTMCRestricted extends DTMCView
 
 	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final BitSet states)
 	{
-		final DTMCRestricted restricted = new DTMCRestricted(model, states);
+		return transform(model, states, STANDARD_RESTRICTION);
+	}
+
+	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final BitSet states, final Restriction restriction)
+	{
+		final DTMCRestricted restricted = new DTMCRestricted(model, states, restriction);
 		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
 	}
 
