@@ -37,22 +37,18 @@ import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
-import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
-import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
-import prism.PrismSettings;
 import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.iterable.IterableBitSet;
 import explicit.conditional.ConditionalDTMCModelChecker;
-import explicit.modelviews.MDPFromDTMC;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -75,19 +71,19 @@ public class DTMCModelChecker extends ProbModelChecker
 	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
 		switch (model.getModelType()) {
 		case DTMC:
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
-			    && (expression.getObjective() instanceof ExpressionProb)) {
-				mainLog.println("\nConverting DTMC to MDPSparse");
-				long buildTime = System.currentTimeMillis();
-				MDP mdp = new MDPSparse(new MDPFromDTMC((DTMC) model));
-				buildTime = System.currentTimeMillis() - buildTime;
-				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-				ExpressionProb objective = (ExpressionProb) expression.getObjective();
-				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
-				StateModelChecker mc = createModelChecker(ModelType.MDP, this);
-				mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
-				return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
-			}
+//			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+//			    && (expression.getObjective() instanceof ExpressionProb)) {
+//				mainLog.println("\nConverting DTMC to MDPSparse");
+//				long buildTime = System.currentTimeMillis();
+//				MDP mdp = new MDPSparse(new MDPFromDTMC((DTMC) model));
+//				buildTime = System.currentTimeMillis() - buildTime;
+//				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
+//				ExpressionProb objective = (ExpressionProb) expression.getObjective();
+//				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
+//				StateModelChecker mc = createModelChecker(ModelType.MDP, this);
+//				mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
+//				return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
+//			}
 		case CTMC:
 			// treat a CTMC as DTMC
 			return new ConditionalDTMCModelChecker(this).checkExpression((DTMC) model, expression, statesOfInterest);
