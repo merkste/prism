@@ -101,7 +101,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			BitSet conditionGoalStates = getLtlTransformer().findAcceptingStates(conditionProduct);
 			BitSet conditionStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
-			checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
+			BitSet unsatisfiable = checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
 
 			// 2) LTL Product Transformation for Objective
 			LTLProduct<M> objectiveAndConditionProduct = getLtlTransformer().constructProduct(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionStatesOfInterest);
@@ -124,14 +124,27 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			// 5) Objective & Condition Goal States
 			BitSet objectiveAndConditionGoalStates = getLtlTransformer().findAcceptingStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
 
-			// 6) Reset Transformation
-			BitSet badStates = computeBadStates(objectiveAndConditionModel, objectiveAndConditionGoalStates, conditionAcceptanceLifted);
-			// do reset
-			BitSet transformedStatesOfInterest = objectiveAndConditionProduct.getTransformedStatesOfInterest();
-			ModelTransformation<M, ? extends M> resetTransformation = transformReset(objectiveAndConditionModel, badStates, transformedStatesOfInterest);
+			// 6) Deadlock hopeless states
+			BitSet unsatisfiableLifted = objectiveAndConditionProduct.liftFromModel(unsatisfiable);
+			// do not deadlock goal states
+			unsatisfiableLifted.andNot(objectiveAndConditionGoalStates);
+			unsatisfiableLifted = new BitSet();
+			ModelTransformation<M, M> deadlockTransformation = deadlockStates(objectiveAndConditionModel, unsatisfiableLifted, objectiveAndConditionProduct.getTransformedStatesOfInterest());
 
-			// 7) Compose Transformations
-			transformation = new ConditionalReachabilitiyTransformation<>(resetTransformation, objectiveAndConditionGoalStates);
+			// 7) Reset Transformation
+			BitSet badStates = computeBadStates(objectiveAndConditionModel, objectiveAndConditionGoalStates, conditionAcceptanceLifted);
+			// lift bad states from normal-form model to deadlock model
+			BitSet badStatesLifted = deadlockTransformation.mapToTransformedModel(badStates);
+			// do reset
+			badStatesLifted.or(unsatisfiableLifted);
+			M deadlockModel = deadlockTransformation.getTransformedModel();
+			BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
+			ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
+
+			// 8) Compose Transformations
+			ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
+			BitSet objectiveAndConditionGoalStatesLifted = nested.mapToTransformedModel(objectiveAndConditionGoalStates);
+			return new ConditionalReachabilitiyTransformation<>(nested, objectiveAndConditionGoalStatesLifted);
 		}
 
 		// 3) Compose Transformations
@@ -149,6 +162,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		// - do not reset from goal states
 		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
 		badStates.and(rStates);
+		// FIXME ALG: double-check whether this is sane!
 		badStates.andNot(objectiveAndConditionGoalStates);
 		return badStates;
 	}

@@ -101,14 +101,21 @@ public interface LtlConditionTransformer<M extends Model> extends ResetCondition
 	{
 		M conditionModel = product.getProductModel();
 
-		checkSatisfiability(conditionModel, conditionGoalStates, statesOfInterest);
-
-		// FIXME ALG: restrict to states of interest?
+		BitSet unsatisfiable = checkSatisfiability(conditionModel, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalFailTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: simplify goal-fail signature?
 		GoalFailTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		M normalFormModel = normalFormTransformation.getTransformedModel();
+
+		// 2) Deadlock hopeless states
+		// do not deadlock goal states
+		unsatisfiable.andNot(objectiveGoalStates);
+		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
+		// deadlock fail state as well
+		unsatisfiableLifted.set(normalFormTransformation.getFailState());
+		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
 
 		// 3) Reset Transformation
 		BitSet badStates = computeBadStates(product, objectiveGoalStates);
@@ -116,14 +123,18 @@ public interface LtlConditionTransformer<M extends Model> extends ResetCondition
 		BitSet badStatesLifted = normalFormTransformation.mapToTransformedModel(badStates);
 		// reset from fail state as well
 		badStatesLifted.set(normalFormTransformation.getFailState());
+		// lift bad states from normal-form model to deadlock model
+		badStatesLifted = deadlockTransformation.mapToTransformedModel(badStatesLifted);
 		// do reset
-		M normalForm = normalFormTransformation.getTransformedModel();
-		BitSet transformedStatesOfInterest = normalFormTransformation.getTransformedStatesOfInterest();
-		ModelTransformation<M, ? extends M> resetTransformation = transformReset(normalForm, badStatesLifted, transformedStatesOfInterest);
+		badStatesLifted.or(unsatisfiableLifted);
+		M deadlockModel = deadlockTransformation.getTransformedModel();
+		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
+		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
 
 		// 3) Compose Transformations
-		BitSet goalStatesLifted = resetTransformation.mapToTransformedModel(normalFormTransformation.getGoalStates());
-		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(normalFormTransformation, resetTransformation);
+		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
+		BitSet goalStatesLifted = nested.mapToTransformedModel(normalFormTransformation.getGoalStates());
+		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
 		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
 	}
 

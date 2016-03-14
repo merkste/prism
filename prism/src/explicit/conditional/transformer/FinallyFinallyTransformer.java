@@ -50,7 +50,8 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 		BitSet objectiveGoalStates = computeStates(model, objectiveGoal);
 
 		// 2) Condition: compute "condition goal states"
-		Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
+		ExpressionTemporal condition = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
+		Expression conditionGoal = condition.getOperand2();
 		BitSet conditionGoalStates = computeStates(model, conditionGoal);
 
 		return transform(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
@@ -59,28 +60,38 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates, BitSet statesOfInterest)
 			throws UndefinedTransformationException, PrismException
 	{
-		checkSatisfiability(model, conditionGoalStates, statesOfInterest);
-
-		// FIXME ALG: restrict to states of interest?
+		BitSet unsatisfiable = checkSatisfiability(model, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalFailStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		M normalFormModel = normalFormTransformation.getTransformedModel();
 
-		// 2) Reset Transformation
+		// 2) Deadlock hopeless states
+		// do not deadlock goal states
+		unsatisfiable.andNot(objectiveGoalStates);
+		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
+		// deadlock fail state as well
+		unsatisfiableLifted.set(normalFormTransformation.getFailState());
+		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
+
+		// 3) Reset Transformation
 		BitSet badStates = computeBadStates(model, objectiveGoalStates, conditionGoalStates);
 		// lift bad states from model to normal-form model
 		BitSet badStatesLifted = normalFormTransformation.mapToTransformedModel(badStates);
 		// reset from fail state as well
 		badStatesLifted.set(normalFormTransformation.getFailState());
+		// lift bad states from normal-form model to deadlock model
+		badStatesLifted = deadlockTransformation.mapToTransformedModel(badStatesLifted);
 		// do reset
-		M normalForm = normalFormTransformation.getTransformedModel();
-		BitSet transformedStatesOfInterest = normalFormTransformation.getTransformedStatesOfInterest();
-		ModelTransformation<M, ? extends M> resetTransformation = transformReset(normalForm, badStatesLifted, transformedStatesOfInterest);
+		M deadlockModel = deadlockTransformation.getTransformedModel();
+		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
+		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
 
-		// 3) Compose Transformations
-		BitSet goalStatesLifted = resetTransformation.mapToTransformedModel(normalFormTransformation.getGoalStates());
-		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(normalFormTransformation, resetTransformation);
+		// 4) Compose Transformations
+		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
+		BitSet goalStatesLifted = nested.mapToTransformedModel(normalFormTransformation.getGoalStates());
+		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
 		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
 	}
 
@@ -126,6 +137,5 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 		{
 			return new GoalFailStopTransformer.MDP(modelChecker);
 		}
-
 	}
 }

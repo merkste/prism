@@ -55,7 +55,8 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		LabeledDA objectiveDA = getLtlTransformer().constructDA(model, objective, ACCEPTANCE_TYPES);
 
 		// 2) Condition: compute "condition goal states"
-		Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
+		ExpressionTemporal condition = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
+		Expression conditionGoal = condition.getOperand2();
 		BitSet conditionGoalStates = computeStates(model, conditionGoal);
 
 		// 3) Transformation
@@ -65,8 +66,6 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, LabeledDA objectiveDA, BitSet conditionGoalStates,
 			BitSet statesOfInterest) throws PrismException
 	{
-		checkSatisfiability(model, conditionGoalStates, statesOfInterest);
-
 		// 1) LTL Product Transformation for Objective
 		LTLProduct<M> product = getLtlTransformer().constructProduct(model, objectiveDA, statesOfInterest);
 		M objectiveModel = product.getProductModel();
@@ -96,26 +95,34 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates, BitSet statesOfInterest)
 			throws PrismException
 	{
-		// FIXME ALG: restrict to states of interest?
-		// FIXME ALG: check satisfiability here?
+		BitSet unsatisfiable = checkSatisfiability(model, conditionGoalStates, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: simplify goal-stop signature?
 		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		M normalFormModel = normalFormTransformation.getTransformedModel();
 
-		// 2) Reset Transformation
+		// 2) Deadlock hopeless states
+		// do not deadlock goal states
+		unsatisfiable.andNot(objectiveGoalStates);
+		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
+		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
+
+		// 3) Reset Transformation
 		BitSet badStates = computeBadStates(model, objectiveGoalStates, conditionGoalStates);
-		// lift bad states from model to normal-form model
+		// lift bad states from model to normal-form model and to deadlock model
 		BitSet badStatesLifted = normalFormTransformation.mapToTransformedModel(badStates);
+		badStatesLifted = deadlockTransformation.mapToTransformedModel(badStatesLifted);
 		// do reset
-		M normalForm = normalFormTransformation.getTransformedModel();
-		BitSet transformedStatesOfInterest = normalFormTransformation.getTransformedStatesOfInterest();
-		ModelTransformation<M, ? extends M> resetTransformation = transformReset(normalForm, badStatesLifted, transformedStatesOfInterest);
+		M deadlockModel = deadlockTransformation.getTransformedModel();
+		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
+		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
 
-		// 3) Compose Transformations
-		BitSet goalStatesLifted = resetTransformation.mapToTransformedModel(normalFormTransformation.getGoalStates());
-		ModelTransformationNested<M, M, M> nested = new ModelTransformationNested<>(normalFormTransformation, resetTransformation);
+		// 4) Compose Transformations
+		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
+		BitSet goalStatesLifted = nested.mapToTransformedModel(normalFormTransformation.getGoalStates());
+		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
 		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
 	}
 
