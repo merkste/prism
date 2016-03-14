@@ -33,7 +33,7 @@ public interface ResetTransformer<M extends Model>
 	default ResetTransformation<M> transformModel(M model, IntPredicate states, BitSet statesOfInterest)
 			throws PrismException
 	{
-		checkStatesOfInterest(statesOfInterest);
+		checkStatesOfInterest(model, statesOfInterest);
 		return transformModel(model, states, statesOfInterest.nextSetBit(0));
 	}
 
@@ -51,9 +51,10 @@ public interface ResetTransformer<M extends Model>
 		return state -> states.test(state) ? reset.iterator() : null;
 	}
 
-	public static void checkStatesOfInterest(BitSet statesOfInterest) throws PrismException
+	public static <M extends Model> void checkStatesOfInterest(M model, BitSet statesOfInterest) throws PrismException
 	{
-		if(statesOfInterest.cardinality() != 1) {
+		int numStates = (statesOfInterest == null) ? model.getNumStates() : statesOfInterest.cardinality();
+		if(numStates != 1) {
 			throw new PrismException(SINGLE_STATE_OF_INTEREST);
 		}
 	}

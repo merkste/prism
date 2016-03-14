@@ -56,7 +56,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	@Override
 	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		ResetTransformer.checkStatesOfInterest(statesOfInterest);
+		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
 		final Expression condition = expression.getCondition();
 		final Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();

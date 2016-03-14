@@ -45,7 +45,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	@Override
 	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		ResetTransformer.checkStatesOfInterest(statesOfInterest);
+		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
 		// compute C aka "condition goalState"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
