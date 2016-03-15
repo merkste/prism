@@ -22,7 +22,7 @@ import prism.PrismException;
 
 public interface ConditionalNormalFormTransformer<M extends Model>
 {
-	public static final int GOAL = 0;
+	static final int GOAL = 0;
 
 
 
@@ -35,17 +35,17 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		return new NormalFormTransformation<>(model, redirectedModel, statesOfInterest);
 	}
 
-	public M addTrapStates(M model, int numTrapStates);
+	M addTrapStates(M model, int numTrapStates);
 
-	public int getNumTrapStates();
+	int getNumTrapStates();
 
-	public M normalizeTransitions(M model, M trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	M normalizeTransitions(M model, M trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
 			throws PrismException;
 
-	public MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
 			throws PrismException;
 
-	public double[] computeUntilProbs(M model, BitSet remain, BitSet goal)
+	double[] computeUntilProbs(M model, BitSet remain, BitSet goal)
 			throws PrismException;
 
 
@@ -60,15 +60,10 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			this.modelChecker = modelChecker;
 		}
 
+		@Override
 		public explicit.DTMC addTrapStates(explicit.DTMC model, int numTrapStates)
 		{
 			return new DTMCAdditionalStates(model, numTrapStates);
-		}
-
-		public double[] computeUntilProbs(explicit.DTMC model, BitSet remain, BitSet goal)
-				throws PrismException
-		{
-			return modelChecker.computeUntilProbs(model, remain, goal).soln;
 		}
 
 		@Override
@@ -78,6 +73,14 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			final MappingInt<Iterator<Entry<Integer, Double>>> transitions = getTransitions(model, objectiveGoalStates, conditionRemain, conditionGoal);
 			return new DTMCAlteredDistributions(trapStatesModel, transitions);
 		}
+
+		@Override
+		public double[] computeUntilProbs(explicit.DTMC model, BitSet remain, BitSet goal)
+				throws PrismException
+		{
+			return modelChecker.computeUntilProbs(model, remain, goal).soln;
+		}
+
 	}
 
 

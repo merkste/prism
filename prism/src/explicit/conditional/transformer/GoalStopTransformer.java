@@ -16,7 +16,9 @@ import explicit.Model;
 
 public interface GoalStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
-	public static final int STOP = 1;
+	static final int STOP = 1;
+
+
 
 	@Override
 	default GoalStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
@@ -63,7 +65,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static final class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalStopTransformer<explicit.DTMC>
+	public static class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalStopTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -73,7 +75,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static final class MDP extends ConditionalNormalFormTransformer.MDP implements GoalStopTransformer<explicit.MDP>
+	public static class MDP extends ConditionalNormalFormTransformer.MDP implements GoalStopTransformer<explicit.MDP>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{

@@ -16,7 +16,9 @@ import prism.PrismException;
 
 public interface GoalFailTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
-	public static final int FAIL = 1;
+	static final int FAIL = 1;
+
+
 
 	@Override
 	default GoalFailTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
@@ -64,7 +66,7 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static final class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalFailTransformer<explicit.DTMC>
+	public static class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalFailTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -74,7 +76,7 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static final class MDP extends ConditionalNormalFormTransformer.MDP implements GoalFailTransformer<explicit.MDP>
+	public static class MDP extends ConditionalNormalFormTransformer.MDP implements GoalFailTransformer<explicit.MDP>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
