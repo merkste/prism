@@ -80,7 +80,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			BitSet transformedStatesOfInterest = objectiveProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
-			LtlConditionTransformer<M> ltlConditionTransformer = getLtlConditionTransformer();
+			FinallyLtlTransformer<M> ltlConditionTransformer = getLtlConditionTransformer();
 			transformation = ltlConditionTransformer.transform(objectiveModel, objectiveGoal, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
 		} else if (conditionAcceptanceType  == AcceptanceType.REACH) {
 			// 1) LTL Product Transformation for Condition
@@ -91,7 +91,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			BitSet transformedStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
-			LtlObjectiveTransformer<M> ltlObjectiveTransformer = getLtlObjectiveTransformer();
+			LtlUntilTransformer<M> ltlObjectiveTransformer = getLtlObjectiveTransformer();
 			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, transformedStatesOfInterest);
 		} else {
 			checkAcceptanceType(objectiveAcceptanceType);
@@ -177,9 +177,9 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		}
 	}
 
-	LtlObjectiveTransformer<M> getLtlObjectiveTransformer();
+	LtlUntilTransformer<M> getLtlObjectiveTransformer();
 
-	LtlConditionTransformer<M> getLtlConditionTransformer();
+	FinallyLtlTransformer<M> getLtlConditionTransformer();
 
 
 
@@ -191,15 +191,15 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		}
 
 		@Override
-		public LtlObjectiveTransformer<explicit.DTMC> getLtlObjectiveTransformer()
+		public LtlUntilTransformer<explicit.DTMC> getLtlObjectiveTransformer()
 		{
-			return new LtlObjectiveTransformer.DTMC(modelChecker);
+			return new LtlUntilTransformer.DTMC(modelChecker);
 		}
 
 		@Override
-		public LtlConditionTransformer<explicit.DTMC> getLtlConditionTransformer()
+		public FinallyLtlTransformer<explicit.DTMC> getLtlConditionTransformer()
 		{
-			return new LtlConditionTransformer.DTMC(modelChecker);
+			return new FinallyLtlTransformer.DTMC(modelChecker);
 		}
 	}
 
@@ -214,15 +214,15 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		}
 
 		@Override
-		public LtlObjectiveTransformer<explicit.MDP> getLtlObjectiveTransformer()
+		public LtlUntilTransformer<explicit.MDP> getLtlObjectiveTransformer()
 		{
-			return new LtlObjectiveTransformer.MDP(modelChecker);
+			return new LtlUntilTransformer.MDP(modelChecker);
 		}
 
 		@Override
-		public LtlConditionTransformer<explicit.MDP> getLtlConditionTransformer()
+		public FinallyLtlTransformer<explicit.MDP> getLtlConditionTransformer()
 		{
-			return new LtlConditionTransformer.MDP(modelChecker);
+			return new FinallyLtlTransformer.MDP(modelChecker);
 		}
 	}
 }

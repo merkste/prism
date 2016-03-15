@@ -22,7 +22,7 @@ import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 
 // FIXME ALG: add comment
-public interface LtlObjectiveTransformer<M extends Model> extends ResetConditionalTransformer<M>
+public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTransformer<M>
 {
 	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
 
@@ -81,7 +81,7 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		ConditionalReachabilitiyTransformation<M, M> transformation;
 		switch (product.getAcceptance().getType()) {
 		case REACH:
-			FinallyFinallyTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
+			FinallyUntilTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
 			transformation = finallyTransformer.transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, transformedStatesOfInterest);
 			break;
 		case STREETT:
@@ -135,13 +135,13 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		return computeProb0E(model, conditionRemain, conditionGoal);
 	}
 
-	FinallyFinallyTransformer<M> getFinallyFinallyTransformer();
+	FinallyUntilTransformer<M> getFinallyFinallyTransformer();
 
 	GoalStopTransformer<M> getNormalFormTransformer();
 
 
 
-	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlObjectiveTransformer<explicit.DTMC>
+	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlUntilTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -149,9 +149,9 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		}
 
 		@Override
-		public FinallyFinallyTransformer<explicit.DTMC> getFinallyFinallyTransformer()
+		public FinallyUntilTransformer<explicit.DTMC> getFinallyFinallyTransformer()
 		{
-			return new FinallyFinallyTransformer.DTMC(modelChecker);
+			return new FinallyUntilTransformer.DTMC(modelChecker);
 		}
 
 		@Override
@@ -163,7 +163,7 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 
 
 
-	public static class MDP extends ResetConditionalTransformer.MDP implements LtlObjectiveTransformer<explicit.MDP>
+	public static class MDP extends ResetConditionalTransformer.MDP implements LtlUntilTransformer<explicit.MDP>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -171,9 +171,9 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		}
 
 		@Override
-		public FinallyFinallyTransformer<explicit.MDP> getFinallyFinallyTransformer()
+		public FinallyUntilTransformer<explicit.MDP> getFinallyFinallyTransformer()
 		{
-			return new FinallyFinallyTransformer.MDP(modelChecker);
+			return new FinallyUntilTransformer.MDP(modelChecker);
 		}
 
 		@Override

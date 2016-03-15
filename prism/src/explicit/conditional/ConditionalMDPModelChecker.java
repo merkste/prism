@@ -22,10 +22,10 @@ import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.StateValues;
 import explicit.conditional.transformer.ConditionalTransformer;
-import explicit.conditional.transformer.FinallyFinallyTransformer;
-import explicit.conditional.transformer.LtlConditionTransformer;
+import explicit.conditional.transformer.FinallyUntilTransformer;
+import explicit.conditional.transformer.FinallyLtlTransformer;
 import explicit.conditional.transformer.LtlLtlTransformer;
-import explicit.conditional.transformer.LtlObjectiveTransformer;
+import explicit.conditional.transformer.LtlUntilTransformer;
 import explicit.conditional.transformer.MdpTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
@@ -195,13 +195,13 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
-					transformer = new FinallyFinallyTransformer.MDP(modelChecker);
+					transformer = new FinallyUntilTransformer.MDP(modelChecker);
 					break;
 				case LtlFinally:
-					transformer = new LtlObjectiveTransformer.MDP(modelChecker);
+					transformer = new LtlUntilTransformer.MDP(modelChecker);
 					break;
 				case FinallyLtl:
-					transformer = new LtlConditionTransformer.MDP(modelChecker);
+					transformer = new FinallyLtlTransformer.MDP(modelChecker);
 					break;
 				case LtlLtl:
 					transformer = new LtlLtlTransformer.MDP(modelChecker);

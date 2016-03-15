@@ -19,7 +19,7 @@ import prism.PrismException;
 import prism.PrismLangException;
 
 // FIXME ALG: add comment
-public interface FinallyFinallyTransformer<M extends Model> extends ResetConditionalTransformer<M>
+public interface FinallyUntilTransformer<M extends Model> extends ResetConditionalTransformer<M>
 {
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
@@ -113,7 +113,7 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 
 
 
-	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyFinallyTransformer<explicit.DTMC>
+	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyUntilTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -129,7 +129,7 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 
 
 
-	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyFinallyTransformer<explicit.MDP>
+	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyUntilTransformer<explicit.MDP>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{

@@ -19,10 +19,10 @@ import explicit.ModelTransformationNested;
 import explicit.StateValues;
 import explicit.conditional.transformer.DtmcTransformerType;
 import explicit.conditional.transformer.ConditionalTransformer;
-import explicit.conditional.transformer.FinallyFinallyTransformer;
-import explicit.conditional.transformer.LtlConditionTransformer;
+import explicit.conditional.transformer.FinallyUntilTransformer;
+import explicit.conditional.transformer.FinallyLtlTransformer;
 import explicit.conditional.transformer.LtlLtlTransformer;
-import explicit.conditional.transformer.LtlObjectiveTransformer;
+import explicit.conditional.transformer.LtlUntilTransformer;
 import explicit.conditional.transformer.MdpTransformerType;
 import explicit.conditional.transformer.mc.MCLTLTransformer;
 import explicit.conditional.transformer.mc.MCNextTransformer;
@@ -105,13 +105,13 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
-					transformer = new FinallyFinallyTransformer.DTMC(modelChecker);
+					transformer = new FinallyUntilTransformer.DTMC(modelChecker);
 					break;
 				case LtlFinally:
-					transformer = new LtlObjectiveTransformer.DTMC(modelChecker);
+					transformer = new LtlUntilTransformer.DTMC(modelChecker);
 					break;
 				case FinallyLtl:
-					transformer = new LtlConditionTransformer.DTMC(modelChecker);
+					transformer = new FinallyLtlTransformer.DTMC(modelChecker);
 					break;
 				case LtlLtl:
 					transformer = new LtlLtlTransformer.DTMC(modelChecker);
