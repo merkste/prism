@@ -30,12 +30,13 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		return ExpressionInspector.isSimpleFinallyFormula(normalized);
+		return ExpressionInspector.isSimpleUntilFormula(normalized);
 	}
 
 	@Override
 	default
-	boolean canHandleObjective(M model, ExpressionConditional expression) throws PrismLangException
+	boolean canHandleObjective(M model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		if (! ResetConditionalTransformer.super.canHandleObjective(model, expression)) {
 			return false;
@@ -51,26 +52,29 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		checkCanHandle(model, expression);
 
 		// 1) Objective: build omega automaton
-		Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();
-		LabeledDA objectiveDA = getLtlTransformer().constructDA(model, objective, ACCEPTANCE_TYPES);
+		Expression objectiveExpr = ((ExpressionProb) expression.getObjective()).getExpression();
+		LabeledDA objectiveDA = getLtlTransformer().constructDA(model, objectiveExpr, ACCEPTANCE_TYPES);
 
 		// 2) Condition: compute "condition goal states"
-		ExpressionTemporal condition = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
-		Expression conditionGoal = condition.getOperand2();
-		BitSet conditionGoalStates = computeStates(model, conditionGoal);
+		ExpressionTemporal conditionExpr = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
+		Expression conditionRemainExpr = conditionExpr.getOperand1();
+		BitSet conditionRemain = computeStates(model, conditionRemainExpr);
+		Expression conditionGoalExpr = conditionExpr.getOperand2();
+		BitSet conditionGoal = computeStates(model, conditionGoalExpr);
 
 		// 3) Transformation
-		return transform(model, objectiveDA, conditionGoalStates, statesOfInterest);
+		return transform(model, objectiveDA, conditionRemain, conditionGoal, statesOfInterest);
 	}
 
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, LabeledDA objectiveDA, BitSet conditionGoalStates,
-			BitSet statesOfInterest) throws PrismException
+	default ConditionalReachabilitiyTransformation<M, M> transform(M model, LabeledDA objectiveDA, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
+			throws PrismException
 	{
 		// 1) LTL Product Transformation for Objective
 		LTLProduct<M> product = getLtlTransformer().constructProduct(model, objectiveDA, statesOfInterest);
 		M objectiveModel = product.getProductModel();
-		BitSet objectiveGoalStates = getLtlTransformer().findAcceptingStates(product);
-		BitSet conditionGoalStatesLifted = product.liftFromModel(conditionGoalStates);
+		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product);
+		BitSet conditionRemainLifted = conditionRemain == null ? null : product.liftFromModel(conditionRemain);
+		BitSet conditionGoalLifted = product.liftFromModel(conditionGoal);
 		BitSet transformedStatesOfInterest = product.getTransformedStatesOfInterest();
 
 		// 2) Bad States Transformation
@@ -78,10 +82,10 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		switch (product.getAcceptance().getType()) {
 		case REACH:
 			FinallyFinallyTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
-			transformation = finallyTransformer.transform(objectiveModel, objectiveGoalStates, conditionGoalStatesLifted, transformedStatesOfInterest);
+			transformation = finallyTransformer.transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, transformedStatesOfInterest);
 			break;
 		case STREETT:
-			transformation = transform(objectiveModel, objectiveGoalStates, conditionGoalStatesLifted, transformedStatesOfInterest);
+			transformation = transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, transformedStatesOfInterest);
 			break;
 		default:
 			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
@@ -92,44 +96,43 @@ public interface LtlObjectiveTransformer<M extends Model> extends ResetCondition
 		return new ConditionalReachabilitiyTransformation<>(nested, transformation.getGoalStates());
 	}
 
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates, BitSet statesOfInterest)
+	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
 			throws PrismException
 	{
-		BitSet unsatisfiable = checkSatisfiability(model, conditionGoalStates, statesOfInterest);
+		BitSet unsatisfiable = checkSatisfiability(model, conditionRemain, conditionGoal, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		// FIXME ALG: simplify goal-stop signature?
-		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
 		// do not deadlock goal states
-		unsatisfiable.andNot(objectiveGoalStates);
+		unsatisfiable.andNot(objectiveGoal);
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
 
 		// 3) Reset Transformation
-		BitSet badStates = computeBadStates(model, objectiveGoalStates, conditionGoalStates);
+		BitSet bad = computeBadStates(model, objectiveGoal, conditionRemain, conditionGoal);
 		// lift bad states from model to normal-form model and to deadlock model
-		BitSet badStatesLifted = normalFormTransformation.mapToTransformedModel(badStates);
-		badStatesLifted = deadlockTransformation.mapToTransformedModel(badStatesLifted);
+		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
+		badLifted = deadlockTransformation.mapToTransformedModel(badLifted);
 		// do reset
 		M deadlockModel = deadlockTransformation.getTransformedModel();
 		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
-		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
+		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badLifted, transformedStatesOfInterest);
 
 		// 4) Compose Transformations
 		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
-		BitSet goalStatesLifted = nested.mapToTransformedModel(normalFormTransformation.getGoalStates());
+		BitSet goalLifted = nested.mapToTransformedModel(normalFormTransformation.getGoalStates());
 		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
-		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
+		return new ConditionalReachabilitiyTransformation<>(nested, goalLifted);
 	}
 
-	default BitSet computeBadStates(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates)
+	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
 	{
 		// bad states == {s | Pmin=0[<> Condition]}
-		return computeProb0E(model, conditionGoalStates);
+		return computeProb0E(model, conditionRemain, conditionGoal);
 	}
 
 	FinallyFinallyTransformer<M> getFinallyFinallyTransformer();

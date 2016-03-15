@@ -19,10 +19,10 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 	public static final int FAIL = 1;
 
 	@Override
-	default GoalFailTransformation<M> transformModel(M model, BitSet objectiveStates, BitSet conditionStates, BitSet statesOfInterest)
+	default GoalFailTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
 			throws PrismException
 	{
-		return new GoalFailTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveStates, conditionStates, statesOfInterest));
+		return new GoalFailTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest));
 	}
 
 	@Override
@@ -32,16 +32,16 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 	};
 
 	@Override
-	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveStates, BitSet conditionStates)
+	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
 			throws PrismException
 	{
 		// compute Pmax(<> Condition)
-		final double[] conditionMaxProbs = computeReachProbs(model, conditionStates);
+		final double[] conditionMaxProbs = computeUntilProbs(model, conditionRemain, conditionGoal);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
-			private final BinaryRedistribution objectiveRedistribution = new BinaryRedistribution(objectiveStates, offset + GOAL, offset + FAIL,
+			private final BinaryRedistribution objectiveRedistribution = new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL,
 					conditionMaxProbs);
 
 			@Override
@@ -110,7 +110,8 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static void main(final String[] args) throws PrismException
+	public static void main(final String[] args)
+			throws PrismException
 	{
 		final MDPSimple original = new MDPSimple(4);
 		original.addInitialState(1);
@@ -141,15 +142,15 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 		System.out.println();
 
 		final GoalFailTransformer.MDP transformer = new GoalFailTransformer.MDP(new MDPModelChecker(null));
-		final BitSet objectiveStates = BitSetTools.asBitSet(1);
-		final BitSet conditionStates = BitSetTools.asBitSet(2);
+		final BitSet objectiveGoal = BitSetTools.asBitSet(1);
+		final BitSet conditionGoal = BitSetTools.asBitSet(2);
 		final BitSet statesOfInterest = BitSetTools.asBitSet(1);
 
 		System.out.println();
 
-		System.out.println("Conditional Model, normal form, objectiveStates=" + objectiveStates + ", conditionStates=" + conditionStates + ", statesOfInterest="
+		System.out.println("Conditional Model, normal form, objectiveGoal=" + objectiveGoal + ", conditionGoal=" + conditionGoal + ", statesOfInterest="
 				+ statesOfInterest + ":");
-		final explicit.MDP transformed = transformer.transformModel(original, objectiveStates, conditionStates, statesOfInterest).getTransformedModel();
+		final explicit.MDP transformed = transformer.transformModel(original, objectiveGoal, null, conditionGoal, statesOfInterest).getTransformedModel();
 		System.out.print(transformed.infoStringTable());
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));

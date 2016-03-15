@@ -29,13 +29,15 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
 
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression) throws PrismLangException
+	default boolean canHandleCondition(M model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression) throws PrismLangException
+	default boolean canHandleObjective(M model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		if (! ResetConditionalTransformer.super.canHandleObjective(model, expression)) {
 			return false;
@@ -74,23 +76,23 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			LTLProduct<M> objectiveProduct = getLtlTransformer().constructProduct(model, objectiveDA, statesOfInterest);
 			product = objectiveProduct;
 			M objectiveModel = objectiveProduct.getTransformedModel();
-			BitSet objectiveGoalStates = getLtlTransformer().findAcceptingStates(objectiveProduct);
+			BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(objectiveProduct);
 			BitSet transformedStatesOfInterest = objectiveProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
 			LtlConditionTransformer<M> ltlConditionTransformer = getLtlConditionTransformer();
-			transformation = ltlConditionTransformer.transform(objectiveModel, objectiveGoalStates, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
+			transformation = ltlConditionTransformer.transform(objectiveModel, objectiveGoal, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
 		} else if (conditionAcceptanceType  == AcceptanceType.REACH) {
 			// 1) LTL Product Transformation for Condition
 			LTLProduct<M> conditionProduct = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 			product = conditionProduct;
 			M conditionModel = conditionProduct.getTransformedModel();
-			BitSet conditionGoalStates = getLtlTransformer().findAcceptingStates(conditionProduct);
+			BitSet conditionGoal = getLtlTransformer().findAcceptingStates(conditionProduct);
 			BitSet transformedStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
 			LtlObjectiveTransformer<M> ltlObjectiveTransformer = getLtlObjectiveTransformer();
-			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionGoalStates, transformedStatesOfInterest);
+			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, transformedStatesOfInterest);
 		} else {
 			checkAcceptanceType(objectiveAcceptanceType);
 			checkAcceptanceType(conditionAcceptanceType);
@@ -98,10 +100,10 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			// 1) LTL Product Transformation for Condition
 			LTLProduct<M> conditionProduct = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 			M conditionModel = conditionProduct.getProductModel();
-			BitSet conditionGoalStates = getLtlTransformer().findAcceptingStates(conditionProduct);
+			BitSet conditionGoal = getLtlTransformer().findAcceptingStates(conditionProduct);
 			BitSet conditionStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
-			BitSet unsatisfiable = checkSatisfiability(conditionModel, conditionGoalStates, conditionStatesOfInterest);
+			BitSet unsatisfiable = checkSatisfiability(conditionModel, null, conditionGoal, conditionStatesOfInterest);
 
 			// 2) LTL Product Transformation for Objective
 			LTLProduct<M> objectiveAndConditionProduct = getLtlTransformer().constructProduct(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionStatesOfInterest);
@@ -122,28 +124,28 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			objectiveAndConditionAcceptance.addAll(conditionAcceptanceLifted);
 
 			// 5) Objective & Condition Goal States
-			BitSet objectiveAndConditionGoalStates = getLtlTransformer().findAcceptingStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
+			BitSet objectiveAndConditionGoal = getLtlTransformer().findAcceptingStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
 
 			// 6) Deadlock hopeless states
 			BitSet unsatisfiableLifted = objectiveAndConditionProduct.liftFromModel(unsatisfiable);
 			// do not deadlock goal states
-			unsatisfiableLifted.andNot(objectiveAndConditionGoalStates);
+			unsatisfiableLifted.andNot(objectiveAndConditionGoal);
 			unsatisfiableLifted = new BitSet();
 			ModelTransformation<M, M> deadlockTransformation = deadlockStates(objectiveAndConditionModel, unsatisfiableLifted, objectiveAndConditionProduct.getTransformedStatesOfInterest());
 
 			// 7) Reset Transformation
-			BitSet badStates = computeBadStates(objectiveAndConditionModel, objectiveAndConditionGoalStates, conditionAcceptanceLifted);
+			BitSet bad = computeBadStates(objectiveAndConditionModel, objectiveAndConditionGoal, conditionAcceptanceLifted);
 			// lift bad states from normal-form model to deadlock model
-			BitSet badStatesLifted = deadlockTransformation.mapToTransformedModel(badStates);
+			BitSet badLifted = deadlockTransformation.mapToTransformedModel(bad);
 			// do reset
-			badStatesLifted.or(unsatisfiableLifted);
+			badLifted.or(unsatisfiableLifted);
 			M deadlockModel = deadlockTransformation.getTransformedModel();
 			BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
-			ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
+			ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badLifted, transformedStatesOfInterest);
 
 			// 8) Compose Transformations
 			ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
-			BitSet objectiveAndConditionGoalStatesLifted = nested.mapToTransformedModel(objectiveAndConditionGoalStates);
+			BitSet objectiveAndConditionGoalStatesLifted = nested.mapToTransformedModel(objectiveAndConditionGoal);
 			return new ConditionalReachabilitiyTransformation<>(nested, objectiveAndConditionGoalStatesLifted);
 		}
 
@@ -152,22 +154,23 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		return new ConditionalReachabilitiyTransformation<>(nested, transformation.getGoalStates());
 	}
 
-	default BitSet computeBadStates(M productModel, BitSet objectiveAndConditionGoalStates, AcceptanceStreett conditionAcceptance)
+	default BitSet computeBadStates(M productModel, BitSet objectiveAndConditionGoal, AcceptanceStreett conditionAcceptance)
 			throws PrismException
 	{
 		// bad states == {s | Pmin=0[<> Condition]}
-		BitSet badStates = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
+		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
 		// reduce number of transitions, i.e.
 		// - reset only from r-states of streett acceptance
 		// - do not reset from goal states
 		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
-		badStates.and(rStates);
+		bad.and(rStates);
 		// FIXME ALG: double-check whether this is sane!
-		badStates.andNot(objectiveAndConditionGoalStates);
-		return badStates;
+		bad.andNot(objectiveAndConditionGoal);
+		return bad;
 	}
 
-	default void checkAcceptanceType(AcceptanceType objectiveAcceptanceType) throws PrismException
+	default void checkAcceptanceType(AcceptanceType objectiveAcceptanceType)
+			throws PrismException
 	{
 		if (objectiveAcceptanceType != AcceptanceType.STREETT) {
 			throw new PrismException("unsupported acceptance type: " + objectiveAcceptanceType);

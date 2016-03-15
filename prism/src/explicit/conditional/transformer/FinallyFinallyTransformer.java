@@ -25,11 +25,12 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		return ExpressionInspector.isSimpleFinallyFormula(normalized);
+		return ExpressionInspector.isSimpleUntilFormula(normalized);
 	}
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression) throws PrismLangException
+	default boolean canHandleObjective(M model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		if (! ResetConditionalTransformer.super.canHandleObjective(model, expression)) {
 			return false;
@@ -40,53 +41,56 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 	}
 
 	@Override
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
+	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+			throws PrismException
 	{
 		checkCanHandle(model, expression);
 
 		// 1) Objective: extract objective
-		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objective.getExpression())).getOperand2();
-		BitSet objectiveGoalStates = computeStates(model, objectiveGoal);
+		ExpressionProb objectiveExpr = (ExpressionProb) expression.getObjective();
+		Expression objectiveGoalExpr = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveExpr.getExpression())).getOperand2();
+		BitSet objectiveGoal = computeStates(model, objectiveGoalExpr);
 
-		// 2) Condition: compute "condition goal states"
-		ExpressionTemporal condition = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
-		Expression conditionGoal = condition.getOperand2();
-		BitSet conditionGoalStates = computeStates(model, conditionGoal);
+		// 2) Condition: compute "condition remain and goal states"
+		ExpressionTemporal conditionExpr = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
+		Expression conditionRemainExpr = conditionExpr.getOperand1();
+		BitSet conditionRemain = computeStates(model, conditionRemainExpr);
+		Expression conditionGoalExpr = conditionExpr.getOperand2();
+		BitSet conditionGoal = computeStates(model, conditionGoalExpr);
 
-		return transform(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		return transform(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest);
 	}
 
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates, BitSet statesOfInterest)
+	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
 			throws UndefinedTransformationException, PrismException
 	{
-		BitSet unsatisfiable = checkSatisfiability(model, conditionGoalStates, statesOfInterest);
+		BitSet unsatisfiable = checkSatisfiability(model, conditionRemain, conditionGoal, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalFailStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoalStates, conditionGoalStates, statesOfInterest);
+		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
 		// do not deadlock goal states
-		unsatisfiable.andNot(objectiveGoalStates);
+		unsatisfiable.andNot(objectiveGoal);
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		// deadlock fail state as well
 		unsatisfiableLifted.set(normalFormTransformation.getFailState());
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
 
 		// 3) Reset Transformation
-		BitSet badStates = computeBadStates(model, objectiveGoalStates, conditionGoalStates);
+		BitSet bad = computeBadStates(model, objectiveGoal, conditionRemain, conditionGoal);
 		// lift bad states from model to normal-form model
-		BitSet badStatesLifted = normalFormTransformation.mapToTransformedModel(badStates);
+		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
 		// reset from fail state as well
-		badStatesLifted.set(normalFormTransformation.getFailState());
+		badLifted.set(normalFormTransformation.getFailState());
 		// lift bad states from normal-form model to deadlock model
-		badStatesLifted = deadlockTransformation.mapToTransformedModel(badStatesLifted);
+		badLifted = deadlockTransformation.mapToTransformedModel(badLifted);
 		// do reset
 		M deadlockModel = deadlockTransformation.getTransformedModel();
 		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
-		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badStatesLifted, transformedStatesOfInterest);
+		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badLifted, transformedStatesOfInterest);
 
 		// 4) Compose Transformations
 		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
@@ -95,13 +99,13 @@ public interface FinallyFinallyTransformer<M extends Model> extends ResetConditi
 		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
 	}
 
-	default BitSet computeBadStates(M model, BitSet objectiveGoalStates, BitSet conditionGoalStates)
+	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
 	{
 		// bad states == {s | Pmin=0[<> Condition]}
-		BitSet badStates = computeProb0E(model, conditionGoalStates);
+		BitSet badStates = computeProb0E(model, conditionRemain, conditionGoal);
 		// reduce number of transitions, i.e.
 		// - do not reset from goal states
-		badStates.andNot(objectiveGoalStates);
+		badStates.andNot(objectiveGoal);
 		return badStates;
 	}
 

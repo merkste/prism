@@ -35,7 +35,8 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 {
 	@SuppressWarnings("unchecked")
 	@Override
-	default boolean canHandle(Model model, ExpressionConditional expression) throws PrismLangException
+	default boolean canHandle(Model model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		return canHandleModelType(model)
 		       && canHandleObjective((M) model, expression)
@@ -44,7 +45,8 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 	boolean canHandleModelType(Model model);
 
-	default boolean canHandleObjective(M model, ExpressionConditional expression) throws PrismLangException
+	default boolean canHandleObjective(M model, ExpressionConditional expression)
+			throws PrismLangException
 	{
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;
@@ -55,18 +57,19 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}
 
-	boolean canHandleCondition(M model, ExpressionConditional expression) throws PrismLangException;
+	boolean canHandleCondition(M model, ExpressionConditional expression)
+			throws PrismLangException;
 
 	@Override
 	ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
 
-	default ModelTransformation<M, ? extends M> transformReset(M model, BitSet resetStates, BitSet statesOfInterest)
+	default ModelTransformation<M, ? extends M> transformReset(M model, BitSet reset, BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1) Reset
 		ResetTransformer<M> resetTransformer = getResetTransformer();
-		ResetTransformation<M> resetTransformation = resetTransformer.transformModel(model, resetStates, statesOfInterest);
+		ResetTransformation<M> resetTransformation = resetTransformer.transformModel(model, reset, statesOfInterest);
 		// 2) Reachability
 		M resetModel = resetTransformation.getTransformedModel();
 		BitSet resetStatesOfInterest = resetTransformation.getTransformedStatesOfInterest();
@@ -79,23 +82,25 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 	ModelTransformation<M, ? extends M> transformRestrict(M model, BitSet states);
 
-	default BitSet checkSatisfiability(M model, BitSet goalStates, BitSet statesOfInterest) throws UndefinedTransformationException
+	default BitSet checkSatisfiability(M model, BitSet remain, BitSet goal, BitSet statesOfInterest)
+			throws UndefinedTransformationException
 	{
-		BitSet unsatisfiable = computeProb0A(model, goalStates);
+		BitSet unsatisfiable = computeProb0A(model, remain, goal);
 		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 		return unsatisfiable;
 	}
 
-	default BitSet computeStates(M model, Expression expression) throws PrismException
+	default BitSet computeStates(M model, Expression expression)
+			throws PrismException
 	{
 		return getModelChecker().checkExpression(model, expression, null).getBitSet();
 	}
 
-	BitSet computeProb0A(M model, BitSet goalStates);
+	BitSet computeProb0A(M model, BitSet remain, BitSet goal);
 
-	BitSet computeProb0E(M model, BitSet goalStates);
+	BitSet computeProb0E(M model, BitSet remain, BitSet goal);
 
 	ModelTransformation<M, M> deadlockStates(M model, BitSet states, BitSet statesOfInterest);
 
@@ -128,16 +133,16 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		}
 
 		@Override
-		public BitSet computeProb0A(explicit.DTMC model, BitSet goalStates)
+		public BitSet computeProb0A(explicit.DTMC model, BitSet remain, BitSet goal)
 		{
 			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
-			return modelChecker.prob0(model, null, goalStates, pre);
+			return modelChecker.prob0(model, remain, goal, pre);
 		}
 
 		@Override
-		public BitSet computeProb0E(explicit.DTMC model, BitSet goalStates)
+		public BitSet computeProb0E(explicit.DTMC model, BitSet remain, BitSet goal)
 		{
-			return computeProb0A(model, goalStates);
+			return computeProb0A(model, remain, goal);
 		}
 
 		@Override
@@ -177,15 +182,15 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 
 		@Override
-		public BitSet computeProb0A(explicit.MDP model, BitSet goalStates)
+		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob0(model, null, goalStates, false, null);
+			return modelChecker.prob0(model, remain, goal, false, null);
 		}
 
 		@Override
-		public BitSet computeProb0E(explicit.MDP model, BitSet goalStates)
+		public BitSet computeProb0E(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob0(model, null, goalStates, true, null);
+			return modelChecker.prob0(model, remain, goal, true, null);
 		}
 
 
