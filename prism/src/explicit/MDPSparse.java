@@ -138,15 +138,15 @@ public class MDPSparse extends MDPExplicit
 					if (sort) {
 						sorted.put(trans.getKey(), trans.getValue());
 					} else {
-						cols[choiceIndex] = (Integer) trans.getKey();
-						nonZeros[choiceIndex] = (Double) trans.getValue();
+						cols[choiceIndex] = trans.getKey();
+						nonZeros[choiceIndex] = trans.getValue();
 						choiceIndex++;
 					}
 				}
 				if (sort) {
 					for (Map.Entry<Integer, Double> e : sorted.entrySet()) {
-						cols[choiceIndex] = (Integer) e.getKey();
-						nonZeros[choiceIndex] = (Double) e.getValue();
+						cols[choiceIndex] = e.getKey();
+						nonZeros[choiceIndex] = e.getValue();
 						choiceIndex++;
 					}
 					sorted.clear();
