@@ -64,6 +64,7 @@ import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceType;
 import automata.DA;
 import automata.LTL2DA;
+import common.BitSetTools;
 import common.iterable.IterableStateSet;
 
 /**
@@ -620,19 +621,48 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingBSCCs(Model model, final AcceptanceOmega acceptance) throws PrismException
 	{
+		return findAcceptingBSCCs(model, acceptance, null);
+	}
+
+	/**
+	 * Find the set of states that belong to accepting BSCCs in {@code restrict} in a model wrt an acceptance condition.
+	 * @param model The model
+	 * @param acceptance The acceptance condition
+	 * @param restrict set of states to restrict to 
+	 */
+	public BitSet findAcceptingBSCCs(Model model, AcceptanceOmega acceptance , BitSet restrict) throws PrismException
+	{
 		final BitSet result = new BitSet();
 
 		// Compute bottom strongly connected components (BSCCs)
 		// and check using the following SCCConsumerBSCCs:
-		SCCConsumerBSCCs sccConsumer = new SCCConsumerBSCCs(this, model) {
-
-			@Override
-			public void notifyNextBSCC(BitSet bscc) {
-				if (acceptance.isBSCCAccepting(bscc)) {
-					result.or(bscc);
+		int numStates = model.getNumStates();
+		boolean allStates = restrict == null || ((restrict.cardinality() == numStates) && (restrict.length() == numStates));
+		SCCConsumerBSCCs sccConsumer;
+		if (allStates) {
+			// all states allowed
+			sccConsumer = new SCCConsumerBSCCs(this, model)
+			{
+				@Override
+				public void notifyNextBSCC(BitSet bscc) {
+					if (acceptance.isBSCCAccepting(bscc)) {
+						result.or(bscc);
+					}
 				}
-			}
-		};
+			};
+		} else {
+			// filter states
+			// FIXME ALG: The filter should be applied during the SCC exploration, already.
+			sccConsumer = new SCCConsumerBSCCs(this, model)
+			{
+				@Override
+				public void notifyNextBSCC(BitSet bscc) {
+					if (BitSetTools.isSubset(bscc, restrict) && acceptance.isBSCCAccepting(bscc)) {
+						result.or(bscc);
+					}
+				}
+			};
+		}
 
 		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, model, sccConsumer);
 		sccComputer.computeSCCs();
@@ -650,12 +680,25 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStates(NondetModel model, AcceptanceOmega acceptance) throws PrismException
 	{
+		return findAcceptingECStates(model, acceptance, null);
+	}
+
+	/**
+	 * Compute the set of states in end components of the model in {@code restrict} that are accepting
+	 * with regard to the acceptance condition.
+	 * @param model the model
+	 * @param acceptance the acceptance condition
+	 * @param restrict set of states to restrict to
+	 * @return BitSet with the set of states that are accepting
+	 */
+	public BitSet findAcceptingECStates(NondetModel model, AcceptanceOmega acceptance, BitSet restrict) throws PrismException
+	{
 		if (acceptance instanceof AcceptanceRabin) {
-			return findAcceptingECStatesForRabin(model, (AcceptanceRabin) acceptance);
+			return findAcceptingECStatesForRabin(model, (AcceptanceRabin) acceptance, restrict);
 		} else if (acceptance instanceof AcceptanceStreett) {
-			return findAcceptingECStatesForStreett(model, (AcceptanceStreett) acceptance);
+			return findAcceptingECStatesForStreett(model, (AcceptanceStreett) acceptance, restrict);
 		} else if (acceptance instanceof AcceptanceGenRabin) {
-			return findAcceptingECStatesForGeneralizedRabin(model, (AcceptanceGenRabin) acceptance);
+			return findAcceptingECStatesForGeneralizedRabin(model, (AcceptanceGenRabin) acceptance, restrict);
 		}
 		throw new PrismNotSupportedException("Computing end components for acceptance type '"+acceptance.getType()+"' currently not supported (explicit engine).");
 	}
@@ -667,18 +710,28 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStatesForRabin(NondetModel model, AcceptanceRabin acceptance) throws PrismException
 	{
+		return findAcceptingECStatesForRabin(model, acceptance, null);
+	}
+
+	/**
+	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Rabin acceptance condition.
+	 * @param model The model
+	 * @param acceptance The acceptance condition
+	 * @param restrict set of states to restrict to
+	 */
+	public BitSet findAcceptingECStatesForRabin(NondetModel model, AcceptanceRabin acceptance, BitSet restrict) throws PrismException
+	{
 		final BitSet allAcceptingStates = new BitSet();
 		int numStates = model.getNumStates();
-		
+		boolean allStates = (restrict == null) || ((restrict.cardinality() == numStates) && (restrict.length() == numStates));
+
 		// Go through the DRA acceptance pairs (L_i, K_i) 
 		for (int i = 0; i < acceptance.size(); i++) {
 			// Find model states *not* satisfying L_i
 			BitSet bitsetLi = acceptance.get(i).getL();
-			BitSet statesLi_not = new BitSet();
-			for (int s = 0; s < numStates; s++) {
-				if (!bitsetLi.get(s)) {
-					statesLi_not.set(s);
-				}
+			BitSet statesLi_not = BitSetTools.complement(numStates, bitsetLi);
+			if (! allStates) {
+				statesLi_not.and(restrict);
 			}
 			// Skip pairs with empty !L_i
 			if (statesLi_not.cardinality() == 0)
@@ -710,6 +763,17 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStatesForStreett(NondetModel model, AcceptanceStreett acceptance) throws PrismException
 	{
+		return findAcceptingECStatesForStreett(model, acceptance, null);
+	}
+
+	/**
+	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Streett acceptance condition.
+	 * @param model The model
+	 * @param acceptance The Streett acceptance condition
+	 * @param restrict set of states to restrict to
+	 */
+	public BitSet findAcceptingECStatesForStreett(NondetModel model, AcceptanceStreett acceptance, BitSet restrict) throws PrismException
+	{
 		class ECandPairs {
 			BitSet MEC;
 			BitSet activePairs;
@@ -725,7 +789,13 @@ public class LTLModelChecker extends PrismComponent
 		if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 			ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 		}
-		ecComputer.computeMECStates();
+
+		int numStates = model.getNumStates();
+		if (restrict == null || (restrict.cardinality() == numStates && restrict.length() == numStates)) {
+			restrict = null;
+		}
+
+		ecComputer.computeMECStates(restrict);
 		for (BitSet mecs : ecStore.getMECStates()) {
 			ECandPairs ecp = new ECandPairs();
 			ecp.MEC = mecs;
@@ -736,7 +806,8 @@ public class LTLModelChecker extends PrismComponent
 		while (!todo.empty()) {
 			ECandPairs ecp = todo.pop();
 			BitSet newActivePairs = (BitSet)ecp.activePairs.clone();
-			BitSet restrict = null;
+			// local restriction set
+			BitSet restrictLocal = null;
 
 			// check for acceptance
 			boolean allAccepting = true;
@@ -746,10 +817,10 @@ public class LTLModelChecker extends PrismComponent
 
 				if (!acceptance.get(pair).isBSCCAccepting(ecp.MEC)) {
 					// this pair is not accepting
-					if (restrict == null) {
-						restrict = (BitSet)ecp.MEC.clone();
+					if (restrictLocal == null) {
+						restrictLocal = (BitSet) ecp.MEC.clone();
 					}
-					restrict.andNot(acceptance.get(pair).getR());
+					restrictLocal.andNot(acceptance.get(pair).getR());
 					newActivePairs.clear(pair);
 					allAccepting = false;
 				}
@@ -757,15 +828,16 @@ public class LTLModelChecker extends PrismComponent
 
 			if (allAccepting) {
 				allAcceptingStates.or(ecp.MEC);
-			} else if (restrict.isEmpty()) {
+			} else if (restrictLocal.isEmpty()) {
 				// nothing to do
+				continue;
 			} else {
 				ecStore = new ECConsumerStore(this, model);
 				ecComputer = ECComputer.createECComputer(this, model, ecStore);
 				if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 					ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 				}
-				ecComputer.computeMECStates(restrict);
+				ecComputer.computeMECStates(restrictLocal);
 				for (BitSet mecs : ecStore.getMECStates()) {
 					ECandPairs newEcp = new ECandPairs();
 					newEcp.MEC = mecs;
@@ -785,19 +857,29 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStatesForGeneralizedRabin(NondetModel model, AcceptanceGenRabin acceptance) throws PrismException
 	{
+		return findAcceptingECStatesForGeneralizedRabin(model, acceptance, null);
+	}
+
+	/**
+	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Generalized Rabin acceptance condition.
+	 * @param model The model
+	 * @param acceptance The acceptance condition
+	 * @param restrict set of states to restrict to
+	 */
+	public BitSet findAcceptingECStatesForGeneralizedRabin(NondetModel model, AcceptanceGenRabin acceptance, BitSet restrict) throws PrismException
+	{
 		final BitSet allAcceptingStates = new BitSet();
 		int numStates = model.getNumStates();
-		
+		boolean allStates = (restrict == null) || ((restrict.cardinality() == numStates) && (restrict.length() - 1 == numStates));
+
 		// Go through the GR acceptance pairs (L_i, K_i_1, ..., K_i_n) 
 		for (int i = 0; i < acceptance.size(); i++) {
-			
+
 			// Find model states *not* satisfying L_i
 			BitSet bitsetLi = acceptance.get(i).getL();
-			BitSet statesLi_not = new BitSet();
-			for (int s = 0; s < numStates; s++) {
-				if (!bitsetLi.get(s)) {
-					statesLi_not.set(s);
-				}
+			BitSet statesLi_not = BitSetTools.complement(numStates, bitsetLi);
+			if (! allStates) {
+				statesLi_not.and(restrict);
 			}
 			// Skip pairs with empty !L_i
 			if (statesLi_not.cardinality() == 0)
@@ -805,7 +887,8 @@ public class LTLModelChecker extends PrismComponent
 
 			final GenRabinPair grabinPair = acceptance.get(i);
 
-			ECConsumer accepting_mec_check = new ECConsumer(this, model) {
+			ECConsumer accepting_mec_check = new ECConsumer(this, model)
+			{
 				@Override
 				public void notifyNextMEC(BitSet mec) {
 					int n = grabinPair.getNumK();
@@ -849,5 +932,4 @@ public class LTLModelChecker extends PrismComponent
 
 		return lifted;
 	}
-
 }
