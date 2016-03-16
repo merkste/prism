@@ -126,6 +126,37 @@ public class BitSetTools
 		return union;
 	}
 
+	public static BitSet intersect(BitSet set, BitSet... sets)
+	{
+		BitSet intersection = (BitSet) set.clone();
+		for (BitSet each : sets) {
+			intersection.and(each);
+		}
+		return intersection;
+	}
+
+	public static BitSet intersect(Iterable<BitSet> sets)
+	{
+		return intersect(sets.iterator());
+	}
+
+	public static BitSet intersect(Iterator<BitSet> sets)
+	{
+		if (! sets.hasNext()) {
+			throw new IllegalArgumentException("Expected at least one set.");
+		}
+		BitSet intersection = sets.next();
+		while (sets.hasNext()) {
+			intersection.and(sets.next());
+		}
+		return intersection;
+	}
+
+	public static boolean isSubset(BitSet subset, BitSet superset)
+	{
+		return minus(subset, superset).isEmpty();
+	}
+
 	/**
 	 * Count the number of set bits up to the specified <code>toIndex</code> (exclusive).
 	 * 
@@ -203,6 +234,22 @@ public class BitSetTools
 		System.out.println("countSetBits(" + bs + ", " + 2 + ", " + 4 + ") = " + countSetBits(bs, 2, 4));
 		System.out.println("countSetBits(" + bs + ", " + 3 + ", " + 4 + ") = " + countSetBits(bs, 3, 4));
 		System.out.println("countSetBits(" + bs + ", " + 4 + ", " + 4 + ") = " + countSetBits(bs, 4, 4));
+		System.out.println();
 
+		int n = 10000000;
+
+		BitSet superset = new BitSet(n);
+		superset.set(0, n);
+
+		BitSet subset = new BitSet(n);
+		for (int i=0; i<n; i++) {
+			subset.set((int)(n * Math.random()));
+		}
+		System.out.println("|subset| = " + subset.cardinality());
+
+		System.out.print("isSubset ... ");
+		StopWatch watch = new StopWatch();
+		boolean result = watch.run(() -> isSubset(subset, superset));
+		System.out.println(result + " in " + watch.elapsedSeconds() + "s");
 	}
 }
