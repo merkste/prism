@@ -9,24 +9,19 @@ import common.iterable.IterableBitSet;
 
 public class EquivalenceRelationInteger implements PairPredicateInt
 {
-	final private Map<Integer, BitSet> classes = new HashMap<Integer, BitSet>();
-	final private BitSet nonRepresentatives = new BitSet();
+	final protected Map<Integer, BitSet> classes = new HashMap<Integer, BitSet>();
+	final protected BitSet nonRepresentatives    = new BitSet();
+
+	public EquivalenceRelationInteger() {}
 
 	public EquivalenceRelationInteger(final Iterable<BitSet> equivalenceClasses)
-	{
-		this(equivalenceClasses, true);
-	}
-
-	public EquivalenceRelationInteger(final Iterable<BitSet> equivalenceClasses, final boolean dropSingletonClasses)
 	{
 		for (BitSet equivalenceClass : equivalenceClasses) {
 			switch (equivalenceClass.cardinality()) {
 			case 0:
 				throw new IllegalArgumentException("expected non-empty classes");
 			case 1:
-				if (dropSingletonClasses){
-					continue;
-				}
+				continue;
 			default:
 				for (Integer i : new IterableBitSet(equivalenceClass)) {
 					if (classes.put(i, equivalenceClass) != null) {
@@ -56,16 +51,16 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 	{
 		BitSet equivalenceClass = getEquivalenceClassOrNull(i);
 		if (equivalenceClass == null) {
-			equivalenceClass = new BitSet(1);
+			equivalenceClass = new BitSet(i + 1);
 			equivalenceClass.set(i);
 		}
 		return equivalenceClass;
 	}
 
 	/**
-	 * Return the equivalence class of {@code i} if it not a singleton otherwise {@code null}. 
+	 * Return the equivalence class of {@code i} if {@code i} is no singleton, otherwise {@code null}. 
 	 * @param i a number
-	 * @return [i] or null if [i] is a singleton
+	 * @return {@code null} if [i] is a singleton, otherwise [i]
 	 */
 	public BitSet getEquivalenceClassOrNull(final int i)
 	{
@@ -80,5 +75,38 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 	public boolean isRepresentative(final int i)
 	{
 		return ! nonRepresentatives.get(i);
+	}
+
+
+
+	public static class KeepSingletons extends EquivalenceRelationInteger
+	{
+		public KeepSingletons(Iterable<BitSet> equivalenceClasses)
+		{
+			for (BitSet equivalenceClass : equivalenceClasses) {
+				switch (equivalenceClass.cardinality()) {
+				case 0:
+					throw new IllegalArgumentException("expected non-empty classes");
+				default:
+					for (Integer i : new IterableBitSet(equivalenceClass)) {
+						if (classes.put(i, equivalenceClass) != null) {
+							throw new IllegalArgumentException("expected disjoint classes");
+						}
+					}
+					nonRepresentatives.or(equivalenceClass);
+					nonRepresentatives.clear(equivalenceClass.nextSetBit(0));
+				}
+			}
+		}
+
+		@Override
+		public BitSet getEquivalenceClassOrNull(int i)
+		{
+			BitSet equivalenceClass = super.getEquivalenceClassOrNull(i);
+			if (equivalenceClass == null) {
+				return null;
+			}
+			return (equivalenceClass.cardinality() == 1) ? null : equivalenceClass;
+		}
 	}
 }
