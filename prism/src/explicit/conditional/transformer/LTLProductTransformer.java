@@ -11,6 +11,7 @@ import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import automata.DA;
+import common.BitSetTools;
 import explicit.DTMC;
 import explicit.LTLModelChecker;
 import explicit.MDP;
@@ -31,7 +32,8 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		ltlModelChecker = new LTLModelChecker(this);
 	}
 
-	public boolean canHandle(final Model model, final Expression expression) throws PrismLangException
+	public boolean canHandle(final Model model, final Expression expression)
+			throws PrismLangException
 	{
 		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression);
 	}
@@ -72,21 +74,36 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		return product;
 	}
 
-	public BitSet findAcceptingStates(final LTLProduct<M> product) throws PrismException
+	public BitSet findAcceptingStates(final LTLProduct<M> product)
+			throws PrismException
 	{
-		return findAcceptingStates(product.getProductModel(), product.getAcceptance());
+		return findAcceptingStates(product, null);
 	}
 
-	protected BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance) throws PrismException
+	protected BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance)
+			throws PrismException
+	{
+		return findAcceptingStates(productModel, acceptance, null);
+	}
+
+	public BitSet findAcceptingStates(final LTLProduct<M> product, final BitSet restrict)
+			throws PrismException
+	{
+		return findAcceptingStates(product.getProductModel(), product.getAcceptance(), restrict);
+	}
+
+	protected BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance, final BitSet restrict)
+			throws PrismException
 	{
 		if (acceptance.getType() == AcceptanceType.REACH) {
-			return ((AcceptanceReach) acceptance).getGoalStates();
+			BitSet goalStates = ((AcceptanceReach) acceptance).getGoalStates();
+			return (restrict == null) ? goalStates : BitSetTools.intersect(goalStates, restrict);
 		}
 		if (productModel instanceof DTMC) {
-			return ltlModelChecker.findAcceptingBSCCs((DTMC) productModel, acceptance);
+			return ltlModelChecker.findAcceptingBSCCs((DTMC) productModel, acceptance, restrict);
 		}
 		if (productModel instanceof MDP) {
-			return ltlModelChecker.findAcceptingECStates((MDP) productModel, acceptance);
+			return ltlModelChecker.findAcceptingECStates((MDP) productModel, acceptance, restrict);
 		}
 		throw new PrismException("Unsupported product model type: " + productModel.getClass());
 	}
