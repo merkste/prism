@@ -26,6 +26,8 @@
 
 package common;
 
+import java.util.function.Supplier;
+
 import prism.PrismLog;
 
 /**
@@ -35,13 +37,16 @@ import prism.PrismLog;
 public class StopWatch
 {
 	/** The log */
-	private PrismLog log;
+	protected PrismLog log;
 
 	/** An (optional) task description */
-	private String taskDescription;
+	protected String taskDescription;
 
 	/** For storing the time */
-	private long time = 0;
+	protected long time = 0;
+
+	/** Is watch running? */
+	protected boolean running = false;
 
 	/** Constructor, no log and no output */
 	public StopWatch()
@@ -64,6 +69,7 @@ public class StopWatch
 	public void start(String taskDescription)
 	{
 		this.taskDescription = taskDescription;
+		running = true;
 		time = System.currentTimeMillis();
 	}
 
@@ -72,9 +78,9 @@ public class StopWatch
 	 * If a task description and a log was given, output
 	 * elapsed time.
 	 */
-	public void stop()
+	public long stop()
 	{
-		stop(null);
+		return stop(null);
 	}
 
 	/**
@@ -82,27 +88,85 @@ public class StopWatch
 	 * If a log and a task description / extra text was given, output
 	 * elapsed time.
 	 */
-	public void stop(String extraText)
+	public long stop(String extraText)
 	{
 		time = System.currentTimeMillis() - time;
+		running = false;
 		if (log != null) {
 			if (taskDescription != null) {
-				log.print("Time for " + taskDescription + ": " + time / 1000.0 + " seconds");
+				log.print("Time for " + taskDescription + ": " + elapsedSeconds() + " seconds");
 				if (extraText == null) {
 					log.println(".");
 				} else {
-					log.print(extraText);
-					log.println(".");
+					log.print(" " + extraText + ".");
 				}
 			} else if (extraText != null) {
-				log.print("Time : " + time / 1000.0 + " seconds "+extraText+".");
+				log.print("Time : " + elapsedSeconds() + " seconds " + extraText + ".");
 			}
 		}
+		return time;
 	}
 
-	/** Get the number of elapsed milliseconds (after having called stop). */
+	/** Get the number of elapsed milliseconds (fixed value after having called stop). */
 	public long elapsedMillis()
 	{
-		return time;
+		return running ? System.currentTimeMillis() - time : time;
+	}
+
+	/** Get the number of elapsed seconds (fixed value after having called stop). */
+	public double elapsedSeconds()
+	{
+		return elapsedMillis() / 1000.0;
+	}
+
+	/**
+	 * Stop the execution time of a task.
+	 * 
+	 * @return time in milliseconds
+	 **/
+	public long run(Runnable task)
+	{
+		return run(task, null, null);
+	}
+
+	/**
+	 * Stop the execution time of a task.
+	 * 
+	 * @param taskDescription description or {@code null})
+	 * @param extraText text or {@code null} 
+	 * @return time in milliseconds
+	 **/
+	public long run(Runnable task, String taskDescription, String extraText)
+	{
+		start(taskDescription);
+		task.run();
+		return stop(extraText);
+	}
+
+	/**
+	 * Stop the execution time of a task and return the result.
+	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
+	 * 
+	 * @return task result
+	 **/
+	public <T> T run(Supplier<T> task)
+	{
+		return run(task, null, null);
+	}
+
+	/**
+	 * Stop the execution time of a task and return the result.
+	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
+	 * 
+	 * @param taskDescription description or {@code null}
+	 * @param extraText text or {@code null} 
+	 * @return task result
+	 **/
+	public <T> T run(Supplier<T> task, String taskDescription, String extraText)
+	{
+		start(taskDescription);
+		T result = task.get();
+		stop(extraText);
+		return result;
 	}
 }
