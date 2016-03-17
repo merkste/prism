@@ -22,11 +22,12 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 
 
 	@Override
-	default GoalFailStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
+	default GoalFailStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
 			throws PrismException
-	{
-		return new GoalFailStopTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest));
-	}
+		{
+			NormalFormTransformation<M> transformation = ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
+			return new GoalFailStopTransformation<>(transformation);
+		}
 
 	@Override
 	default public int getNumTrapStates()
@@ -35,21 +36,22 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 	};
 
 	@Override
-	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException
 	{
 		// compute Pmax(<> Objective)
-		final double[] objectiveProbs = computeUntilProbs(model, null, objectiveGoal);
+		double[] objectiveProbs = computeUntilProbs(model, null, objectiveGoal, false);
 		// compute Pmax(<> Condition)
-		final double[] conditionProbs = computeUntilProbs(model, conditionRemain, conditionGoal);
+		double[] conditionProbs = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
+		BitSet conditionTerminals = getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
-			private final BinaryRedistribution conditionRedistribution =
-					new BinaryRedistribution(conditionGoal, offset + GOAL, offset + STOP, objectiveProbs);
-			private final BinaryRedistribution objectiveRedistribution =
+			final BinaryRedistribution objectiveRedistribution =
 					new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL, conditionProbs);
+			final BinaryRedistribution conditionRedistribution =
+					new BinaryRedistribution(conditionTerminals, offset + GOAL, offset + STOP, objectiveProbs);
 
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(int state)
@@ -76,7 +78,6 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 
 
 
-
 	public static class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalFailStopTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
@@ -95,9 +96,11 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 		}
 
 		@Override
-		protected BitSet getTerminalStates(BitSet objectiveStates, BitSet conditionStates)
+		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			return BitSetTools.union(objectiveStates, conditionStates);
+			BitSet conditionTerminals = getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
+
+			return BitSetTools.union(objectiveGoal, conditionTerminals);
 		}
 	}
 
@@ -169,7 +172,7 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 
 		System.out.println("Conditional Model, normal form, objectiveGoal=" + objectiveGoal + ", conditionGoal=" + conditionGoal + ", statesOfInterest="
 				+ statesOfInterest + ":");
-		final explicit.MDP transformed = transformer.transformModel(original, objectiveGoal, null, conditionGoal, statesOfInterest).getTransformedModel();
+		final explicit.MDP transformed = transformer.transformModel(original, objectiveGoal, null, conditionGoal, false, statesOfInterest).getTransformedModel();
 		System.out.print(transformed.infoStringTable());
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));

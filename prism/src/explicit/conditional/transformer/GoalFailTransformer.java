@@ -21,10 +21,10 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 
 
 	@Override
-	default GoalFailTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
+	default GoalFailTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
 			throws PrismException
 	{
-		return new GoalFailTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest));
+		return new GoalFailTransformation<>(ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest));
 	}
 
 	@Override
@@ -34,22 +34,22 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 	};
 
 	@Override
-	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException
 	{
 		// compute Pmax(<> Condition)
-		final double[] conditionMaxProbs = computeUntilProbs(model, conditionRemain, conditionGoal);
+		double[] conditionMaxProbs = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
-			private final BinaryRedistribution objectiveRedistribution = new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL,
-					conditionMaxProbs);
+			final BinaryRedistribution objectiveRedistribution =
+					new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL, conditionMaxProbs);
 
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(int state)
 			{
-				final Iterator<Entry<Integer, Double>> distribution = objectiveRedistribution.apply(state);
+				Iterator<Entry<Integer, Double>> distribution = objectiveRedistribution.apply(state);
 				if (distribution != null) {
 					// objective state
 					return distribution;
@@ -84,9 +84,9 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 		}
 
 		@Override
-		protected BitSet getTerminalStates(final BitSet objectiveStates, final BitSet conditionStates)
+		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			return objectiveStates;
+			return objectiveGoal;
 		}
 	}
 
@@ -99,7 +99,7 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 			super(originalModel, transformedModel, transformedStatesOfInterest);
 		}
 
-		public GoalFailTransformation(final NormalFormTransformation<? extends M> transformation)
+		public GoalFailTransformation(NormalFormTransformation<? extends M> transformation)
 		{
 			super(transformation);
 		}
@@ -152,7 +152,7 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 
 		System.out.println("Conditional Model, normal form, objectiveGoal=" + objectiveGoal + ", conditionGoal=" + conditionGoal + ", statesOfInterest="
 				+ statesOfInterest + ":");
-		final explicit.MDP transformed = transformer.transformModel(original, objectiveGoal, null, conditionGoal, statesOfInterest).getTransformedModel();
+		final explicit.MDP transformed = transformer.transformModel(original, objectiveGoal, null, conditionGoal, false, statesOfInterest).getTransformedModel();
 		System.out.print(transformed.infoStringTable());
 		System.out.println("Initials:    " + BitSetTools.asBitSet(transformed.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(transformed.getDeadlockStates()));

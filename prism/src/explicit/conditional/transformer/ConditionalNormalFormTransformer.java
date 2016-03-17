@@ -29,8 +29,14 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 	default NormalFormTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
 			throws PrismException
 	{
+		return transformModel(model, objectiveGoal, conditionRemain, conditionGoal, false, statesOfInterest);
+	}
+
+	default NormalFormTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
+			throws PrismException
+	{
 		M trapStatesModel = addTrapStates(model, getNumTrapStates());
-		M redirectedModel = normalizeTransitions(model, trapStatesModel, objectiveGoal, conditionRemain, conditionGoal);
+		M redirectedModel = normalizeTransitions(model, trapStatesModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 
 		return new NormalFormTransformation<>(model, redirectedModel, statesOfInterest);
 	}
@@ -39,15 +45,38 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 
 	int getNumTrapStates();
 
-	M normalizeTransitions(M model, M trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	M normalizeTransitions(M model, M trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException;
 
-	MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException;
 
-	double[] computeUntilProbs(M model, BitSet remain, BitSet goal)
+	double[] computeUntilProbs(M model, BitSet remain, BitSet goal, boolean negated)
 			throws PrismException;
 
+	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
+	static double[] negateProbabilities(final double[] probabilities)
+	{
+		for (int state = 0; state < probabilities.length; state++) {
+			probabilities[state] = 1 - probabilities[state];
+		}
+		return probabilities;
+	}
+
+	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
+	default BitSet getUntilTerminalStates(M model, BitSet remain, BitSet goal, boolean negated)
+	{
+		// terminal = ! (remain | goal)
+		if (! negated) {
+			return goal;
+		}
+		if (remain == null || remain.cardinality() == model.getNumStates()) {
+			return new BitSet();
+		}
+		BitSet terminals = BitSetTools.union(remain, goal);
+		terminals.flip(0, model.getNumStates());
+		return terminals;
+	}
 
 
 	public abstract static class DTMC extends PrismComponent implements ConditionalNormalFormTransformer<explicit.DTMC>
@@ -67,20 +96,24 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		}
 
 		@Override
-		public explicit.DTMC normalizeTransitions(explicit.DTMC model, explicit.DTMC trapStatesModel, BitSet objectiveGoalStates, BitSet conditionRemain, BitSet conditionGoal)
+		public explicit.DTMC normalizeTransitions(explicit.DTMC model, explicit.DTMC trapStatesModel, BitSet objectiveGoalStates, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 				throws PrismException
 		{
-			final MappingInt<Iterator<Entry<Integer, Double>>> transitions = getTransitions(model, objectiveGoalStates, conditionRemain, conditionGoal);
+			MappingInt<Iterator<Entry<Integer, Double>>> transitions = getTransitions(model, objectiveGoalStates, conditionRemain, conditionGoal, conditionNegated);
 			return new DTMCAlteredDistributions(trapStatesModel, transitions);
 		}
 
 		@Override
-		public double[] computeUntilProbs(explicit.DTMC model, BitSet remain, BitSet goal)
+		public double[] computeUntilProbs(explicit.DTMC model, BitSet remain, BitSet goal, boolean negated)
 				throws PrismException
 		{
-			return modelChecker.computeUntilProbs(model, remain, goal).soln;
+			// FIXME ALG: consider precomputation
+			double[] probs = modelChecker.computeUntilProbs(model, remain, goal).soln;
+			if (negated) {
+				return negateProbabilities(probs);
+			}
+			return probs;
 		}
-
 	}
 
 
@@ -101,22 +134,23 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		}
 
 		@Override
-		public explicit.MDP normalizeTransitions(explicit.MDP model, explicit.MDP trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+		public explicit.MDP normalizeTransitions(explicit.MDP model, explicit.MDP trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 				throws PrismException
 		{
-			MDPDroppedAllChoices dropped = new MDPDroppedAllChoices(trapStatesModel, getTerminalStates(objectiveGoal, conditionGoal));
+			// FIXME ALG: avoid duplicated computation of terminals
+			MDPDroppedAllChoices dropped = new MDPDroppedAllChoices(trapStatesModel, getTerminalStates(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated));
 
-			MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getChoices(model, objectiveGoal, conditionRemain, conditionGoal);
+			MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getChoices(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 			MappingInt<List<Object>> actions = getActions(model, "normalize");
 			return new MDPAdditionalChoices(dropped, choices, actions);
 		}
 
-		protected abstract BitSet getTerminalStates(BitSet objectiveGoal, BitSet conditionGoal);
+		protected abstract BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean negated);
 
-		protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+		protected MappingInt<List<Iterator<Entry<Integer, Double>>>> getChoices(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 				throws PrismException
 		{
-			MappingInt<Iterator<Entry<Integer,Double>>> transitions = getTransitions(model, objectiveGoal, conditionRemain, conditionGoal);
+			MappingInt<Iterator<Entry<Integer,Double>>> transitions = getTransitions(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 
 			return transitions.andThen((Iterator<Entry<Integer, Double>> i) -> (i == null) ? null : Collections.singletonList(i));
 		}
@@ -130,12 +164,16 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		}
 
 		@Override
-		public double[] computeUntilProbs(explicit.MDP model, BitSet remain, BitSet goal)
+		public double[] computeUntilProbs(explicit.MDP model, BitSet remain, BitSet goal, boolean negated)
 				throws PrismException
 		{
-			return modelChecker.computeUntilProbs(model, remain, goal, false).soln;
+			double[] probs = modelChecker.computeUntilProbs(model, remain, goal, negated).soln;
+			if (negated) {
+				probs = negateProbabilities(probs);
+			}
+			return probs;
 		}
-	}
+}
 
 
 

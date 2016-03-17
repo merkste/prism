@@ -68,7 +68,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 
 		// 1) Normal-Form Transformation
 		GoalFailStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest);
+		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, false, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states

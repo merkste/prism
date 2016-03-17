@@ -107,7 +107,7 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 
 		// 1) Normal-Form Transformation
 		GoalFailTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		GoalFailTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStates, null, conditionGoalStates, statesOfInterest);
+		GoalFailTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(conditionModel, objectiveGoalStates, null, conditionGoalStates, false, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
