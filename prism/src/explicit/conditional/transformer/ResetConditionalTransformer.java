@@ -82,14 +82,19 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 	ModelTransformation<M, ? extends M> transformRestrict(M model, BitSet states);
 
-	default BitSet checkSatisfiability(M model, BitSet remain, BitSet goal, BitSet statesOfInterest)
+	default BitSet checkSatisfiability(M model, BitSet remain, BitSet goal, boolean negated, BitSet statesOfInterest)
 			throws UndefinedTransformationException
 	{
-		BitSet unsatisfiable = computeProb0A(model, remain, goal);
+		BitSet unsatisfiable = computeUnsatisfiable(model, remain, goal, negated);
 		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 		return unsatisfiable;
+	}
+
+	default BitSet computeUnsatisfiable(M model, BitSet remain, BitSet goal, boolean negated)
+	{
+		return negated ? computeProb1A(model, remain, goal) : computeProb0A(model, remain, goal);
 	}
 
 	default BitSet computeStates(M model, Expression expression)
@@ -101,6 +106,10 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 	BitSet computeProb0A(M model, BitSet remain, BitSet goal);
 
 	BitSet computeProb0E(M model, BitSet remain, BitSet goal);
+
+	BitSet computeProb1A(M model, BitSet remain, BitSet goal);
+
+	BitSet computeProb1E(M model, BitSet remain, BitSet goal);
 
 	ModelTransformation<M, M> deadlockStates(M model, BitSet states, BitSet statesOfInterest);
 
@@ -146,6 +155,19 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		}
 
 		@Override
+		public BitSet computeProb1A(explicit.DTMC model, BitSet remain, BitSet goal)
+		{
+			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
+			return modelChecker.prob1(model, remain, goal, pre);
+		}
+
+		@Override
+		public BitSet computeProb1E(explicit.DTMC model, BitSet remain, BitSet goal)
+		{
+			return computeProb1A(model, remain, goal);
+		}
+
+		@Override
 		public ModelTransformation<explicit.DTMC, explicit.DTMC> deadlockStates(explicit.DTMC model, BitSet states, BitSet statesOfInterest)
 		{
 			IntFunction<Iterator<Entry<Integer, Double>>> deadlock = state -> states.get(state) ? Collections.emptyIterator() : null;
@@ -180,7 +202,6 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 			return MDPRestricted.transform(model, states);
 		}
 
-
 		@Override
 		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
@@ -193,6 +214,17 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 			return modelChecker.prob0(model, remain, goal, true, null);
 		}
 
+		@Override
+		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
+		{
+			return modelChecker.prob1(model, remain, goal, true, null);
+		}
+
+		@Override
+		public BitSet computeProb1E(explicit.MDP model, BitSet remain, BitSet goal)
+		{
+			return modelChecker.prob1(model, remain, goal, false, null);
+		}
 
 		@Override
 		public ModelTransformation<explicit.MDP, explicit.MDP> deadlockStates(explicit.MDP model, BitSet states, BitSet statesOfInterest)

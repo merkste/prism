@@ -84,7 +84,7 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 		switch (product.getAcceptance().getType()) {
 		case REACH:
 			FinallyUntilTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
-			transformation = finallyTransformer.transform(conditionModel, objectiveGoalLifted, null, conditionGoal, transformedStatesOfInterest);
+			transformation = finallyTransformer.transform(conditionModel, objectiveGoalLifted, null, conditionGoal, false, transformedStatesOfInterest);
 			break;
 		case STREETT:
 			transformation = transform(product, objectiveGoalLifted, conditionGoal, transformedStatesOfInterest);
@@ -103,7 +103,7 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 	{
 		M conditionModel = product.getProductModel();
 
-		BitSet unsatisfiable = checkSatisfiability(conditionModel, null, conditionGoalStates, statesOfInterest);
+		BitSet unsatisfiable = checkSatisfiability(conditionModel, null, conditionGoalStates, false, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalFailTransformer<M> normalFormTransformer = getNormalFormTransformer();
@@ -111,7 +111,7 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
-		// do not deadlock goal states
+		// do not deadlock goal states, go over fail-state
 		unsatisfiable.andNot(objectiveGoalStates);
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		// deadlock fail state as well
@@ -148,9 +148,9 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
 		// reduce number of transitions, i.e.
 		// - reset only from r-states of streett acceptance
-		// - do not reset from goal states
 		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
 		bad.and(rStates);
+		// - do not reset from goal states, go over fail-state
 		bad.andNot(objectiveGoal);
 		return bad;
 	}

@@ -15,6 +15,7 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
+import parser.ast.ExpressionUnaryOp;
 import prism.PrismException;
 import prism.PrismLangException;
 
@@ -25,7 +26,8 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		return ExpressionInspector.isSimpleUntilFormula(normalized);
+		Expression until = removeNegation(normalized);
+		return ExpressionInspector.isSimpleUntilFormula(until);
 	}
 
 	@Override
@@ -40,6 +42,17 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
+	// FIXME ALG: code dupe in MCUntilTransformer, move to ExpressionInspector
+	default Expression removeNegation(final Expression expression)
+	{
+		if (expression instanceof ExpressionUnaryOp) {
+			// assume negated formula
+			return removeNegation(((ExpressionUnaryOp) expression).getOperand());
+		}
+		// assume non-negated formula
+		return expression;
+	}
+
 	@Override
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
@@ -49,30 +62,32 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 		// 1) Objective: extract objective
 		ExpressionProb objectiveExpr = (ExpressionProb) expression.getObjective();
 		Expression objectiveGoalExpr = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveExpr.getExpression())).getOperand2();
-		BitSet objectiveGoal = computeStates(model, objectiveGoalExpr);
+		BitSet objectiveGoal         = computeStates(model, objectiveGoalExpr);
 
 		// 2) Condition: compute "condition remain and goal states"
-		ExpressionTemporal conditionExpr = (ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition());
-		Expression conditionRemainExpr = conditionExpr.getOperand1();
-		BitSet conditionRemain = computeStates(model, conditionRemainExpr);
-		Expression conditionGoalExpr = conditionExpr.getOperand2();
-		BitSet conditionGoal = computeStates(model, conditionGoalExpr);
+		Expression conditionExpr       = ExpressionInspector.normalizeExpression(expression.getCondition());
+		ExpressionTemporal untilExpr   = (ExpressionTemporal)removeNegation(conditionExpr);
+		Expression conditionRemainExpr = untilExpr.getOperand1();
+		BitSet conditionRemain         = computeStates(model, conditionRemainExpr);
+		Expression conditionGoalExpr   = untilExpr.getOperand2();
+		BitSet conditionGoal           = computeStates(model, conditionGoalExpr);
+		boolean conditionNegated       = conditionExpr instanceof ExpressionUnaryOp;
 
-		return transform(model, objectiveGoal, conditionRemain, conditionGoal, statesOfInterest);
+		return transform(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 	}
 
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, BitSet statesOfInterest)
+	default ConditionalReachabilitiyTransformation<M, M> transform(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
 			throws UndefinedTransformationException, PrismException
 	{
-		BitSet unsatisfiable = checkSatisfiability(model, conditionRemain, conditionGoal, statesOfInterest);
+		BitSet unsatisfiable = checkSatisfiability(model, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 
 		// 1) Normal-Form Transformation
 		GoalFailStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, false, statesOfInterest);
+		GoalFailStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
-		// do not deadlock goal states
+		// do not deadlock goal states, go over fail-state
 		unsatisfiable.andNot(objectiveGoal);
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		// deadlock fail state as well
@@ -80,7 +95,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
 
 		// 3) Reset Transformation
-		BitSet bad = computeBadStates(model, objectiveGoal, conditionRemain, conditionGoal);
+		BitSet bad = computeBadStates(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 		// lift bad states from model to normal-form model
 		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
 		// reset from fail state as well
@@ -99,10 +114,16 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 		return new ConditionalReachabilitiyTransformation<>(nested, goalStatesLifted);
 	}
 
-	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal)
+	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean negated)
 	{
-		// bad states == {s | Pmin=0[<> Condition]}
-		BitSet badStates = computeProb0E(model, conditionRemain, conditionGoal);
+		BitSet badStates;
+		if (negated) {
+			// bad states == {s | Pmax=1[<> Condition]}
+			badStates = computeProb1E(model, conditionRemain, conditionGoal);
+		} else {
+			// bad states == {s | Pmin=0[<> Condition]}
+			badStates = computeProb0E(model, conditionRemain, conditionGoal);
+		}
 		// reduce number of transitions, i.e.
 		// - do not reset from goal states
 		badStates.andNot(objectiveGoal);

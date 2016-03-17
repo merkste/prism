@@ -92,7 +92,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 			// 2) Bad States Transformation
 			LtlUntilTransformer<M> ltlObjectiveTransformer = getLtlObjectiveTransformer();
-			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, transformedStatesOfInterest);
+			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, false, transformedStatesOfInterest);
 		} else {
 			checkAcceptanceType(objectiveAcceptanceType);
 			checkAcceptanceType(conditionAcceptanceType);
@@ -103,7 +103,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			BitSet conditionGoal = getLtlTransformer().findAcceptingStates(conditionProduct);
 			BitSet conditionStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
-			BitSet unsatisfiable = checkSatisfiability(conditionModel, null, conditionGoal, conditionStatesOfInterest);
+			BitSet unsatisfiable = checkSatisfiability(conditionModel, null, conditionGoal, false, conditionStatesOfInterest);
 
 			// 2) LTL Product Transformation for Objective
 			LTLProduct<M> objectiveAndConditionProduct = getLtlTransformer().constructProduct(conditionModel, objectiveDA.liftToProduct(conditionProduct), conditionStatesOfInterest);
@@ -128,9 +128,6 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 			// 6) Deadlock hopeless states
 			BitSet unsatisfiableLifted = objectiveAndConditionProduct.liftFromModel(unsatisfiable);
-			// do not deadlock goal states
-			unsatisfiableLifted.andNot(objectiveAndConditionGoal);
-			unsatisfiableLifted = new BitSet();
 			ModelTransformation<M, M> deadlockTransformation = deadlockStates(objectiveAndConditionModel, unsatisfiableLifted, objectiveAndConditionProduct.getTransformedStatesOfInterest());
 
 			// 7) Reset Transformation
@@ -161,10 +158,9 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
 		// reduce number of transitions, i.e.
 		// - reset only from r-states of streett acceptance
-		// - do not reset from goal states
 		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
 		bad.and(rStates);
-		// FIXME ALG: double-check whether this is sane!
+		// - do not reset from goal states
 		bad.andNot(objectiveAndConditionGoal);
 		return bad;
 	}
