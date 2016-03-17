@@ -71,7 +71,8 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		final BitSet prob1 = modelChecker.prob1(model, remain, goal, pre);
 		final double[] probabilities = computeProbabilities(model, remain, goal, prob0, prob1, negated);
 
-		if (BitSetTools.minus(statesOfInterest, prob0).isEmpty()) {
+		final BitSet unsatisfiable = negated ? prob1 : prob0;
+		if (BitSetTools.minus(statesOfInterest, unsatisfiable).isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 
