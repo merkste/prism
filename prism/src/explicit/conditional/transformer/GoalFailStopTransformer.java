@@ -39,19 +39,25 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException
 	{
-		// compute Pmax(<> Objective)
-		double[] objectiveProbs = computeUntilProbs(model, null, objectiveGoal, false);
-		// compute Pmax(<> Condition)
-		double[] conditionProbs = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
-		BitSet conditionTerminals = getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
+		// compute normal states and enlarge set by prob1a
+		BitSet objectiveNormalStates = computeProb1A(model, null, objectiveGoal);
+		// compute Pmax(Objective)
+		// FIXME ALG: reuse precomputation?
+		double[] objectiveProbs      = computeUntilProbs(model, null, objectiveGoal, false);
+		// compute normal states and enlarge set by prob1a
+		BitSet conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
+		BitSet conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
+		BitSet conditionNormalStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
+		// compute Pmax(Condition)
+		double[] conditionProbs      = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
 			final BinaryRedistribution objectiveRedistribution =
-					new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL, conditionProbs);
+					new BinaryRedistribution(objectiveNormalStates, offset + GOAL, offset + FAIL, conditionProbs);
 			final BinaryRedistribution conditionRedistribution =
-					new BinaryRedistribution(conditionTerminals, offset + GOAL, offset + STOP, objectiveProbs);
+					new BinaryRedistribution(conditionNormalStates, offset + GOAL, offset + STOP, objectiveProbs);
 
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(int state)
@@ -98,7 +104,7 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 		@Override
 		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			BitSet conditionTerminals = getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			BitSet conditionTerminals = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
 
 			return BitSetTools.union(objectiveGoal, conditionTerminals);
 		}

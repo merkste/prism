@@ -12,6 +12,7 @@ import explicit.BasicModelTransformation;
 import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
 import explicit.Model;
+import explicit.PredecessorRelation;
 import explicit.modelviews.DTMCAdditionalStates;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.MDPAdditionalChoices;
@@ -54,6 +55,9 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 	double[] computeUntilProbs(M model, BitSet remain, BitSet goal, boolean negated)
 			throws PrismException;
 
+	// FIXME ALG: code dupe in ResetConditionTransformer
+	BitSet computeProb1A(M model, BitSet remain, BitSet goal);
+
 	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
 	static double[] negateProbabilities(final double[] probabilities)
 	{
@@ -64,19 +68,35 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 	}
 
 	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
-	default BitSet getUntilTerminalStates(M model, BitSet remain, BitSet goal, boolean negated)
+	default BitSet getWeakGoalStates(M model, BitSet remain, BitSet goal, boolean negated)
 	{
-		// terminal = ! (remain | goal)
 		if (! negated) {
 			return goal;
 		}
-		if (remain == null || remain.cardinality() == model.getNumStates()) {
+		// terminal = ! (remain | goal)
+		int numStates = model.getNumStates();
+		if (goal == null || goal.cardinality() == numStates
+			|| remain == null || remain.cardinality() == numStates) {
 			return new BitSet();
 		}
 		BitSet terminals = BitSetTools.union(remain, goal);
-		terminals.flip(0, model.getNumStates());
+		terminals.flip(0, numStates);
 		return terminals;
 	}
+
+	default BitSet getWeakRemainStates(M model,BitSet remain, BitSet goal, boolean negated)
+	{
+		if (! negated) {
+			return remain;
+		}
+		// remain = ! goal
+		final int numStates = model.getNumStates();
+		if (goal == null || goal.cardinality() == numStates) {
+			return new BitSet();
+		}
+		return BitSetTools.complement(numStates, goal);
+	}
+
 
 
 	public abstract static class DTMC extends PrismComponent implements ConditionalNormalFormTransformer<explicit.DTMC>
@@ -113,6 +133,14 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 				return negateProbabilities(probs);
 			}
 			return probs;
+		}
+
+		// FIXME ALG: code dupe in ResetConditionTransformer
+		@Override
+		public BitSet computeProb1A(explicit.DTMC model, BitSet remain, BitSet goal)
+		{
+			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
+			return modelChecker.prob1(model, remain, goal, pre);
 		}
 	}
 
@@ -172,6 +200,13 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 				probs = negateProbabilities(probs);
 			}
 			return probs;
+		}
+
+		// FIXME ALG: code dupe in ResetConditionTransformer
+		@Override
+		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
+		{
+			return modelChecker.prob1(model, remain, goal, true, null);
 		}
 }
 

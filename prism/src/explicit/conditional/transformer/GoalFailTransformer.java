@@ -37,6 +37,8 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException
 	{
+		// compute normal states and enlarge set by prob1a
+		BitSet objectiveNormalStates = computeProb1A(model, null, objectiveGoal);
 		// compute Pmax(<> Condition)
 		double[] conditionMaxProbs = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
 
@@ -44,7 +46,7 @@ public interface GoalFailTransformer<M extends Model> extends ConditionalNormalF
 		{
 			final int offset = model.getNumStates();
 			final BinaryRedistribution objectiveRedistribution =
-					new BinaryRedistribution(objectiveGoal, offset + GOAL, offset + FAIL, conditionMaxProbs);
+					new BinaryRedistribution(objectiveNormalStates, offset + GOAL, offset + FAIL, conditionMaxProbs);
 
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(int state)

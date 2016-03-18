@@ -113,7 +113,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		// 1) Normal-Form Transformation
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: consider moving objective-goal-computation to normal-form transformer
-		BitSet terminal = normalFormTransformer.getUntilTerminalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
+		BitSet terminal = normalFormTransformer.getWeakGoalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
 		BitSet restrict = BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable);
 		restrict.or(new ReachabilityComputer(objectiveModel).computeSuccStar(terminal));
 		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);

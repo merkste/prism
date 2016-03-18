@@ -40,13 +40,16 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 	{
 		// compute Pmax(<> Objective)
 		double[] objectiveProbs = computeUntilProbs(model, null, objectiveGoal, false);
-		BitSet conditionTerminals = getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
+		// compute normal states and enlarge set by prob1a
+		BitSet conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
+		BitSet conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
+		BitSet conditionNormalStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
 			final BinaryRedistribution conditionRedistribution =
-					new BinaryRedistribution(conditionTerminals, offset + GOAL, offset + STOP, objectiveProbs);
+					new BinaryRedistribution(conditionNormalStates, offset + GOAL, offset + STOP, objectiveProbs);
 
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(int state)
@@ -88,7 +91,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 		@Override
 		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			return getUntilTerminalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			return getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
 		}
 	}
 
