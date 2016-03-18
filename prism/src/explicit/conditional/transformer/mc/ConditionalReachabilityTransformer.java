@@ -124,16 +124,18 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 
 	public BitSet getTerminal(final DTMC model, final BitSet remain, final BitSet goal, final boolean negated)
 	{
-		if (!negated) {
+		if (! negated) {
 			return goal;
 		}
 		// terminal = ! (remain | goal)
-		if (remain == null || remain.cardinality() == model.getNumStates()) {
+		int numStates = model.getNumStates();
+		if (goal == null || goal.cardinality() == numStates
+			|| remain == null || remain.cardinality() == numStates) {
 			return new BitSet();
 		}
-		final BitSet terminal = BitSetTools.union(remain, goal);
-		terminal.flip(0, model.getNumStates());
-		return terminal;
+		BitSet terminals = BitSetTools.union(remain, goal);
+		terminals.flip(0, numStates);
+		return terminals;
 	}
 
 	// FIXME ALG: similar code in ConditionalLTLTransformer, ConditionalNextTransformer

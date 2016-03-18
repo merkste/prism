@@ -15,6 +15,7 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
+import explicit.conditional.transformer.UndefinedTransformationException;
 
 // FIXME ALG: add comment
 public class MCQuotientTransformer extends MCConditionalTransformer
@@ -47,7 +48,9 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		final double[] probabilities = computeProbability(model, expression.getCondition());
 		final BitSet support = new Support(probabilities).asBitSet();
 		support.and(statesOfInterest);
-
+		if (support.isEmpty()) {
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
 		final BasicModelExpressionTransformation<DTMC, DTMC> transformation = super.transform(model, expression, support);
 		return new ConditionalQuotientTransformation(transformation, probabilities);
 	}
