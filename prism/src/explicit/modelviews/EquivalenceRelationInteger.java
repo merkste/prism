@@ -108,5 +108,10 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 			}
 			return (equivalenceClass.cardinality() == 1) ? null : equivalenceClass;
 		}
+
+		public BitSet getOriginalEquivalenceClass(int i)
+		{
+			return classes.get(i);
+		}
 	}
 }
