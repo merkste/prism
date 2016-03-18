@@ -40,7 +40,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
-		final Expression until = removeNegation(condition);
+		final Expression until = ExpressionInspector.removeNegation(condition);
 		return ExpressionInspector.isSimpleUntilFormula(until);
 	}
 
@@ -101,24 +101,14 @@ public class MCUntilTransformer extends MCConditionalTransformer
 
 	protected BitSet getRemainStates(final DTMC model, final Expression expression) throws PrismException
 	{
-		final ExpressionTemporal until = (ExpressionTemporal) removeNegation(expression);
+		final ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return modelChecker.checkExpression(model, until.getOperand1(), null).getBitSet();
 	}
 
 	protected BitSet getGoalStates(final DTMC model, final Expression expression) throws PrismException
 	{
-		final ExpressionTemporal until = (ExpressionTemporal) removeNegation(expression);
+		final ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return modelChecker.checkExpression(model, until.getOperand2(), null).getBitSet();
-	}
-
-	protected Expression removeNegation(final Expression expression)
-	{
-		if (expression instanceof ExpressionUnaryOp) {
-			// assume negated formula
-			return removeNegation(((ExpressionUnaryOp) expression).getOperand());
-		}
-		// assume non-negated formula
-		return expression;
 	}
 
 	protected boolean requiresSecondMode(final ExpressionConditional expression)
@@ -147,7 +137,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected Expression getConditionGoal(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
-		return ((ExpressionTemporal) removeNegation(condition)).getOperand2();
+		return ((ExpressionTemporal) ExpressionInspector.removeNegation(condition)).getOperand2();
 	}
 
 	protected Expression getObjectiveGoal(final ExpressionConditional expression)
@@ -160,9 +150,9 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		} else if (objective instanceof ExpressionProb) {
 			objectiveExpression = ((ExpressionProb) objective).getExpression();
 		}
-		final Expression nonNegatedObjective = removeNegation(objectiveExpression);
+		final Expression nonNegatedObjective = ExpressionInspector.removeNegation(objectiveExpression);
 		if (nonNegatedObjective instanceof ExpressionTemporal) {
-			return ((ExpressionTemporal) removeNegation(objectiveExpression)).getOperand2();
+			return ((ExpressionTemporal) ExpressionInspector.removeNegation(objectiveExpression)).getOperand2();
 		}
 		// no goal expression
 		return null;

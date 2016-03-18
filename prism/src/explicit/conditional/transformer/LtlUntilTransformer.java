@@ -33,7 +33,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		Expression until = removeNegation(normalized);
+		Expression until = ExpressionInspector.removeNegation(normalized);
 		return ExpressionInspector.isSimpleUntilFormula(until);
 	}
 
@@ -49,17 +49,6 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		return getLtlTransformer().canHandle(model, objective.getExpression());
 	}
 
-	// FIXME ALG: code dupe in MCUntilTransformer, move to ExressionInspector
-	default Expression removeNegation(final Expression expression)
-	{
-		if (expression instanceof ExpressionUnaryOp) {
-			// assume negated formula
-			return removeNegation(((ExpressionUnaryOp) expression).getOperand());
-		}
-		// assume non-negated formula
-		return expression;
-	}
-
 	@Override
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
@@ -72,7 +61,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 
 		// 2) Condition: compute "condition remain and goal states"
 		Expression conditionExpr       = ExpressionInspector.normalizeExpression(expression.getCondition());
-		ExpressionTemporal untilExpr   = (ExpressionTemporal)removeNegation(conditionExpr);
+		ExpressionTemporal untilExpr   = (ExpressionTemporal)ExpressionInspector.removeNegation(conditionExpr);
 		Expression conditionRemainExpr = untilExpr.getOperand1();
 		BitSet conditionRemain         = computeStates(model, conditionRemainExpr);
 		Expression conditionGoalExpr   = untilExpr.getOperand2();

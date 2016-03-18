@@ -26,7 +26,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
-		Expression until = removeNegation(normalized);
+		Expression until = ExpressionInspector.removeNegation(normalized);
 		return ExpressionInspector.isSimpleUntilFormula(until);
 	}
 
@@ -42,17 +42,6 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
-	// FIXME ALG: code dupe in MCUntilTransformer, move to ExpressionInspector
-	default Expression removeNegation(final Expression expression)
-	{
-		if (expression instanceof ExpressionUnaryOp) {
-			// assume negated formula
-			return removeNegation(((ExpressionUnaryOp) expression).getOperand());
-		}
-		// assume non-negated formula
-		return expression;
-	}
-
 	@Override
 	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
@@ -66,7 +55,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 
 		// 2) Condition: compute "condition remain and goal states"
 		Expression conditionExpr       = ExpressionInspector.normalizeExpression(expression.getCondition());
-		ExpressionTemporal untilExpr   = (ExpressionTemporal)removeNegation(conditionExpr);
+		ExpressionTemporal untilExpr   = (ExpressionTemporal)ExpressionInspector.removeNegation(conditionExpr);
 		Expression conditionRemainExpr = untilExpr.getOperand1();
 		BitSet conditionRemain         = computeStates(model, conditionRemainExpr);
 		Expression conditionGoalExpr   = untilExpr.getOperand2();

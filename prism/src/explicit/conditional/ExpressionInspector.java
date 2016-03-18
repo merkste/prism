@@ -107,6 +107,20 @@ public class ExpressionInspector
 	}
 
 	/**
+	 * Remove all surrounding negations.
+	 * 
+	 * @param expression
+	 * @return non-negated expression
+	 */
+	public static Expression removeNegation(final Expression expression)
+	{
+		if (Expression.isNot(expression)) {
+			return removeNegation(((ExpressionUnaryOp) expression).getOperand());
+		}
+		return expression;
+	}
+
+	/**
 	 * 1. If possible, convert the outermost temporal operator to until form.
 	 * 2. If outermost temporal operator is negated next, move negation to the inner formula.
 	 * 3. Trim surrounding parentheses, double negation and double minus.
