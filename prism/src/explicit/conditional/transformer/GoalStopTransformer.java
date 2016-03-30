@@ -22,11 +22,11 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 	@Override
 	default GoalStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
-			throws PrismException
-		{
-			NormalFormTransformation<M> transformation = ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
-			return new GoalStopTransformation<>(transformation);
-		}
+		throws PrismException
+	{
+		NormalFormTransformation<M> transformation = ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
+		return new GoalStopTransformation<>(transformation);
+	}
 
 	@Override
 	default public int getNumTrapStates()
