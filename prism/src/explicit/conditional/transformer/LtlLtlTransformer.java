@@ -143,7 +143,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			// 8) Compose Transformations
 			ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
 			BitSet objectiveAndConditionGoalStatesLifted = nested.mapToTransformedModel(objectiveAndConditionGoal);
-			return new ConditionalReachabilitiyTransformation<>(nested, objectiveAndConditionGoalStatesLifted);
+			transformation = new ConditionalReachabilitiyTransformation<>(nested, objectiveAndConditionGoalStatesLifted);
 		}
 
 		// 3) Compose Transformations
