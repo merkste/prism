@@ -114,8 +114,12 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: consider moving objective-goal-computation to normal-form transformer
 		BitSet terminal = normalFormTransformer.getWeakGoalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
-		BitSet restrict = BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable);
-		restrict.or(new ReachabilityComputer(objectiveModel).computeSuccStar(terminal));
+		// compute ECs in succ*(terminal)
+		BitSet restrict = new ReachabilityComputer(objectiveModel).computeSuccStar(terminal);
+		if (conditionNegated) {
+			// and in  S \ unsatisfiable
+			restrict.or(BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable));
+		}
 		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);
 		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
@@ -139,7 +143,6 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		// FIXME ALG: consider moving goal-set computation to normal-form transformer
 		BitSet goalLifted = normalFormTransformation.mapToTransformedModel(objectiveGoal);
 		goalLifted.set(normalFormTransformation.getGoalState());
-		goalLifted.andNot(unsatisfiableLifted);
 		goalLifted = nested.mapToTransformedModel(goalLifted);
 		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
 		return new ConditionalReachabilitiyTransformation<>(nested, goalLifted);
@@ -149,7 +152,9 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 	{
 		if (negated) {
 			// bad states == {s | Pmax=1[<> Condition]}
-			return computeProb1E(model, conditionRemain, conditionGoal);
+			final BitSet badStates = computeProb1E(model, conditionRemain, conditionGoal);
+			badStates.andNot(objectiveGoal); // optionally, reduce number of choices
+			return badStates;
 		} else {
 			// bad states == {s | Pmin=0[<> Condition]}
 			return computeProb0E(model, conditionRemain, conditionGoal);
