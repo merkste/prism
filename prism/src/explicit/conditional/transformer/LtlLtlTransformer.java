@@ -156,7 +156,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 	{
 		// bad states == {s | Pmin=0[<> Condition]}
 		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
-		// reduce number of transitions, i.e.
+		// reduce number of choices, i.e.
 		// - reset only from r-states of streett acceptance
 		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
 		bad.and(rStates);

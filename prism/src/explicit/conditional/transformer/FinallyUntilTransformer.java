@@ -113,7 +113,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 			// bad states == {s | Pmin=0[<> Condition]}
 			badStates = computeProb0E(model, conditionRemain, conditionGoal);
 		}
-		// reduce number of transitions, i.e.
+		// reduce number of choices, i.e.
 		// - do not reset from goal states
 		badStates.andNot(objectiveGoal);
 		return badStates;
