@@ -13,6 +13,7 @@ import java.util.function.IntPredicate;
 import common.BitSetTools;
 import common.IteratorTools;
 import common.iterable.FilteringIterable;
+import common.iterable.IterableBitSet;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterable;
@@ -338,7 +339,7 @@ public class MDPRestricted extends MDPView
 		}
 		//FIXME ALG: consider allocating a BitSet in a suited size
 		final BitSet mappedStates = new BitSet();
-		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
+		for (int originalState : new IterableBitSet(originalStates)) {
 			final Integer state = mappingToRestrictedModel[originalState];
 			if (state != null) {
 				mappedStates.set(state);
