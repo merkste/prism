@@ -121,6 +121,8 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 			restrict.or(BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable));
 		}
 		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);
+		// enlarge target set
+		objectiveGoal = computeProb1A(objectiveModel, null, objectiveGoal);
 		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 

@@ -125,6 +125,8 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 			// 5) Objective & Condition Goal States
 			BitSet objectiveAndConditionGoal = getLtlTransformer().findAcceptingStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
+			// enlarge target set
+//			objectiveAndConditionGoal = computeProb1A(objectiveAndConditionModel, null, objectiveAndConditionGoal);
 
 			// 6) Deadlock hopeless states
 			BitSet unsatisfiableLifted = objectiveAndConditionProduct.liftFromModel(unsatisfiable);
