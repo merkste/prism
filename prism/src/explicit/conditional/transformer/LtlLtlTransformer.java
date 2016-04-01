@@ -54,11 +54,11 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 		// 1) Objective: build omega automaton
 		Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();
-		LabeledDA objectiveDA = getLtlTransformer().constructDA(model, objective, ACCEPTANCE_TYPES);
+		LabeledDA objectiveDA = constructReachOrStreetDA(model, objective);
 
 		// 2) Condition: build omega automaton
 		Expression condition = expression.getCondition();
-		LabeledDA conditionDA = getLtlTransformer().constructDA(model, condition, ACCEPTANCE_TYPES);
+		LabeledDA conditionDA = constructReachOrStreetDA(model, condition);
 
 		// 3) Transformation
 		return transform(model, objectiveDA, conditionDA, statesOfInterest);
@@ -153,6 +153,19 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		// 3) Compose Transformations
 		ModelTransformationNested<M, M, M> nested = new ModelTransformationNested<>(product, transformation);
 		return new ConditionalReachabilitiyTransformation<>(nested, transformation.getGoalStates());
+	}
+
+	default LabeledDA constructReachOrStreetDA(M model, Expression expression) throws PrismException {
+		if (Expression.isCoSafeLTLSyntactic(expression, true)) {
+			getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
+			LabeledDA da = getLtlTransformer().constructDA(model, expression, AcceptanceType.REACH, AcceptanceType.RABIN);
+			if (da.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
+				getLog().println("Success.");
+				return da;
+			}
+			getLog().println("Failed. Falling back to acceptance STREETT");
+		}
+		return getLtlTransformer().constructDA(model, expression, AcceptanceType.STREETT);
 	}
 
 	default BitSet computeBadStates(M productModel, BitSet objectiveAndConditionGoal, AcceptanceStreett conditionAcceptance)
