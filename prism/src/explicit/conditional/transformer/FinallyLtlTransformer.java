@@ -4,6 +4,7 @@ import java.util.BitSet;
 
 import common.BitSetTools;
 import common.iterable.MappingIterator;
+import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceStreett.StreettPair;
 import acceptance.AcceptanceType;
@@ -29,7 +30,7 @@ import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformati
 // FIXME ALG: add comment
 public interface FinallyLtlTransformer<M extends Model> extends ResetConditionalTransformer<M>
 {
-	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
+	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
 
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
@@ -87,6 +88,8 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 			getLog().println("\nDetected acceptance REACH for condition, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(conditionModel, objectiveGoalLifted, null, conditionGoal, false, transformedStatesOfInterest);
 			break;
+		case RABIN:
+		case GENERALIZED_RABIN:
 		case STREETT:
 			transformation = transform(product, objectiveGoalLifted, conditionGoal, transformedStatesOfInterest);
 			break;
@@ -145,12 +148,15 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 	{
 		// bad states == {s | Pmin=0[<> Condition]}
 		M productModel = product.getProductModel();
-		AcceptanceStreett conditionAcceptance = (AcceptanceStreett) product.getAcceptance();
-		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
+		AcceptanceOmega conditionAcceptance = product.getAcceptance();
+		AcceptanceOmega conditionAcceptanceComplement = conditionAcceptance.complement(productModel.getNumStates(), ACCEPTANCE_TYPES);
+		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptanceComplement);
 		// reduce number of choices, i.e.
 		// - reset only from r-states of streett acceptance
-		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
-		bad.and(rStates);
+		if (conditionAcceptance instanceof AcceptanceStreett) {
+			BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
+			bad.and(rStates);
+		}
 		// - do not reset from goal states, go over fail-state
 		bad.andNot(objectiveGoal);
 		return bad;
