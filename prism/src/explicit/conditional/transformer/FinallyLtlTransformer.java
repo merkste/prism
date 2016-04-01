@@ -74,7 +74,6 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 	{
 		// 1) LTL Product Transformation for Condition
 		LTLProduct<M> product = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
-		M conditionModel = product.getProductModel();
 		BitSet objectiveGoalLifted = product.liftFromModel(objectiveGoal);
 		BitSet conditionGoal = getLtlTransformer().findAcceptingStates(product);
 		BitSet transformedStatesOfInterest = product.getTransformedStatesOfInterest();
@@ -83,7 +82,9 @@ public interface FinallyLtlTransformer<M extends Model> extends ResetConditional
 		ConditionalReachabilitiyTransformation<M,M> transformation;
 		switch (product.getAcceptance().getType()) {
 		case REACH:
+			M conditionModel = product.getProductModel();
 			FinallyUntilTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
+			getLog().println("\nDetected acceptance REACH for condition, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(conditionModel, objectiveGoalLifted, null, conditionGoal, false, transformedStatesOfInterest);
 			break;
 		case STREETT:

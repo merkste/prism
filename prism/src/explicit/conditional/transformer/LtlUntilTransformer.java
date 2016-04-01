@@ -89,6 +89,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 			M objectiveModel = product.getTransformedModel();
 			objectiveGoal = getLtlTransformer().findAcceptingStates(product);
 			FinallyUntilTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
+			getLog().println("\nDetected acceptance REACH for objective, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, conditionNegated, transformedStatesOfInterest);
 			break;
 		case RABIN:

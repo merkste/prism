@@ -10,10 +10,17 @@ import parser.ast.ExpressionConditional;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismLog;
 
 // FIXME ALG: add comment
 public interface ConditionalTransformer<M extends Model>
 {
+	default String getName() {
+		Class<?> type = this.getClass();
+		type = type.getEnclosingClass() == null ? type : type.getEnclosingClass();
+		return type.getSimpleName();
+	}
+
 	/**
 	 * Test whether the transformer can handle a model and a conditional expression.
 	 * 
@@ -35,6 +42,8 @@ public interface ConditionalTransformer<M extends Model>
 
 	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
+
+	PrismLog getLog();
 
 	LTLProductTransformer<M> getLtlTransformer();
 

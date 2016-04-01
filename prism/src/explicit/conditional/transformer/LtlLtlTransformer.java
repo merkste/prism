@@ -81,6 +81,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 			// 2) Bad States Transformation
 			FinallyLtlTransformer<M> ltlConditionTransformer = getLtlConditionTransformer();
+			getLog().println("\nDetected acceptance REACH for objective, delegating to " + ltlConditionTransformer.getName());
 			transformation = ltlConditionTransformer.transform(objectiveModel, objectiveGoal, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
 		} else if (conditionAcceptanceType  == AcceptanceType.REACH) {
 			// 1) LTL Product Transformation for Condition
@@ -92,6 +93,7 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 			// 2) Bad States Transformation
 			LtlUntilTransformer<M> ltlObjectiveTransformer = getLtlObjectiveTransformer();
+			getLog().println("Detected acceptance REACH for condition, delegating to " + ltlObjectiveTransformer.getName());
 			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, false, transformedStatesOfInterest);
 		} else {
 			checkAcceptanceType(objectiveAcceptanceType);
