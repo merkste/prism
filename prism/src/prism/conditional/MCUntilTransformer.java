@@ -175,47 +175,33 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
 		if (!ExpressionInspector.isSimpleUntilFormula(condition)) {
-			// can handle simple until conditions only
+			// can optimize unbounded simple until conditions only
 			return true;
 		}
+		final ExpressionTemporal conditionPath = (ExpressionTemporal) condition;
+
 		final Expression objective = expression.getObjective();
-		if (!(ExpressionInspector.isSimpleUntilFormula(objective) || ExpressionInspector.isReachablilityReward(objective))) {
-			// can handle simple until and reachability reward objectives only
+		final Expression objectiveSubExpr;
+		if (ExpressionInspector.isReachablilityReward(objective)) {
+			objectiveSubExpr = ((ExpressionReward) objective).getExpression();
+		} else if (objective instanceof ExpressionProb) {
+			objectiveSubExpr = ((ExpressionProb) objective).getExpression();
+			if (! ExpressionInspector.isSimpleUntilFormula(objectiveSubExpr)) {
+				return true;
+			}
+		} else {
 			return true;
 		}
-		final Expression conditionGoal = ExpressionInspector.trimUnaryOperations(getConditionGoal(expression));
-		final Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(getObjectiveGoal(expression));
+		final ExpressionTemporal objectivePath = (ExpressionTemporal) objectiveSubExpr;
+
+		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionPath.getOperand2());
+		Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(objectivePath.getOperand2());
 		if (conditionGoal != null && objectiveGoal != null) {
 			try {
 				return !objectiveGoal.syntacticallyEquals(conditionGoal);
-			} catch (PrismLangException e) {
-			}
+			} catch (PrismLangException e) {}
 		}
 		return true;
-	}
-
-	protected Expression getConditionGoal(final ExpressionConditional expression)
-	{
-		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
-		return ((ExpressionTemporal) removeNegation(condition)).getOperand2();
-	}
-
-	protected Expression getObjectiveGoal(final ExpressionConditional expression)
-	{
-		final Expression objective = expression.getObjective();
-		Expression objectiveExpression = null;
-		;
-		if (ExpressionInspector.isReachablilityReward(objective)) {
-			objectiveExpression = ((ExpressionReward) objective).getExpression();
-		} else if (objective instanceof ExpressionProb) {
-			objectiveExpression = ((ExpressionProb) objective).getExpression();
-		}
-		final Expression nonNegatedObjective = removeNegation(objectiveExpression);
-		if (nonNegatedObjective instanceof ExpressionTemporal) {
-			return ((ExpressionTemporal) removeNegation(objectiveExpression)).getOperand2();
-		}
-		// no goal expression
-		return null;
 	}
 
 	protected JDDNode checkExpression(final ProbModel model, final Expression expression) throws PrismException
