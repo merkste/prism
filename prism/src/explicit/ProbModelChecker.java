@@ -41,6 +41,7 @@ import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.RewardStruct;
 import parser.ast.TemporalOperatorBound;
+import parser.ast.TemporalOperatorBounds;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -49,6 +50,7 @@ import prism.IntegerBound;
 import prism.OpRelOpBound;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import explicit.rewards.ConstructRewards;
@@ -660,7 +662,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		if (expr instanceof ExpressionTemporal) {
- 			exprTemp = (ExpressionTemporal) expr;
+			exprTemp = (ExpressionTemporal) expr;
 
 			// Next
 			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
@@ -1236,5 +1238,19 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		return dist;
+	}
+
+	// Model transformations
+
+	protected <M extends Model> ModelExpressionTransformation<M, M> replaceBoundsWithCounters(M model, Expression expr, TemporalOperatorBounds bounds, BitSet statesOfInterest, boolean keepSingleTimeBound)
+			throws PrismLangException, PrismException
+	{
+		List<TemporalOperatorBound> boundsToReplace = bounds.getStepBoundsForDiscreteTime();
+		if (keepSingleTimeBound && !boundsToReplace.isEmpty()) {
+			boundsToReplace.remove(0);
+		}
+		boundsToReplace.addAll(bounds.getRewardBounds());
+
+		return CounterTransformation.replaceBoundsWithCounters(this, model, expr, boundsToReplace, statesOfInterest);
 	}
 }
