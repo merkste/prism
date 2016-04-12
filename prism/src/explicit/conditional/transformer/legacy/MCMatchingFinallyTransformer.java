@@ -85,7 +85,7 @@ public class MCMatchingFinallyTransformer extends MCUntilTransformer
 		}
 		final Expression objective = expression.getObjective();
 		// can handle simple until and reachability reward objectives only
-		return ExpressionInspector.isSimpleUntilFormula(objective) || ExpressionInspector.isReachablilityReward(objective);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(objective) || ExpressionInspector.isReachablilityReward(objective);
 	}
 
 	@Override

@@ -114,7 +114,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected boolean requiresSecondMode(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
-		if (!ExpressionInspector.isSimpleUntilFormula(condition)) {
+		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(condition)) {
 			// can optimize unbounded simple until conditions only
 			return true;
 		}
@@ -126,7 +126,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			objectiveSubExpr = ((ExpressionReward) objective).getExpression();
 		} else if (objective instanceof ExpressionProb) {
 			objectiveSubExpr = ((ExpressionProb) objective).getExpression();
-			if (! ExpressionInspector.isSimpleUntilFormula(objectiveSubExpr)) {
+			if (! ExpressionInspector.isUnboundedSimpleUntilFormula(objectiveSubExpr)) {
 				return true;
 			}
 		} else {

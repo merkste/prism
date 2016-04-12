@@ -9,7 +9,7 @@ import prism.PrismLangException;
 //FIXME ALG: add comment
 public class ExpressionInspector
 {
-	// either (expr = F goal) or (expr = remain U goal), both variants without bounds
+	// either (expr = F goal) or (expr = remain U goal)
 	public static boolean isSimpleUntilFormula(final Expression expression)
 	{
 		if (!(expression instanceof ExpressionTemporal)) {
@@ -25,20 +25,19 @@ public class ExpressionInspector
 			return false;
 		}
 		final int operator = temporal.getOperator();
-		if (!(operator == ExpressionTemporal.P_F || operator == ExpressionTemporal.P_U)) {
-			return false;
-		}
-		if (temporal.hasBounds()) {
-			return false;
-		}
+		return operator == ExpressionTemporal.P_F || operator == ExpressionTemporal.P_U;
+	}
 
-		return true;
+	// either (expr = F goal) or (expr = remain U goal), both variants without bounds
+	public static boolean isUnboundedSimpleUntilFormula(final Expression expression)
+	{
+		return isSimpleUntilFormula(expression) && !((ExpressionTemporal) expression).hasBounds();
 	}
 
 	// either (expr = F goal) or (expr = true U goal) 
 	public static boolean isSimpleFinallyFormula(final Expression expression)
 	{
-		if (!isSimpleUntilFormula(expression)) {
+		if (!isUnboundedSimpleUntilFormula(expression)) {
 			return false;
 		}
 		final Expression until;

@@ -27,7 +27,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
-		return ExpressionInspector.isSimpleUntilFormula(until);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
 	@Override

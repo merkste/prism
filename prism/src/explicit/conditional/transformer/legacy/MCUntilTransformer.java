@@ -40,7 +40,7 @@ public class MCUntilTransformer extends MCTwoModeTransformer
 			// can handle negated formula, too
 			condition = ((ExpressionUnaryOp) condition).getOperand();
 		}
-		return ExpressionInspector.isSimpleUntilFormula(condition);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(condition);
 	}
 
 	@Override

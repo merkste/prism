@@ -34,7 +34,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
-		return ExpressionInspector.isSimpleUntilFormula(until);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
 	@Override
