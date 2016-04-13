@@ -206,7 +206,8 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		@Override
 		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob1(model, remain, goal, true, null);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return modelChecker.prob1(model, remain, goal, true, null, pre);
 		}
 }
 

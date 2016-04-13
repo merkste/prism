@@ -205,25 +205,29 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		@Override
 		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob0(model, remain, goal, false, null);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return modelChecker.prob0(model, remain, goal, false, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb0E(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob0(model, remain, goal, true, null);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return modelChecker.prob0(model, remain, goal, true, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob1(model, remain, goal, true, null);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return modelChecker.prob1(model, remain, goal, true, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb1E(explicit.MDP model, BitSet remain, BitSet goal)
 		{
-			return modelChecker.prob1(model, remain, goal, false, null);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return modelChecker.prob1(model, remain, goal, false, null, pre);
 		}
 
 		@Override
