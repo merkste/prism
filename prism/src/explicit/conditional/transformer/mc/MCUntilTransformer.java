@@ -56,22 +56,20 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
-		return transformModel(model, condition, statesOfInterest, !requiresSecondMode(expression));
-	}
+		final boolean absorbing = !requiresSecondMode(expression);
 
-	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression condition, final BitSet statesOfInterest,
-			final boolean absorbing) throws PrismException
-	{
+
+
 		final Expression until = ExpressionInspector.normalizeExpression(condition);
 		final BitSet remain = getRemainStates(model, until);
 		final BitSet goal = getGoalStates(model, until);
 		final boolean negated = until instanceof ExpressionUnaryOp;
 		final boolean collapse = !absorbing;
-
+		
 		// 1. create mode 1 == conditional part
 		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
-
+		
 		// 2. create transformed model
 		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
 		final DTMCView transformedModel;
@@ -83,7 +81,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			// mode 2 == submodel reachable from terminal states
 			final DTMCRestricted mode2 = new DTMCRestricted(model, terminalLookup.values());
 			getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
-
+		
 			// union of mode1 and mode2
 			// FIXME ALG: code duplication, building identify map
 			final Map<Integer, Integer> identify = new HashMap<>(terminalLookup);
@@ -95,7 +93,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		// sane, as long as mode 1 is already restricted
 		ModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
 		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(mode1, union);
-
+		
 		return nested;
 	}
 
