@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 
 import mtbdd.PrismMTBDD;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
@@ -91,7 +92,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 		                                            model.getAllDDRowVars(),
 		                                            model.getAllDDColVars(),
 		                                            model.getAllDDNondetVars(),
-		                                            JDD.ONE,
+		                                            model.getReach(),
 		                                            targetStates);
 		JDD.Deref(targetStates);
 		final JDDNode badStates = JDD.And(prob0E, JDD.Not(objectiveGoalStates.copy()));
@@ -112,6 +113,12 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 		objectiveMaxResult.clear();
 
 		// compute Pmax(<>C | E)
+		JDDNode prob0A = PrismMTBDD.Prob0A(model.getTrans01(), model.getReach(), model.getAllDDRowVars(), model.getAllDDColVars(), model.getAllDDNondetVars(), model.getReach(), conditionGoalStates);
+		if (JDD.IsContainedIn(statesOfInterest, prob0A)) {
+			JDD.Deref(prob0A);
+			throw new UndefinedTransformationException("condition is not satisfiable");
+		}
+		JDD.Deref(prob0A);
 		time = System.currentTimeMillis();
 		prism.getLog().println("Compute Pmax(<> G)");
 		StateValuesMTBDD conditionMaxResult = mc.checkProbUntil(model.getReach(),
@@ -123,6 +130,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 			prism.getLog().println("conditionMaxResult");
 			conditionMaxResult.print(prism.getLog());
 		}
+
 		final JDDNode conditionMaxProbs = conditionMaxResult.getJDDNode().copy();
 		conditionMaxResult.clear();
 
