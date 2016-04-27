@@ -146,7 +146,18 @@ public class Context4ExpressionQuantileExpUpperRewardBound extends Context4Expre
 				if (quantileUtilities.getDebugLevel() > 9){
 					droppedMecSelfLoops.exportToDotFile("1-Ex-dropZeroValueMECselfLoops-markZeroValueMECs.dot", BitSetTools.union(zeroValueMecs));
 				}
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().print("\nbuilding model with collapsed zero-utility MECs (using MDPEquivSelfLoopsForNonRepresentatives) ... ");
+				long timer = System.currentTimeMillis();
+				//XXX:
 				final MDP mdpEquiv = new MDPEquivSelfLoopsForNonRepresentatives(droppedMecSelfLoops, identify);
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().println("done in " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds");
+				//XXX:
 				if (quantileUtilities.getDebugLevel() > 9){
 					mdpEquiv.exportToDotFile("2-Ex-collapseZeroValueMECs-markRepresentatives.dot", BitSetTools.complement(mdp.getNumStates(), identify.getNonRepresentatives()));
 				}
@@ -159,10 +170,21 @@ public class Context4ExpressionQuantileExpUpperRewardBound extends Context4Expre
 				}
 				
 				//MDPSparse is used to achieve better performances
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().print("building MDPSparse out of MDPEquivSelfLoopsForNonRepresentatives ... ");
+				timer = System.currentTimeMillis();
+				//XXX:
 				final MDP model4expectedRewardsComputation = new MDPSparse(PrecomputationHelper.redirectStatesToGoal(modelWithGoalState, BitSetTools.complement(mdp.getNumStates(), identify.getNonRepresentatives()), goalState));
 				if (quantileUtilities.getDebugLevel() > 9){
 					model4expectedRewardsComputation.exportToDotFile("4-Ex-finalModel-introduceTauTransition-markRepresentatives.dot", BitSetTools.complement(mdp.getNumStates(), identify.getNonRepresentatives()));
 				}
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().println("done in " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds");
+				//XXX:
 				assert (! PrecomputationHelper.hasDeadlocks(model4expectedRewardsComputation));
 				
 				if (quantileUtilities.getDebugLevel() > 0) {
