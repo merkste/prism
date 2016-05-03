@@ -1,5 +1,6 @@
 package explicit.modelviews;
 
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +23,9 @@ public class MDPDroppedChoices extends MDPView
 {
 	private MDP model;
 	private PairPredicateInt preserved;
+	
+	private int[] numChoices;
+	private static final int UNDEFINED = -1;
 
 
 
@@ -30,6 +34,8 @@ public class MDPDroppedChoices extends MDPView
 		this.model = model;
 		// FIXME ALG: consider using preserved instead of dropped
 		this.preserved = dropped.negate();
+		this.numChoices = new int[model.getNumStates()];
+		Arrays.fill(numChoices, UNDEFINED);
 	}
 
 	public MDPDroppedChoices(final MDPDroppedChoices dropped)
@@ -37,6 +43,7 @@ public class MDPDroppedChoices extends MDPView
 		super(dropped);
 		model = dropped.model;
 		preserved = dropped.preserved;
+		numChoices = dropped.numChoices;
 	}
 
 
@@ -125,8 +132,11 @@ public class MDPDroppedChoices extends MDPView
 	@Override
 	public int getNumChoices(final int state)
 	{
-		// FIXME ALG: consider loop instead of Interval for performance
-		return IteratorTools.count(new Interval(model.getNumChoices(state)), preserved.curry(state));
+		if (numChoices[state] == UNDEFINED){
+			// FIXME ALG: consider loop instead of Interval for performance
+			numChoices[state] = IteratorTools.count(new Interval(model.getNumChoices(state)), preserved.curry(state));
+		}
+		return numChoices[state];
 	}
 
 	@Override
