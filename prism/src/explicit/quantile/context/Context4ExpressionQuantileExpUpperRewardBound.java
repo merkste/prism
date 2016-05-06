@@ -205,11 +205,34 @@ public class Context4ExpressionQuantileExpUpperRewardBound extends Context4Expre
 				//so, each zero-utility EC will not be left
 				//this ensures (A1)
 				
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().print("\nbuilding model with trapping zero-utility MECs (using MDPDroppedChoices) ... ");
+				long timer = System.currentTimeMillis();
+				//XXX:
+				final MDP stayInZeroValueMecsVirtual = PrecomputationHelper.stayInComponents(mdp, zeroValueMecs);
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().println("done in " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds");
+				//XXX:
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().print("building MDPSparse out of MDPDroppedChoices ... ");
+				timer = System.currentTimeMillis();
+				//XXX:
 				//MDPSparse is used to achieve better performances
-				final MDP stayInZeroValueMecs = new MDPSparse(PrecomputationHelper.stayInComponents(mdp, zeroValueMecs));
+				final MDP stayInZeroValueMecs = new MDPSparse(stayInZeroValueMecsVirtual);
 				if (quantileUtilities.getDebugLevel() > 9){
 					stayInZeroValueMecs.exportToDotFile("1-Un-dropChoicesLeavingZeroValueMECs-markZeroValueMECs.dot", BitSetTools.union(zeroValueMecs));
 				}
+				//XXX:
+				//XXX:
+				//XXX:
+				quantileUtilities.getLog().println("done in " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds");
+				//XXX:
 				assert (! PrecomputationHelper.hasDeadlocks(stayInZeroValueMecs));
 				
 				if (quantileUtilities.getDebugLevel() > 0) {
