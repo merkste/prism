@@ -1,7 +1,5 @@
 package explicit;
 
-import java.util.BitSet;
-
 import parser.ast.Expression;
 
 //FIXME ALG: add comment
@@ -9,17 +7,14 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 		extends BasicModelTransformation<OM, TM>
 		implements ModelExpressionTransformation<OM, TM>
 {
-	private final Expression originalExpression;
-	private final Expression transformedExpression;
-	private final BitSet transformedStatesOfInterest;
+	protected final Expression originalExpression;
+	protected final Expression transformedExpression;
 
-	public BasicModelExpressionTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation, final Expression originalExpression,
-			final Expression transformedExpression, final BitSet statesOfInterest)
+	public BasicModelExpressionTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation, final Expression originalExpression, final Expression transformedExpression)
 	{
 		super(transformation);
 		this.originalExpression = originalExpression;
 		this.transformedExpression = transformedExpression;
-		this.transformedStatesOfInterest = mapToTransformedModel(statesOfInterest);
 	}
 
 	public BasicModelExpressionTransformation(final ModelExpressionTransformation<? extends OM, ? extends TM> transformation)
@@ -27,7 +22,6 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 		super(transformation);
 		this.originalExpression = transformation.getOriginalExpression();
 		this.transformedExpression = transformation.getTransformedExpression();
-		this.transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 	}
 
 	@Override
@@ -40,11 +34,5 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 	public Expression getTransformedExpression()
 	{
 		return transformedExpression;
-	}
-
-	@Override
-	public BitSet getTransformedStatesOfInterest()
-	{
-		return transformedStatesOfInterest;
 	}
 }
