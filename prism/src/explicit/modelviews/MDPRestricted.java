@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.function.IntPredicate;
 
 import common.BitSetTools;
 import common.IteratorTools;
@@ -330,6 +331,11 @@ public class MDPRestricted extends MDPView
 
 	//--- static methods ---
 
+	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final IntPredicate states)
+	{
+		return transform(model, BitSetTools.asBitSet(new IterableStateSet(states, model.getNumStates())));
+	}
+
 	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states)
 	{
 		return transform(model, states, STANDARD_RESTRICTION);
@@ -338,7 +344,8 @@ public class MDPRestricted extends MDPView
 	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states, final Restriction restriction)
 	{
 		final MDPRestricted restricted = new MDPRestricted(model, states, restriction);
-		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
+		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(states);
+		return new BasicModelTransformation<>(model, restricted, transformedStates, restricted.mappingToRestrictedModel);
 	}
 
 	public static void main(final String[] args) throws PrismException

@@ -292,6 +292,11 @@ public class DTMCRestricted extends DTMCView
 
 	//--- static methods ---
 
+	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final IntPredicate states)
+	{
+		return transform(model, BitSetTools.asBitSet(new IterableStateSet(states, model.getNumStates())));
+	}
+
 	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final BitSet states)
 	{
 		return transform(model, states, STANDARD_RESTRICTION);
@@ -300,7 +305,8 @@ public class DTMCRestricted extends DTMCView
 	public static BasicModelTransformation<DTMC, DTMCRestricted> transform(final DTMC model, final BitSet states, final Restriction restriction)
 	{
 		final DTMCRestricted restricted = new DTMCRestricted(model, states, restriction);
-		return new BasicModelTransformation<>(model, restricted, restricted.mappingToRestrictedModel);
+		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(states);
+		return new BasicModelTransformation<>(model, restricted, transformedStates, restricted.mappingToRestrictedModel);
 	}
 
 	public static void main(final String[] args) throws PrismException
