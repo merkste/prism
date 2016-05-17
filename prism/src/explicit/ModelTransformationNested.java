@@ -46,11 +46,11 @@ public class ModelTransformationNested<OriginalModel extends Model,
                                        TransformedModel extends Model>
 	implements ModelTransformation<OriginalModel, TransformedModel>
 {
-	protected final ModelTransformation<OriginalModel, ? extends IntermediateModel> innerTransformation;
-	protected final ModelTransformation<? extends IntermediateModel, TransformedModel> outerTransformation;
+	protected final ModelTransformation<? extends OriginalModel, ? extends IntermediateModel> innerTransformation;
+	protected final ModelTransformation<? extends IntermediateModel, ? extends TransformedModel> outerTransformation;
 
-	public ModelTransformationNested(final ModelTransformation<OriginalModel, ? extends IntermediateModel> inner,
-                                     final ModelTransformation<? extends IntermediateModel, TransformedModel> outer)
+	public ModelTransformationNested(final ModelTransformation<? extends OriginalModel, ? extends IntermediateModel> inner,
+                                     final ModelTransformation<? extends IntermediateModel, ? extends TransformedModel> outer)
 	{
 		if (inner.getTransformedModel() != outer.getOriginalModel()) {
 			throw new IllegalArgumentException("Trying to nest unrelated ModelTransformations.");

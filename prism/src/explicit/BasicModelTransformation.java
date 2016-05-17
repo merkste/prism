@@ -26,12 +26,12 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		this(originalModel, transformedModel, ArrayMapping.identity(originalModel.getNumStates()).getElements());
 	}
 
-	public BasicModelTransformation(final BasicModelTransformation<OM, TM> transformation)
+	public BasicModelTransformation(final BasicModelTransformation<? extends OM, ? extends TM> transformation)
 	{
 		this(transformation.originalModel, transformation.transformedModel, transformation.mapping);
 	}
 
-	public BasicModelTransformation(final ModelTransformation<OM, TM> transformation)
+	public BasicModelTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation)
 	{
 		this(transformation.getOriginalModel(), transformation.getTransformedModel(), buildMappingToTransformedModel(transformation));
 	}
