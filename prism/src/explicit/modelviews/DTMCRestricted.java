@@ -25,17 +25,20 @@ import prism.PrismException;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCSimple;
+import explicit.ReachabilityComputer;
 
 public class DTMCRestricted extends DTMCView
 {
 	private static final Restriction STANDARD_RESTRICTION = Restriction.TRANSITIVE_CLOSURE;
 	private DTMC model;
-	// FIXME ALG: consider using a predicate instead
+	// FIXME ALG: consider not storing state set at all
 	private BitSet states;
+	protected int numStates;
 	private Restriction restriction;
 	// FIXME ALG: consider using a mapping function instead
-	private int[] mappingToOriginalModel;
-	private Integer[] mappingToRestrictedModel;
+	protected int[] mappingToOriginalModel;
+	protected Integer[] mappingToRestrictedModel;
+	protected BitSet redirectTransitions;
 
 
 
@@ -71,13 +74,21 @@ public class DTMCRestricted extends DTMCView
 		this.model = model;
 		this.restriction = restriction;
 		this.states = restriction.getStateSet(model, include);
+		numStates = states.cardinality();
 
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
-		mappingToOriginalModel = new int[states.cardinality()];
+		mappingToOriginalModel = new int[numStates];
+		int firstModified = 0;
 		for (int state = states.nextSetBit(0), index = 0; state >= 0; state = states.nextSetBit(state+1)) {
 			mappingToRestrictedModel[state] = index;
 			mappingToOriginalModel[index] = state;
 			index++;
+			if (state < index) {
+				firstModified = index;
+			}
+			redirectTransitions = new BitSet(numStates);
+			redirectTransitions.set(firstModified, model.getNumStates());
+			redirectTransitions = new ReachabilityComputer(model).computePre(redirectTransitions);
 		}
 	}
 
@@ -86,9 +97,11 @@ public class DTMCRestricted extends DTMCView
 		super(restricted);
 		model = restricted.model;
 		states = restricted.states;
+		numStates = restricted.numStates;
 		restriction = restricted.restriction;
 		mappingToOriginalModel = restricted.mappingToOriginalModel;
 		mappingToRestrictedModel = restricted.mappingToRestrictedModel;
+		redirectTransitions = restricted.redirectTransitions;
 	}
 
 
@@ -108,7 +121,7 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public int getNumStates()
 	{
-		return states.cardinality();
+		return numStates;
 	}
 
 	@Override
@@ -187,7 +200,12 @@ public class DTMCRestricted extends DTMCView
 		if (restriction == Restriction.STRICT) {
 			return super.getSuccessorsIterator(state);
 		}
-		return model.getSuccessorsIterator(mapStateToOriginalModel(state));
+		int originalState = mapStateToOriginalModel(state);
+		Iterator<Integer> successors = model.getSuccessorsIterator(originalState);
+		if (redirectTransitions.get(originalState)) {
+			successors = new MappingIterator.From<>(successors, this::mapStateToRestrictedModel);
+		}
+		return successors;
 	}
 
 
@@ -197,17 +215,16 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state)
 	{
-		final int originalState = mapStateToOriginalModel(state);
-		if (restriction == Restriction.STRICT && ! allSuccessorsIncluded(originalState)) {
+		int originalState = mapStateToOriginalModel(state);
+		final int originalState1 = originalState;
+		if (restriction == Restriction.STRICT && ! model.allSuccessorsInSet(originalState1, states)) {
 			return EmptyIterator.Of();
 		}
-		return new MappingIterator.From<>(model.getTransitionsIterator(originalState), this::mapTransitionToRestrictedModel);
-	}
-
-	private boolean allSuccessorsIncluded(final int originalState)
-	{
-		// FIXME ALG: consider memoizing
-		return model.allSuccessorsInSet(originalState, states);
+		Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState);
+		if (redirectTransitions.get(originalState)) {
+			transitions = new MappingIterator.From<>(transitions, this::mapTransitionToRestrictedModel);
+		}
+		return transitions;
 	}
 
 
@@ -226,9 +243,13 @@ public class DTMCRestricted extends DTMCView
 		restriction = Restriction.TRANSITIVE_CLOSURE_SAFE;
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[numStates];
-		mappingToRestrictedModel = new Integer[numStates];
-		for (int state = 0; state < numStates; state++) {
+		mappingToRestrictedModel = new Integer[mappingToRestrictedModel.length];
+		int state = 0;
+		for (; state < numStates; state++) {
 			mappingToOriginalModel[state] = state;
+			mappingToRestrictedModel[state] = state;
+		}
+		for (; state < mappingToRestrictedModel.length; state++) {
 			mappingToRestrictedModel[state] = state;
 		}
 	}
@@ -270,7 +291,7 @@ public class DTMCRestricted extends DTMCView
 		if (length == 0){
 			return new BitSet();
 		}
-		//XXX: consider allocating a BitSet in a suited size
+		//FIXME ALG: consider allocating a BitSet in a suited size
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
 			final Integer state = mappingToRestrictedModel[originalState];
