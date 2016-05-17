@@ -53,9 +53,8 @@ public class MDPResetTransformer extends PrismComponent
 	public MappingInt<List<Object>> getResetActions(final BitSet resetStates, final Object action)
 	{
 		List<Object> resetActions = Collections.singletonList((Object) action);
-		List<Object> noActions = Collections.emptyList();
 
-		return state -> resetStates.get(state) ? resetActions : noActions;
+		return state -> resetStates.get(state) ? resetActions : null;
 	}
 
 	public static void checkStatesOfInterest(final BitSet statesOfInterest) throws PrismException
