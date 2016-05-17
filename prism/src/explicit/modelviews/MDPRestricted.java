@@ -21,6 +21,7 @@ import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
+import explicit.ReachabilityComputer;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -29,13 +30,15 @@ import prism.PrismException;
 public class MDPRestricted extends MDPView
 {
 	private static final Restriction STANDARD_RESTRICTION = Restriction.TRANSITIVE_CLOSURE;
-	private MDP model;
-	// FIXME ALG: consider using a predicate instead
-	private BitSet states;
-	private Restriction restriction;
+	protected MDP model;
+	// FIXME ALG: consider not storing state set at all
+	protected BitSet states;
+	protected int numStates;
+	protected Restriction restriction;
 	// FIXME ALG: consider using a mapping function instead
-	private int[] mappingToOriginalModel;
-	private Integer[] mappingToRestrictedModel;
+	protected int[] mappingToOriginalModel;
+	protected Integer[] mappingToRestrictedModel;
+	protected BitSet redirectTransitions;
 
 
 
@@ -51,14 +54,22 @@ public class MDPRestricted extends MDPView
 		this.model = model;
 		this.restriction = restriction;
 		this.states = restriction.getStateSet(model, include);
+		numStates = states.cardinality();
 
 		mappingToRestrictedModel = new Integer[model.getNumStates()];
-		mappingToOriginalModel = new int[states.cardinality()];
+		mappingToOriginalModel = new int[numStates];
+		int firstModified = 0;
 		for (int state = states.nextSetBit(0), index = 0; state >= 0; state = states.nextSetBit(state+1)) {
 			mappingToRestrictedModel[state] = index;
 			mappingToOriginalModel[index] = state;
 			index++;
+			if (state < index) {
+				firstModified = index;
+			}
 		}
+		redirectTransitions = new BitSet(numStates);
+		redirectTransitions.set(firstModified, model.getNumStates());
+		redirectTransitions = new ReachabilityComputer(model).computePre(redirectTransitions);
 	}
 
 	public MDPRestricted(final MDPRestricted restricted)
@@ -66,10 +77,11 @@ public class MDPRestricted extends MDPView
 		super(restricted);
 		model = restricted.model;
 		states = restricted.states;
+		numStates = restricted.numStates;
 		restriction = restricted.restriction;
 		mappingToOriginalModel = restricted.mappingToOriginalModel;
 		mappingToRestrictedModel = restricted.mappingToRestrictedModel;
-		//		mapTargetState = restricted.mapTargetState;
+		redirectTransitions = restricted.redirectTransitions;
 	}
 
 
@@ -89,7 +101,7 @@ public class MDPRestricted extends MDPView
 	@Override
 	public int getNumStates()
 	{
-		return states.cardinality();
+		return numStates;
 	}
 
 	@Override
@@ -169,7 +181,12 @@ public class MDPRestricted extends MDPView
 		if (restriction == Restriction.STRICT) {
 			return super.getSuccessorsIterator(state);
 		}
-		return model.getSuccessorsIterator(mapStateToOriginalModel(state));
+		int originalState = mapStateToOriginalModel(state);
+		Iterator<Integer> successors = model.getSuccessorsIterator(originalState);
+		if (redirectTransitions.get(originalState)) {
+			successors = new MappingIterator.From<>(successors, this::mapStateToRestrictedModel);
+		}
+		return successors;
 	}
 
 
@@ -211,9 +228,12 @@ public class MDPRestricted extends MDPView
 		if (restriction == Restriction.STRICT) {
 			return super.getSuccessorsIterator(state, choice);
 		}
-		final int originalState = mapStateToOriginalModel(state);
-		final Iterator<Integer> successors = model.getSuccessorsIterator(originalState, choice);
-		return new MappingIterator.From<>(successors, this::mapStateToRestrictedModel);
+		int originalState = mapStateToOriginalModel(state);
+		Iterator<Integer> successors = model.getSuccessorsIterator(originalState, choice);
+		if (redirectTransitions.get(originalState)) {
+			successors = new MappingIterator.From<>(successors, this::mapStateToRestrictedModel);
+		}
+		return successors;
 	}
 
 
@@ -223,10 +243,13 @@ public class MDPRestricted extends MDPView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
-		final int originalState = mapStateToOriginalModel(state);
-		final int originalChoice = mapChoiceToOriginalModel(state, choice);
-		final Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState, originalChoice);
-		return new MappingIterator.From<>(transitions, this::mapTransitionToRestrictedModel);
+		int originalState = mapStateToOriginalModel(state);
+		int originalChoice = mapChoiceToOriginalModel(state, choice);
+		Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState, originalChoice);
+		if (redirectTransitions.get(originalState)) {
+			transitions = new MappingIterator.From<>(transitions, this::mapTransitionToRestrictedModel);
+		}
+		return transitions;
 	}
 
 
@@ -245,9 +268,13 @@ public class MDPRestricted extends MDPView
 		restriction = Restriction.TRANSITIVE_CLOSURE_SAFE;
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[numStates];
-		mappingToRestrictedModel = new Integer[numStates];
-		for (int state = 0; state < numStates; state++) {
+		mappingToRestrictedModel = new Integer[mappingToRestrictedModel.length];
+		int state = 0;
+		for (; state < numStates; state++) {
 			mappingToOriginalModel[state] = state;
+			mappingToRestrictedModel[state] = state;
+		}
+		for (; state < mappingToRestrictedModel.length; state++) {
 			mappingToRestrictedModel[state] = state;
 		}
 	}
@@ -309,7 +336,7 @@ public class MDPRestricted extends MDPView
 		if (length == 0){
 			return new BitSet();
 		}
-		//XXX: consider allocating a BitSet in a suited size
+		//FIXME ALG: consider allocating a BitSet in a suited size
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
 			final Integer state = mappingToRestrictedModel[originalState];
