@@ -267,11 +267,11 @@ public class MDPAlteredDistributions extends MDPView
 			public List<Object> apply(final int state)
 			{
 				if (! identify.isRepresentative(state)) {
-					return Collections.emptyList();
+					return null;
 				}
 				final BitSet equivalenceClass = identify.getEquivalenceClassOrNull(state);
 				if (equivalenceClass == null) {
-					return Collections.emptyList();
+					return null;
 				}
 				final IntFunction<List<Object>> getOtherActions = new IntFunction<List<Object>>()
 				{
@@ -279,7 +279,7 @@ public class MDPAlteredDistributions extends MDPView
 					public List<Object> apply(final int state)
 					{
 						if (identify.isRepresentative(state)) {
-							return Collections.emptyList();
+							return null;
 						}
 						final int numChoices = model.getNumChoices(state);
 						final List<Object> actions = new ArrayList<>(numChoices);
