@@ -110,7 +110,7 @@ public abstract class ModelView implements Model
 	@Override
 	public void findDeadlocks(final boolean fix) throws PrismException
 	{
-		findDeadlocks(null).forEach((IntConsumer) deadlockStates::set);
+		findDeadlocks(new BitSet()).forEach((IntConsumer) deadlockStates::set);
 
 		if (fix && !fixedDeadlocks) {
 			fixDeadlocks();
