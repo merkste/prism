@@ -10,6 +10,8 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.mc.MCConditionalTransformer;
@@ -41,13 +43,12 @@ public class MCLTLTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		final LTLProduct<DTMC> ltlTransformation = ltlTransformer.transform(model, expression.getCondition(), statesOfInterest, AcceptanceType.RABIN);
 
 		final Integer[] ltlMapping = new Integer[model.getNumStates()];
-		// FIXME ALG: simplify or generalize mapping creation? Move to transformation?
 		for (Integer productState : ltlTransformation.getProductModel().getInitialStates()) {
 			// get the state index of the corresponding state in the original model
 			final Integer modelState = ltlTransformation.getModelState(productState);
@@ -65,7 +66,6 @@ public class MCLTLTransformer extends MCConditionalTransformer
 			mapping[state] = (ltlState == null) ? null : untilTransformation.mapToTransformedModel(ltlState);
 		}
 
-		// FIXME ALG: use nestedTransformation?
-		return new BasicModelTransformation<>(model, untilTransformation.getTransformedModel(), mapping);
+		return new ModelTransformationNested<>(ltlTransformation, untilTransformation);
 	}
 }

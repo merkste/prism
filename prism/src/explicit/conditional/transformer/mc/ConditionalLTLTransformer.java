@@ -13,6 +13,8 @@ import prism.PrismLangException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.TerminalTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
 
@@ -47,47 +49,19 @@ public class ConditionalLTLTransformer extends PrismComponent
 		final TerminalTransformation<DTMC, DTMC> reachabilityTransformation = reachabilityTransformer.transformModel(ltlProduct.getProductModel(),
 				null, goal, ltlStatesOfInterest);
 
-		// 3. create mapping from original to reachability model
-		final Integer[] mapping = buildMapping(ltlProduct, reachabilityTransformation);
+		// 3. compose Transformations
+		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(ltlProduct, reachabilityTransformation);
 
 		// 4. create mapping of terminals from reachability model to original model
 		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(ltlProduct, reachabilityTransformation);
 
-		return new TerminalTransformation<DTMC, DTMC>(model, reachabilityTransformation.getTransformedModel(), mapping, terminalLookup);
-	}
-
-	public Integer[] buildMapping(final LTLProduct<DTMC> ltlProduct, final TerminalTransformation<DTMC, DTMC> terminalTransformation)
-	{
-		final Integer[] ltlMapping = buildLTLMapping(ltlProduct);
-
-		// FIXME ALG: consider mapping impl as fn instead of array, move to DMTCRestricted ?
-		final Integer[] mapping = new Integer[ltlProduct.getOriginalModel().getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			final Integer ltlState = ltlMapping[state];
-			if (ltlState != null) {
-				mapping[state] = terminalTransformation.mapToTransformedModel(ltlState);
-			}
-		}
-		return mapping;
-	}
-
-	public Integer[] buildLTLMapping(final LTLProduct<DTMC> ltlProduct)
-	{
-		final Integer[] ltlMapping = new Integer[ltlProduct.getOriginalModel().getNumStates()];
-
-		for (Integer productState : ltlProduct.getProductModel().getInitialStates()) {
-			// get the state index of the corresponding state in the original model
-			final Integer modelState = ltlProduct.getModelState(productState);
-			assert ltlMapping[modelState] == null : "do not map state twice";
-			ltlMapping[modelState] = productState;
-		}
-		return ltlMapping;
+		return new TerminalTransformation<DTMC, DTMC>(nested, terminalLookup);
 	}
 
 	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalNextTransformer
-	public Map<Integer, Integer> buildTerminalLookup(final LTLProduct<DTMC> product, final TerminalTransformation<DTMC, DTMC> terminalTransformation)
+	public Map<Integer, Integer> buildTerminalLookup(final LTLProduct<DTMC> product, final TerminalTransformation<DTMC, DTMC> transformation)
 	{
-		final Map<Integer, Integer> reachabilityTerminalLookup = terminalTransformation.getTerminalMapping();
+		final Map<Integer, Integer> reachabilityTerminalLookup = transformation.getTerminalMapping();
 
 		final Map<Integer, Integer> terminalLookup = new HashMap<>(reachabilityTerminalLookup.size());
 		for (Entry<Integer, Integer> entry : reachabilityTerminalLookup.entrySet()) {

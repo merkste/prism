@@ -76,8 +76,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 				if (transformation instanceof ModelExpressionTransformation) {
 					Expression originalExpression = ((ModelExpressionTransformation<?,?>) transformation).getOriginalExpression();
 					Expression transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
-					BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-					sparseTransformation = new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression, transformedStatesOfInterest);
+					sparseTransformation = new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
 				} else if (transformation instanceof ConditionalReachabilitiyTransformation) {
 					sparseTransformation = new ConditionalReachabilitiyTransformation<>(sparseTransformation, ((ConditionalReachabilitiyTransformation<?,?>) transformation).getGoalStates());
 				}

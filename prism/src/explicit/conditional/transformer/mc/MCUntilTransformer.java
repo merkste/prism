@@ -17,6 +17,8 @@ import prism.PrismLangException;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
@@ -50,14 +52,14 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
 		return transformModel(model, condition, statesOfInterest, !requiresSecondMode(expression));
 	}
 
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression condition, final BitSet statesOfInterest,
+	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final Expression condition, final BitSet statesOfInterest,
 			final boolean absorbing) throws PrismException
 	{
 		final Expression until = ExpressionInspector.normalizeExpression(condition);
@@ -67,7 +69,6 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		final boolean collapse = !absorbing;
 
 		// 1. create mode 1 == conditional part
-		// FIXME ALG: how to handle initial states ?
 		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
@@ -91,16 +92,11 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			}
 			transformedModel = DTMCDisjointUnion.DTMCUnion(mode1.getTransformedModel(), mode2, identify);
 		}
+		// sane, as long as mode 1 is already restricted
+		ModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
+		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(mode1, union);
 
-		// 3. create model transformation
-		// FIXME ALG: refactor to remove tedious code duplication
-		// FIXME ALG: consider ModelExpressionTransformationNested
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = mode1.mapToTransformedModel(state);
-		}
-
-		return new BasicModelTransformation<DTMC, DTMC>(model, transformedModel, mapping);
+		return nested;
 	}
 
 	protected BitSet getRemainStates(final DTMC model, final Expression expression) throws PrismException

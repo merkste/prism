@@ -72,7 +72,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 		transformedModel.findDeadlocks(false);
 
 		final Integer[] mapping = getMappingToTransformedModel();
-		final BasicModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(originalModel, transformedModel, mapping);
+		final BasicModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(originalModel, transformedModel, null, mapping);
 		originalModel = transformedModel = null;
 		return transformation;
 	}

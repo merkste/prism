@@ -138,18 +138,14 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 
 	public static class NormalFormTransformation<M extends Model> extends BasicModelTransformation<M, M> implements ReachabilityTransformation<M, M>
 	{
-		protected BitSet transformedStatesOfInterest;
-
 		public NormalFormTransformation(M originalModel, M transformedModel, BitSet transformedStatesOfInterest)
 		{
-			super(originalModel, transformedModel);
-			this.transformedStatesOfInterest = transformedStatesOfInterest;
+			super(originalModel, transformedModel, transformedStatesOfInterest);
 		}
 
 		public NormalFormTransformation(NormalFormTransformation<? extends M> transformation)
 		{
 			super(transformation);
-			transformedStatesOfInterest = transformation.transformedStatesOfInterest;
 		}
 
 		@Override
@@ -161,12 +157,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		public int getGoalState()
 		{
 			return numberOfStates + GOAL;
-		}
-
-		@Override
-		public BitSet getTransformedStatesOfInterest()
-		{
-			return transformedStatesOfInterest;
 		}
 	}
 }

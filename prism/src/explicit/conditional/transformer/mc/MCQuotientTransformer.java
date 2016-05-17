@@ -2,7 +2,6 @@ package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
-import common.iterable.IterableBitSet;
 import common.iterable.Support;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -57,11 +56,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (Integer state : new IterableBitSet(statesOfInterest)) {
-			mapping[state] = state;
-		}
-		return new BasicModelTransformation<DTMC, DTMC>(model, model, mapping);
+		return new BasicModelTransformation<DTMC, DTMC>(model, model, statesOfInterest);
 	}
 
 	@Override

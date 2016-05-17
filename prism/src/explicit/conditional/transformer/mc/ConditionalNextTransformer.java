@@ -18,9 +18,12 @@ import common.iterable.MappingIterator;
 import common.iterable.Support;
 import prism.PrismComponent;
 import prism.PrismException;
+import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.TerminalTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.DTMCAlteredDistributions;
@@ -57,19 +60,20 @@ public class ConditionalNextTransformer extends PrismComponent
 		// 1. make probabilities conditional, terminal states absorbing
 		final MappingInt<Iterator<Entry<Integer, Double>>> conditionalProbability = new ConditionalNext(unionModel, probabilities, terminal);
 		final DTMCAlteredDistributions conditionalModel = new DTMCAlteredDistributions(unionModel, conditionalProbability);
+		ModelTransformation<DTMC, DTMC> conditional = new BasicModelTransformation<>(model, conditionalModel, statesOfInterest);
 
 		// 2. restrict to states reachable from support and statesOfInterest
 		final Support support = new Support(probabilities);
 		final PredicateInt conditionalStatesOfInterest = statesOfInterest == null ? support : ((PredicateInt) statesOfInterest::get).and((IntPredicate) support);
-		final DTMCRestricted restrictedModel = new DTMCRestricted(conditionalModel, conditionalStatesOfInterest);
+		ModelTransformation<DTMC, DTMCRestricted> restricted = DTMCRestricted.transform(conditionalModel, conditionalStatesOfInterest);
 
-		// 4. create mapping from original to restricted model
-		final Integer[] mapping = buildMapping(model, restrictedModel);
+		// 4. compose transformations
+		ModelTransformation<DTMC, DTMCRestricted> nested = new ModelTransformationNested<>(conditional, restricted);
 
 		// 5. create mapping of terminals from restricted model to original model
-		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(unionModel, terminal, restrictedModel);
+		final Map<Integer, Integer> terminalLookup = buildTerminalLookup(unionModel, terminal, restricted);
 
-		return new TerminalTransformation<DTMC, DTMC>(model, restrictedModel, mapping, terminalLookup);
+		return new TerminalTransformation<DTMC, DTMC>(nested, terminalLookup);
 	}
 
 	private double[] computeProbabilities(final DTMC model, final BitSet target, final boolean negated) throws PrismException
@@ -88,29 +92,21 @@ public class ConditionalNextTransformer extends PrismComponent
 		return terminal;
 	}
 
-	private Integer[] buildMapping(final DTMC model, final DTMCRestricted restrictedModel)
-	{
-		// FIXME ALG: consider mapping impl as fn instead of array, move to DMTCRestricted ?
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = restrictedModel.mapStateToRestrictedModel(state);
-		}
-		return mapping;
-	}
-
 	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalLTLTransformer
-	public Map<Integer, Integer> buildTerminalLookup(final DTMCDisjointUnion model, final BitSet terminal, final DTMCRestricted restrictedModel)
+	public Map<Integer, Integer> buildTerminalLookup(final DTMCDisjointUnion model, final BitSet terminal, final ModelTransformation<?,?> transformation)
 	{
 		final int offset = model.offset;
 		final Map<Integer, Integer> terminalLookup = new HashMap<>();
 		for (Integer state : new IterableBitSet(terminal)) {
-			final Integer restrictedState = restrictedModel.mapStateToRestrictedModel(state + offset);
-			if (restrictedState != null) {
-				terminalLookup.put(restrictedState, state);
+			final Integer transformedState = transformation.mapToTransformedModel(state + offset);
+			if (transformedState != null) {
+				terminalLookup.put(transformedState, state);
 			}
 		}
 		return terminalLookup;
 	}
+
+
 
 	private final class ConditionalNext implements MappingInt<Iterator<Entry<Integer, Double>>>
 	{

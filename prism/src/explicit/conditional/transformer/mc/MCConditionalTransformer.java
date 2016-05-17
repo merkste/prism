@@ -45,7 +45,7 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer.Ba
 		final ModelTransformation<DTMC, DTMC> transformation = transformModel(model, expression, statesOfInterest);
 		final Expression transformedExpression = transformExpression(expression);
 
-		return new BasicModelExpressionTransformation<DTMC, DTMC>(transformation, expression, transformedExpression, statesOfInterest);
+		return new BasicModelExpressionTransformation<DTMC, DTMC>(transformation, expression, transformedExpression);
 	}
 
 	protected Expression transformExpression(final ExpressionConditional expression)

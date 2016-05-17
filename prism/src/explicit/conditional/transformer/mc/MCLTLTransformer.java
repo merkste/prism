@@ -11,6 +11,8 @@ import prism.PrismLangException;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCDisjointUnion;
@@ -40,7 +42,7 @@ public class MCLTLTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1. create mode 1 == conditional part
@@ -59,15 +61,19 @@ public class MCLTLTransformer extends MCConditionalTransformer
 			identify.put(id.getKey(), mode2.mapStateToRestrictedModel(id.getValue()));
 		}
 		final DTMCRestricted transformedModel = DTMCDisjointUnion.DTMCUnion(mode1.getTransformedModel(), mode2, identify);
+		ModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
+		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(mode1, union);
 
-		// 4. create model transformation
-		// FIXME ALG: consider ModelExpressionTransformationNested
-		// FIXME ALG: refactor to remove tedious code duplication
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = mode1.mapToTransformedModel(state);
-		}
+		return nested;
 
-		return new BasicModelTransformation<DTMC, DTMC>(model, transformedModel, mapping);
+//		// 4. create model transformation
+//		// FIXME ALG: consider ModelExpressionTransformationNested
+//		// FIXME ALG: refactor to remove tedious code duplication
+//		final Integer[] mapping = new Integer[model.getNumStates()];
+//		for (int state = 0; state < mapping.length; state++) {
+//			mapping[state] = mode1.mapToTransformedModel(state);
+//		}
+//
+//		return new BasicModelTransformation<DTMC, DTMC>(model, transformedModel, mapping);
 	}
 }

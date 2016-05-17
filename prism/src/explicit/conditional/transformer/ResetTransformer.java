@@ -111,8 +111,8 @@ public interface ResetTransformer<M extends Model>
 
 	public static class ResetTransformation<M extends Model> extends BasicModelTransformation<M, M>
 	{
-		private final int targetState;
-		private final Object resetAction;
+		protected final int targetState;
+		protected final Object resetAction;
 
 		public ResetTransformation(M originalModel, M transformedModel, int targetState, Object resetAction)
 		{

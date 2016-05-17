@@ -4,16 +4,19 @@ import java.util.Map;
 
 import explicit.BasicModelTransformation;
 import explicit.Model;
+import explicit.ModelTransformation;
 
 // FIXME ALG: add comment
 public class TerminalTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM>
 {
-	private final Map<Integer, Integer> terminalMapping;
+	protected final Map<Integer, Integer> terminalMapping;
 
-	public TerminalTransformation(final OM originalModel, final TM transformedModel, final Integer[] mapping,
-			final Map<Integer, Integer> terminalMapping)
+	/**
+	 * @param terminalMapping terminal_transformed -> terminal_original
+	 */
+	public TerminalTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation, final Map<Integer, Integer> terminalMapping)
 	{
-		super(originalModel, transformedModel, mapping);
+		super(transformation);
 		this.terminalMapping = terminalMapping;
 	}
 

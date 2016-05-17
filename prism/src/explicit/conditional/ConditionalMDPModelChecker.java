@@ -19,6 +19,7 @@ import explicit.MDPSparse;
 import explicit.MinMax;
 import explicit.ModelCheckerResult;
 import explicit.ModelTransformation;
+import explicit.ModelTransformationNested;
 import explicit.StateValues;
 import explicit.conditional.transformer.ConditionalTransformer;
 import explicit.conditional.transformer.FinallyFinallyTransformer;
@@ -121,26 +122,27 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		long transformationTime = System.currentTimeMillis() - overallTime;
 		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
-		if (isVirtualModel(transformation.getTransformedModel())) {
+		MDP transformedModel = transformation.getTransformedModel();
+		if (isVirtualModel(transformedModel)) {
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
 				mainLog.println("Using virtual model");
 			} else {
-				// FIXME ALG: consider restriction to reachable state space
 				mainLog.println("Converting virtual model to " + MDPSparse.class.getSimpleName());
 				long buildTime = System.currentTimeMillis();
-				final MDP transformedModel = new MDPSparse(transformation.getTransformedModel());
 				buildTime = System.currentTimeMillis() - buildTime;
-				final ModelTransformation<MDP, MDP> simpleTransformation = new BasicModelTransformation<>(transformation.getOriginalModel(),
-						transformedModel, transformation.getMapping());
-				transformation = new ConditionalReachabilitiyTransformation<>(simpleTransformation, transformation.getGoalStates());
 				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
+				MDP transformedModelSparse = new MDPSparse(transformedModel);
+				BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
+				ModelTransformation<MDP, MDP> sparseTransformation = new BasicModelTransformation<>(transformedModel, transformedModelSparse, transformedStatesOfInterest);
+				sparseTransformation = new ModelTransformationNested<>(transformation, sparseTransformation);
+				transformation = new ConditionalReachabilitiyTransformation<>(sparseTransformation, transformation.getGoalStates());
 			}
 		}
 
 		overallTime = System.currentTimeMillis() - overallTime;
 		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
 		mainLog.print("Transformed model has ");
-		mainLog.println(transformation.getTransformedModel().infoString());
+		mainLog.println(transformedModel.infoString());
 		return transformation;
 	}
 
