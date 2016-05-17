@@ -121,7 +121,7 @@ public interface ResetTransformer<M extends Model>
 			this.resetAction = resetAction;
 		}
 
-		public ResetTransformation(ResetTransformation<M> transformation)
+		public ResetTransformation(ResetTransformation<? extends M> transformation)
 		{
 			super(transformation);
 			this.targetState = transformation.targetState;

@@ -71,7 +71,7 @@ public interface ResetStateTransformer<M extends Model> extends ResetTransformer
 			this.redirectAction = redirectAction;
 		}
 
-		public ResetStateTransformation(ResetStateTransformation<M> transformation)
+		public ResetStateTransformation(ResetStateTransformation<? extends M> transformation)
 		{
 			super(transformation);
 			this.resetState = transformation.resetState;

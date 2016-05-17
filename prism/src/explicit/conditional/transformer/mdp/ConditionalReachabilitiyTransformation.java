@@ -27,7 +27,7 @@ public class ConditionalReachabilitiyTransformation<OM extends Model, TM extends
 		this.transformedStatesOfInterest = transformation.transformedStatesOfInterest;
 	}
 
-	public ConditionalReachabilitiyTransformation(final ModelTransformation<OM, TM> transformation, final BitSet goalStates)
+	public ConditionalReachabilitiyTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation, final BitSet goalStates)
 	{
 		super(transformation);
 		this.goalStates = goalStates;

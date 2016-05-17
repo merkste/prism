@@ -146,7 +146,7 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			this.transformedStatesOfInterest = transformedStatesOfInterest;
 		}
 
-		public NormalFormTransformation(NormalFormTransformation<M> transformation)
+		public NormalFormTransformation(NormalFormTransformation<? extends M> transformation)
 		{
 			super(transformation);
 			transformedStatesOfInterest = transformation.transformedStatesOfInterest;

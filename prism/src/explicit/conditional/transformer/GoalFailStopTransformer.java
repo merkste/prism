@@ -107,7 +107,7 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 			super(originalModel, transformedModel, transformedStatesOfInterest);
 		}
 
-		public GoalFailStopTransformation(final NormalFormTransformation<M> transformation)
+		public GoalFailStopTransformation(final NormalFormTransformation<? extends M> transformation)
 		{
 			super(transformation);
 		}
