@@ -18,28 +18,36 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 
 	protected final OM originalModel;
 	protected final TM transformedModel;
+	protected final BitSet transformedStatesOfInterest;
+
 	protected final int numberOfStates;
 	protected final Integer[] mapping;
 
 	public BasicModelTransformation(final OM originalModel, final TM transformedModel)
 	{
-		this(originalModel, transformedModel, ArrayMapping.identity(originalModel.getNumStates()).getElements());
+		this(originalModel, transformedModel, null, ArrayMapping.identity(originalModel.getNumStates()).getElements());
 	}
 
-	public BasicModelTransformation(final BasicModelTransformation<? extends OM, ? extends TM> transformation)
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest)
 	{
-		this(transformation.originalModel, transformation.transformedModel, transformation.mapping);
+		this(originalModel, transformedModel, transformedStatesOfInterest, ArrayMapping.identity(originalModel.getNumStates()).getElements());
 	}
 
 	public BasicModelTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation)
 	{
-		this(transformation.getOriginalModel(), transformation.getTransformedModel(), buildMappingToTransformedModel(transformation));
+		this(transformation.getOriginalModel(), transformation.getTransformedModel(), transformation.getTransformedStatesOfInterest(), buildMappingToTransformedModel(transformation));
 	}
 
-	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final Integer[] mappingToTransformedModel)
+	public BasicModelTransformation(final BasicModelTransformation<? extends OM, ? extends TM> transformation)
+	{
+		this(transformation.originalModel, transformation.transformedModel, transformation.transformedStatesOfInterest, transformation.mapping);
+	}
+
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final Integer[] mappingToTransformedModel)
 	{
 		this.originalModel = originalModel;
 		this.transformedModel = transformedModel;
+		this.transformedStatesOfInterest = transformedStatesOfInterest;
 		this.numberOfStates = originalModel.getNumStates();
 		this.mapping = mappingToTransformedModel;
 
@@ -61,8 +69,7 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 	@Override
 	public BitSet getTransformedStatesOfInterest()
 	{
-		// FIXME ALG: Auto-generated method stub
-		return null;
+		return transformedStatesOfInterest;
 	}
 
 	public Integer[] getMapping()
