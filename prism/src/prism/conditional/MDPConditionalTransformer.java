@@ -9,11 +9,14 @@ import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismLangException;
 
-public abstract class MDPConditionalTransformer extends ConditionalTransformer<NondetModelChecker, NondetModel>
+public abstract class MDPConditionalTransformer extends NewConditionalTransformer.MDP
 {
+	protected Prism prism;
+
 	public MDPConditionalTransformer(NondetModelChecker modelChecker, Prism prism)
 	{
-		super(modelChecker, prism);
+		super(modelChecker);
+		this.prism = prism;
 	}
 
 	@Override
@@ -26,9 +29,9 @@ public abstract class MDPConditionalTransformer extends ConditionalTransformer<N
 		return canHandleCondition(mdp, expression) && canHandleObjective(mdp, expression);
 	}
 
-	protected abstract boolean canHandleCondition(NondetModel model, ExpressionConditional expression)  throws PrismLangException;
+	public abstract boolean canHandleCondition(NondetModel model, ExpressionConditional expression)  throws PrismLangException;
 
-	protected boolean canHandleObjective(NondetModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(NondetModel model, ExpressionConditional expression) throws PrismLangException
 	{
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;

@@ -106,14 +106,9 @@ public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 		               JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 	}
 
-	/** Returns a JDDNode for the goal state in the transformed model.
-	 * <br>[ REFS: <i>result</i> ]
-	 * @param row construct for row or col vars?
-	 */
-	public JDDNode goal(boolean row) {
-		// extra(0) & !extra(1) & !originalVar(0) & !originalVar(1) & ....
-		JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-		                         JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+	public JDDNode trap(boolean row) {
+		// !normal & !originalVar(0) & !originalVar(1) & ....
+		JDDNode result =  JDD.Not(normal(row));
 
 		JDDVars vars = (row ? originalModel.getAllDDRowVars() : originalModel.getAllDDColVars());
 		for (int i = 0; i < vars.getNumVars(); i++) {
@@ -122,20 +117,38 @@ public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 		return result;
 	}
 
+	/** Returns a JDDNode for the goal state in the transformed model.
+	 * <br>[ REFS: <i>result</i> ]
+	 * @param row construct for row or col vars?
+	 */
+	public JDDNode goal(boolean row) {
+		// extra(0) & !extra(1) & !originalVar(0) & !originalVar(1) & ....
+		JDDNode result = JDD.And(        (row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
+		                         JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+
+		return JDD.And(result, trap(row));
+//		JDDVars vars = (row ? originalModel.getAllDDRowVars() : originalModel.getAllDDColVars());
+//		for (int i = 0; i < vars.getNumVars(); i++) {
+//			result = JDD.And(result, JDD.Not(vars.getVar(i).copy()));
+//		}
+//		return result;
+	}
+
 	/** Returns a JDDNode for the fail state in the transformed model.
 	 * <br>[ REFS: <i>result</i> ]
 	 * @param row construct for row or col vars?
 	 */
 	public JDDNode fail(boolean row) {
-		// extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
-		JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-		                         (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
+		// !extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
+		JDDNode result = JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
+		                                 (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
-		JDDVars vars = (row ? originalModel.getAllDDRowVars() : originalModel.getAllDDColVars());
-		for (int i = 0; i < vars.getNumVars(); i++) {
-			result = JDD.And(result, JDD.Not(vars.getVar(i).copy()));
-		}
-		return result;
+		return JDD.And(result, trap(row));
+//		JDDVars vars = (row ? originalModel.getAllDDRowVars() : originalModel.getAllDDColVars());
+//		for (int i = 0; i < vars.getNumVars(); i++) {
+//			result = JDD.And(result, JDD.Not(vars.getVar(i).copy()));
+//		}
+//		return result;
 	}
 
 	/** Returns a JDDNode for the reset target (column variables)
@@ -177,8 +190,8 @@ public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 	{
 		// we need 2 extra state variables:
 		// 00 = normal
-		// 10 = goal
-		// 11 = fail
+		// 01 = goal
+		// 10 = fail
 		return 2;
 	}
 
@@ -287,6 +300,7 @@ public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 	@Override
 	public JDDNode getTransformedStart()
 	{
+		// FIXME ALG: check wether this should be resetTarget instead
 		JDDNode start = JDD.And(normal(ROW), originalModel.getStart().copy());
 		return start;
 	}

@@ -25,14 +25,14 @@ import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
 
-public class MCNextTransformer extends ConditionalTransformer<ProbModelChecker, ProbModel>
+public class MCNextTransformer extends MCConditionalTransformer
 {
 	public MCNextTransformer(ProbModelChecker modelChecker, Prism prism) {
 		super(modelChecker, prism);
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression) throws PrismException
+	public boolean canHandle(Model model, ExpressionConditional expression)
 	{
 		if (!(model instanceof ProbModel) || (model instanceof NondetModel)) {
 			return false;
@@ -41,7 +41,7 @@ public class MCNextTransformer extends ConditionalTransformer<ProbModelChecker, 
 		return canHandleCondition(mc, expression) && canHandleObjective(mc, expression);
 	}
 
-	protected boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		try {
@@ -69,7 +69,7 @@ public class MCNextTransformer extends ConditionalTransformer<ProbModelChecker, 
 		return true;
 	}
 
-	protected boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());

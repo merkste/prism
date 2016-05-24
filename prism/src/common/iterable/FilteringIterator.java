@@ -1,5 +1,6 @@
 package common.iterable;
 
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -60,8 +61,21 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 
 	public static OfInt dedupe(final PrimitiveIterator.OfInt iterator)
 	{
-		final Set<Integer> elements = new HashSet<>();
-		return new FilteringIterator.OfInt(iterator, (IntPredicate) elements::add);
+		final IntPredicate elements = new IntPredicate()
+		{
+			final BitSet elements = new BitSet();
+
+			@Override
+			public boolean test(int value)
+			{
+				if (elements.get(value)) {
+					return false;
+				}
+				elements.set(value);
+				return true;
+			}
+		};
+		return new FilteringIterator.OfInt(iterator, elements);
 	}
 
 	public static OfLong dedupe(final PrimitiveIterator.OfLong iterator)

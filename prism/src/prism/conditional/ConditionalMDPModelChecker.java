@@ -54,7 +54,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		}
 
 		try {
-			final ConditionalTransformer<NondetModelChecker, NondetModel> transformer = selectModelTransformer(model, expression);
+			final NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
 			if (transformer == null) {
 				JDD.Deref(statesOfInterest);
 				throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
@@ -102,7 +102,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	}
 
 	
-	private ModelExpressionTransformation<NondetModel,NondetModel> transformModel(final ConditionalTransformer<NondetModelChecker, NondetModel> transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
+	private ModelExpressionTransformation<NondetModel,NondetModel> transformModel(final NewConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for " + expression);
 		long timer = System.currentTimeMillis();
 		final ModelExpressionTransformation<NondetModel, NondetModel> transformation = 
@@ -117,14 +117,17 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return transformation;
 	}
 
-	private ConditionalTransformer<NondetModelChecker, NondetModel> selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
+	private NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
 		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MDP);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
 		if (types.contains(MdpTransformerType.FinallyFinally)) {
-			if (new MDPFinallyTransformer(mc, prism).canHandle(model, expression)) {
-				return new MDPFinallyTransformer(mc, prism);
+			if (new NewFinallyUntilTransformer.MDP(mc).canHandle(model, expression)) {
+				return new NewFinallyUntilTransformer.MDP(mc);
 			}
+//			if (new MDPFinallyTransformer(mc, prism).canHandle(model, expression)) {
+//				return new MDPFinallyTransformer(mc, prism);
+//			}
 		}
 
 		if (types.contains(MdpTransformerType.LtlLtl)) {

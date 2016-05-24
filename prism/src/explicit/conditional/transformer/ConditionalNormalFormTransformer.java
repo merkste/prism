@@ -84,7 +84,7 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		return terminals;
 	}
 
-	default BitSet getWeakRemainStates(M model,BitSet remain, BitSet goal, boolean negated)
+	default BitSet getWeakRemainStates(M model, BitSet remain, BitSet goal, boolean negated)
 	{
 		if (! negated) {
 			return remain;

@@ -19,6 +19,7 @@ import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.conditional.NewConditionalTransformer.DTMC;
 
 public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbModel> {
 	
@@ -31,7 +32,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 
 	@Override
 	public StateValues checkExpression(final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		final ConditionalTransformer<ProbModelChecker, ProbModel> transformer = selectModelTransformer(model, expression);
+		final NewConditionalTransformer.DTMC transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			// try quotient as last resort
 			try {
@@ -56,7 +57,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		return resultOriginal;
 	}
 
-	private ModelTransformation<ProbModel, ProbModel> transformModel(final ConditionalTransformer<ProbModelChecker, ProbModel> transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
+	private ModelTransformation<ProbModel, ProbModel> transformModel(final NewConditionalTransformer.DTMC transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
 		long timer = System.currentTimeMillis();
 		final ModelTransformation<ProbModel, ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
@@ -70,13 +71,13 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		return transformation;
 	}
 
-	private ConditionalTransformer<ProbModelChecker, ProbModel> selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
+	private NewConditionalTransformer.DTMC selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
 		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MC);
 		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 
 		// System.out.println(types);
 		for (DtmcTransformerType type : types) {
-			ConditionalTransformer<ProbModelChecker, ProbModel> transformer;
+			NewConditionalTransformer.DTMC transformer;
 			switch (type) {
 //			case Quotient:
 //				transformer = new MCQuotientTransformer(mc);

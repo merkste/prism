@@ -26,14 +26,14 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 	}
 
 	@Override
-	protected boolean canHandleCondition(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(ProbModel model, ExpressionConditional expression) throws PrismLangException
 	{
 		final Expression condition = expression.getCondition();
 		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
 	}
 
 	@Override
-	protected boolean canHandleObjective(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(ProbModel model, ExpressionConditional expression) throws PrismLangException
 	{
 		// cannot handle steady state computation yet
 		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));

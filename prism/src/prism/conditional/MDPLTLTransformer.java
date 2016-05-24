@@ -42,14 +42,14 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 	}
 
 	@Override
-	protected boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
 	{
 		final Expression condition = expression.getCondition();
 		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
 	}
 
 	@Override
-	protected boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;

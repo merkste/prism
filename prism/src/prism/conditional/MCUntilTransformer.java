@@ -33,14 +33,14 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final Expression until = removeNegation(condition);
 		return ExpressionInspector.isSimpleUntilFormula(until);
 	}
 
-	protected boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
@@ -228,21 +228,21 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return probabilities.convertToStateValuesMTBDD().getJDDNode();
 	}
 
-	private JDDNode computeProb0(final ProbModel model, JDDNode remain, JDDNode goal)
-	{
-		JDDNode trans01 = model.getTrans01();
-		JDDNode reach   = model.getReach();
-		JDDVars rowVars = model.getAllDDRowVars();
-		JDDVars colVars = model.getAllDDColVars();
-		return PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, remain, goal);
-	}
-
-	private JDDNode computeProb1(final ProbModel model, JDDNode remain, JDDNode goal, JDDNode prob0)
-	{
-		JDDNode trans01 = model.getTrans01();
-		JDDNode reach   = model.getReach();
-		JDDVars rowVars = model.getAllDDRowVars();
-		JDDVars colVars = model.getAllDDColVars();
-		return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
-	}
+//	private JDDNode computeProb0(final ProbModel model, JDDNode remain, JDDNode goal)
+//	{
+//		JDDNode trans01 = model.getTrans01();
+//		JDDNode reach   = model.getReach();
+//		JDDVars rowVars = model.getAllDDRowVars();
+//		JDDVars colVars = model.getAllDDColVars();
+//		return PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, remain, goal);
+//	}
+//
+//	private JDDNode computeProb1(final ProbModel model, JDDNode remain, JDDNode goal, JDDNode prob0)
+//	{
+//		JDDNode trans01 = model.getTrans01();
+//		JDDNode reach   = model.getReach();
+//		JDDVars rowVars = model.getAllDDRowVars();
+//		JDDVars colVars = model.getAllDDColVars();
+//		return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
+//	}
 }

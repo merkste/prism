@@ -7,11 +7,14 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 
-public abstract class MCConditionalTransformer extends ConditionalTransformer<ProbModelChecker, ProbModel>
+public abstract class MCConditionalTransformer extends NewConditionalTransformer.DTMC
 {
+	protected Prism prism;
+
 	public MCConditionalTransformer(ProbModelChecker modelChecker, Prism prism)
 	{
-		super(modelChecker, prism);
+		super(modelChecker);
+		this.prism = prism;
 	}
 
 	@Override
@@ -23,8 +26,4 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer<Pr
 		final ProbModel mc = (ProbModel) model;
 		return canHandleCondition(mc, expression) && canHandleObjective(mc, expression);
 	}
-
-	protected abstract boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression) throws PrismLangException;
-
-	protected abstract boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression) throws PrismLangException;
 }

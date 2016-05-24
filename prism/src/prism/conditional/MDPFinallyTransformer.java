@@ -33,14 +33,14 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 	}
 
 	@Override
-	protected boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression)
 	{
 		final Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
 	@Override
-	protected boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;
