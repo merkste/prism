@@ -92,4 +92,52 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 			return new FilteringIterator.OfDouble((IterableDouble) iterable, predicate);
 		}
 	}
+
+	public static IterableInt dedupe(IterableInt iterable)
+	{
+		return new IterableInt()
+		{
+			@Override
+			public PrimitiveIterator.OfInt iterator()
+			{
+				return FilteringIterator.dedupe(iterable.iterator());
+			}
+		};
+	}
+
+	public static IterableLong dedupe(IterableLong iterable)
+	{
+		return new IterableLong()
+		{
+			@Override
+			public PrimitiveIterator.OfLong iterator()
+			{
+				return FilteringIterator.dedupe(iterable.iterator());
+			}
+		};
+	}
+
+	public static IterableDouble dedupe(IterableDouble iterable)
+	{
+		return new IterableDouble()
+		{
+			@Override
+			public PrimitiveIterator.OfDouble iterator()
+			{
+				return FilteringIterator.dedupe(iterable.iterator());
+			}
+		};
+	}
+
+	public static <T> Iterable<T> dedupe(Iterable<T> iterable)
+	{
+		return new Iterable<T>()
+		{
+			@Override
+			public Iterator<T> iterator()
+			{
+				return FilteringIterator.dedupe(iterable.iterator());
+			}
+		};
+	}
 }
