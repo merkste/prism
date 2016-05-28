@@ -2,16 +2,14 @@ package prism.conditional;
 
 import jdd.JDDNode;
 import parser.ast.ExpressionConditional;
-import prism.Model;
 import prism.ModelTransformation;
 import prism.Prism;
 import prism.PrismException;
-import prism.PrismLangException;
 import prism.ProbModel;
 import prism.StateModelChecker;
-import prism.NonProbModelChecker;
 
-public abstract class ConditionalTransformer<MC extends StateModelChecker, M extends Model> implements NewConditionalTransformer<M, MC>
+@Deprecated
+public abstract class ConditionalTransformer<M extends ProbModel, MC extends StateModelChecker> implements NewConditionalTransformer<M, MC>
 {
 
 	protected Prism prism;

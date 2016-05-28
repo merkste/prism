@@ -23,8 +23,6 @@ import prism.conditional.transform.MCDeadlockTransformation;
 import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
-import jdd.JDDVars;
-import mtbdd.PrismMTBDD;
 
 public class MCUntilTransformer extends MCConditionalTransformer
 {

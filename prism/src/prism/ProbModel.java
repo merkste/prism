@@ -1077,13 +1077,18 @@ public class ProbModel implements Model
 		result.filterReachableStates();
 		result.findDeadlocks(false);
 		if (result.getDeadlockStates().size() > 0) {
+			try {
+				result.exportToFile(Prism.EXPORT_DOT, true, new java.io.File("deadlocks_sym.dot"));
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			// Assuming original model has no deadlocks, neither should the transformed model
 			throw new PrismException("Transformed model product has deadlock states");
 		}
 
 		extraDDRowVars.derefAll();
 		extraDDColVars.derefAll();
-
 		return result;
 	}
 

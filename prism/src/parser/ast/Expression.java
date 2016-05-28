@@ -627,6 +627,10 @@ public abstract class Expression extends ASTElement
 		return new ExpressionTemporal(ExpressionTemporal.P_F, null, expr);
 	}
 
+	public static ExpressionTemporal Globally(Expression expr) {
+		return new ExpressionTemporal(ExpressionTemporal.P_G, null, expr);
+	}
+
 	public static ExpressionTemporal Next(Expression expr) {
 		return new ExpressionTemporal(ExpressionTemporal.P_X, null, expr);
 	}

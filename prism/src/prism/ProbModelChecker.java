@@ -60,7 +60,6 @@ import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
 import sparse.PrismSparse;
 import dv.DoubleVector;
-import explicit.MinMax;
 import prism.conditional.ConditionalDTMCModelChecker;
 
 /*
@@ -452,18 +451,18 @@ public class ProbModelChecker extends NonProbModelChecker
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		switch (model.getModelType()) {
 		case DTMC:
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
-			    && (expression.getObjective() instanceof ExpressionProb)) {
-				prism.getLog().println("\nConverting DTMC to MDP");
-				long buildTime = System.currentTimeMillis();
-				NondetModel mdp = NondetModel.fromProbModel(model);
-				buildTime = System.currentTimeMillis() - buildTime;
-				prism.getLog().println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-				ExpressionProb objective = (ExpressionProb) expression.getObjective();
-				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
-				NondetModelChecker mc = new NondetModelChecker(prism, mdp, getPropertiesFile());
-				return mc.checkExpression(new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
-			}
+//			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+//			    && (expression.getObjective() instanceof ExpressionProb)) {
+//				prism.getLog().println("\nConverting DTMC to MDP");
+//				long buildTime = System.currentTimeMillis();
+//				NondetModel mdp = NondetModel.fromProbModel(model);
+//				buildTime = System.currentTimeMillis() - buildTime;
+//				prism.getLog().println("Time for converting: " + buildTime / 1000.0 + " seconds.");
+//				ExpressionProb objective = (ExpressionProb) expression.getObjective();
+//				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
+//				NondetModelChecker mc = new NondetModelChecker(prism, mdp, getPropertiesFile());
+//				return mc.checkExpression(new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
+//			}
 		case CTMC:
 			// treat a CTMC as DTMC
 			return new ConditionalDTMCModelChecker(this, prism).checkExpression((ProbModel) model, expression, statesOfInterest);

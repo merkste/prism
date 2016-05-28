@@ -26,6 +26,7 @@
 
 package common;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import prism.PrismLog;
@@ -95,13 +96,12 @@ public class StopWatch
 		if (log != null) {
 			if (taskDescription != null) {
 				log.print("Time for " + taskDescription + ": " + elapsedSeconds() + " seconds");
-				if (extraText == null) {
-					log.println(".");
-				} else {
-					log.print(" " + extraText + ".");
+				if (extraText != null) {
+					log.print(" " + extraText);
 				}
+				log.println(".");
 			} else if (extraText != null) {
-				log.print("Time : " + elapsedSeconds() + " seconds " + extraText + ".");
+				log.println("Time: " + elapsedSeconds() + " seconds " + extraText + ".");
 			}
 		}
 		return time;
@@ -151,7 +151,7 @@ public class StopWatch
 	 **/
 	public <T> T run(Supplier<T> task)
 	{
-		return run(task, null, null);
+		return run(task, null, (String) null);
 	}
 
 	/**
@@ -167,6 +167,22 @@ public class StopWatch
 		start(taskDescription);
 		T result = task.get();
 		stop(extraText);
+		return result;
+	}
+
+	/**
+	 * Stop the execution time of a task and return the result.
+	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
+	 * 
+	 * @param taskDescription description or {@code null}
+	 * @param resultDescription function that provides a description or {@code null} 
+	 * @return task result
+	 **/
+	public <T> T run(Supplier<T> task, String taskDescription, Function<? super T, String> resultDescription)
+	{
+		start(taskDescription);
+		T result = task.get();
+		stop(resultDescription.apply(result));
 		return result;
 	}
 }

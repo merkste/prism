@@ -18,9 +18,10 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.StateValues;
+import prism.conditional.SimplePathProperty.Until;
 import prism.PrismComponent;
 
-public interface NewConditionalTransformer<M extends Model, MC extends StateModelChecker>
+public interface NewConditionalTransformer<M extends ProbModel, MC extends StateModelChecker>
 {
 	default String getName() {
 		Class<?> type = this.getClass();
@@ -77,21 +78,9 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		return getModelChecker(model).checkExpressionDD(expression, JDD.Constant(1));
 	}
 
-	JDDNode computeProb0A(M model, JDDNode remain, JDDNode goal);
-
-	JDDNode computeProb0E(M model, JDDNode remain, JDDNode goal);
-
-	JDDNode computeProb1A(M model, JDDNode remain, JDDNode goal);
-
-	JDDNode computeProb1E(M model, JDDNode remain, JDDNode goal);
-
-	JDDNode computeUntilMaxProbs(NondetModel model, JDDNode remain, JDDNode goal, boolean negated)
-			throws PrismException;
 
 
-
-
-	public static abstract class Basic<M extends Model, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
+	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
 	{
 		protected MC modelChecker;
 //		protected LTLProductTransformer<M> ltlTransformer;
@@ -126,7 +115,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 
 	public static abstract class DTMC extends Basic<ProbModel, ProbModelChecker>
 	{
-
 		public DTMC(ProbModelChecker modelChecker)
 		{
 			super(modelChecker);
@@ -136,18 +124,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		public boolean canHandleModelType(Model model)
 		{
 			return (model.getModelType() == ModelType.DTMC) && (model instanceof ProbModel);
-		}
-
-		@Override
-		public JDDNode computeProb0A(ProbModel model, JDDNode remain, JDDNode goal)
-		{
-			return computeProb0(model, remain, goal);
-		}
-
-		@Override
-		public JDDNode computeProb0E(ProbModel model, JDDNode remain, JDDNode goal)
-		{
-			return computeProb0(model, remain, goal);
 		}
 
 		public JDDNode computeProb0(ProbModel model, JDDNode remain, JDDNode goal)
@@ -160,18 +136,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			JDDVars rowVars = model.getAllDDRowVars();
 			JDDVars colVars = model.getAllDDColVars();
 			return PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, remain, goal);
-		}
-
-		@Override
-		public JDDNode computeProb1A(ProbModel model, JDDNode remain, JDDNode goal)
-		{
-			return computeProb1(model, remain, goal);
-		}
-
-		@Override
-		public JDDNode computeProb1E(ProbModel model, JDDNode remain, JDDNode goal)
-		{
-			return computeProb1(model, remain, goal);
 		}
 
 		public JDDNode computeProb1(ProbModel model, JDDNode remain, JDDNode goal)
@@ -197,16 +161,28 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
 		}
 
-		public JDDNode computeUntilMaxProbs(NondetModel model, JDDNode remain, JDDNode goal, boolean negated)
-				throws PrismException
+		protected JDDNode computeUntilProbs(ProbModel model, Until until) throws PrismException
 		{
 			ProbModelChecker mc = getModelChecker(model);
-			StateValues probabilities = mc.checkProbUntil(remain, goal, false);
-			if (negated) {
+			StateValues probabilities = mc.checkProbUntil(until.getRemain(), until.getGoal(), false);
+			if (until.isNegated()) {
 				probabilities.subtractFromOne();
 			}
 			return probabilities.convertToStateValuesMTBDD().getJDDNode();
 		}
+
+//		protected JDDNode computeUntilProbs(ProbModel model, JDDNode remain, JDDNode goal, boolean negated) throws PrismException
+//		{
+//			if (remain == null) {
+//				remain = model.getReach();
+//			}
+//			ProbModelChecker mc = getModelChecker(model);
+//			StateValues probabilities = mc.checkProbUntil(remain, goal, false);
+//			if (negated) {
+//				probabilities.subtractFromOne();
+//			}
+//			return probabilities.convertToStateValuesMTBDD().getJDDNode();
+//		}
 	}
 
 
@@ -224,7 +200,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return (model.getModelType() == ModelType.MDP) && (model instanceof NondetModel);
 		}
 
-		@Override
 		public JDDNode computeProb0A(NondetModel model, JDDNode remain, JDDNode goal)
 		{
 			if (remain == null) {
@@ -238,7 +213,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return PrismMTBDD.Prob0A(trans01, reach, rowVars, colVars, nondetVars, remain, goal);
 		}
 
-		@Override
 		public JDDNode computeProb0E(NondetModel model, JDDNode remain, JDDNode goal)
 		{
 			if (remain == null) {
@@ -253,7 +227,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return PrismMTBDD.Prob0E(trans01, reach, nondetMask, rowVars, colVars, nondetVars, remain, goal);
 		}
 
-		@Override
 		public JDDNode computeProb1A(NondetModel model, JDDNode remain, JDDNode goal)
 		{
 			if (remain == null) {
@@ -266,24 +239,12 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			JDDVars colVars    = model.getAllDDColVars();
 			JDDVars nondetVars = model.getAllDDNondetVars();
 
-//			JDDNode no     = JDD.And(reach.copy(), JDD.Not(JDD.Or(remain.copy(), goal.copy())));
-//			// min
-//			if (min) {
-//				// no: "min prob = 0" equates to "there exists an adversary prob equals 0"
-//				no = PrismMTBDD.Prob0E(tr01, reach, nondetMask, allDDRowVars, allDDColVars, allDDNondetVars, b1, b2);
-//			}
-//			// max
-//			else {
-//				// no: "max prob = 0" equates to "for all adversaries prob equals 0"
-//				no = PrismMTBDD.Prob0A(tr01, reach, allDDRowVars, allDDColVars, allDDNondetVars, b1, b2);
-//			}
 			JDDNode no     = PrismMTBDD.Prob0E(trans01, reach, nondetMask, rowVars, colVars, nondetVars, remain, goal);
 			JDDNode prob1A = PrismMTBDD.Prob1A(trans01, reach, nondetMask, rowVars, colVars, nondetVars, no, goal);
 			JDD.Deref(no);
 			return prob1A;
 		}
 
-		@Override
 		public JDDNode computeProb1E(NondetModel model, JDDNode remain, JDDNode goal)
 		{
 			if (remain == null) {
@@ -301,22 +262,37 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return prob1E;
 		}
 
-		public JDDNode computeUntilMaxProbs(NondetModel model, JDDNode remain, JDDNode goal, boolean negated)
+		public JDDNode computeUntilMaxProbs(NondetModel model, Until until)
 				throws PrismException
 		{
-			if (remain == null) {
-				remain = model.getReach();
-			}
 			NondetModelChecker mc = getModelChecker(model);
 			StateValues probabilities;
-			if (negated) {
+			if (until.isNegated()) {
 				// Pmax(¬φ) = 1 - Pmin(φ);
-				probabilities = mc.checkProbUntil(remain, goal, false, true);
+				probabilities = mc.checkProbUntil(until.getRemain(), until.getGoal(), false, true);
 				probabilities.subtractFromOne();
 			} else {
-				probabilities = mc.checkProbUntil(remain, goal, false, false);
+				probabilities = mc.checkProbUntil(until.getRemain(), until.getGoal(), false, false);
 			}
 			return probabilities.convertToStateValuesMTBDD().getJDDNode();
 		}
+
+//		public JDDNode computeUntilMaxProbs(NondetModel model, JDDNode remain, JDDNode goal, boolean negated)
+//				throws PrismException
+//		{
+//			if (remain == null) {
+//				remain = model.getReach();
+//			}
+//			NondetModelChecker mc = getModelChecker(model);
+//			StateValues probabilities;
+//			if (negated) {
+//				// Pmax(¬φ) = 1 - Pmin(φ);
+//				probabilities = mc.checkProbUntil(remain, goal, false, true);
+//				probabilities.subtractFromOne();
+//			} else {
+//				probabilities = mc.checkProbUntil(remain, goal, false, false);
+//			}
+//			return probabilities.convertToStateValuesMTBDD().getJDDNode();
+//		}
 	}
 }

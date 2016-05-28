@@ -45,9 +45,7 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 		// FIXME ALG: reuse precomputation?
 		double[] objectiveProbs      = computeUntilProbs(model, null, objectiveGoal, false);
 		// compute normal states and enlarge set by prob1a
-		BitSet conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
-		BitSet conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
-		BitSet conditionNormalStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
+		BitSet conditionNormalStates = computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);
 		// compute Pmax(Condition)
 		double[] conditionProbs      = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
 
@@ -104,7 +102,7 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 		@Override
 		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			BitSet conditionTerminals = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			BitSet conditionTerminals = computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);
 
 			return BitSetTools.union(objectiveGoal, conditionTerminals);
 		}

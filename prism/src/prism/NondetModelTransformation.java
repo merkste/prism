@@ -66,7 +66,7 @@ public abstract class NondetModelTransformation
 		if (extraActionVars != null) {
 			extraActionVars.derefAll();
 		}
-	}	
+	}
 
 	/** Return the name for any new extra state variables */
 	public String getExtraStateVariableName() 

@@ -1,6 +1,5 @@
 package prism.conditional;
 
-import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.ExpressionConditional;
@@ -20,7 +19,7 @@ import prism.conditional.transform.NewMCResetTransformation;
 import prism.conditional.transform.NewMDPResetTransformation;
 
 // FIXME ALG: add comment
-public interface NewResetConditionalTransformer<M extends Model, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
+public interface NewResetConditionalTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
 {
 	@Override
 	default boolean canHandleObjective(M model, ExpressionConditional expression)
@@ -37,21 +36,6 @@ public interface NewResetConditionalTransformer<M extends Model, MC extends Stat
 
 	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode unsatisfiedStates, JDDNode resetStates, JDDNode statesOfInterest)
 			throws PrismException;
-
-	default JDDNode checkSatisfiability(M model, JDDNode remain, JDDNode goal, boolean negated, JDDNode statesOfInterest)
-			throws UndefinedTransformationException
-	{
-		JDDNode unsatisfiable = computeUnsatisfiable(model, remain, goal, negated);
-		if (JDD.IsContainedIn(statesOfInterest, unsatisfiable)) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
-		}
-		return unsatisfiable;
-	}
-
-	default JDDNode computeUnsatisfiable(M model, JDDNode remain, JDDNode goal, boolean negated)
-	{
-		return negated ? computeProb1A(model, remain, goal) : computeProb0A(model, remain, goal);
-	}
 
 
 
@@ -73,7 +57,7 @@ public interface NewResetConditionalTransformer<M extends Model, MC extends Stat
 		public NewMCResetTransformation transformReset(ProbModel model, JDDNode unsatisfiedStates, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMCResetTransformation(model, resetStates, statesOfInterest);
+			return new NewMCResetTransformation(model, JDD.Or(unsatisfiedStates, resetStates), statesOfInterest);
 		}
 	}
 

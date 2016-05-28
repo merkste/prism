@@ -28,15 +28,26 @@ public class NewMCResetTransformation implements ModelTransformation<ProbModel, 
 	protected ProbModel transformedModel;
 	protected MCResetOperator operator;
 
+
+
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public NewMCResetTransformation(ProbModel model, JDDNode resetStates, JDDNode statesOfInterest)
+	public NewMCResetTransformation(ProbModel model, JDDNode resetDet, JDDNode statesOfInterest)
 			throws PrismException
 	{
-		originalModel    = model;
-		operator         = new MCResetOperator(model, resetStates, statesOfInterest);
-		transformedModel = originalModel.getTransformed(operator);
+		this(model, new MCResetOperator(model, resetDet, statesOfInterest));
+	}
+
+	/**
+	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
+	 */
+	public NewMCResetTransformation(ProbModel model, MCResetOperator operator)
+			throws PrismException
+	{
+		this.originalModel    = model;
+		this.operator         = operator;
+		this.transformedModel = originalModel.getTransformed(operator);
 	}
 
 	@Override
@@ -85,7 +96,7 @@ public class NewMCResetTransformation implements ModelTransformation<ProbModel, 
 //		private PrismLog log;
 
 		/** States where a reset transition will be added */
-		private JDDNode resetStates;
+		private JDDNode resetDet;
 		/** The reset target */
 		private JDDNode resetTarget;
 
@@ -94,30 +105,26 @@ public class NewMCResetTransformation implements ModelTransformation<ProbModel, 
 
 		/** Constructor.
 		 *
-		 * <br> [ STORES: resetStates, resetTarget, derefed on later call to clear() ]
+		 * <br> [ STORES: resetDet, resetTarget, derefed on later call to clear() ]
 		 * @param model the model to be transformed
-		 * @param resetStates for these states, an additional tau action to the resetTarget is added
+		 * @param resetDet for these states, an additional tau action to the resetTarget is added
 		 * @param resetTarget the target state in the model for the reset action
 		 * @param log PrismLog for status / debug output
 		 */
 //		public MCResetOperator(ProbModel model,
-//		                                      JDDNode resetStates,
+//		                                      JDDNode resetDet,
 //		                                      JDDNode resetTarget,
 //		                                      PrismLog log) throws PrismException
 		public MCResetOperator(ProbModel model,
-		                       JDDNode resetStates,
+		                       JDDNode resetDet,
 		                       JDDNode resetTarget) throws PrismException
 		{
 			super(model);
 			checkResetTarget(model, resetTarget);
-			this.resetStates = resetStates;
+			this.resetDet = resetDet;
 			this.resetTarget = resetTarget;
 
-			if (!JDD.isSingleton(resetTarget, originalModel.getAllDDRowVars())) {
-				throw new PrismException("Reset target has to be a single state!");
-			}
-
-//			this.log = log;
+			//			this.log = log;
 		}
 
 		public static void checkResetTarget(ProbModel model, JDDNode statesOfInterest) throws PrismException
@@ -139,7 +146,7 @@ public class NewMCResetTransformation implements ModelTransformation<ProbModel, 
 			// call underlying clear
 			super.clear();
 			// clear stored JDDNodes
-			JDD.Deref(resetStates, resetTarget);
+			JDD.Deref(resetDet, resetTarget);
 		}
 
 		/** Returns a JDDNode for the reset target (column variables)
@@ -171,13 +178,13 @@ public class NewMCResetTransformation implements ModelTransformation<ProbModel, 
 
 //			if (verbose) sw.start("normal_to_normal");
 			JDDNode normal_to_normal =
-				JDD.Times(resetStates.copy(),
+				JDD.Times(JDD.Not(resetDet.copy()),
 				          originalModel.getTrans().copy());
 //			if (verbose) sw.stop("MTBDD nodes = "+JDD.GetNumNodes(normal_to_normal));
 
 //			if (verbose) sw.start("reset_to_target");
 			JDDNode reset_to_target = 
-				JDD.Times(resetStates.copy(),
+				JDD.Times(resetDet.copy(),
 				          resetTarget());
 //			if (verbose) sw.stop("MTBDD nodes = "+JDD.GetNumNodes(reset_to_target));
 
