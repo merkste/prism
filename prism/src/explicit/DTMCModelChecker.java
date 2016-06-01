@@ -45,6 +45,7 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
+import prism.PrismSettings;
 import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
@@ -53,6 +54,7 @@ import automata.LTL2WDBA;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.quantile.QuantileUtilities;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -75,31 +77,28 @@ public class DTMCModelChecker extends ProbModelChecker
 	protected StateValues checkProbPathFormulaSimple(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
+		final boolean isNegated = Expression.isNot(expr);
 		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
 
-		if (model.getModelType() == ModelType.DTMC &&
-		    (exprTemp.getBounds().hasRewardBounds() ||
-		     exprTemp.getBounds().countTimeBoundsDiscrete() > 1)) {
-			// We have a DTMC and reward bounds or multiple time / step bounds
-			// transform model and expression and recurse
-			
-			List<TemporalOperatorBound> boundsToReplace = exprTemp.getBounds().getStepBoundsForDiscreteTime();
-			if (!boundsToReplace.isEmpty()) {
-				// exempt first time bound, is handled by standard simple path formula procedure
-				boundsToReplace.remove(0);
-			}
-			boundsToReplace.addAll(exprTemp.getBounds().getRewardBounds());
-
+		final List<TemporalOperatorBound> boundsToReplace = getBoundsForReplacement(exprTemp.getBounds(), settings.getBoolean(PrismSettings.PRISM_BOUNDS_VIA_COUNTERS));
+		if (model.getModelType() == ModelType.DTMC && ! boundsToReplace.isEmpty()) {
 			ModelExpressionTransformation<DTMC, DTMC> transformed =
 			    CounterTransformation.replaceBoundsWithCounters(this, (DTMC) model, expr, boundsToReplace, statesOfInterest);
 			mainLog.println("\nPerforming actual calculations for\n");
 			mainLog.println("DTMC  "+transformed.getTransformedModel().infoString());
 			mainLog.println("Formula: "+transformed.getTransformedExpression() +"\n");
 
-			// We can now delegate to ProbModelChecker.checkProbPathFormulaSimple as there is
+			// We can now recursively invoke checkProbPathFormulaSimple as there is
 			// at most one time / step bound remaining
-			StateValues svTransformed = super.checkProbPathFormulaSimple(transformed.getTransformedModel(), transformed.getTransformedExpression(), minMax, transformed.getTransformedStatesOfInterest());
+			StateValues svTransformed = checkProbPathFormulaSimple(transformed.getTransformedModel(), transformed.getTransformedExpression(), minMax, transformed.getTransformedStatesOfInterest());
 			return transformed.projectToOriginalModel(svTransformed);
+		}
+		assert (exprTemp.getBounds().countRewardBounds() + exprTemp.getBounds().countTimeBoundsDiscrete() <= 1);
+		assert (! settings.getBoolean(PrismSettings.PRISM_BOUNDS_VIA_COUNTERS)
+				| (exprTemp.getBounds().countRewardBounds() == 0 & exprTemp.getBounds().countTimeBoundsDiscrete() == 0));
+		if (exprTemp.getBounds().countRewardBounds() > 0 ||
+				(settings.getBoolean(PrismSettings.QUANTILE_BACKEND_FOR_TIME_BOUND) && exprTemp.getBounds().countTimeBoundsDiscrete() > 0)){
+			return new QuantileUtilities(this).checkExpressionProbPathFormulaSimple(model, exprTemp, minMax, isNegated, statesOfInterest);
 		} else {
 			// We are fine, delegate to ProbModelChecker.checkProbPathFormulaSimple
 			return super.checkProbPathFormulaSimple(model, expr, minMax, statesOfInterest);

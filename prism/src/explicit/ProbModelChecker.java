@@ -27,6 +27,7 @@
 package explicit;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -48,6 +49,7 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.ModulesFile;
 import parser.ast.RewardStruct;
 import parser.ast.TemporalOperatorBound;
+import parser.ast.TemporalOperatorBounds;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -57,6 +59,7 @@ import prism.ModelType;
 import prism.OpRelOpBound;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import explicit.quantile.QuantileTransformations;
@@ -1519,5 +1522,38 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		return dist;
+	}
+
+	protected static List<TemporalOperatorBound> getBoundsForReplacement(final TemporalOperatorBounds temporalOperatorBounds, final boolean useCounterForAllBounds) throws PrismLangException
+	{
+		final List<TemporalOperatorBound> boundsToReplace = new ArrayList<>();
+		if (useCounterForAllBounds){
+			boundsToReplace.addAll(temporalOperatorBounds.getRewardBounds());
+			boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+			return boundsToReplace;
+		}
+		final int numberOfRewardBounds = temporalOperatorBounds.countRewardBounds();
+		final int numberOfTimeBounds = temporalOperatorBounds.countTimeBoundsDiscrete();
+		if (numberOfRewardBounds + numberOfTimeBounds >= 2){
+			//at least one bound needs to be replaced by counters ...
+			if (numberOfRewardBounds > 0){
+				boundsToReplace.addAll(temporalOperatorBounds.getRewardBounds());
+				//calculate very first reward bound using quantile-backend
+				boundsToReplace.remove(0);
+				//at least one reward bound ==> use quantile-backend
+				// ==> replace each time-bound using counters
+				boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+				return boundsToReplace;
+			}
+			assert (numberOfRewardBounds == 0);
+			assert (numberOfTimeBounds >= 2);
+			boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+			//one time bound can be calculated either by standard simple path formula procedure or by quantile-backend
+			boundsToReplace.remove(0);
+			return boundsToReplace;
+		}
+		assert (numberOfRewardBounds + numberOfTimeBounds <= 1);
+		//since there is at most 1 bound given, there is no need to replace any bound
+		return boundsToReplace;
 	}
 }
