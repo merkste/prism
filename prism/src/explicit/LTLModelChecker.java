@@ -628,7 +628,7 @@ public class LTLModelChecker extends PrismComponent
 	 * Find the set of states that belong to accepting BSCCs in {@code restrict} in a model wrt an acceptance condition.
 	 * @param model The model
 	 * @param acceptance The acceptance condition
-	 * @param restrict set of states to restrict to 
+	 * @param restrict set of states to restrict BSCC search to 
 	 */
 	public BitSet findAcceptingBSCCs(Model model, AcceptanceOmega acceptance , BitSet restrict) throws PrismException
 	{
@@ -688,19 +688,21 @@ public class LTLModelChecker extends PrismComponent
 	 * with regard to the acceptance condition.
 	 * @param model the model
 	 * @param acceptance the acceptance condition
-	 * @param restrict set of states to restrict to
+	 * @param restrict set of states to restrict MEC search to
 	 * @return BitSet with the set of states that are accepting
 	 */
 	public BitSet findAcceptingECStates(NondetModel model, AcceptanceOmega acceptance, BitSet restrict) throws PrismException
 	{
-		if (acceptance instanceof AcceptanceRabin) {
+		switch (acceptance.getType()) {
+		case RABIN:
 			return findAcceptingECStatesForRabin(model, (AcceptanceRabin) acceptance, restrict);
-		} else if (acceptance instanceof AcceptanceStreett) {
-			return findAcceptingECStatesForStreett(model, (AcceptanceStreett) acceptance, restrict);
-		} else if (acceptance instanceof AcceptanceGenRabin) {
+		case GENERALIZED_RABIN:
 			return findAcceptingECStatesForGeneralizedRabin(model, (AcceptanceGenRabin) acceptance, restrict);
+		case STREETT:
+			return findAcceptingECStatesForStreett(model, (AcceptanceStreett) acceptance, restrict);
+		default:
+			throw new PrismNotSupportedException("Computing end components for acceptance type '"+acceptance.getType()+"' currently not supported (explicit engine).");
 		}
-		throw new PrismNotSupportedException("Computing end components for acceptance type '"+acceptance.getType()+"' currently not supported (explicit engine).");
 	}
 
 	/**
@@ -717,7 +719,7 @@ public class LTLModelChecker extends PrismComponent
 	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Rabin acceptance condition.
 	 * @param model The model
 	 * @param acceptance The acceptance condition
-	 * @param restrict set of states to restrict to
+	 * @param restrict set of states to restrict MEC search to
 	 */
 	public BitSet findAcceptingECStatesForRabin(NondetModel model, AcceptanceRabin acceptance, BitSet restrict) throws PrismException
 	{
@@ -770,7 +772,7 @@ public class LTLModelChecker extends PrismComponent
 	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Streett acceptance condition.
 	 * @param model The model
 	 * @param acceptance The Streett acceptance condition
-	 * @param restrict set of states to restrict to
+	 * @param restrict set of states to restrict MEC search to
 	 */
 	public BitSet findAcceptingECStatesForStreett(NondetModel model, AcceptanceStreett acceptance, BitSet restrict) throws PrismException
 	{
@@ -864,7 +866,7 @@ public class LTLModelChecker extends PrismComponent
 	 * Find the set of states in accepting end components (ECs) in {@code restrict} in a nondeterministic model wrt a Generalized Rabin acceptance condition.
 	 * @param model The model
 	 * @param acceptance The acceptance condition
-	 * @param restrict set of states to restrict to
+	 * @param restrict set of states to restrict MEC search to
 	 */
 	public BitSet findAcceptingECStatesForGeneralizedRabin(NondetModel model, AcceptanceGenRabin acceptance, BitSet restrict) throws PrismException
 	{

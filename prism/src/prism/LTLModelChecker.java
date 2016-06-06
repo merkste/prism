@@ -432,22 +432,23 @@ public class LTLModelChecker extends PrismComponent
 	public LTLProduct<ProbModel> constructProductMC(ProbModelChecker mc, ProbModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException
 	{
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
-		DA<BitSet, ? extends AcceptanceOmega> da;
-		ProbModel modelProduct;
-		JDDVars daDDRowVars, daDDColVars;
+		DA<BitSet, ? extends AcceptanceOmega> da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
+		LTLProduct<ProbModel> product = constructProductMC(model, da, labelDDs, statesOfInterest);
+		mainLog.println();
+		product.getProductModel().printTransInfo(mainLog, false);
+		return product;
+	}
 
-		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+	public LTLProduct<ProbModel> constructProductMC(ProbModel model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs,
+			JDDNode statesOfInterest) throws PrismException
+	{
 		// Build product of Markov chain and automaton
 		// (note: might be a CTMC - StochModelChecker extends this class)
-		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
-		daDDRowVars = new JDDVars();
-		daDDColVars = new JDDVars();
-		modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
-		mainLog.println();
-		modelProduct.printTransInfo(mainLog, false);
-
+		JDDVars daDDRowVars = new JDDVars();
+		JDDVars daDDColVars = new JDDVars();
+		ProbModel modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
-
 		daDDColVars.derefAll();
 		for (int i = 0; i < labelDDs.size(); i++) {
 			JDD.Deref(labelDDs.get(i));
@@ -641,28 +642,28 @@ public class LTLModelChecker extends PrismComponent
 		return modelProd;
 	}
 
-	public LTLProduct<NondetModel> constructProductMDP(NondetModelChecker mc, NondetModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException {
+	public LTLProduct<NondetModel> constructProductMDP(NondetModelChecker mc, NondetModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException
+	{
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
-		DA<BitSet, ? extends AcceptanceOmega> da;
-		NondetModel modelProduct;
-		JDDVars daDDRowVars, daDDColVars;
-		long l;
-
-		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
-
-		// Build product of MDP and automaton
-		l = System.currentTimeMillis();
+		DA<BitSet, ? extends AcceptanceOmega> da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+		long l = System.currentTimeMillis();
 		mainLog.println("\nConstructing MDP-"+da.getAutomataType()+" product...");
-		daDDRowVars = new JDDVars();
-		daDDColVars = new JDDVars();
-		modelProduct = constructProductMDP(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
+		LTLProduct<NondetModel> product = constructProductMDP(model, da, labelDDs, statesOfInterest);
 		l = System.currentTimeMillis() - l;
 		mainLog.println("Time for product construction: " + l / 1000.0 + " seconds.");
 		mainLog.println();
-		modelProduct.printTransInfo(mainLog, false);
+		product.getProductModel().printTransInfo(mainLog, false);
+		return product;
+	}
 
+	public LTLProduct<NondetModel> constructProductMDP(NondetModel model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs,
+			JDDNode statesOfInterest) throws PrismException
+	{
+		// Build product of MDP and automaton
+		JDDVars daDDRowVars = new JDDVars();
+		JDDVars daDDColVars = new JDDVars();
+		NondetModel modelProduct = constructProductMDP(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
-
 		daDDColVars.derefAll();
 		for (int i = 0; i < labelDDs.size(); i++) {
 			JDD.Deref(labelDDs.get(i));
@@ -765,6 +766,18 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public JDDNode findAcceptingBSCCs(AcceptanceOmegaDD acceptance, ProbModel model) throws PrismException
 	{
+		return findAcceptingBSCCs(acceptance, model, null);
+	}
+
+	/**
+	 * Find the set of accepting BSCCs in a model wrt an omega acceptance condition.
+	 * @param acceptance the acceptance condition, with BDD based storage
+	 * @param model The model
+	 * @param restrict set of states to restrict BSCC search to
+	 * @return A referenced BDD for the union of all states in accepting BSCCs
+	 */
+	public JDDNode findAcceptingBSCCs(AcceptanceOmegaDD acceptance, ProbModel model, JDDNode restrict) throws PrismException
+	{
 		JDDNode allAcceptingStates;
 		List<JDDNode> vectBSCCs;
 
@@ -778,7 +791,8 @@ public class LTLModelChecker extends PrismComponent
 		// Go through the BSCC
 		for (JDDNode bscc : vectBSCCs) {
 			// Check for acceptance
-			if (acceptance.isBSCCAccepting(bscc)) {
+			// FIXME ALG: The filter should be applied during the SCC exploration, already.
+			if (JDD.IsContainedIn(bscc, restrict) && acceptance.isBSCCAccepting(bscc)) {
 				// This BSCC is accepting: add to allAcceptingStates
 				JDD.Ref(bscc);
 				allAcceptingStates = JDD.Or(allAcceptingStates, bscc);
@@ -801,16 +815,33 @@ public class LTLModelChecker extends PrismComponent
 	public JDDNode findAcceptingECStates(AcceptanceOmegaDD acceptance, NondetModel model, JDDVars daDDRowVars, JDDVars daDDColVars, boolean fairness)
 			throws PrismException
 	{
+		return findAcceptingECStates(acceptance, model, daDDRowVars, daDDColVars, fairness, null);
+	}
+
+	
+	/**
+	 * Find the set of states in accepting end components (ECs) in a nondeterministic model wrt an acceptance condition.
+	 * @param acceptance the acceptance condition
+	 * @param model The model
+	 * @param daDDRowVars BDD row variables for the DA part of the model
+	 * @param daDDColVars BDD column variables for the DA part of the model
+	 * @param fairness Consider fairness?
+	 * @param restrict set of states to restrict MEC search to
+	 * @return A referenced BDD for the union of all states in accepting MECs
+	 */
+	public JDDNode findAcceptingECStates(AcceptanceOmegaDD acceptance, NondetModel model, JDDVars daDDRowVars, JDDVars daDDColVars, boolean fairness, JDDNode restrict)
+			throws PrismException
+	{
 		switch (acceptance.getType()) {
 		case RABIN:
-			return findAcceptingECStatesForRabin((AcceptanceRabinDD) acceptance, model, null, null, fairness);
+			return findAcceptingECStatesForRabin((AcceptanceRabinDD) acceptance, model, null, null, fairness, restrict);
 		case GENERALIZED_RABIN:
-			return findAcceptingECStatesForGeneralizedRabin((AcceptanceGenRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness);
+			return findAcceptingECStatesForGeneralizedRabin((AcceptanceGenRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness, restrict);
 		case STREETT:
-			return findAcceptingECStatesForStreett((AcceptanceStreettDD) acceptance, model, fairness);
+			return findAcceptingECStatesForStreett((AcceptanceStreettDD) acceptance, model, fairness, restrict);
 		
 		default:
-			throw new PrismNotSupportedException("Computing the accepting EC states for "+acceptance.getTypeName()+" acceptance is not yet implemented (symbolic engine)");
+			throw new PrismNotSupportedException("Computing the accepting EC states for "+acceptance.getType().getName()+" acceptance is not yet implemented (symbolic engine)");
 		}
 	}
 
@@ -826,9 +857,27 @@ public class LTLModelChecker extends PrismComponent
 	public JDDNode findAcceptingECStatesForRabin(AcceptanceRabinDD acceptance, NondetModel model, JDDVars draDDRowVars, JDDVars draDDColVars, boolean fairness)
 			throws PrismException
 	{
-		JDDNode acceptingStates = null, allAcceptingStates, acceptanceVector_L_not, acceptanceVector_K, candidateStates;
-		int i;
+		return findAcceptingECStatesForRabin(acceptance, model, draDDRowVars, draDDColVars, fairness, null);
+	}
 
+	/**
+	 * Find the set of states in accepting end components (ECs) in a nondeterministic model wrt a Rabin acceptance condition.
+	 * <br>[ REFS: <i>result</i>, DEREFS: None ]
+	 * @param acceptance the Rabin acceptance condition
+	 * @param model The model
+	 * @param draDDRowVars BDD row variables for the DRA part of the model
+	 * @param draDDColVars BDD column variables for the DRA part of the model
+	 * @param fairness Consider fairness?
+	 * @param restrict set of states to restrict MEC search to
+	 * @return A referenced BDD for the union of all states in accepting MECs
+	 */
+	public JDDNode findAcceptingECStatesForRabin(AcceptanceRabinDD acceptance, NondetModel model, JDDVars draDDRowVars, JDDVars draDDColVars, boolean fairness, JDDNode restrict)
+			throws PrismException
+	{
+		JDDNode acceptingStates = null, allAcceptingStates, acceptanceVector_L_not, acceptanceVector_K, candidateStates;
+
+		// if restrict is null we allow all states for MEC search
+		restrict           = restrict == null ? JDD.Constant(1) : restrict.copy();
 		allAcceptingStates = JDD.Constant(0);
 
 		if (acceptance.size() > 1) {
@@ -837,12 +886,13 @@ public class LTLModelChecker extends PrismComponent
 			ArrayList<JDDNode> statesLnot = new ArrayList<JDDNode>();
 			ArrayList<JDDNode> statesK = new ArrayList<JDDNode>();
 
-			for (i = 0; i < acceptance.size(); i++) {
+			for (int i = 0; i < acceptance.size(); i++) {
 				JDDNode tmpLnot = JDD.Not(acceptance.get(i).getL());
-				JDDNode tmpK = acceptance.get(i).getK();
+				tmpLnot = JDD.And(tmpLnot, restrict.copy());
 				statesLnot.add(tmpLnot);
 				JDD.Ref(tmpLnot);
 				acceptanceVector_L_not = JDD.Or(acceptanceVector_L_not, tmpLnot);
+				JDDNode tmpK = acceptance.get(i).getK();
 				statesK.add(tmpK);
 				JDD.Ref(tmpK);
 				acceptanceVector_K = JDD.Or(acceptanceVector_K, tmpK);
@@ -865,7 +915,7 @@ public class LTLModelChecker extends PrismComponent
 			JDD.Deref(acceptanceVector_K);
 			JDD.Deref(candidateStates);
 
-			for (i = 0; i < acceptance.size(); i++) {
+			for (int i = 0; i < acceptance.size(); i++) {
 				// build the acceptance vectors L_i and K_i
 				acceptanceVector_L_not = statesLnot.get(i);
 				acceptanceVector_K = statesK.get(i);
@@ -917,9 +967,10 @@ public class LTLModelChecker extends PrismComponent
 				JDD.Deref(ec);
 		} else {
 			// Go through the DRA acceptance pairs (L_i, K_i) 
-			for (i = 0; i < acceptance.size(); i++) {
+			for (int i = 0; i < acceptance.size(); i++) {
 				// Build BDDs for !L_i and K_i
 				JDDNode statesLi_not = JDD.Not(acceptance.get(i).getL());
+				statesLi_not = JDD.And(statesLi_not, restrict.copy());
 				JDDNode statesK_i = acceptance.get(i).getK();
 				// Find states in the model for which there are no transitions leaving !L_i
 				// (this will allow us to reduce the problem to finding MECs, not ECs)
@@ -962,6 +1013,7 @@ public class LTLModelChecker extends PrismComponent
 			}
 		}
 
+		JDD.Deref(restrict);
 		return allAcceptingStates;
 	}
 
@@ -977,13 +1029,30 @@ public class LTLModelChecker extends PrismComponent
 	public JDDNode findAcceptingECStatesForGeneralizedRabin(AcceptanceGenRabinDD acceptance, NondetModel model, JDDVars draDDRowVars, JDDVars draDDColVars, boolean fairness)
 			throws PrismException
 	{
-		
+		return findAcceptingECStatesForGeneralizedRabin(acceptance, model, draDDRowVars, draDDColVars, fairness, null);
+	}
+
+	/**
+	 * Find the set of states in accepting end components (ECs) in a nondeterministic model wrt a Generalized Rabin acceptance condition.
+	 * @param acceptance the Generalized Rabin acceptance condition
+	 * @param model The model
+	 * @param draDDRowVars BDD row variables for the DRA part of the model
+	 * @param draDDColVars BDD column variables for the DRA part of the model
+	 * @param fairness Consider fairness?
+	 * @param restrict set of states to restrict MEC search to
+	 * @return A referenced BDD for the union of all states in accepting MECs
+	 */
+	public JDDNode findAcceptingECStatesForGeneralizedRabin(AcceptanceGenRabinDD acceptance, NondetModel model, JDDVars draDDRowVars, JDDVars draDDColVars, boolean fairness, JDDNode restrict)
+			throws PrismException
+	{
 		if (fairness) {
 			throw new PrismNotSupportedException("Accepting end-component computation for generalized Rabin is currently not supported with fairness");
 		}
 
 		JDDNode allAcceptingStates;
 
+		// if restrict is null we allow all states for MEC search
+		restrict           = restrict == null ? JDD.Constant(1) : restrict.copy();
 		allAcceptingStates = JDD.Constant(0);
 
 		// Go through the GR acceptance pairs (L_i, K_i_1, ..., K_i_n) 
@@ -991,11 +1060,12 @@ public class LTLModelChecker extends PrismComponent
 					
 			// Filter out L_i states from the model and find the MECs
 			JDDNode notL = JDD.Not(acceptance.get(i).getL());
+			notL = JDD.And(notL, restrict.copy());
 			JDD.Ref(model.getTrans01());
 			JDD.Ref(notL);
 			JDDNode candidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), notL);
 			notL = JDD.PermuteVariables(notL, draDDRowVars, draDDColVars);
-			candidateStates = JDD.Apply(JDD.TIMES, candidateStates,	notL);
+			candidateStates = JDD.Apply(JDD.TIMES, candidateStates, notL);
 			candidateStates = JDD.ThereExists(candidateStates, model.getAllDDColVars());
 			candidateStates = JDD.ThereExists(candidateStates, model.getAllDDNondetVars());
 			List<JDDNode> mecs = findMECStates(model, candidateStates);
@@ -1017,10 +1087,17 @@ public class LTLModelChecker extends PrismComponent
 			allAcceptingStates = JDD.Or(allAcceptingStates, acceptingStates);
 		}
 
+		JDD.Deref(restrict);
 		return allAcceptingStates;
 	}
 
 	public JDDNode findAcceptingECStatesForStreett(AcceptanceStreettDD acceptance, NondetModel model, boolean fairness)
+			throws PrismException
+	{
+		return findAcceptingECStatesForStreett(acceptance, model, fairness, null);
+	}
+
+	public JDDNode findAcceptingECStatesForStreett(AcceptanceStreettDD acceptance, NondetModel model, boolean fairness, JDDNode restrict)
 			throws PrismException
 	{
 		class ECandPairs {
@@ -1042,7 +1119,9 @@ public class LTLModelChecker extends PrismComponent
 		if (fairness) {
 			throw new PrismException("Currently, can not compute fair MECs for Streett (symbolic engine)");
 		}
-		
+
+		// if restrict is null we allow all states for MEC search
+		restrict                   = restrict == null ? JDD.Constant(1) : restrict.copy();
 		JDDNode allAcceptingStates = JDD.Constant(0);
 		BitSet allPairs = new BitSet();
 		allPairs.set(0, acceptance.size());
@@ -1051,7 +1130,7 @@ public class LTLModelChecker extends PrismComponent
 		int accepting = 0;
 		
 		Stack<ECandPairs> todo = new Stack<ECandPairs>();
-		List<JDDNode> mecs = findMECStates(model, JDD.ONE);
+		List<JDDNode> mecs = findMECStates(model, restrict);
 		for (JDDNode mec : mecs) {
 			ECandPairs ecp = new ECandPairs(mec, allPairs);
 			todo.push(ecp);
@@ -1065,7 +1144,7 @@ public class LTLModelChecker extends PrismComponent
 			steps++;
 
 			BitSet newActivePairs = (BitSet)ecp.activePairs.clone();
-			JDDNode restrict = null;
+			JDDNode restrictLocal = null;
 
 			// check for acceptance
 			boolean allAccepting = true;
@@ -1075,10 +1154,10 @@ public class LTLModelChecker extends PrismComponent
 
 				if (!acceptance.get(pair).isBSCCAccepting(ecp.ddMEC)) {
 					// this pair is not accepting
-					if (restrict == null) {
-						restrict = ecp.ddMEC.copy();
+					if (restrictLocal == null) {
+						restrictLocal = ecp.ddMEC.copy();
 					}
-					restrict = JDD.And(restrict, JDD.Not(acceptance.get(pair).getR()));
+					restrictLocal = JDD.And(restrictLocal, JDD.Not(acceptance.get(pair).getR()));
 					newActivePairs.clear(pair);
 					allAccepting = false;
 				}
@@ -1087,10 +1166,10 @@ public class LTLModelChecker extends PrismComponent
 			if (allAccepting) {
 				allAcceptingStates = JDD.Or(allAcceptingStates, ecp.ddMEC.copy());
 				accepting++;
-			} else if (restrict.equals(JDD.ZERO)) {
+			} else if (restrictLocal.equals(JDD.ZERO)) {
 				// nothing to do
 			} else {
-				mecs = findMECStates(model, restrict);
+				mecs = findMECStates(model, restrictLocal);
 				for (JDDNode mec : mecs) {
 					ECandPairs newEcp = new ECandPairs(mec, newActivePairs);
 					todo.push(newEcp);
@@ -1098,11 +1177,12 @@ public class LTLModelChecker extends PrismComponent
 			}
 			// cleanup
 			ecp.clear();
-			if (restrict != null) JDD.Deref(restrict);
+			if (restrictLocal != null) JDD.Deref(restrictLocal);
 		}
 
 		getLog().println("Tested "+steps+" potential (M)ECs, found "+accepting+" to be accepting.");
-		
+
+		JDD.Deref(restrict);
 		return allAcceptingStates;
 	}
 

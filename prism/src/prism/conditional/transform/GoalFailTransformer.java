@@ -1,20 +1,31 @@
 package prism.conditional.transform;
 
+import java.util.BitSet;
+import java.util.Vector;
 import java.util.function.Function;
 
+import acceptance.AcceptanceType;
+import common.BitSetTools;
 import common.StopWatch;
+import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
+import prism.LTLModelChecker;
+import prism.LTLModelChecker.LTLProduct;
 import prism.ModelExpressionTransformation;
+import prism.ModelExpressionTransformationNested;
+import prism.ModelTransformation;
+import prism.ModelTransformationNested;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
@@ -30,11 +41,14 @@ import prism.StateValues;
 import prism.conditional.NewConditionalTransformer;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
+import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 
 
 
-public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
+public interface GoalFailTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
 {
+	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
+
 	public static final boolean ROW    = true;
 	public static final boolean COLUMN = false;
 
@@ -62,9 +76,8 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return false;
 		}
-		// can handle simple finally formulae only
-		Expression normalized = ExpressionInspector.normalizeExpression(objective.getExpression());
-		return ExpressionInspector.isSimpleFinallyFormula(normalized);
+//		return getLtlTransformer().canHandle(model, objective.getExpression());
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression);
 	}
 
 	@Override
@@ -73,12 +86,47 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 	{
 		checkCanHandle(model, expression);
 
-		// 1) Objective: compute simple path property
+		// 1) Objective: build omega automaton
 		Expression objectiveExpr = ((ExpressionProb) expression.getObjective()).getExpression();
-		Finally objectivePath    = new Finally(objectiveExpr, getModelChecker(), true);
+		LabeledDA objectiveDA    = getLtlTransformer().constructDA(model, objectiveExpr, ACCEPTANCE_TYPES);
 
 		// 2) Condition: compute simple path property
 		Until conditionPath      = new Until(expression.getCondition(), getModelChecker(), true);
+
+		// 1) LTL Product Transformation for Objective
+		LTLProduct<M> product = getLtlTransformer().constructProduct(model, objectiveDA, statesOfInterest);
+		// conditionPath point should be valid in product model as well
+		Until conditionPathLifted = conditionPath;
+//		Until conditionPathLifted = new Until(conditionPath.isNegated(), JDD.And(conditionPath.getRemain().copy(), model.getReach().copy()), JDD.And(conditionPath.getGoal().copy(), model.getReach().copy()));
+		JDDNode transformedStatesOfInterest = product.getTransformedStatesOfInterest();
+
+		// 2) Bad States Transformation
+		JDDNode objectiveGoal;
+		ModelExpressionTransformation<M, M> transformation;
+		switch (product.getAcceptance().getType()) {
+		case REACH:
+			M objectiveModel = product.getTransformedModel();
+			Finally objectivePath = new Finally(getLtlTransformer().findAcceptingStates(product));
+			GoalFailStopTransformer<M, MC> goalFailStopTransformer = getGoalFailStopTransformer();
+			getLog().println("\nDetected acceptance REACH for objective, delegating to " + goalFailStopTransformer.getName());
+			transformation = goalFailStopTransformer.transform(objectiveModel, objectivePath, conditionPath, transformedStatesOfInterest);
+			break;
+		case RABIN:
+		case GENERALIZED_RABIN:
+		case STREETT:
+			transformation = transform(product, conditionPath, transformedStatesOfInterest);
+			break;
+		default:
+			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
+		}
+		// 3) Compose Transformations
+		ModelTransformationNested<M, M, M> nested = new ModelTransformationNested<>(product, transformation);
+		return new ConditionalReachabilitiyTransformation<>(nested, transformation.getGoalStates());
+	}
+
+	default ModelExpressionTransformation<M, M> transform(LTLProduct<M> product, Until conditionPath, JDDNode statesOfInterest)
+	{
+		M model = product.getTransformedModel();
 
 		// check satisfiability
 		// FIXME ALG: consider whether this is actually an error here
@@ -87,22 +135,63 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		JDD.Deref(statesOfInterest);
 		JDDNode conditionMaybeUnsatisfied = computeMaybeUnsatified(model, conditionPath);
 
+
 		// compute normal-form states and probabilities for objective
 		// FIXME ALG: reuse precomputation?
-		JDDNode objectiveNormalStates = computeNormalFormStates(model, objectivePath);
-		JDDNode objectiveNormalProbs  = computeNormalFormProbs(model, objectivePath);
+		// compute ECs in succ*(terminal)
+		JDDNode restrict = PrismMTBDD.Reachability(model.getTrans01(), model.getAllDDRowVars(), model.getAllDDColVars(), conditionNormalStates);
+		if (conditionPath.isNegated()) {
+			// and in  S \ unsatisfiable
+			restrict = JDD.Or(restrict, JDD.Not(conditionUnsatisfied.copy()));
+		}
+		JDDNode objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);
+		// FIXME ALG: Do we need to enlarge the target set?
+		// objectiveGoal = computeProb1A(model, null, objectiveGoal);
+		Finally objectivePath = new Finally(objectiveGoal);
+		JDDNode objectiveNormalProbs  = computeNormalFormProbs(model, new Finally(objectiveGoal));
 		objectivePath.clear();
 
-		// compute normal-form states and probabilities for condition
+		// compute normal-form states for condition
 		// FIXME ALG: reuse precomputation?
 		JDDNode conditionNormalStates = computeNormalFormStates(model, conditionPath);
 ////>>> Debug: print conditionNormalStates
 //getLog().println("conditionNormalStates:");
 //JDD.PrintMinterms(getLog(), conditionNormalStates.copy());
 //new StateValuesMTBDD(conditionNormalStates.copy(), model).print(getLog());
-		conditionNormalStates         = JDD.And(conditionNormalStates, JDD.Not(objectiveNormalStates.copy()));
-		JDDNode conditionProbs        = computeNormalFormProbs(model, conditionPath);
 		conditionPath.clear();
+
+		// transform model and expression
+		GoalFailStopOperator<M> operator = configureOperator(model, conditionUnsatisfied, JDD.Constant(0), objectiveNormalProbs, conditionNormalStates, JDD.Constant(0));
+		return new GoalFailStopTransformation<>(model, expression, operator, conditionMaybeUnsatisfied);
+
+
+
+
+
+//		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
+//		M normalFormModel = normalFormTransformation.getTransformedModel();
+//
+//		// 3) Reset Transformation
+//		BitSet bad = computeBadStates(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
+//		// lift bad states from model to normal-form model and to deadlock model
+//		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
+//		badLifted = deadlockTransformation.mapToTransformedModel(badLifted);
+//		// do reset
+//		M deadlockModel = deadlockTransformation.getTransformedModel();
+//		BitSet transformedStatesOfInterest = deadlockTransformation.getTransformedStatesOfInterest();
+//		ModelTransformation<M, ? extends M> resetTransformation = transformReset(deadlockModel, badLifted, transformedStatesOfInterest);
+//
+//		// 4) Compose Transformations
+//		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
+//		// FIXME ALG: consider moving goal-set computation to normal-form transformer
+//		BitSet goalLifted = normalFormTransformation.mapToTransformedModel(objectiveGoal);
+//		goalLifted.set(normalFormTransformation.getGoalState());
+//		goalLifted = nested.mapToTransformedModel(goalLifted);
+//		nested = new ModelTransformationNested<>(normalFormTransformation, nested);
+//		return new ConditionalReachabilitiyTransformation<>(nested, goalLifted);
+
+
+
 
 ////>>> Debug: print conditionUnsatisfied
 //getLog().println("conditionUnsatisfied:");
@@ -112,10 +201,6 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 //getLog().println("objectiveNormalStates:");
 //JDD.PrintMinterms(getLog(), objectiveNormalStates.copy());
 //new StateValuesMTBDD(objectiveNormalStates.copy(), model).print(getLog());
-
-		// transform model and expression
-		GoalFailStopOperator<M> operator = configureOperator(model, conditionUnsatisfied, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs);
-		return new GoalFailStopTransformation<>(model, expression, operator, conditionMaybeUnsatisfied);
 	}
 
 	default JDDNode checkSatisfiability(M model, Until condition, JDDNode statesOfInterest)
@@ -139,9 +224,11 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 	GoalFailStopOperator<M> configureOperator(M model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
 			JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException;
 
+	GoalFailStopTransformer<M, MC> getGoalFailStopTransformer();
 
 
-	public class DTMC extends NewConditionalTransformer.DTMC implements GoalFailStopTransformer<ProbModel, ProbModelChecker>
+
+	public class DTMC extends NewConditionalTransformer.DTMC implements GoalFailTransformer<ProbModel, ProbModelChecker>
 	{
 		public DTMC(ProbModelChecker modelChecker)
 		{
@@ -190,11 +277,17 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		{
 			return new MCGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
 		}
+
+		@Override
+		public GoalFailStopTransformer<ProbModel, ProbModelChecker> getGoalFailStopTransformer()
+		{
+			return new GoalFailStopTransformer.DTMC(getModelChecker());
+		}
 	}
 
 
 
-	public class MDP extends NewConditionalTransformer.MDP implements GoalFailStopTransformer<NondetModel, NondetModelChecker>
+	public class MDP extends NewConditionalTransformer.MDP implements GoalFailTransformer<NondetModel, NondetModelChecker>
 	{
 		public MDP(NondetModelChecker modelChecker)
 		{
@@ -241,6 +334,12 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 				JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
 		{
 			return new MDPGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
+		}
+
+		@Override
+		public GoalFailStopTransformer<NondetModel, NondetModelChecker> getGoalFailStopTransformer()
+		{
+			return new GoalFailStopTransformer.MDP(getModelChecker());
 		}
 	}
 

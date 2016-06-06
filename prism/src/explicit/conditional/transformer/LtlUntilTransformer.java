@@ -27,7 +27,7 @@ import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformati
 // FIXME ALG: add comment
 public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTransformer<M>
 {
-	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
+	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
 
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)

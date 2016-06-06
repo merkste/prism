@@ -19,6 +19,7 @@ import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.StateValues;
 import prism.conditional.SimplePathProperty.Until;
+import prism.conditional.transform.LTLProductTransformer;
 import prism.PrismComponent;
 
 public interface NewConditionalTransformer<M extends ProbModel, MC extends StateModelChecker>
@@ -66,11 +67,11 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 	PrismLog getLog();
 
-//	LTLProductTransformer<M> getLtlTransformer();
-
 	MC getModelChecker();
 
 	MC getModelChecker(M model) throws PrismException;
+
+	LTLProductTransformer<M> getLtlTransformer() throws PrismException;
 
 	default JDDNode computeStates(M model, Expression expression)
 			throws PrismException
@@ -83,7 +84,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
 	{
 		protected MC modelChecker;
-//		protected LTLProductTransformer<M> ltlTransformer;
+		protected LTLProductTransformer<M> ltlTransformer;
 
 		public Basic(MC modelChecker) {
 			super(modelChecker);
@@ -104,13 +105,13 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return (MC) modelChecker.createModelChecker(model);
 		}
 
-//		public LTLProductTransformer<M> getLtlTransformer()
-//		{
-//			if (ltlTransformer == null) {
-//				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
-//			}
-//			return ltlTransformer;
-//		}
+		public LTLProductTransformer<M> getLtlTransformer() throws PrismException
+		{
+			if (ltlTransformer == null) {
+				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
+			}
+			return ltlTransformer;
+		}
 	}
 
 	public static abstract class DTMC extends Basic<ProbModel, ProbModelChecker>
