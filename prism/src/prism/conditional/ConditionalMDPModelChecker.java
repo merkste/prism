@@ -103,7 +103,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 	
 	private ModelExpressionTransformation<NondetModel,NondetModel> transformModel(final NewConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for " + expression);
+		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 		long timer = System.currentTimeMillis();
 		final ModelExpressionTransformation<NondetModel, NondetModel> transformation = 
 				(ModelExpressionTransformation<NondetModel, NondetModel>) transformer.transform(model, expression, statesOfInterest);
@@ -121,18 +121,27 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MDP);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
-		if (types.contains(MdpTransformerType.FinallyFinally)) {
-			if (new NewFinallyUntilTransformer.MDP(mc).canHandle(model, expression)) {
-				return new NewFinallyUntilTransformer.MDP(mc);
+		for (MdpTransformerType type : types) {
+			NewConditionalTransformer.MDP transformer;
+			switch (type) {
+			case FinallyFinally:
+				transformer = new NewFinallyUntilTransformer.MDP(mc);
+				break;
+			case LtlFinally:
+				transformer = new NewLtlUntilTransformer.MDP(mc);
+				break;
+//			case FinallyLtl:
+//				transformer = new FinallyLtlTransformer.MDP(mc);
+//				break;
+			case LtlLtl:
+//				transformer = new LtlLtlTransformer.MDP(mc);
+				transformer = new MDPLTLTransformer(mc, prism);
+				break;
+			default:
+				continue;
 			}
-//			if (new MDPFinallyTransformer(mc, prism).canHandle(model, expression)) {
-//				return new MDPFinallyTransformer(mc, prism);
-//			}
-		}
-
-		if (types.contains(MdpTransformerType.LtlLtl)) {
-			if(new MDPLTLTransformer(mc, prism).canHandle(model, expression)) {
-				return new MDPLTLTransformer(mc, prism);
+			if (transformer.canHandle(model, expression)) {
+				return transformer;
 			}
 		}
 

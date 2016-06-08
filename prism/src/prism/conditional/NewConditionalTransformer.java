@@ -79,6 +79,11 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		return getModelChecker(model).checkExpressionDD(expression, JDD.Constant(1));
 	}
 
+	default JDDNode computeSuccStar(M model, JDDNode states)
+	{
+		return PrismMTBDD.Reachability(model.getTransReln(), model.getAllDDRowVars(), model.getAllDDColVars(), states);
+	}
+
 
 
 	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>

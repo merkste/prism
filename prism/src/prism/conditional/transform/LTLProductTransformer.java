@@ -100,7 +100,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	{
 		if (acceptance.getType() == AcceptanceType.REACH) {
 			JDDNode goalStates = ((AcceptanceReachDD) acceptance).getGoalStates();
-			return (restrict == null) ? goalStates : JDD.And(goalStates.copy(), restrict.copy());
+			return (restrict == null) ? goalStates : JDD.And(goalStates, restrict.copy());
 		}
 		if (productModel instanceof NondetModel) {
 			return ltlModelChecker.findAcceptingECStates(acceptance, (NondetModel) productModel, null, null, false, restrict);

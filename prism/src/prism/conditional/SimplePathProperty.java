@@ -5,11 +5,12 @@ import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
 import parser.ast.ExpressionTemporal;
+import prism.Model;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.StateModelChecker;
 
-public abstract class SimplePathProperty
+public abstract class SimplePathProperty implements Cloneable
 {
 	protected boolean negated;
 	protected JDDNode goal;
@@ -21,10 +22,61 @@ public abstract class SimplePathProperty
 		// Empty constructor to support flexible subclass instantiation.
 	}
 
+	/**
+	 * Copy constructor that restricts the state sets to the 
+	 * @param model
+	 * @param property
+	 */
+	public SimplePathProperty(Model model, SimplePathProperty property)
+	{
+		this(property.negated, JDD.And(property.goal.copy(), model.getReach().copy()));
+	}
+
 	public SimplePathProperty(boolean negated, JDDNode goal)
 	{
 		this.negated = negated;
 		this.goal    = goal;
+	}
+
+	/**
+	 * [ REFS: <i>goal</i>, DEREFS: none ]
+	 */
+	@Override
+	public SimplePathProperty clone()
+	{
+		try {
+			SimplePathProperty clone = (SimplePathProperty) super.clone();
+			clone.goal = goal.copy();
+			return clone;
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Object#clone is expected to work for Cloneable objects.", e);
+		}
+	}
+
+	/**
+	 * Convenience method to match JDDNode's copy semantics.
+	 * Override in Subclasses to enforce type-safety!
+	 * 
+	 * @return a clone
+	 * @see #clone
+	 */
+	public SimplePathProperty copy()
+	{
+		return clone();
+	}
+
+	/**
+	 * Construct a property which state sets are subsets of a model's reachable state space.
+	 * 
+	 * @param model
+	 * @return a property in {@code model}
+	 */
+	public SimplePathProperty copy(Model model)
+	{
+		SimplePathProperty copy = this.copy();
+		copy.goal = JDD.And(copy.goal, model.getReach().copy());
+		return copy;
 	}
 
 	public JDDNode getGoal()
@@ -37,6 +89,9 @@ public abstract class SimplePathProperty
 		return negated;
 	}
 
+	/**
+	 * [ REFS: none, DEREFS: <i>goal</i> ]
+	 */
 	public void clear()
 	{
 		JDD.Deref(goal);
@@ -94,7 +149,7 @@ public abstract class SimplePathProperty
 
 	public static class Until extends SimplePathProperty
 	{
-		protected final JDDNode remain;
+		protected JDDNode remain;
 
 		public Until(Expression expression, StateModelChecker modelChecker) throws PrismException 
 		{
@@ -122,11 +177,41 @@ public abstract class SimplePathProperty
 			this.remain = remain;
 		}
 
+		/**
+		 * [ REFS: <i>remain, goal</i>, DEREFS: none ]
+		 */
+		@Override
+		public Until clone()
+		{
+			Until clone = (Until) super.clone();
+			clone.remain = remain.copy();
+			return clone;
+		}
+
+		@Override
+		public Until copy()
+		{
+			return clone();
+		}
+
+		@Override
+		public Until copy(Model model)
+		{
+			Until copy = this.copy();
+			copy.remain = JDD.And(copy.remain, model.getReach().copy());
+			copy.goal   = JDD.And(copy.goal, model.getReach().copy());
+			return copy;
+		}
+
 		public JDDNode getRemain()
 		{
 			return remain;
 		}
 
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		@Override
 		public void clear()
 		{
 			super.clear();
@@ -167,14 +252,40 @@ public abstract class SimplePathProperty
 			super(normalizeUnboundedSimpleFinallyFormula(expression, convert), modelChecker, true);
 		}
 
-		public Finally(JDDNode goal)
+		public Finally(Model model, JDDNode goal)
 		{
-			super(JDD.Constant(1), goal);
+			super(model.getReach().copy(), goal);
 		}
 
-		public Finally(boolean negated, JDDNode goal)
+		public Finally(Model model, boolean negated, JDDNode goal)
 		{
-			super(negated, JDD.Constant(1), goal);
+			this(negated, model.getReach().copy(), goal);
+		}
+
+		private Finally(boolean negated, JDDNode remain, JDDNode goal)
+		{
+			super(negated, remain, goal);
+		}
+
+		@Override
+		public Finally clone()
+		{
+			return (Finally) super.clone();
+		}
+
+		@Override
+		public Finally copy()
+		{
+			return clone();
+		}
+
+		@Override
+		public Finally copy(Model model)
+		{
+			Finally copy = this.copy();
+			copy.remain = JDD.And(copy.remain, model.getReach().copy());
+			copy.goal   = JDD.And(copy.goal, model.getReach().copy());
+			return copy;
 		}
 
 		public static Expression normalizeUnboundedSimpleFinallyFormula(Expression expression, boolean convert)
@@ -230,6 +341,26 @@ public abstract class SimplePathProperty
 		public Next(boolean negated, JDDNode goal)
 		{
 			super(negated, goal);
+		}
+
+		@Override
+		public Next clone()
+		{
+			return (Next) super.clone();
+		}
+
+		@Override
+		public Next copy()
+		{
+			return clone();
+		}
+
+		@Override
+		public Next copy(Model model)
+		{
+			Next copy = this.copy();
+			copy.goal = JDD.And(copy.goal, model.getReach().copy());
+			return copy;
 		}
 
 		public static Expression normalizeUnboundedSimpleNextFormula(Expression expression, boolean convert)

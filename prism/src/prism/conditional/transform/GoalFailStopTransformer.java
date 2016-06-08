@@ -13,8 +13,7 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
-import parser.ast.ExpressionUnaryOp;
-import prism.ModelExpressionTransformation;
+import prism.ModelTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
@@ -31,14 +30,10 @@ import prism.conditional.NewConditionalTransformer;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
 
-
-
 public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
 {
-	public static final boolean ROW    = true;
+	public static final boolean ROW = true;
 	public static final boolean COLUMN = false;
-
-
 
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
@@ -49,8 +44,7 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 	}
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
-			throws PrismLangException
+	default boolean canHandleObjective(M model, ExpressionConditional expression) throws PrismLangException
 	{
 		// can handle probabilities only
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
@@ -68,60 +62,103 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 	}
 
 	@Override
-	default GoalFailStopTransformation<M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
-			throws PrismException
+	default NormalFormTransformation<M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		checkCanHandle(model, expression);
 
 		// 1) Objective: compute simple path property
-		Expression objectiveExpr = ((ExpressionProb) expression.getObjective()).getExpression();
-		Finally objectivePath    = new Finally(objectiveExpr, getModelChecker(), true);
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		Expression objectiveTemp = objective.getExpression();
+		Finally objectivePath    = new Finally(objectiveTemp, getModelChecker(), true);
 
 		// 2) Condition: compute simple path property
-		Until conditionPath      = new Until(expression.getCondition(), getModelChecker(), true);
+		Expression conditionTemp = ExpressionInspector.normalizeExpression(expression.getCondition());
+		Until conditionPath      = new Until(conditionTemp, getModelChecker(), true);
 
+		// 3) Transform model
+		JDDNode conditionUnsatisfied                 = computeUnsatified(model, conditionPath);
+		GoalFailStopTransformation<M> transformation = transform(model, objectivePath, conditionPath, conditionUnsatisfied, statesOfInterest);
+
+		// 4) Transform expression
+		ExpressionLabel goal = new ExpressionLabel(transformation.getGoalLabel());
+		ExpressionLabel fail = new ExpressionLabel(transformation.getFailLabel());
+		ExpressionTemporal transformedObjectiveTemp = Expression.Finally(goal);
+		ExpressionProb transformedObjective = new ExpressionProb(transformedObjectiveTemp, objective.getMinMax(), objective.getRelOp().toString(),
+				objective.getBound());
+		Expression transformedCondition;
+		if (conditionPath.isNegated()) {
+			// All path violating the condition end in the fail state.
+			transformedCondition = Expression.Globally(Expression.Not(fail));
+		} else {
+			// All path satisfying the condition end in the goal or stop state.
+			ExpressionLabel stop = new ExpressionLabel(transformation.getStopLabel());
+			transformedCondition = Expression.Finally(Expression.Parenth(Expression.Or(goal, stop)));
+		}
+		//		Expression transformedCondition = Expression.Finally(Expression.Parenth(Expression.Or(new ExpressionLabel(goalLabel), new ExpressionLabel(stopLabel))));
+		//		if (conditionPath.isNegated()) {
+		//			// ¬(a U b) == (¬b U ¬(a|b)) | G(¬b)
+		//			ExpressionTemporal untilExpr = (ExpressionTemporal) ExpressionInspector.removeNegation(conditionTemp);
+		//			Expression conditionGoalExpr = untilExpr.getOperand2();
+		//			transformedCondition         = Expression.Or(transformedCondition, Expression.Globally(Expression.Parenth(ExpressionInspector.trimUnaryOperations(Expression.Not(conditionGoalExpr)))));
+		//		}
+		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
+
+		JDDNode badStates = computeMaybeUnsatified(model, conditionPath, conditionUnsatisfied);
+		badStates = JDD.And(badStates, transformation.getNormalStates());
+////>>> Debug: print unsatisfied
+//getLog().println("unsatisfied:");
+//new StateValuesMTBDD(conditionUnsatisfied.copy(), transformation.getTransformedModel()).print(getLog());
+////>>> Debug: print badStates
+//getLog().println("badStates:");
+//new StateValuesMTBDD(JDD.And(badStates.copy(), transformation.getTransformedModel().getReach().copy()), transformation.getTransformedModel()).print(getLog());
+		String badLabel   = transformation.getTransformedModel().addUniqueLabelDD("bad", badStates);
+
+		objectivePath.clear();
+		conditionPath.clear();
+		return new NormalFormTransformation<>(transformation, expression, transformedExpression, fail.getName(), badLabel);
+	}
+
+	default GoalFailStopTransformation<M> transform(M model, Until objectivePath, Until conditionPath, JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
+			throws PrismException
+	{
 		// check satisfiability
 		// FIXME ALG: consider whether this is actually an error here
 		// FIXME ALG: release resources
-		JDDNode conditionUnsatisfied      = checkSatisfiability(model, conditionPath, statesOfInterest);
+		checkSatisfiability(conditionUnsatisfied, statesOfInterest);
 		JDD.Deref(statesOfInterest);
-		JDDNode conditionMaybeUnsatisfied = computeMaybeUnsatified(model, conditionPath);
 
 		// compute normal-form states and probabilities for objective
 		// FIXME ALG: reuse precomputation?
 		JDDNode objectiveNormalStates = computeNormalFormStates(model, objectivePath);
 		JDDNode objectiveNormalProbs  = computeNormalFormProbs(model, objectivePath);
-		objectivePath.clear();
 
 		// compute normal-form states and probabilities for condition
 		// FIXME ALG: reuse precomputation?
 		JDDNode conditionNormalStates = computeNormalFormStates(model, conditionPath);
-////>>> Debug: print conditionNormalStates
-//getLog().println("conditionNormalStates:");
-//JDD.PrintMinterms(getLog(), conditionNormalStates.copy());
-//new StateValuesMTBDD(conditionNormalStates.copy(), model).print(getLog());
-		conditionNormalStates         = JDD.And(conditionNormalStates, JDD.Not(objectiveNormalStates.copy()));
-		JDDNode conditionProbs        = computeNormalFormProbs(model, conditionPath);
-		conditionPath.clear();
+		////>>> Debug: print conditionNormalStates
+		//getLog().println("conditionNormalStates:");
+		//JDD.PrintMinterms(getLog(), conditionNormalStates.copy());
+		//new StateValuesMTBDD(conditionNormalStates.copy(), model).print(getLog());
+		conditionNormalStates = JDD.And(conditionNormalStates, JDD.Not(objectiveNormalStates.copy()));
+		JDDNode conditionProbs = computeNormalFormProbs(model, conditionPath);
 
-////>>> Debug: print conditionUnsatisfied
-//getLog().println("conditionUnsatisfied:");
-//JDD.PrintMinterms(getLog(), conditionUnsatisfied.copy());
-//new StateValuesMTBDD(conditionUnsatisfied.copy(), model).print(getLog());
-////>>> Debug: print objectiveNormalStates
-//getLog().println("objectiveNormalStates:");
-//JDD.PrintMinterms(getLog(), objectiveNormalStates.copy());
-//new StateValuesMTBDD(objectiveNormalStates.copy(), model).print(getLog());
+		////>>> Debug: print conditionUnsatisfied
+		//getLog().println("conditionUnsatisfied:");
+		//JDD.PrintMinterms(getLog(), conditionUnsatisfied.copy());
+		//new StateValuesMTBDD(conditionUnsatisfied.copy(), model).print(getLog());
+		////>>> Debug: print objectiveNormalStates
+		//getLog().println("objectiveNormalStates:");
+		//JDD.PrintMinterms(getLog(), objectiveNormalStates.copy());
+		//new StateValuesMTBDD(objectiveNormalStates.copy(), model).print(getLog());
 
-		// transform model and expression
-		GoalFailStopOperator<M> operator = configureOperator(model, conditionUnsatisfied, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs);
-		return new GoalFailStopTransformation<>(model, expression, operator, conditionMaybeUnsatisfied);
+		// transform model
+		GoalFailStopOperator<M> operator = configureOperator(model, conditionUnsatisfied, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates,
+				conditionProbs);
+		return new GoalFailStopTransformation<>(model, operator);
 	}
 
-	default JDDNode checkSatisfiability(M model, Until condition, JDDNode statesOfInterest)
-			throws UndefinedTransformationException
+	default JDDNode checkSatisfiability(JDDNode conditionUnsatisfied, JDDNode statesOfInterest) throws UndefinedTransformationException
 	{
-		JDDNode conditionUnsatisfied  = computeUnsatified(model, condition);
 		if (JDD.IsContainedIn(statesOfInterest, conditionUnsatisfied)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
@@ -130,7 +167,7 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 
 	JDDNode computeUnsatified(M model, Until until);
 
-	JDDNode computeMaybeUnsatified(M model, Until until);
+	JDDNode computeMaybeUnsatified(M model, Until until, JDDNode unsatisfiedStates);
 
 	JDDNode computeNormalFormStates(M model, Until until);
 
@@ -138,8 +175,6 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 
 	GoalFailStopOperator<M> configureOperator(M model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
 			JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException;
-
-
 
 	public class DTMC extends NewConditionalTransformer.DTMC implements GoalFailStopTransformer<ProbModel, ProbModelChecker>
 	{
@@ -159,9 +194,10 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		}
 
 		@Override
-		public JDDNode computeMaybeUnsatified(ProbModel model, Until until)
+		public JDDNode computeMaybeUnsatified(ProbModel model, Until until, JDDNode unsatisfiedStates)
 		{
-			return computeUnsatified(model, until);
+			// DTMCs are purely probabilistic
+			return JDD.Constant(0);
 		}
 
 		@Override
@@ -172,10 +208,10 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			} else {
 				return computeProb1(model, until.getRemain(), until.getGoal());
 			}
-// FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
-//			JDDNode conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
-//			JDDNode conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
-//			return computeProb1(model, conditionWeakRemain, conditionWeakGoal);
+			// FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
+			//			JDDNode conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
+			//			JDDNode conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			//			return computeProb1(model, conditionWeakRemain, conditionWeakGoal);
 		}
 
 		@Override
@@ -185,14 +221,13 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		}
 
 		@Override
-		public GoalFailStopOperator<ProbModel> configureOperator(ProbModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
-				JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
+		public GoalFailStopOperator<ProbModel> configureOperator(ProbModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates,
+				JDDNode objectiveNormalProbs, JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
 		{
-			return new MCGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
+			return new MCGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied,
+					getLog());
 		}
 	}
-
-
 
 	public class MDP extends NewConditionalTransformer.MDP implements GoalFailStopTransformer<NondetModel, NondetModelChecker>
 	{
@@ -208,13 +243,15 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		}
 
 		@Override
-		public JDDNode computeMaybeUnsatified(NondetModel model, Until until)
+		public JDDNode computeMaybeUnsatified(NondetModel model, Until until, JDDNode unsatisfiedStates)
 		{
+			JDDNode maybeUnsatisfiedStates;
 			if (until.isNegated()) {
-				return computeProb1E(model, until.getRemain(), until.getGoal());
+				maybeUnsatisfiedStates = computeProb1E(model, until.getRemain(), until.getGoal());
 			} else {
-				return computeProb0E(model, until.getRemain(), until.getGoal());
+				maybeUnsatisfiedStates = computeProb0E(model, until.getRemain(), until.getGoal());
 			}
+			return JDD.And(maybeUnsatisfiedStates, JDD.Not(unsatisfiedStates.copy()));
 		}
 
 		@Override
@@ -225,10 +262,10 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			} else {
 				return computeProb1A(model, until.getRemain(), until.getGoal());
 			}
-// FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
-//			JDDNode conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
-//			JDDNode conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
-//			return computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
+			// FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
+			//			JDDNode conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
+			//			JDDNode conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			//			return computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
 		}
 
 		@Override
@@ -237,16 +274,49 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			return computeUntilMaxProbs(model, until);
 		}
 
-		public GoalFailStopOperator<NondetModel> configureOperator(NondetModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
-				JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
+		public GoalFailStopOperator<NondetModel> configureOperator(NondetModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates,
+				JDDNode objectiveNormalProbs, JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
 		{
-			return new MDPGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
+			return new MDPGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied,
+					getLog());
 		}
 	}
 
+	public class NormalFormTransformation<M extends ProbModel> extends BasicModelExpressionTransformation<M, M>
+	{
+		protected String failLabel;
+		protected String badLabel;
 
+		public NormalFormTransformation(ModelTransformation<M, M> transformation, ExpressionConditional expression, ExpressionConditional transformedExpression, String failLabel,
+				String badLabel)
+		{
+			super(transformation, expression, transformedExpression);
+			this.failLabel = failLabel;
+			this.badLabel  = badLabel;
+		}
 
-	public class GoalFailStopTransformation<M extends ProbModel> implements ModelExpressionTransformation<M, M>
+		public String getFailLabel()
+		{
+			return failLabel;
+		}
+
+		public String getBadLabel()
+		{
+			return badLabel;
+		}
+
+		public ExpressionConditional getOriginalExpression()
+		{
+			return (ExpressionConditional) originalExpression;
+		}
+
+		public ExpressionConditional getTransformedExpression()
+		{
+			return (ExpressionConditional) transformedExpression;
+		}
+}
+
+	public class GoalFailStopTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 	{
 		protected GoalFailStopOperator<M> operator;
 
@@ -255,44 +325,25 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		protected String goalLabel;
 		protected String failLabel;
 		protected String stopLabel;
-		protected JDDNode conditionMaybeUnsatisfied;
-		protected ExpressionConditional originalExpression;
-		protected ExpressionConditional transformedExpression;
-
-
+//		protected JDDNode badStates;
+//		protected ExpressionConditional originalExpression;
+//		protected ExpressionConditional transformedExpression;
 
 		/**
 		 * [ REFS: <i>...</i>, DEREFS: <i>...</i> ]
 		 */
-		public GoalFailStopTransformation(M model, ExpressionConditional expression, GoalFailStopOperator<M> operator, JDDNode conditionMaybeUnsatisfied)
-				throws PrismException
+		public GoalFailStopTransformation(M model, GoalFailStopOperator<M> operator) throws PrismException
 		{
-			this.originalModel      = model;
-			this.originalExpression = expression;
-			this.operator           = operator;
-			this.transformedModel   = operator.apply(originalModel);
-			this.conditionMaybeUnsatisfied = conditionMaybeUnsatisfied;
+			this.originalModel = model;
+//			this.originalExpression = expression;
+			this.operator = operator;
+			this.transformedModel = operator.apply(originalModel);
+//			this.badStates = badStates;
 
 			// store trap states under a unique label
 			goalLabel = transformedModel.addUniqueLabelDD("goal", operator.goal(ROW));
 			failLabel = transformedModel.addUniqueLabelDD("fail", operator.fail(ROW));
 			stopLabel = transformedModel.addUniqueLabelDD("stop", operator.stop(ROW));
-
-			Expression conditionExpr       = ExpressionInspector.normalizeExpression(expression.getCondition());
- 			boolean conditionNegated       = conditionExpr instanceof ExpressionUnaryOp;
-
-			// transform expression
-			ExpressionProb objective            = (ExpressionProb) expression.getObjective();
-			ExpressionProb transformedObjective = new ExpressionProb(Expression.Finally(new ExpressionLabel(goalLabel)), objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
-			Expression transformedCondition     = Expression.Finally(Expression.Parenth(Expression.Or(new ExpressionLabel(goalLabel), new ExpressionLabel(stopLabel))));
-			if (conditionNegated) {
-				// FIXME ALG: add (! F b) to transformed condition iff condition == !(a U b)
-				// ¬(a U b) == (¬b U ¬(a|b)) | G(¬b)
-				ExpressionTemporal untilExpr = (ExpressionTemporal) ExpressionInspector.removeNegation(conditionExpr);
-				Expression conditionGoalExpr = untilExpr.getOperand2();
-				transformedCondition         = Expression.Or(transformedCondition, Expression.Globally(Expression.Parenth(ExpressionInspector.trimUnaryOperations(Expression.Not(conditionGoalExpr)))));
-			}
-			transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
 		}
 
 		@Override
@@ -307,17 +358,17 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			return transformedModel;
 		}
 
-		@Override
-		public ExpressionConditional getOriginalExpression()
-		{
-			return originalExpression;
-		}
-
-		@Override
-		public ExpressionConditional getTransformedExpression()
-		{
-			return transformedExpression;
-		}
+		//		@Override
+		//		public ExpressionConditional getOriginalExpression()
+		//		{
+		//			return originalExpression;
+		//		}
+		//
+		//		@Override
+		//		public ExpressionConditional getTransformedExpression()
+		//		{
+		//			return transformedExpression;
+		//		}
 
 		@Override
 		public void clear()
@@ -350,10 +401,10 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			return operator.getConditionUnsatisfied();
 		}
 
-		public JDDNode getConditonMaybeUnsatisfiedStates()
-		{
-			return JDD.And(getNormalStates(), conditionMaybeUnsatisfied.copy());
-		}
+//		public JDDNode getConditonMaybeUnsatisfiedStates()
+//		{
+//			return JDD.And(getNormalStates(), badStates.copy());
+//		}
 
 		public String getGoalLabel()
 		{
@@ -380,8 +431,6 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			return operator.trap(ROW);
 		}
 	}
-
-
 
 	public interface GoalFailStopOperator<M extends ProbModel>
 	{
@@ -427,13 +476,13 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			JDDVars extraColVars = getExtraColVars();
 			// !extra(0) & !extra(1)
 			return JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
-			               JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+					JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 		}
 
 		default JDDNode trap(boolean row)
 		{
 			// !normal & !originalVar(0) & !originalVar(1) & ....
-			JDDNode result =  JDD.Not(normal(row));
+			JDDNode result = JDD.Not(normal(row));
 
 			M originalModel = getOriginalModel();
 			JDDVars vars = (row ? originalModel.getAllDDRowVars() : originalModel.getAllDDColVars());
@@ -448,8 +497,8 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			JDDVars extraRowVars = getExtraRowVars();
 			JDDVars extraColVars = getExtraColVars();
 			// extra(0) & !extra(1) & !originalVar(0) & !originalVar(1) & ....
-			JDDNode result = JDD.And(        (row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-			                         JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+			JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
+					JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 
 			return JDD.And(result, trap(row));
 		}
@@ -460,7 +509,7 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			JDDVars extraColVars = getExtraColVars();
 			// !extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
 			JDDNode result = JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
-			                                 (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
+					(row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
 			return JDD.And(result, trap(row));
 		}
@@ -471,7 +520,7 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			JDDVars extraColVars = getExtraColVars();
 			// extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
 			JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-			                         (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
+					(row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
 			return JDD.And(result, trap(row));
 		}
@@ -484,55 +533,55 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 
 			log.println("Goal/fail/stop/reset transformation:");
 
-//			if (debug)
-//				originalModel.printTransInfo(log, true);
+			//			if (debug)
+			//				originalModel.printTransInfo(log, true);
 
 			JDDNode normal_to_normal = watch.run(this::transformNormalToNormal);
-			log.println(" normal_to_normal: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_normal));
-//			if (debug) {
-//				JDD.PrintMinterms(log, originalModel.getTrans().copy(), "trans");
-//				JDD.PrintMinterms(log, normal_to_normal.copy(), "normal_to_normal");
-//			}
+			log.println(" normal_to_normal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_normal));
+			//			if (debug) {
+			//				JDD.PrintMinterms(log, originalModel.getTrans().copy(), "trans");
+			//				JDD.PrintMinterms(log, normal_to_normal.copy(), "normal_to_normal");
+			//			}
 
 			JDDNode objective_to_goal = watch.run(this::transformObjectiveToGoal);
-			log.println(" objective_to_goal: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_goal));
-//			if (debug)
-//				JDD.PrintMinterms(log, objective_to_goal.copy(), "objective_to_goal");
+			log.println(" objective_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_goal));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, objective_to_goal.copy(), "objective_to_goal");
 
 			JDDNode objective_to_fail = watch.run(this::transformObjectiveToFail);
-			log.println(" objective_to_fail: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_fail));
-//			if (debug)
-//				JDD.PrintMinterms(log, objective_to_fail.copy(), "objective_to_fail");
+			log.println(" objective_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_fail));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, objective_to_fail.copy(), "objective_to_fail");
 
 			JDDNode condition_to_goal = watch.run(this::transformConditionToGoal);
-			log.println(" condition_to_goal: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_goal));
-//			if (debug)
-//				JDD.PrintMinterms(log, condition_to_goal.copy(), "condition_to_goal");
+			log.println(" condition_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_goal));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, condition_to_goal.copy(), "condition_to_goal");
 
 			JDDNode condition_to_stop = watch.run(this::transformConditionToStop);
-			log.println(" condition_to_stop: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_stop));
-//			if (debug)
-//				JDD.PrintMinterms(log, condition_to_stop.copy(), "condition_to_stop");
+			log.println(" condition_to_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_stop));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, condition_to_stop.copy(), "condition_to_stop");
+
+			JDDNode unsatisfied_to_fail = watch.run(this::transformUnsatisfiedToFail);
+			log.println(" unsatisfied_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(unsatisfied_to_fail));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, unsatisfied_self_loop, "unsatisfied_self_loop");
 
 			JDDNode goal_self_loop = watch.run(this::transformGoalSelfLoop);
-			log.println(" goal_self_loop: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(goal_self_loop));
-//			if (debug)
-//				JDD.PrintMinterms(log, goal_self_loop.copy(), "goal_self_loop");
+			log.println(" goal_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(goal_self_loop));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, goal_self_loop.copy(), "goal_self_loop");
 
 			JDDNode fail_self_loop = watch.run(this::transformFailSelfLoop);
-			log.println(" fail_self_loop: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(fail_self_loop));
-//			if (debug)
-//				JDD.PrintMinterms(log, fail_self_loop.copy(), "fail_self_loop");
+			log.println(" fail_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(fail_self_loop));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, fail_self_loop.copy(), "fail_self_loop");
 
 			JDDNode stop_self_loop = watch.run(this::transformStopSelfLoop);
-			log.println(" stop_self_loop: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(stop_self_loop));
-//			if (debug)
-//				JDD.PrintMinterms(log, stop_self_loop, "stop_self_loop");
-
-			JDDNode unsatisfied_self_loops = watch.run(this::transformUnsatisfiedSelfLoops);
-			log.println(" unsatisfied_self_loops: "+ watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(unsatisfied_self_loops));
-//			if (debug)
-//				JDD.PrintMinterms(log, unsatisfied_self_loop, "unsatisfied_self_loop");
+			log.println(" stop_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(stop_self_loop));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, stop_self_loop, "stop_self_loop");
 
 			// plug new transitions together...
 			JDDNode newTrans;
@@ -547,10 +596,10 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			watch.start();
 			newTrans = JDD.Apply(JDD.MAX, newTrans, stop_self_loop);
 			watch.stop();
-			log.println("  |= stop_self_loop" +  watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= stop_self_loop" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, unsatisfied_self_loops);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, unsatisfied_to_fail);
 			watch.stop();
 			log.println("  |= unsatisfied_self_loops" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
@@ -579,103 +628,71 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 			watch.stop();
 			log.println("  |= normal_to_normal" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
-//			if (debug)
-//			JDD.PrintMinterms(log, newTrans.copy(), "newTrans");
+			//			if (debug)
+			//			JDD.PrintMinterms(log, newTrans.copy(), "newTrans");
 
 			return newTrans;
 		}
 
 		default JDDNode transformNormalToNormal()
 		{
-			return JDD.Times(normal(ROW),
-			                 JDD.Not(getObjectiveNormalStates()),
-			                 JDD.Not(getConditionNormalStates()),
-			                 JDD.Not(getConditionUnsatisfied()),
-			                 notTau(),
-			                 normal(COLUMN),
-			                 getOriginalModel().getTrans().copy());
+			return JDD.Times(normal(ROW), JDD.Not(getObjectiveNormalStates()), JDD.Not(getConditionNormalStates()), JDD.Not(getConditionUnsatisfied()),
+					notTau(), normal(COLUMN), getOriginalModel().getTrans().copy());
 		}
 
 		default JDDNode transformObjectiveToGoal()
 		{
-			return JDD.Times(normal(ROW),
-			                 getObjectiveNormalStates(),
-			                 tau(),
-			                 goal(COLUMN),
-			                 getConditionNormalProbs());
+			return JDD.Times(normal(ROW), getObjectiveNormalStates(), tau(), goal(COLUMN), getConditionNormalProbs());
 		}
 
 		default JDDNode transformObjectiveToFail()
 		{
 			JDDNode oneMinusConditionNormalProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getConditionNormalProbs());
-			return JDD.Times(normal(ROW),
-			                 getObjectiveNormalStates(),
-			                 tau(),
-			                 fail(COLUMN),
-			                 oneMinusConditionNormalProbs);
+			return JDD.Times(normal(ROW), getObjectiveNormalStates(), tau(), fail(COLUMN), oneMinusConditionNormalProbs);
 		}
 
 		default JDDNode transformConditionToGoal()
 		{
-			return JDD.Times(normal(ROW),
-			                 getConditionNormalStates(),
-			                 tau(),
-			                 goal(COLUMN),
-			                 getObjectiveNormalProbs());
+			return JDD.Times(normal(ROW), getConditionNormalStates(), tau(), goal(COLUMN), getObjectiveNormalProbs());
 		}
 
 		default JDDNode transformConditionToStop()
 		{
 			JDDNode oneMinusObjectiveNormalProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getObjectiveNormalProbs());
-			return JDD.Times(normal(ROW),
-			                 getConditionNormalStates(),
-			                 tau(),
-			                 stop(COLUMN),
-			                 oneMinusObjectiveNormalProbs);
+			return JDD.Times(normal(ROW), getConditionNormalStates(), tau(), stop(COLUMN), oneMinusObjectiveNormalProbs);
 		}
 
 		default JDDNode transformGoalSelfLoop()
 		{
-			return JDD.Times(goal(ROW),
-			                 tau(),
-			                 goal(COLUMN));
+			return JDD.Times(goal(ROW), tau(), goal(COLUMN));
 		}
 
 		default JDDNode transformFailSelfLoop()
 		{
-			return JDD.Times(fail(ROW),
-			                 tau(),
-			                 fail(COLUMN));
+			return JDD.Times(fail(ROW), tau(), fail(COLUMN));
 		}
 
 		default JDDNode transformStopSelfLoop()
 		{
-			return JDD.Times(stop(ROW),
-			                 tau(),
-			                 stop(COLUMN));
+			return JDD.Times(stop(ROW), tau(), stop(COLUMN));
 		}
 
-		default JDDNode transformUnsatisfiedSelfLoops()
+		default JDDNode transformUnsatisfiedToFail()
 		{
-			return JDD.Times(getConditionUnsatisfied(),
-			                 JDD.Not(getObjectiveNormalStates()), // do not deadlock normal-form states
-			                 tau(),
-			                 normal(COLUMN),
-			                 JDD.Identity(getOriginalModel().getAllDDRowVars(), getOriginalModel().getAllDDColVars()));
+			return JDD.Times(normal(ROW), getConditionUnsatisfied(), JDD.Not(getObjectiveNormalStates()), // do not deadlock normal-form states
+					tau(), fail(COLUMN));
 		}
 
 		default JDDNode getTransformedStart() throws PrismException
 		{
 			// FIXME ALG: use states of interest as start function
 			JDDNode start = JDD.And(normal(ROW), getOriginalModel().getStart().copy());
-//			if (debug)
-//				JDD.PrintMinterms(log, start.copy(), "start");
+			//			if (debug)
+			//				JDD.PrintMinterms(log, start.copy(), "start");
 			return start;
-//			return getOriginalModel().getReach().copy();
+			//			return getOriginalModel().getReach().copy();
 		}
 	}
-
-
 
 	public static class MDPGoalFailStopOperator extends NondetModelTransformation implements GoalFailStopOperator<NondetModel>
 	{
@@ -687,24 +704,16 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		protected JDDNode conditionNormalProbs;
 		protected JDDNode conditionUnsatisfied;
 
-
-
 		/**
 		 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionNormalProbs, and conditionUnsatisfied</i> ]
 		 */
-		public MDPGoalFailStopOperator(NondetModel model,
-		                               JDDNode objectiveNormalStates,
-		                               JDDNode objectiveNormalProbs,
-		                               JDDNode conditionNormalStates,
-		                               JDDNode conditionNormalProbs,
-		                               JDDNode conditionUnsatisfied,
-		                               PrismLog log
-		                              ) throws PrismException
+		public MDPGoalFailStopOperator(NondetModel model, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs, JDDNode conditionNormalStates,
+				JDDNode conditionNormalProbs, JDDNode conditionUnsatisfied, PrismLog log) throws PrismException
 		{
 			super(model);
 			this.log = log;
 
-			assert (! JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
+			assert (!JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
 
 			this.objectiveNormalStates = objectiveNormalStates;
 			this.objectiveNormalProbs  = objectiveNormalProbs;
@@ -822,8 +831,6 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		}
 	}
 
-
-
 	public static class MCGoalFailStopOperator extends ProbModelTransformation implements GoalFailStopOperator<ProbModel>
 	{
 		protected PrismLog log;
@@ -834,24 +841,16 @@ public interface GoalFailStopTransformer<M extends ProbModel, MC extends StateMo
 		protected JDDNode conditionNormalProbs;
 		protected JDDNode conditionUnsatisfied;
 
-
-
 		/**
 		 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, and conditionNormalProbs</i> ]
 		 */
-		public MCGoalFailStopOperator(ProbModel model,
-		                               JDDNode objectiveNormalStates,
-		                               JDDNode objectiveNormalProbs,
-		                               JDDNode conditionNormalStates,
-		                               JDDNode conditionNormalProbs,
-		                               JDDNode conditionUnsatisfied,
-		                               PrismLog log
-		                              ) throws PrismException
+		public MCGoalFailStopOperator(ProbModel model, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs, JDDNode conditionNormalStates,
+				JDDNode conditionNormalProbs, JDDNode conditionUnsatisfied, PrismLog log) throws PrismException
 		{
 			super(model);
 			this.log = log;
 
-			assert (! JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
+			assert (!JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
 
 			this.objectiveNormalStates = objectiveNormalStates;
 			this.objectiveNormalProbs  = objectiveNormalProbs;

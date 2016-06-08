@@ -778,6 +778,9 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public JDDNode findAcceptingBSCCs(AcceptanceOmegaDD acceptance, ProbModel model, JDDNode restrict) throws PrismException
 	{
+		// if restrict is null we allow all states for MEC search
+		restrict           = restrict == null ? JDD.Constant(1) : restrict.copy();
+
 		JDDNode allAcceptingStates;
 		List<JDDNode> vectBSCCs;
 
@@ -800,6 +803,7 @@ public class LTLModelChecker extends PrismComponent
 			JDD.Deref(bscc);
 		}
 
+		JDD.Deref(restrict);
 		return allAcceptingStates;
 	}
 

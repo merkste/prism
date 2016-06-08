@@ -1,6 +1,5 @@
 package prism.conditional;
 
-import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -34,7 +33,7 @@ public interface NewResetConditionalTransformer<M extends ProbModel, MC extends 
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}
 
-	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode unsatisfiedStates, JDDNode resetStates, JDDNode statesOfInterest)
+	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 			throws PrismException;
 
 
@@ -54,10 +53,10 @@ public interface NewResetConditionalTransformer<M extends ProbModel, MC extends 
 		}
 
 		@Override
-		public NewMCResetTransformation transformReset(ProbModel model, JDDNode unsatisfiedStates, JDDNode resetStates, JDDNode statesOfInterest)
+		public NewMCResetTransformation transformReset(ProbModel model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMCResetTransformation(model, JDD.Or(unsatisfiedStates, resetStates), statesOfInterest);
+			return new NewMCResetTransformation(model, resetStates, statesOfInterest);
 		}
 	}
 
@@ -77,10 +76,10 @@ public interface NewResetConditionalTransformer<M extends ProbModel, MC extends 
 		}
 
 		@Override
-		public ModelTransformation<NondetModel, ? extends NondetModel> transformReset(NondetModel model, JDDNode unsatisfiedStates, JDDNode resetStates, JDDNode statesOfInterest)
+		public ModelTransformation<NondetModel, ? extends NondetModel> transformReset(NondetModel model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMDPResetTransformation(model, unsatisfiedStates, resetStates, statesOfInterest);
+			return new NewMDPResetTransformation(model, resetStates, statesOfInterest);
 		}
 	}
 }

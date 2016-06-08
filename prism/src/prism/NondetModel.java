@@ -664,6 +664,7 @@ public class NondetModel extends ProbModel
 		result.findDeadlocks(false);
 		if (result.getDeadlockStates().size() > 0) {
 			// Assuming original model has no deadlocks, neither should the transformed model
+			System.out.println(result.infoString());
 			throw new PrismException("Transformed model product has deadlock states");
 		}
 
