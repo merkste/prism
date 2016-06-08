@@ -95,12 +95,16 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		return findAcceptingStates(product.getProductModel(), product.getAcceptance(), restrict);
 	}
 
-	protected JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance, final JDDNode restrict)
+	protected JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance, JDDNode restrict)
 			throws PrismException
 	{
 		if (acceptance.getType() == AcceptanceType.REACH) {
-			JDDNode goalStates = ((AcceptanceReachDD) acceptance).getGoalStates();
-			return (restrict == null) ? goalStates : JDD.And(goalStates, restrict.copy());
+			// if restrict is null we allow all reachable states for MEC search
+			JDDNode goalStates      = ((AcceptanceReachDD) acceptance).getGoalStates();
+			restrict                = restrict == null ? productModel.getReach().copy() : restrict.copy();
+			JDDNode acceptingStates = JDD.And(goalStates, restrict.copy());
+			JDD.Deref(restrict);
+			return acceptingStates;
 		}
 		if (productModel instanceof NondetModel) {
 			return ltlModelChecker.findAcceptingECStates(acceptance, (NondetModel) productModel, null, null, false, restrict);

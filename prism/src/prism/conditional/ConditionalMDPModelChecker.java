@@ -130,9 +130,9 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			case LtlFinally:
 				transformer = new NewLtlUntilTransformer.MDP(mc);
 				break;
-//			case FinallyLtl:
-//				transformer = new FinallyLtlTransformer.MDP(mc);
-//				break;
+			case FinallyLtl:
+				transformer = new NewFinallyLtlTransformer.MDP(mc);
+				break;
 			case LtlLtl:
 //				transformer = new LtlLtlTransformer.MDP(mc);
 				transformer = new MDPLTLTransformer(mc, prism);
