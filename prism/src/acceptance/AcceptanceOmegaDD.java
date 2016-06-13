@@ -27,11 +27,12 @@
 package acceptance;
 
 import jdd.JDDNode;
+import prism.PrismException;
 
 /**
  * Generic interface for an omega-regular acceptance condition (BDD-based).
  */
-public interface AcceptanceOmegaDD
+public interface AcceptanceOmegaDD extends Cloneable
 {
 	/** Returns true if the bottom strongly connected component (BSSC)
 	 *  given by bscc_states is accepting for this acceptance condition.
@@ -54,6 +55,19 @@ public interface AcceptanceOmegaDD
 
 	/** Returns the AcceptanceType of this acceptance condition */
 	public AcceptanceType getType();
+
+	public AcceptanceOmegaDD clone();
+
+	/**
+	 * Complement the acceptance condition if possible.
+	 * @param allowedAcceptance the allowed acceptance types that may be used for complementing
+	 */
+	public AcceptanceOmegaDD complement(AcceptanceType... allowedAcceptance) throws PrismException;
+
+	/**
+	 * Convert this acceptance condition to an AcceptanceGeneric condition.
+	 */
+	public AcceptanceGenericDD toAcceptanceGeneric();
 
 	/** Returns the type of this acceptance condition as a String,
 	 * i.e., "R" for Rabin

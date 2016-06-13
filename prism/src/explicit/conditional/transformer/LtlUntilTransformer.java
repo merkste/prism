@@ -115,13 +115,16 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: consider moving objective-goal-computation to normal-form transformer
 		BitSet conditionNormalStates = normalFormTransformer.computeNormalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
-		// compute ECs in succ*(terminal)
+		// compute ECs in succ*(terminal) ...
 		BitSet restrict = new ReachabilityComputer(objectiveModel).computeSuccStar(conditionNormalStates);
 		if (conditionNegated) {
-			// and in  S \ unsatisfiable
+			// ... and in  S \ unsatisfiable
 			restrict.or(BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable));
 		}
 		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);
+getLog().println("restrict =" + restrict);
+getLog().println("goal     =" + objectiveGoal);
+objectiveModel.exportToDotFile("product.dot", objectiveGoal);
 		// enlarge target set
 		objectiveGoal = computeProb1A(objectiveModel, null, objectiveGoal);
 		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
@@ -130,8 +133,10 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		// 2) Deadlock hopeless states
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
+normalFormModel.exportToDotFile("normal.dot", unsatisfiableLifted);
 
 		// 3) Reset Transformation
+// FIXME ALG: do not reset from normal-form states
 		BitSet bad = computeBadStates(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 		// lift bad states from model to normal-form model and to deadlock model
 		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
@@ -156,7 +161,6 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		if (negated) {
 			// bad states == {s | Pmax=1[<> Condition]}
 			final BitSet badStates = computeProb1E(model, conditionRemain, conditionGoal);
-			badStates.andNot(objectiveGoal); // optionally, reduce number of choices
 			return badStates;
 		} else {
 			// bad states == {s | Pmin=0[<> Condition]}

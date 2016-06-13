@@ -16,13 +16,13 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.conditional.transform.BasicModelExpressionTransformation;
-import prism.conditional.transform.GoalFailStopTransformer;
+import prism.conditional.transform.FailStopTransformer;
 import prism.conditional.transform.GoalFailStopTransformer.NormalFormTransformation;
 
 
 
 // FIXME ALG: add comment
-public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewResetConditionalTransformer<M, MC>
+public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewResetConditionalTransformer<M, MC>
 {
 	default boolean canHandle(Model model, ExpressionConditional expression)
 			throws PrismLangException
@@ -58,7 +58,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 //}
 
 		// 1) Normal-Form Transformation
-		GoalFailStopTransformer<M, MC> transformer           = getNormalFormTransformer();
+		FailStopTransformer<M, MC> transformer               = getNormalFormTransformer();
 		NormalFormTransformation<M> normalFormTransformation = transformer.transform(model, expression, statesOfInterest);
 		M normalFormModel                                    = normalFormTransformation.getTransformedModel();
 		getLog().println("Normal-form transformation: " + normalFormTransformation.getTransformedExpression());
@@ -122,12 +122,12 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		return JDD.Or(badStates.copy(), failState.copy());
 	}
 
-	GoalFailStopTransformer<M, MC> getNormalFormTransformer();
+	FailStopTransformer<M, MC> getNormalFormTransformer();
 
 
 
 
-	public static class DTMC extends NewResetConditionalTransformer.DTMC implements NewFinallyUntilTransformer<ProbModel, ProbModelChecker>
+	public static class DTMC extends NewResetConditionalTransformer.DTMC implements NewLtlLtlTransformer<ProbModel, ProbModelChecker>
 	{
 		public DTMC(ProbModelChecker modelChecker)
 		{
@@ -135,15 +135,15 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		}
 
 		@Override
-		public GoalFailStopTransformer.DTMC getNormalFormTransformer()
+		public FailStopTransformer.DTMC getNormalFormTransformer()
 		{
-			return new GoalFailStopTransformer.DTMC(modelChecker);
+			return new FailStopTransformer.DTMC(modelChecker);
 		}
 	}
 
 
 
-	public static class MDP extends NewResetConditionalTransformer.MDP implements NewFinallyUntilTransformer<NondetModel, NondetModelChecker>
+	public static class MDP extends NewResetConditionalTransformer.MDP implements NewLtlLtlTransformer<NondetModel, NondetModelChecker>
 	{
 		public MDP(NondetModelChecker modelChecker)
 		{
@@ -151,9 +151,9 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		}
 
 		@Override
-		public GoalFailStopTransformer.MDP getNormalFormTransformer()
+		public FailStopTransformer.MDP getNormalFormTransformer()
 		{
-			return new GoalFailStopTransformer.MDP(modelChecker);
+			return new FailStopTransformer.MDP(modelChecker);
 		}
 	}
 }

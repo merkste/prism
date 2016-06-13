@@ -1,6 +1,9 @@
 package prism.conditional.transform;
 
+
+import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
+import explicit.MinMax;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
@@ -9,28 +12,23 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
-import parser.ast.ExpressionTemporal;
 import prism.LTLModelChecker;
 import prism.LTLModelChecker.LTLProduct;
-import prism.ModelTransformationNested;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.OpRelOpBound;
+import prism.Pair;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
-import prism.StateValuesMTBDD;
 import prism.conditional.NewConditionalTransformer;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
-import prism.conditional.transform.GoalFailStopTransformer.GoalFailStopOperator;
-import prism.conditional.transform.GoalFailStopTransformer.GoalFailStopTransformation;
-import prism.conditional.transform.GoalFailStopTransformer.MCGoalFailStopOperator;
-import prism.conditional.transform.GoalFailStopTransformer.MDPGoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformer.NormalFormTransformation;
 import prism.conditional.transform.LTLProductTransformer.LabeledDA;
+import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 
 
 
@@ -74,109 +72,121 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 	{
 		checkCanHandle(model, expression);
 
-		// 1) Objective: build omega automaton
+		// 1) Objective: compute simple path property
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		Expression objectiveTemp = objective.getExpression();
-		Finally objectivePath      = new Finally(objectiveTemp, getModelChecker(), true);
+		Expression objectiveTmp = objective.getExpression();
+		Finally objectivePath      = new Finally(objectiveTmp, getModelChecker(), true);
 
-		// 2) Condition: compute simple path property
+		// 2) Condition: build omega automaton
 		Expression conditionTmp = expression.getCondition();
 		LabeledDA conditionDA = getLtlTransformer().constructDA(model, conditionTmp, ACCEPTANCE_TYPES);
 
-		// compute normal-form states for objective
-		// FIXME ALG: reuse precomputation?
+		// 3) Transform Model
+		Pair<GoalFailStopTransformation<M>,ExpressionConditional> result = transform(model, objectivePath, conditionDA, statesOfInterest);
+		GoalFailStopTransformation<M> transformation = result.first;
+		ExpressionConditional transformedExpression  = result.second;
 
-		// 1) LTL Product Transformation for Objective
+		// 4) Inherit bounds
+		ExpressionProb transformedObjective        = (ExpressionProb) transformedExpression.getObjective();
+		ExpressionProb transformedObjectiveBounded = new ExpressionProb(transformedObjective.getExpression(), objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
+		ExpressionConditional transformedExpressionBounded = new ExpressionConditional(transformedObjectiveBounded, transformedExpression.getCondition());
+
+//		// transform expression
+//		ExpressionLabel goal                = new ExpressionLabel(transformation.getGoalLabel());
+//		ExpressionLabel fail                = new ExpressionLabel(transformation.getFailLabel());
+//		Expression transformedObjectiveTmp  = Expression.Finally(goal);
+////		if (conditionDA.getAutomaton().getAcceptance().getType() != AcceptanceType.REACH && conditionPathProduct.isNegated()) {
+////			transformedObjectiveTemp        = Expression.Or(transformedObjectiveTemp, Expression.Finally(new ExpressionLabel(acceptLabel)));
+////		}
+//		ExpressionProb transformedObjective = new ExpressionProb(transformedObjectiveTmp, objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
+//		// All satisfying the condition end up in goal or an accepting EC.
+//		Expression transformedCondition     = Expression.Or(Expression.Finally(goal), conditionTmp);
+//		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
+
+		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded, transformation.getFailLabel(), transformation.getBadLabel());
+	}
+
+	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transform(M model, Finally objectivePath, LabeledDA conditionDA, JDDNode statesOfInterest)
+			throws PrismException
+	{
+		// 1) LTL Product Transformation for Condition
 		LTLProduct<M> product = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 		M productModel        = product.getTransformedModel();
 
 		// Lift state sets to product model
 		Finally objectivePathProduct = objectivePath.copy(productModel);
 		objectivePath.clear();
-		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
 
 		JDDNode acceptStates = getLtlTransformer().findAcceptingStates(product);
-
-//new StateValuesMTBDD(acceptStates, productModel).print(getLog());
-
-		String acceptLabel   = productModel.addUniqueLabelDD("accept", acceptStates.copy());
+//		String acceptLabel   = productModel.addUniqueLabelDD("accept", acceptStates.copy());
 		Finally conditionPathProduct = new Finally(productModel, acceptStates);
-		// compute unsatisfied states
-		JDDNode conditionUnsatisfiedProduct = computeUnsatified(productModel, conditionPathProduct);
-		checkSatisfiability(conditionUnsatisfiedProduct, statesOfInterestProduct);
 
+		// compute unsatisfied states
+//		checkSatisfiability(conditionUnsatisfiedProduct, statesOfInterestProduct);
+
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result;
 		// 2) Normal-Form Transformation
-		GoalFailStopTransformation<M> transformation;
 		switch (product.getAcceptance().getType()) {
 		case REACH:
 			GoalFailStopTransformer<M, MC> goalFailStopTransformer = getGoalFailStopTransformer();
 			getLog().println("\nDetected acceptance REACH for objective, delegating to " + goalFailStopTransformer.getName());
-			transformation = goalFailStopTransformer.transform(productModel, objectivePathProduct, conditionPathProduct, conditionUnsatisfiedProduct, statesOfInterestProduct);
+			JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
+			result = goalFailStopTransformer.transform(productModel, objectivePathProduct, conditionPathProduct, statesOfInterestProduct);
 			break;
 		case RABIN:
 		case GENERALIZED_RABIN:
 		case STREETT:
-			transformation = transform(productModel, objectivePathProduct, conditionPathProduct, conditionUnsatisfiedProduct, statesOfInterestProduct);
+			result = transform(product, objectivePathProduct, conditionPathProduct);
 			break;
 		default:
 			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
 		}
-		objectivePathProduct.clear();
 
 		// 3) Compose Transformations
-		ModelTransformationNested<M, M, M> nested = new ModelTransformationNested<>(product, transformation);
-
-		// transform expression
-		ExpressionLabel goal = new ExpressionLabel(transformation.getGoalLabel());
-		ExpressionLabel fail = new ExpressionLabel(transformation.getFailLabel());
-		Expression transformedObjectiveTemp = Expression.Finally(goal);
-		if (product.getAcceptance().getType() != AcceptanceType.REACH && conditionPathProduct.isNegated()) {
-			transformedObjectiveTemp        = Expression.Or(transformedObjectiveTemp, Expression.Finally(new ExpressionLabel(acceptLabel)));
-		}
-		ExpressionProb transformedObjective = new ExpressionProb(transformedObjectiveTemp, objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
-		ExpressionTemporal transformedCondition;
-		if (conditionPathProduct.isNegated()) {
-			// All path violating the condition end in the fail state.
-			transformedCondition      = Expression.Globally(Expression.Not(fail));
-		} else {
-			// All path satisfying the condition end in the goal or stop state.
-			ExpressionLabel stopLabel = new ExpressionLabel(transformation.getStopLabel());
-			transformedCondition      = Expression.Finally(Expression.Parenth(Expression.Or(goal, stopLabel)));
-		}
-		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
-
-		JDDNode badStates = computeMaybeUnsatified(productModel, conditionPathProduct, conditionUnsatisfiedProduct);
-		badStates         = JDD.And(badStates, transformation.getNormalStates());
-		String badLabel   = transformation.getTransformedModel().addUniqueLabelDD("bad", badStates);
-
-		conditionPathProduct.clear();
-		return new NormalFormTransformation<>(nested, expression, transformedExpression, fail.getName(), badLabel);
+		GoalFailStopTransformation<M> transformation = result.first.compose(product);
+		return new Pair<>(transformation, result.second);
 	}
 
-	default GoalFailStopTransformation<M> transform(M model, Finally objectivePath, Finally conditionPath, JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
+	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transform(LTLProduct<M> product, Finally objectivePath, Finally conditionPath)
 			throws UndefinedTransformationException, PrismException
 	{
+		M productModel               = product.getProductModel();
+		JDDNode conditionUnsatisfied = computeUnsatified(productModel, conditionPath);
+
+		// FIXME ALG: consider whether this is actually an error in a normal-form transformation
+		JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
 		checkSatisfiability(conditionUnsatisfied, statesOfInterest);
 		JDD.Deref(statesOfInterest);
 
-////>>> Debug: print conditionUnsatisfied
-//getLog().println("conditionUnsatisfied:");
-//JDD.PrintMinterms(getLog(), conditionUnsatisfied.copy());
-//new StateValuesMTBDD(conditionUnsatisfied.copy(), model).print(getLog());
-////>>> Debug: print conditionUnsatisfied
-//getLog().println("badStates:");
-//JDD.PrintMinterms(getLog(), conditionUnsatisfied.copy());
-//new StateValuesMTBDD(badStates.copy(), model).print(getLog());
 
 		// compute normal-form states for objective
-		JDDNode objectiveNormalStates = computeNormalFormStates(model, objectivePath);
+		JDDNode objectiveNormalStates = computeNormalFormStates(productModel, objectivePath);
 
 		// compute probabilities for condition
-		JDDNode conditionNormalProbs  = computeNormalFormProbs(model, conditionPath);
+		JDDNode conditionNormalProbs  = computeNormalFormProbs(productModel, conditionPath);
+
+		// configure transformation operator
+		GoalFailStopOperator<M> operator = configureOperator(productModel, conditionUnsatisfied, objectiveNormalStates, JDD.Constant(0), JDD.Constant(0), conditionNormalProbs);
+
+		// compute bad states
+		JDDNode badStates = computeMaybeUnsatified(product, conditionUnsatisfied);
 
 		// transform model
-		GoalFailStopOperator<M> operator = configureOperator(model, conditionUnsatisfied, objectiveNormalStates, JDD.Constant(0), JDD.Constant(0), conditionNormalProbs);
-		return new GoalFailStopTransformation<>(model, operator);
+		GoalFailStopTransformation<M> transformation = new GoalFailStopTransformation<>(productModel, operator, badStates);
+
+		// build expression
+		ExpressionLabel goal                = new ExpressionLabel(transformation.getGoalLabel());
+		Expression transformedObjectiveTmp  = Expression.Finally(goal);
+		ExpressionProb transformedObjective = new ExpressionProb(transformedObjectiveTmp, MinMax.max(), "=", null);
+		// All paths satisfying the condition eventually reach goal or an accepting EC.
+		// The label accept_condition is an artificial and stands for the automaton's acceptance condition.
+		Expression transformedCondition     = Expression.Or(Expression.Finally(goal), new ExpressionLabel("accept_condition"));
+		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
+
+		objectivePath.clear();
+		conditionPath.clear();
+		return new Pair<>(transformation, transformedExpression);
+
 	}
 
 	default JDDNode checkSatisfiability(JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
@@ -190,7 +200,7 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 
 	JDDNode computeUnsatified(M model, Until until);
 
-	JDDNode computeMaybeUnsatified(M model, Until until, JDDNode unsatisfiedStates);
+	JDDNode computeMaybeUnsatified(LTLProduct<M> product, JDDNode unsatisfiedStates) throws PrismException;
 
 	JDDNode computeNormalFormStates(M model, Until until);
 
@@ -221,7 +231,7 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		}
 
 		@Override
-		public JDDNode computeMaybeUnsatified(ProbModel model, Until until, JDDNode unsatisfiedStates)
+		public JDDNode computeMaybeUnsatified(LTLProduct<ProbModel> product, JDDNode unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
 			return JDD.Constant(0);
@@ -251,7 +261,7 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		public GoalFailStopOperator<ProbModel> configureOperator(ProbModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
 				JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
 		{
-			return new MCGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
+			return new GoalFailStopOperator.DTMC(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
 		}
 
 		@Override
@@ -277,14 +287,20 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		}
 
 		@Override
-		public JDDNode computeMaybeUnsatified(NondetModel model, Until until, JDDNode unsatisfiedStates)
+		public JDDNode computeMaybeUnsatified(LTLProduct<NondetModel> product, JDDNode unsatisfiedStates) throws PrismException
 		{
-			JDDNode maybeUnsatisfiedStates;
-			if (until.isNegated()) {
-				maybeUnsatisfiedStates = computeProb1E(model, until.getRemain(), until.getGoal());
-			} else {
-				maybeUnsatisfiedStates = computeProb0E(model, until.getRemain(), until.getGoal());
-			}
+			// bad states == {s | Pmin=0[<> Condition]}
+			NondetModel productModel                        = product.getProductModel();
+			AcceptanceOmegaDD conditionAcceptance           = product.getAcceptance();
+			AcceptanceOmegaDD conditionAcceptanceComplement = conditionAcceptance.complement(ACCEPTANCE_TYPES);
+			JDDNode maybeUnsatisfiedStates                  = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptanceComplement);
+			conditionAcceptanceComplement.clear();
+//			// reduce number of choices, i.e.
+//			// - reset only from r-states of streett acceptance
+//			if (conditionAcceptance instanceof AcceptanceStreett) {
+//				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
+//				bad.and(rStates);
+//			}
 			return JDD.And(maybeUnsatisfiedStates, JDD.Not(unsatisfiedStates.copy()));
 		}
 
@@ -311,7 +327,7 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		public GoalFailStopOperator<NondetModel> configureOperator(NondetModel model, JDDNode conditionUnsatisfied, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs,
 				JDDNode conditionNormalStates, JDDNode conditionProbs) throws PrismException
 		{
-			return new MDPGoalFailStopOperator(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
+			return new GoalFailStopOperator.MDP(model, objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionProbs, conditionUnsatisfied, getLog());
 		}
 
 		@Override

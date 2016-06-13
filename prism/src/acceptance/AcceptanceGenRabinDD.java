@@ -33,6 +33,8 @@ import common.iterable.IterableBitSet;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import prism.PrismException;
+import prism.PrismNotSupportedException;
 
 /**
  * A Generalized Rabin acceptance condition (based on JDD state sets)
@@ -54,7 +56,7 @@ public class AcceptanceGenRabinDD
 	 * A pair in a Generalized Rabin acceptance condition, i.e., with
 	 *  (F G !"L") & (G F "K_1") & ... & (G F "K_n").
 	 **/
-	public static class GenRabinPairDD {
+	public static class GenRabinPairDD implements Cloneable {
 		/** State set L (should be visited only finitely often) */
 		private JDDNode L;
 
@@ -84,8 +86,7 @@ public class AcceptanceGenRabinDD
 		 */
 		public JDDNode getL()
 		{
-			JDD.Ref(L);
-			return L;
+			return L.copy();
 		}
 
 		/** Get the number of K_j sets */
@@ -99,8 +100,7 @@ public class AcceptanceGenRabinDD
 		 */
 		public JDDNode getK(int j)
 		{
-			JDD.Ref(K_list.get(j));
-			return K_list.get(j);
+			return K_list.get(j).copy();
 		}
 
 		/** Returns true if the bottom strongly connected component
@@ -126,6 +126,34 @@ public class AcceptanceGenRabinDD
 			return true;
 		}
 
+		@Override
+		public GenRabinPairDD clone()
+		{
+			ArrayList<JDDNode> newK_list = new ArrayList<JDDNode>();
+			for (JDDNode K_j : K_list)
+				newK_list.add(K_j.copy());
+
+			return new GenRabinPairDD(getL(), newK_list);
+		}
+
+		public AcceptanceGenericDD toAcceptanceGeneric()
+		{
+			AcceptanceGenericDD genericL = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.FIN, L.copy());
+			if (getNumK() == 0) {
+				return genericL;
+			}
+			AcceptanceGenericDD genericKs = null;
+			for (JDDNode K : K_list) {
+				AcceptanceGenericDD genericK = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.INF, K.copy());
+				if (genericKs == null) {
+					genericKs = genericK;
+				} else {
+					genericKs = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.AND, genericKs, genericK);
+				}
+			}
+			return new AcceptanceGenericDD(AcceptanceGeneric.ElementType.AND, genericL, genericKs);
+		}
+
 		/** Returns a textual representation of this Rabin pair. */
 		@Override
 		public String toString()
@@ -137,6 +165,8 @@ public class AcceptanceGenRabinDD
 			return s;
 		}
 	}
+
+	public AcceptanceGenRabinDD() {}
 
 	/**
 	 * Constructor, from a BitSet-based AcceptanceGenRabin.
@@ -224,6 +254,50 @@ public class AcceptanceGenRabinDD
 	public AcceptanceType getType()
 	{
 		return AcceptanceType.GENERALIZED_RABIN;
+	}
+
+	@Override
+	public AcceptanceGenRabinDD clone()
+	{
+		AcceptanceGenRabinDD result = new AcceptanceGenRabinDD();
+		for (GenRabinPairDD pair : this) {
+			result.add(pair.clone());
+		}
+		return result;
+	}
+
+	@Override
+	public AcceptanceOmegaDD complement(AcceptanceType... allowedAcceptance) throws PrismException
+	{
+		if (AcceptanceType.contains(allowedAcceptance, AcceptanceType.GENERIC)) {
+			return complementToGeneric();
+		}
+		throw new PrismNotSupportedException("Can not complement " + getType() + " acceptance to a supported acceptance type");
+	}
+
+	/** Complement this acceptance condition, return as AcceptanceGeneric. */
+	public AcceptanceGenericDD complementToGeneric()
+	{
+		AcceptanceGenericDD generic = toAcceptanceGeneric();
+		return generic.complementToGeneric();
+	}
+
+	@Override
+	public AcceptanceGenericDD toAcceptanceGeneric()
+	{
+		if (size() == 0) {
+			return new AcceptanceGenericDD(false);
+		}
+		AcceptanceGenericDD genericPairs = null;
+		for (GenRabinPairDD pair : this) {
+			AcceptanceGenericDD genericPair = pair.toAcceptanceGeneric();
+			if (genericPairs == null) {
+				genericPairs = genericPair;
+			} else {
+				genericPairs = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.OR, genericPairs, genericPair);
+			}
+		}
+		return genericPairs;
 	}
 
 	@Override

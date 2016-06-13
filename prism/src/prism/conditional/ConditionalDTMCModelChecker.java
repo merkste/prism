@@ -62,7 +62,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 
 	private ModelTransformation<ProbModel, ProbModel> transformModel(final NewConditionalTransformer.DTMC transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		prism.getLog().println("\nTransforming model (using " + transformer.getClass().getSimpleName() + ") for condition: " + expression.getCondition());
+		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
 		long timer = System.currentTimeMillis();
 		final ModelTransformation<ProbModel, ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
@@ -87,12 +87,12 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 				case FinallyFinally:
 					transformer = new NewFinallyUntilTransformer.DTMC(modelChecker);
 					break;
-//				case LtlFinally:
-//					transformer = new NewLtlUntilTransformer.DTMC(modelChecker);
-//					break;
-//				case FinallyLtl:
-//					transformer = new NewFinallyLtlTransformer.DTMC(modelChecker);
-//					break;
+				case LtlFinally:
+					transformer = new NewLtlUntilTransformer.DTMC(modelChecker);
+					break;
+				case FinallyLtl:
+					transformer = new NewFinallyLtlTransformer.DTMC(modelChecker);
+					break;
 //				case LtlLtl:
 //					transformer = new NewLtlLtlTransformer.DTMC(modelChecker);
 //					break;

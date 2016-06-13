@@ -32,6 +32,8 @@ import common.iterable.IterableBitSet;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import prism.PrismException;
+import prism.PrismNotSupportedException;
 
 /**
  * A Rabin acceptance condition (based on JDD state sets)
@@ -82,8 +84,7 @@ public class AcceptanceRabinDD
 		 */
 		public JDDNode getL()
 		{
-			JDD.Ref(L);
-			return L;
+			return L.copy();
 		}
 
 		/** Get a referenced copy of the state set K.
@@ -91,8 +92,7 @@ public class AcceptanceRabinDD
 		 */
 		public JDDNode getK()
 		{
-			JDD.Ref(K);
-			return K;
+			return K.copy();
 		}
 
 		public RabinPairDD clone()
@@ -119,6 +119,16 @@ public class AcceptanceRabinDD
 			}
 
 			return false;
+		}
+
+		public AcceptanceGenericDD toAcceptanceGeneric()
+		{
+			AcceptanceGenericDD genericL = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.FIN, getL());
+			AcceptanceGenericDD genericK = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.INF, getK());
+			
+			//      F G ! "L" & G F "K"
+			// <=>  Fin(L) & Inf(K)
+			return new AcceptanceGenericDD(AcceptanceGeneric.ElementType.AND, genericL, genericK);
 		}
 
 		/** Returns a textual representation of this Rabin pair. */
@@ -253,6 +263,72 @@ public class AcceptanceRabinDD
 	}
 
 	@Override
+	public AcceptanceOmegaDD clone()
+	{
+		AcceptanceRabinDD result = new AcceptanceRabinDD();
+		for (RabinPairDD pair : this) {
+			result.add(pair.clone());
+		}
+
+		return result;
+	}
+
+	@Override
+	public AcceptanceOmegaDD complement(AcceptanceType... allowedAcceptance) throws PrismException
+	{
+		if (AcceptanceType.contains(allowedAcceptance, AcceptanceType.STREETT)) {
+			return complementToStreett();
+		}
+		if (AcceptanceType.contains(allowedAcceptance, AcceptanceType.GENERIC)) {
+			return complementToGeneric();
+		}
+		throw new PrismNotSupportedException("Can not complement " + getType() + " acceptance to a supported acceptance type");
+	}
+
+	/**
+	 * Get the Streett acceptance condition that is the dual of this Rabin acceptance condition, i.e.,
+	 * any word that is accepted by this condition is rejected by the returned Streett condition.
+	 * @return the complement Streett acceptance condition
+	 */
+	public AcceptanceStreettDD complementToStreett()
+	{
+		AcceptanceStreettDD accStreett = new AcceptanceStreettDD();
+
+		for (RabinPairDD accPairRabin : this) {
+			JDDNode R = accPairRabin.getK();
+			JDDNode G = accPairRabin.getL();
+			AcceptanceStreettDD.StreettPairDD accPairStreett = new AcceptanceStreettDD.StreettPairDD(R, G);
+			accStreett.add(accPairStreett);
+		}
+
+		return accStreett;
+	}
+
+	/** Complement this acceptance condition, return as AcceptanceGeneric. */
+	public AcceptanceGenericDD complementToGeneric()
+	{
+		return toAcceptanceGeneric().complementToGeneric();
+	}
+
+	@Override
+	public AcceptanceGenericDD toAcceptanceGeneric()
+	{
+		if (size() == 0) {
+			return new AcceptanceGenericDD(false);
+		}
+		AcceptanceGenericDD genericPairs = null;
+		for (RabinPairDD pair : this) {
+			AcceptanceGenericDD genericPair = pair.toAcceptanceGeneric();
+			if (genericPairs == null) {
+				genericPairs = genericPair;
+			} else {
+				genericPairs = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.OR, genericPairs, genericPair);
+			}
+		}
+		return genericPairs;
+	}
+
+	@Override
 	@Deprecated
 	public String getTypeAbbreviated() {
 		return getType().getNameAbbreviated();
@@ -263,5 +339,4 @@ public class AcceptanceRabinDD
 	public String getTypeName() {
 		return getType().getName();
 	}
-
 }

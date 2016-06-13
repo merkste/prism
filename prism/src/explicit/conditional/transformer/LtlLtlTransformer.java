@@ -26,7 +26,7 @@ import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformati
 // FIXME ALG: add comment
 public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTransformer<M>
 {
-	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
+	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
 
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
@@ -54,11 +54,13 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 
 		// 1) Objective: build omega automaton
 		Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();
-		LabeledDA objectiveDA = constructReachOrStreetDA(model, objective);
+//		LabeledDA objectiveDA = constructReachOrStreetDA(model, objective);
+		LabeledDA objectiveDA = getLtlTransformer().constructDA(model, objective, ACCEPTANCE_TYPES);
 
 		// 2) Condition: build omega automaton
 		Expression condition = expression.getCondition();
-		LabeledDA conditionDA = constructReachOrStreetDA(model, condition);
+//		LabeledDA conditionDA = constructReachOrStreetDA(model, condition);
+		LabeledDA conditionDA = getLtlTransformer().constructDA(model, condition, ACCEPTANCE_TYPES);
 
 		// 3) Transformation
 		return transform(model, objectiveDA, conditionDA, statesOfInterest);
@@ -96,9 +98,6 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 			getLog().println("Detected acceptance REACH for condition, delegating to " + ltlObjectiveTransformer.getName());
 			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, false, transformedStatesOfInterest);
 		} else {
-			checkAcceptanceType(objectiveAcceptanceType);
-			checkAcceptanceType(conditionAcceptanceType);
-
 			// 1) LTL Product Transformation for Condition
 			LTLProduct<M> conditionProduct = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 			M conditionModel = conditionProduct.getProductModel();
@@ -155,18 +154,18 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		return new ConditionalReachabilitiyTransformation<>(nested, transformation.getGoalStates());
 	}
 
-	default LabeledDA constructReachOrStreetDA(M model, Expression expression) throws PrismException {
-		if (Expression.isCoSafeLTLSyntactic(expression, true)) {
-			getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
-			LabeledDA da = getLtlTransformer().constructDA(model, expression, AcceptanceType.REACH, AcceptanceType.RABIN);
-			if (da.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
-				getLog().println("Success.");
-				return da;
-			}
-			getLog().println("Failed. Falling back to acceptance STREETT");
-		}
-		return getLtlTransformer().constructDA(model, expression, AcceptanceType.STREETT);
-	}
+//	default LabeledDA constructReachOrStreetDA(M model, Expression expression) throws PrismException {
+//		if (Expression.isCoSafeLTLSyntactic(expression, true)) {
+//			getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
+//			LabeledDA da = getLtlTransformer().constructDA(model, expression, AcceptanceType.REACH, AcceptanceType.RABIN);
+//			if (da.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
+//				getLog().println("Success.");
+//				return da;
+//			}
+//			getLog().println("Failed. Falling back to acceptance STREETT");
+//		}
+//		return getLtlTransformer().constructDA(model, expression, AcceptanceType.STREETT);
+//	}
 
 	default BitSet computeBadStates(M productModel, BitSet objectiveAndConditionGoal, AcceptanceStreett conditionAcceptance)
 			throws PrismException
@@ -180,14 +179,6 @@ public interface LtlLtlTransformer<M extends Model> extends ResetConditionalTran
 		// - do not reset from goal states
 		bad.andNot(objectiveAndConditionGoal);
 		return bad;
-	}
-
-	default void checkAcceptanceType(AcceptanceType objectiveAcceptanceType)
-			throws PrismException
-	{
-		if (objectiveAcceptanceType != AcceptanceType.STREETT) {
-			throw new PrismException("unsupported acceptance type: " + objectiveAcceptanceType);
-		}
 	}
 
 	LtlUntilTransformer<M> getLtlObjectiveTransformer();

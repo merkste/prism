@@ -50,8 +50,28 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	public LabeledDA constructDA(final M model, final Expression expression, final AcceptanceType...acceptanceTypes)
 			throws PrismException
 	{
-		final Vector<JDDNode> labels = new Vector<JDDNode>();
-		final DA<BitSet,? extends AcceptanceOmega> da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, acceptanceTypes);
+		final Vector<JDDNode> labels            = new Vector<JDDNode>();
+		DA<BitSet,? extends AcceptanceOmega> da = null;
+
+		// If formula is co-safe, check whether acceptance REACH is allowed
+		if (Expression.isCoSafeLTLSyntactic(expression, true)) {
+			for (int i=0; i<acceptanceTypes.length; i++) {
+				if (acceptanceTypes[i] == AcceptanceType.REACH) {
+					getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
+					da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, AcceptanceType.REACH, AcceptanceType.RABIN);
+					if (da.getAcceptance().getType() == AcceptanceType.REACH) {
+						getLog().println("Success.");
+					} else {
+						getLog().println("Failed. Falling back to other acceptance types.");
+					}
+					break;
+				}
+			}
+		}
+		// Either formula is co-safe or construction of acceptance REACH failed.
+		if (da == null) {
+			da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, acceptanceTypes);
+		}
 
 		return new LabeledDA(da, labels);
 	}

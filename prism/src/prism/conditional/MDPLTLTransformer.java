@@ -165,15 +165,16 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 		badEcStates = JDD.And(badEcStates, JDD.Not(objectiveAndConditionGoalStates.copy()));
 
 		// restrict bad states to those that appear in some R of a street pair of the condition
-		JDDNode r_states = JDD.Constant(0);
-		for (StreettPairDD streettPair : conditionAcceptance) {
-			r_states = JDD.Or(r_states, streettPair.getR());
-		}
-		if (debug) {
-			StateValuesMTBDD.print(prism.getLog(), r_states.copy(), objectiveAndConditionModel, "r_states");
-			StateValuesMTBDD.print(prism.getLog(), badEcStates.copy(), objectiveAndConditionModel, "badEcStates");
-		}
-		final JDDNode badStates = JDD.And(badEcStates, r_states);
+//		JDDNode r_states = JDD.Constant(0);
+//		for (StreettPairDD streettPair : conditionAcceptance) {
+//			r_states = JDD.Or(r_states, streettPair.getR());
+//		}
+//		if (debug) {
+//			StateValuesMTBDD.print(prism.getLog(), r_states.copy(), objectiveAndConditionModel, "r_states");
+//			StateValuesMTBDD.print(prism.getLog(), badEcStates.copy(), objectiveAndConditionModel, "badEcStates");
+//		}
+//		final JDDNode badStates = JDD.And(badEcStates, r_states);
+		JDDNode badStates = badEcStates;
 		prism.getLog().println("Reset states (Pmax=1[!condition] and in R for some pair) = "+JDD.GetNumMintermsString(badStates, objectiveAndConditionModel.getNumDDRowVars())+" states.");		
 		if (debug)
 			StateValuesMTBDD.print(prism.getLog(), badStates.copy(), objectiveAndConditionModel, "badStates");

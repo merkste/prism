@@ -32,6 +32,8 @@ import common.iterable.IterableBitSet;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import prism.PrismException;
+import prism.PrismNotSupportedException;
 
 /**
  * A Streett acceptance condition (based on JDD state sets).
@@ -82,8 +84,7 @@ public class AcceptanceStreettDD
 		 */
 		public JDDNode getR()
 		{
-			JDD.Ref(R);
-			return R;
+			return R.copy();
 		}
 
 		/** Get a referenced copy of the state set G.
@@ -91,8 +92,7 @@ public class AcceptanceStreettDD
 		 */
 		public JDDNode getG()
 		{
-			JDD.Ref(G);
-			return G;
+			return G.copy();
 		}
 
 		public StreettPairDD clone()
@@ -120,6 +120,17 @@ public class AcceptanceStreettDD
 				// no R visited, no need to check for G
 				return true;
 			}
+		}
+
+		public AcceptanceGenericDD toAcceptanceGeneric()
+		{
+			AcceptanceGenericDD genericR = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.FIN, getR());
+			AcceptanceGenericDD genericG = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.INF, getG());
+			//      G F "R" -> G F "G"
+			// <=>  ! G F "R"  | G F "G"
+			// <=>  F G ! "R"  | G F "G"
+			// <=>  Fin(R) | Inf(G)
+			return new AcceptanceGenericDD(AcceptanceGeneric.ElementType.OR, genericR, genericG);
 		}
 
 		@Override
@@ -247,6 +258,65 @@ public class AcceptanceStreettDD
 	public AcceptanceType getType()
 	{
 		return AcceptanceType.STREETT;
+	}
+
+	@Override
+	public AcceptanceOmegaDD clone()
+	{
+		AcceptanceStreettDD result = new AcceptanceStreettDD();
+		for (StreettPairDD pair : this) {
+			result.add(pair.clone());
+		}
+
+		return result;
+	}
+
+	@Override
+	public AcceptanceOmegaDD complement(AcceptanceType... allowedAcceptance) throws PrismException
+	{
+		if (AcceptanceType.contains(allowedAcceptance, AcceptanceType.RABIN)) {
+			return complementToRabin();
+		}
+		if (AcceptanceType.contains(allowedAcceptance, AcceptanceType.GENERIC)) {
+			return complementToGeneric();
+		}
+		throw new PrismNotSupportedException("Can not complement " + getType() + " acceptance to a supported acceptance type");
+	}
+
+	public AcceptanceRabinDD complementToRabin()
+	{
+		AcceptanceRabinDD accRabin = new AcceptanceRabinDD();
+
+		for (StreettPairDD accPairStreett : this) {
+			JDDNode L = accPairStreett.getG();
+			JDDNode K = accPairStreett.getR();
+			AcceptanceRabinDD.RabinPairDD accPairRabin = new AcceptanceRabinDD.RabinPairDD(L, K);
+			accRabin.add(accPairRabin);
+		}
+		return accRabin;
+	}
+
+	public AcceptanceGenericDD complementToGeneric()
+	{
+		return toAcceptanceGeneric().complementToGeneric();
+	}
+
+	@Override
+	public AcceptanceGenericDD toAcceptanceGeneric()
+	{
+		if (size() == 0) {
+			return new AcceptanceGenericDD(true);
+		}
+		AcceptanceGenericDD genericPairs = null;
+		for (StreettPairDD pair : this) {
+			AcceptanceGenericDD genericPair = pair.toAcceptanceGeneric();
+			if (genericPairs == null) {
+				genericPairs = genericPair;
+			} else {
+				genericPairs = new AcceptanceGenericDD(AcceptanceGeneric.ElementType.AND, genericPairs, genericPair);
+			}
+		}
+		return genericPairs;
 	}
 
 	@Override
