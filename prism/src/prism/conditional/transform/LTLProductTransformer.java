@@ -121,7 +121,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		if (acceptance.getType() == AcceptanceType.REACH) {
 			// if restrict is null we allow all reachable states for MEC search
 			JDDNode goalStates      = ((AcceptanceReachDD) acceptance).getGoalStates();
-			restrict                = restrict == null ? productModel.getReach().copy() : restrict.copy();
+			restrict                = restrict == null ? productModel.getReach().copy() : JDD.And(restrict.copy(), productModel.getReach().copy());
 			JDDNode acceptingStates = JDD.And(goalStates, restrict.copy());
 			JDD.Deref(restrict);
 			return acceptingStates;

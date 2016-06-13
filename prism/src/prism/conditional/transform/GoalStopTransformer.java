@@ -91,18 +91,6 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		ExpressionProb transformedObjectiveBounded = new ExpressionProb(transformedObjective.getExpression(), objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
 		ExpressionConditional transformedExpressionBounded = new ExpressionConditional(transformedObjectiveBounded, transformedExpression.getCondition());
 
-//		// transform expression
-//		ExpressionLabel goal                = new ExpressionLabel(transformation.getGoalLabel());
-//		ExpressionLabel fail                = new ExpressionLabel(transformation.getFailLabel());
-//		Expression transformedObjectiveTmp  = Expression.Finally(goal);
-////		if (conditionDA.getAutomaton().getAcceptance().getType() != AcceptanceType.REACH && conditionPathProduct.isNegated()) {
-////			transformedObjectiveTemp        = Expression.Or(transformedObjectiveTemp, Expression.Finally(new ExpressionLabel(acceptLabel)));
-////		}
-//		ExpressionProb transformedObjective = new ExpressionProb(transformedObjectiveTmp, objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
-//		// All satisfying the condition end up in goal or an accepting EC.
-//		Expression transformedCondition     = Expression.Or(Expression.Finally(goal), conditionTmp);
-//		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
-
 		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded, transformation.getFailLabel(), transformation.getBadLabel());
 	}
 
@@ -117,26 +105,16 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		Finally objectivePathProduct = objectivePath.copy(productModel);
 		objectivePath.clear();
 
-		JDDNode acceptStates = getLtlTransformer().findAcceptingStates(product);
-//		String acceptLabel   = productModel.addUniqueLabelDD("accept", acceptStates.copy());
-		Finally conditionPathProduct = new Finally(productModel, acceptStates);
-
-		// compute unsatisfied states
-//		checkSatisfiability(conditionUnsatisfiedProduct, statesOfInterestProduct);
-
-		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result;
 		// 2) Normal-Form Transformation
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result;
 		switch (product.getAcceptance().getType()) {
 		case REACH:
-			GoalFailStopTransformer<M, MC> goalFailStopTransformer = getGoalFailStopTransformer();
-			getLog().println("\nDetected acceptance REACH for objective, delegating to " + goalFailStopTransformer.getName());
-			JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
-			result = goalFailStopTransformer.transform(productModel, objectivePathProduct, conditionPathProduct, statesOfInterestProduct);
+			result = transformReach(product, objectivePathProduct);
 			break;
 		case RABIN:
 		case GENERALIZED_RABIN:
 		case STREETT:
-			result = transform(product, objectivePathProduct, conditionPathProduct);
+			result = transform(product, objectivePathProduct);
 			break;
 		default:
 			throw new PrismException("unsupported acceptance type: " + product.getAcceptance().getType());
@@ -147,17 +125,35 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		return new Pair<>(transformation, result.second);
 	}
 
-	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transform(LTLProduct<M> product, Finally objectivePath, Finally conditionPath)
+	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformReach(LTLProduct<M> product, Finally objectivePathProduct) throws PrismException
+	{
+		if (product.getAcceptance().getType() != AcceptanceType.REACH) {
+			throw new IllegalArgumentException("Expected acceptance REACH.");
+		}
+		GoalFailStopTransformer<M, MC> goalFailStopTransformer = getGoalFailStopTransformer();
+		getLog().println("\nDetected acceptance REACH for objective, delegating to " + goalFailStopTransformer.getName());
+
+		M productModel           = product.getProductModel();
+
+		JDDNode acceptStates         = getLtlTransformer().findAcceptingStates(product);
+		Finally conditionPathProduct = new Finally(productModel, acceptStates);
+
+		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
+		return goalFailStopTransformer.transform(productModel, objectivePathProduct, conditionPathProduct, statesOfInterestProduct);
+	}
+
+	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transform(LTLProduct<M> product, Finally objectivePath)
 			throws UndefinedTransformationException, PrismException
 	{
 		M productModel               = product.getProductModel();
+		JDDNode acceptStates         = getLtlTransformer().findAcceptingStates(product);
+		Finally conditionPath        = new Finally(productModel, acceptStates);
 		JDDNode conditionUnsatisfied = computeUnsatified(productModel, conditionPath);
 
 		// FIXME ALG: consider whether this is actually an error in a normal-form transformation
 		JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
 		checkSatisfiability(conditionUnsatisfied, statesOfInterest);
 		JDD.Deref(statesOfInterest);
-
 
 		// compute normal-form states for objective
 		JDDNode objectiveNormalStates = computeNormalFormStates(productModel, objectivePath);
@@ -186,7 +182,6 @@ public interface GoalStopTransformer<M extends ProbModel, MC extends StateModelC
 		objectivePath.clear();
 		conditionPath.clear();
 		return new Pair<>(transformation, transformedExpression);
-
 	}
 
 	default JDDNode checkSatisfiability(JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
