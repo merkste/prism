@@ -127,7 +127,9 @@ public class PrismSettings implements Observer
 	
 	public static final String PRISM_LTL2DA_TOOL					= "prism.ltl2daTool";
 	public static final String PRISM_LTL2DA_SYNTAX					= "prism.ltl2daSyntax";
-	
+
+	public static final	String PRISM_JDD_SANITY_CHECKS					= "prism.ddsanity";
+
 	public static final	String PRISM_PARAM_ENABLED					= "prism.param.enabled";
 	public static final	String PRISM_PARAM_PRECISION				= "prism.param.precision";
 	public static final	String PRISM_PARAM_SPLIT					= "prism.param.split";
@@ -360,6 +362,10 @@ public class PrismSettings implements Observer
 
 			{ CHOICE_TYPE,		PRISM_LTL2DA_SYNTAX,					"LTL syntax for external LTL->DA tool",		"4.2.1",			"LBT",		"LBT,Spin,Spot,Rabinizer",
 																			"The syntax for LTL formulas passed to the external LTL->DA tool."},
+
+			// DEBUG / SANITY CHECK OPTIONS:
+			{ BOOLEAN_TYPE,		PRISM_JDD_SANITY_CHECKS,					"Do BDD sanity checks",			"4.3.1",			new Boolean(false),		"",
+																			"Perform internal sanity checks during computations (can cause significant slow-down)." },
 
 			// PARAMETRIC MODEL CHECKING
 			{ BOOLEAN_TYPE,		PRISM_PARAM_ENABLED,					"Do parametric model checking",			"4.1",			new Boolean(false),															"",
@@ -1478,6 +1484,11 @@ public class PrismSettings implements Observer
 			}
 		}
 
+		// DEBUGGING / SANITY CHECKS
+		else if (sw.equals("ddsanity")) {
+			set(PRISM_JDD_SANITY_CHECKS, true);
+		}
+
 		// PARAMETRIC MODEL CHECKING:
 		
 		else if (sw.equals("param")) {
@@ -1826,6 +1837,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-exportadvmdp <file> ........... Export an adversary from MDP model checking (as an MDP)");
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
+ 		mainLog.println("-ddsanity ...................... Enable internal sanity checks (causes slow-down)");
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
 		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: beforereach noconstraints optimizetrans converge");
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
