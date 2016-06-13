@@ -115,25 +115,25 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
 		// FIXME ALG: consider moving objective-goal-computation to normal-form transformer
 		BitSet conditionNormalStates = normalFormTransformer.computeNormalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
+
 		// compute ECs in succ*(terminal) ...
-		BitSet restrict = new ReachabilityComputer(objectiveModel).computeSuccStar(conditionNormalStates);
-		if (conditionNegated) {
-			// ... and in  S \ unsatisfiable
-			restrict.or(BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable));
-		}
+		BitSet restrict      = new ReachabilityComputer(objectiveModel).computeSuccStar(conditionNormalStates);
 		BitSet objectiveGoal = getLtlTransformer().findAcceptingStates(product, restrict);
-getLog().println("restrict =" + restrict);
-getLog().println("goal     =" + objectiveGoal);
-objectiveModel.exportToDotFile("product.dot", objectiveGoal);
-		// enlarge target set
-		objectiveGoal = computeProb1A(objectiveModel, null, objectiveGoal);
+
+		BitSet acceptStatesConditionECs = new BitSet();
+		if (conditionNegated) {
+			// There might be paths that satisfy objective and condition but do not end in goal
+			BitSet conditionSatisfiable      = BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable);
+			acceptStatesConditionECs = getLtlTransformer().findAcceptingStates(product, conditionSatisfiable);
+		}
+//		// enlarge target set
+//		objectiveGoal = computeProb1A(objectiveModel, null, objectiveGoal);
 		GoalStopTransformation<M> normalFormTransformation = normalFormTransformer.transformModel(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
 		M normalFormModel = normalFormTransformation.getTransformedModel();
 
 		// 2) Deadlock hopeless states
 		BitSet unsatisfiableLifted = normalFormTransformation.mapToTransformedModel(unsatisfiable);
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
-normalFormModel.exportToDotFile("normal.dot", unsatisfiableLifted);
 
 		// 3) Reset Transformation
 // FIXME ALG: do not reset from normal-form states
@@ -149,7 +149,8 @@ normalFormModel.exportToDotFile("normal.dot", unsatisfiableLifted);
 		// 4) Compose Transformations
 		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
 		// FIXME ALG: consider moving goal-set computation to normal-form transformer
-		BitSet goalLifted = normalFormTransformation.mapToTransformedModel(objectiveGoal);
+		// All paths satisfying the objective and condition eventually reach goal or an accepting EC.
+		BitSet goalLifted = normalFormTransformation.mapToTransformedModel(acceptStatesConditionECs);
 		goalLifted.set(normalFormTransformation.getGoalState());
 		goalLifted = nested.mapToTransformedModel(goalLifted);
 		nested = new ModelTransformationNested<>(normalFormTransformation, nested);

@@ -141,8 +141,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
 		mainLog.print("Transformed model has ");
 		mainLog.println(transformedModel.infoString());
-model.exportToDotFile("original.dot");
-transformedModel.exportToDotFile("transformed.dot", transformation.getGoalStates());
 		return transformation;
 	}
 
