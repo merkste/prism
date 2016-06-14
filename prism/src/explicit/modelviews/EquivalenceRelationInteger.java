@@ -37,6 +37,9 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 	@Override
 	public boolean test(final int i, final int j)
 	{
+		if (i == j) {
+			return true;
+		}
 		final BitSet equivalenceClass = classes.get(i);
 		return equivalenceClass != null && equivalenceClass.get(j);
 	}
