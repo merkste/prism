@@ -100,7 +100,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		return findAcceptingStates(product, null);
 	}
 
-	protected BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance)
+	public BitSet findAcceptingStates(final M productModel, final AcceptanceOmega acceptance)
 			throws PrismException
 	{
 		return findAcceptingStates(productModel, acceptance, null);

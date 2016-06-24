@@ -38,6 +38,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		// can handle simple finally formulae only
 		Expression normalized = ExpressionInspector.normalizeExpression(objective.getExpression());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}

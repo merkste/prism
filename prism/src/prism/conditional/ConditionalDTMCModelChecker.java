@@ -1,5 +1,6 @@
 package prism.conditional;
 
+import java.io.FileNotFoundException;
 import java.util.SortedSet;
 
 import explicit.conditional.transformer.DtmcTransformerType;
@@ -72,6 +73,15 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		prism.getLog().println(transformation.getTransformedModel().infoString());
 		prism.getLog().print("Transformed matrix has ");
 		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
+
+//		try {
+//			transformation.getOriginalModel().exportToFile(Prism.EXPORT_DOT, true, new java.io.File("original.dot"));
+//			transformation.getTransformedModel().exportToFile(Prism.EXPORT_DOT, true, new java.io.File("transformed.dot"));
+//		} catch (FileNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+
 		return transformation;
 	}
 
@@ -93,9 +103,9 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 				case FinallyLtl:
 					transformer = new NewFinallyLtlTransformer.DTMC(modelChecker);
 					break;
-//				case LtlLtl:
-//					transformer = new NewLtlLtlTransformer.DTMC(modelChecker);
-//					break;
+				case LtlLtl:
+					transformer = new NewLtlLtlTransformer.DTMC(modelChecker);
+					break;
 				default:
 					continue;
 				}

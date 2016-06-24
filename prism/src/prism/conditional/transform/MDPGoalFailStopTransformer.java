@@ -102,17 +102,17 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 		// compute normal-form states and probabilities for objective
 		// FIXME ALG: reuse precomputation?
 		JDDNode conditionNormalStates = computeNormalFormStates(model, conditionPath);
-////>>> Debug: print conditionNormalStates
-//getLog().println("conditionNormalStates:");
-//JDD.PrintMinterms(getLog(), conditionNormalStates.copy());
-//new StateValuesMTBDD(conditionNormalStates.copy(), model).print(getLog());
+////>>> Debug: print goalStopStates
+//getLog().println("goalStopStates:");
+//JDD.PrintMinterms(getLog(), goalStopStates.copy());
+//new StateValuesMTBDD(goalStopStates.copy(), model).print(getLog());
 		conditionNormalStates         = JDD.And(conditionNormalStates, JDD.Not(objectiveNormalStates.copy()));
 		JDDNode conditionProbs        = computeNormalFormProbs(model, conditionPath);
 		conditionPath.clear();
 		//>>> Debug: print probabilities
-//		getLog().println("conditionNormalStates:");
-//		JDD.PrintMinterms(getLog(), conditionNormalStates.copy());
-//		new StateValuesMTBDD(conditionNormalStates.copy(), model).print(getLog());
+//		getLog().println("goalStopStates:");
+//		JDD.PrintMinterms(getLog(), goalStopStates.copy());
+//		new StateValuesMTBDD(goalStopStates.copy(), model).print(getLog());
 
 		
 		
@@ -306,7 +306,7 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 	
 	
 			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, and conditionNormalProbs</i> ]
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalStopProbs, goalStopStates, and goalFailProbs</i> ]
 			 */
 			public MDPGoalFailStopOperator(NondetModel model,
 			                               JDDNode objectiveNormalStates,
@@ -346,7 +346,7 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 			public JDDNode conditionUnsatisfied(boolean row)
 			{
 				return JDD.And(normal(ROW), conditionUnsatisfied.copy());
-//				JDDNode unsatisfiedRow = JDD.And(normal(ROW), conditionUnsatisfied.copy());
+//				JDDNode unsatisfiedRow = JDD.And(normal(ROW), instantFailStates.copy());
 //				if (row) {
 //					return unsatisfiedRow;
 //				}
@@ -455,8 +455,8 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 				JDDNode normal_to_normal =
 					JDD.Times(normal(ROW),
 					          notTau(),
-	//				          JDD.And(JDD.Not(objectiveNormalStates.copy()),
-	//				                  JDD.Not(conditionNormalStates.copy()),
+	//				          JDD.And(JDD.Not(goalFailStates.copy()),
+	//				                  JDD.Not(goalStopStates.copy()),
 	//				                  JDD.Not(unsatisfied(ROW))),
 					          JDD.Not(objectiveNormalStates.copy()),
 					          JDD.Not(conditionNormalStates.copy()),

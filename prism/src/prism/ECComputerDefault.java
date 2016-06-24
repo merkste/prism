@@ -154,7 +154,7 @@ public class ECComputerDefault extends ECComputer
 	 * @param candidateStates BDD for a set of states (over allDDRowVars) (dereferenced after calling this function)
 	 * @return A referenced BDD with the maximal stable set in c
 	 */
-	private JDDNode findMaximalStableSet(JDDNode candidateStates)
+	public JDDNode findMaximalStableSet(JDDNode candidateStates)
 	{
 		// Store two copies to allow check for fixed point 
 		JDDNode current = candidateStates;

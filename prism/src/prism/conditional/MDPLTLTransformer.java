@@ -30,7 +30,6 @@ import prism.conditional.transform.MDPGoalFailResetTransformation;
 import prism.conditional.transform.MDPResetTransformation;
 import acceptance.AcceptanceRabinDD;
 import acceptance.AcceptanceStreettDD;
-import acceptance.AcceptanceStreettDD.StreettPairDD;
 import acceptance.AcceptanceType;
 
 public class MDPLTLTransformer extends MDPConditionalTransformer {

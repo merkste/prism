@@ -122,9 +122,10 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 
 		BitSet acceptStatesConditionECs = new BitSet();
 		if (conditionNegated) {
-			// There might be paths that satisfy objective and condition but do not end in goal
-			BitSet conditionSatisfiable      = BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable);
-			acceptStatesConditionECs = getLtlTransformer().findAcceptingStates(product, conditionSatisfiable);
+			// Some ECs might satisfy objective and condition
+			// -> exclude all states that falsify the condition for sure
+			BitSet conditionSatisfiable = BitSetTools.complement(objectiveModel.getNumStates(), unsatisfiable);
+			acceptStatesConditionECs    = getLtlTransformer().findAcceptingStates(product, conditionSatisfiable);
 		}
 //		// enlarge target set
 //		objectiveGoal = computeProb1A(objectiveModel, null, objectiveGoal);

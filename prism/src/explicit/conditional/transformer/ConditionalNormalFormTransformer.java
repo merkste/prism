@@ -62,8 +62,8 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 // FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
 //		BitSet conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
 //		BitSet conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
-//		BitSet conditionNormalStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
-//		return conditionNormalStates;
+//		BitSet goalStopStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
+//		return goalStopStates;
 	}
 
 	double[] computeUntilProbs(M model, BitSet remain, BitSet goal, boolean negated)

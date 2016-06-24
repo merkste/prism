@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.Vector;
 
 import parser.ast.Expression;
+import prism.ECComputerDefault;
 import prism.LTLModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
@@ -20,6 +21,8 @@ import acceptance.AcceptanceType;
 import automata.DA;
 import jdd.JDD;
 import jdd.JDDNode;
+import jdd.JDDVars;
+import mtbdd.PrismMTBDD;
 
 // FIXME ALG: add comment
 public class LTLProductTransformer<M extends Model> extends PrismComponent
@@ -27,7 +30,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	private final StateModelChecker modelChecker;
 	private final LTLModelChecker ltlModelChecker;
 
-	public LTLProductTransformer(final StateModelChecker modelChecker) throws PrismException
+	public LTLProductTransformer(final StateModelChecker modelChecker)
 	{
 		super(modelChecker);
 		this.modelChecker = modelChecker;
@@ -103,49 +106,117 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		return findAcceptingStates(product, null);
 	}
 
-	protected JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance)
+	public JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance)
 			throws PrismException
 	{
-		return findAcceptingStates(productModel, acceptance, null);
+		return findAcceptingStates(productModel, acceptance, null, true);
 	}
 
-	public JDDNode findAcceptingStates(final LTLProduct<M> product, final JDDNode restrict)
+	public JDDNode findAcceptingStates(final LTLProduct<M> product, final JDDNode remain)
 			throws PrismException
 	{
-		return findAcceptingStates(product.getProductModel(), product.getAcceptance(), restrict);
+		return findAcceptingStates(product.getProductModel(), product.getAcceptance(), remain, true);
 	}
 
-	protected JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance, JDDNode restrict)
+	public JDDNode findAcceptingStates(final LTLProduct<M> product, final JDDNode remain, boolean alwaysRemain)
+			throws PrismException
+	{
+		return findAcceptingStates(product.getProductModel(), product.getAcceptance(), remain, alwaysRemain);
+	}
+
+	public JDDNode findAcceptingStates(final M productModel, final AcceptanceOmegaDD acceptance, JDDNode remain, boolean alwaysRemain)
 			throws PrismException
 	{
 		if (acceptance.getType() == AcceptanceType.REACH) {
-			// if restrict is null we allow all reachable states for MEC search
-			JDDNode goalStates      = ((AcceptanceReachDD) acceptance).getGoalStates();
-			restrict                = restrict == null ? productModel.getReach().copy() : JDD.And(restrict.copy(), productModel.getReach().copy());
-			JDDNode acceptingStates = JDD.And(goalStates, restrict.copy());
-			JDD.Deref(restrict);
+			return findAcceptingStates(productModel, (AcceptanceReachDD) acceptance, remain, alwaysRemain);
+		}
+		if (productModel instanceof NondetModel) {
+			return ltlModelChecker.findAcceptingECStates(acceptance, (NondetModel) productModel, null, null, false, remain);
+		}
+		if (productModel instanceof ProbModel) {
+			return ltlModelChecker.findAcceptingBSCCs(acceptance, (ProbModel) productModel, remain);
+		}
+		throw new PrismException("Unsupported product model type: " + productModel.getClass());
+	}
+
+	public JDDNode findAcceptingStates(final M productModel, final AcceptanceReachDD acceptance, JDDNode remain, boolean alwaysRemain)
+			throws PrismException
+	{
+		// if restrict is null we allow all reachable states
+		JDDNode goalStates      = ((AcceptanceReachDD) acceptance).getGoalStates();
+		remain                  = remain == null ? productModel.getReach().copy() : JDD.And(remain.copy(), productModel.getReach().copy());
+		JDDNode acceptingStates = JDD.And(goalStates, remain);
+		if (! alwaysRemain) {
 			return acceptingStates;
 		}
 		if (productModel instanceof NondetModel) {
-			return ltlModelChecker.findAcceptingECStates(acceptance, (NondetModel) productModel, null, null, false, restrict);
+			ECComputerDefault ecComputer = new ECComputerDefault(this, productModel.getReach(), productModel.getTrans(), productModel.getTrans01(), productModel.getAllDDRowVars(), productModel.getAllDDColVars(), ((NondetModel) productModel).getAllDDNondetVars());
+			return ecComputer.findMaximalStableSet(acceptingStates);
+//			ECComputer ecComputer = ECComputer.createECComputer(this, (NondetModel) productModel);
+//			ecComputer.computeMECStates(acceptingStates);
+//			JDD.Deref(acceptingStates);
+//			return ecComputer.getMECStates().stream().reduce(JDD.Constant(0), JDD::Or);
 		}
 		if (productModel instanceof ProbModel) {
-			return ltlModelChecker.findAcceptingBSCCs(acceptance, (ProbModel) productModel, restrict);
+//			Prob1 (G acceptingStates) = Prob0 (F !acceptingStates)
+			JDDNode trans01            = productModel.getTrans01();
+			JDDNode reach              = productModel.getReach();
+			JDDVars rowVars            = productModel.getAllDDRowVars();
+			JDDVars colVars            = productModel.getAllDDColVars();
+			JDDNode nonAcceptingStates = JDD.And(reach.copy(), JDD.Not(acceptingStates.copy()));
+			JDDNode result             = PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, acceptingStates, nonAcceptingStates);
+			JDD.Deref(acceptingStates, nonAcceptingStates);
+			return result;
+//			SCCComputer sccComputer = SCCComputer.createSCCComputer(this, (ProbModel) productModel);
+//			sccComputer.computeBSCCs();
+//			List<JDDNode> bsccs = sccComputer.getBSCCs();
+//			JDDNode result = bsccs.stream().filter(bscc -> JDD.IsContainedIn(bscc, acceptingStates)).reduce(JDD.Constant(0), JDD::Or);
+//			JDD.Deref(acceptingStates);
+//			return result;
 		}
 		throw new PrismException("Unsupported product model type: " + productModel.getClass());
 	}
 
 
 
-	public static class LabeledDA
+	public static class LabeledDA implements Cloneable
 	{
 		final DA<BitSet, ? extends AcceptanceOmega> automaton;
-		final Vector<JDDNode> labels;
+		Vector<JDDNode> labels;
 
 		public LabeledDA(DA<BitSet, ? extends AcceptanceOmega> automaton, Vector<JDDNode> labels)
 		{
 			this.automaton = automaton;
 			this.labels = labels;
+		}
+
+		public void clear()
+		{
+			for (JDDNode label : labels) {
+				JDD.Deref(label);
+			}
+			labels.clear();
+		}
+
+		@Override
+		public LabeledDA clone()
+		{
+			try {
+				LabeledDA clone = (LabeledDA) super.clone();
+				clone.labels    = new Vector<>(labels.size());
+				for (JDDNode label : labels) {
+					clone.labels.add(label.copy());
+				}
+				return clone;
+			} catch (CloneNotSupportedException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Object#clone is expected to work for Cloneable objects.", e);
+			}
+		}
+
+		public LabeledDA copy()
+		{
+			return clone();
 		}
 
 		public DA<BitSet, ? extends AcceptanceOmega> getAutomaton()

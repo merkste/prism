@@ -1,5 +1,6 @@
 package prism.conditional.transform;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 import common.StopWatch;
@@ -52,15 +53,12 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 		failLabel = transformedModel.addUniqueLabelDD("fail", JDD.And(operator.fail(ROW), transformedModel.getReach().copy()));
 		stopLabel = transformedModel.addUniqueLabelDD("stop", JDD.And(operator.stop(ROW), transformedModel.getReach().copy()));
 
-		// FIXME ALG: Exclude non-trap states and normal-form states from bad states
-		JDDNode nonTrapStates    = JDD.And(operator.notrap(ROW), transformedModel.getReach().copy());
-		JDDNode normalFormStates = JDD.And(JDD.Or(operator.getConditionNormalStates(), operator.getObjectiveNormalStates()), transformedModel.getReach().copy());
+		JDDNode nonTrapStates    = operator.notrap(ROW);
+		JDDNode normalFormStates = JDD.Or(operator.getGoalStopStates(), operator.getGoalFailStates());
+		badStates                = JDD.And(badStates, transformedModel.getReach().copy());
 		badStates                = JDD.And(badStates, nonTrapStates);
-		badStates                = JDD.And(badStates, normalFormStates);
+		badStates                = JDD.And(badStates, JDD.Not(normalFormStates));
 		badLabel                 = transformedModel.addUniqueLabelDD("bad", badStates);
-		////>>> Debug: print badStates
-		//getLog().println("badStates:");
-		//new StateValuesMTBDD(badStates.copy(), transformedModel()).print(getLog());
 	}
 
 	public GoalFailStopTransformation<M> compose(ModelTransformation<M,M> transformation) throws PrismException
@@ -119,26 +117,42 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 		return badLabel;
 	}
 
-//	public JDDNode getConditonUnsatisfiedStates()
-//	{
-//		return operator.getConditionUnsatisfied();
-//	}
-//
-//	public JDDNode getNormalFormStates()
-//	{
-//		return JDD.And(JDD.Or(operator.getConditionNormalStates(), operator.getObjectiveNormalStates()), transformedModel.getReach().copy());
-//	}
-//
-//	public JDDNode getNonTrapStates()
-//	{
-//		return JDD.And(operator.notrap(ROW), transformedModel.getReach().copy().copy());
-//	}
-//
-//	public JDDNode getTrapStates()
-//	{
-//		return JDD.And(operator.trap(ROW), transformedModel.getReach().copy().copy());
-//	}
 
+
+	public static class ProbabilisticRedistribution
+	{
+		protected JDDNode states;
+		protected JDDNode probabilities; 
+
+		public ProbabilisticRedistribution()
+		{
+			this(JDD.Constant(0), JDD.Constant(0));
+		}
+
+		public ProbabilisticRedistribution(JDDNode states, JDDNode probabilities)
+		{
+			Objects.requireNonNull(states);
+			Objects.requireNonNull(probabilities);
+			this.states        = states;
+			this.probabilities = probabilities;
+		}
+
+		public JDDNode getStates()
+		{
+			return states.copy();
+		}
+
+		public JDDNode getProbabilities()
+		{
+			return probabilities.copy();
+		}
+
+		public void clear()
+		{
+			JDD.Deref(states, probabilities);
+			states = probabilities = null;
+		}
+	}
 
 
 	public static interface GoalFailStopOperator<M extends ProbModel>
@@ -198,15 +212,23 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 
 		M getOriginalModel();
 
-		JDDNode getObjectiveNormalStates();
+		JDDNode getGoalFailStates();
 
-		JDDNode getObjectiveNormalProbs();
+		JDDNode getGoalFailProbs();
 
-		JDDNode getConditionNormalStates();
+		JDDNode getGoalStopStates();
 
-		JDDNode getConditionNormalProbs();
+		JDDNode getGoalStopProbs();
 
-		JDDNode getConditionUnsatisfied();
+		JDDNode getStopFailStates();
+
+		JDDNode getStopFailProbs();
+
+		JDDNode getInstantGoalStates();
+
+		JDDNode getInstantFailStates();
+
+		JDDNode getStatesOfInterest();
 
 		JDDVars getExtraRowVars();
 
@@ -232,7 +254,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			JDDVars extraColVars = getExtraColVars();
 			// !extra(0) & !extra(1)
 			return JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
-					JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+			               JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 		}
 
 		default JDDNode trap(boolean row)
@@ -253,8 +275,8 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			JDDVars extraRowVars = getExtraRowVars();
 			JDDVars extraColVars = getExtraColVars();
 			// extra(0) & !extra(1) & !originalVar(0) & !originalVar(1) & ....
-			JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-					JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
+			JDDNode result = JDD.And(        (row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
+			                         JDD.Not((row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy()));
 
 			return JDD.And(result, trap(row));
 		}
@@ -265,7 +287,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			JDDVars extraColVars = getExtraColVars();
 			// !extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
 			JDDNode result = JDD.And(JDD.Not((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy()),
-					(row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
+			                                 (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
 			return JDD.And(result, trap(row));
 		}
@@ -276,7 +298,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			JDDVars extraColVars = getExtraColVars();
 			// extra(0) & extra(1) & !originalVar(0) & !originalVar(1) & ....
 			JDDNode result = JDD.And((row ? extraRowVars.getVar(0) : extraColVars.getVar(0)).copy(),
-					(row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
+			                         (row ? extraRowVars.getVar(1) : extraColVars.getVar(1)).copy());
 
 			return JDD.And(result, trap(row));
 		}
@@ -299,30 +321,50 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			//				JDD.PrintMinterms(log, normal_to_normal.copy(), "normal_to_normal");
 			//			}
 
-			JDDNode objective_to_goal = watch.run(this::transformObjectiveToGoal);
-			log.println(" objective_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_goal));
+			JDDNode normal_to_goal_fail= watch.run(this::transformToGoalFail);
+			log.println(" normal_to_goal_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_goal_fail));
 			//			if (debug)
-			//				JDD.PrintMinterms(log, objective_to_goal.copy(), "objective_to_goal");
+			//				JDD.PrintMinterms(log, normal_to_goal_fail.copy(), "normal_to_goal_fail");
 
-			JDDNode objective_to_fail = watch.run(this::transformObjectiveToFail);
-			log.println(" objective_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_fail));
+			JDDNode normal_to_goal_stop = watch.run(this::transformNormalToGoalStop);
+			log.println(" normal_to_goal_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_goal_stop));
 			//			if (debug)
-			//				JDD.PrintMinterms(log, objective_to_fail.copy(), "objective_to_fail");
+			//				JDD.PrintMinterms(log, normal_to_goal_stop.copy(), "normal_to_goal_stop");
 
-			JDDNode condition_to_goal = watch.run(this::transformConditionToGoal);
-			log.println(" condition_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_goal));
+			JDDNode normal_to_stop_fail = watch.run(this::transformNormalToStopFail);
+			log.println(" normal_to_stop_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_stop_fail));
 			//			if (debug)
-			//				JDD.PrintMinterms(log, condition_to_goal.copy(), "condition_to_goal");
+			//				JDD.PrintMinterms(log, normal_to_stop_fail.copy(), "normal_to_stop_fail");
 
-			JDDNode condition_to_stop = watch.run(this::transformConditionToStop);
-			log.println(" condition_to_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_stop));
-			//			if (debug)
-			//				JDD.PrintMinterms(log, condition_to_stop.copy(), "condition_to_stop");
+//			JDDNode objective_to_goal = watch.run(this::transformObjectiveToGoal);
+//			log.println(" objective_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_goal));
+//			//			if (debug)
+//			//				JDD.PrintMinterms(log, objective_to_goal.copy(), "objective_to_goal");
+//
+//			JDDNode objective_to_fail = watch.run(this::transformObjectiveToFail);
+//			log.println(" objective_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(objective_to_fail));
+//			//			if (debug)
+//			//				JDD.PrintMinterms(log, objective_to_fail.copy(), "objective_to_fail");
+//
+//			JDDNode condition_to_goal = watch.run(this::transformConditionToGoal);
+//			log.println(" condition_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_goal));
+//			//			if (debug)
+//			//				JDD.PrintMinterms(log, condition_to_goal.copy(), "condition_to_goal");
+//
+//			JDDNode condition_to_stop = watch.run(this::transformConditionToStop);
+//			log.println(" condition_to_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(condition_to_stop));
+//			//			if (debug)
+//			//				JDD.PrintMinterms(log, condition_to_stop.copy(), "condition_to_stop");
 
-			JDDNode unsatisfied_to_fail = watch.run(this::transformUnsatisfiedToFail);
-			log.println(" unsatisfied_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(unsatisfied_to_fail));
+			JDDNode normal_to_goal = watch.run(this::transformNormalToGoal);
+			log.println(" normal_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_goal));
 			//			if (debug)
-			//				JDD.PrintMinterms(log, unsatisfied_self_loop, "unsatisfied_self_loop");
+			//				JDD.PrintMinterms(log, normal_to_goal, "normal_to_goal");
+
+			JDDNode normal_to_fail = watch.run(this::transformNormalToFail);
+			log.println(" normal_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(normal_to_fail));
+			//			if (debug)
+			//				JDD.PrintMinterms(log, normal_to_fail, "normal_to_fail");
 
 			JDDNode goal_self_loop = watch.run(this::transformGoalSelfLoop);
 			log.println(" goal_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(goal_self_loop));
@@ -347,106 +389,389 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			watch.start();
 			newTrans = JDD.Apply(JDD.MAX, goal_self_loop, fail_self_loop);
 			watch.stop();
-			log.println(" goal_self_loop\n  |= fail_self_loop" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println(" goal_self_loop\n  |= fail_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
 			newTrans = JDD.Apply(JDD.MAX, newTrans, stop_self_loop);
 			watch.stop();
-			log.println("  |= stop_self_loop" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= stop_self_loop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, unsatisfied_to_fail);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_goal_fail);
 			watch.stop();
-			log.println("  |= unsatisfied_self_loops" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_goal_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_goal);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_goal_stop);
 			watch.stop();
-			log.println("  |= objective_to_goal" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_goal_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_fail);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_stop_fail);
 			watch.stop();
-			log.println("  |= objective_to_fail" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_stop_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+
+//			watch.start();
+//			newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_goal);
+//			watch.stop();
+//			log.println("  |= objective_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+//
+//			watch.start();
+//			newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_fail);
+//			watch.stop();
+//			log.println("  |= objective_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+//
+//			watch.start();
+//			newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_goal);
+//			watch.stop();
+//			log.println("  |= condition_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+//
+//			watch.start();
+//			newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_stop);
+//			watch.stop();
+//			log.println("  |= condition_to_stop: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_goal);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_goal);
 			watch.stop();
-			log.println("  |= condition_to_goal" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_goal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
-			newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_stop);
+			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_fail);
 			watch.stop();
-			log.println("  |= condition_to_stop" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_fail: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
 			watch.start();
 			newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_normal);
 			watch.stop();
-			log.println("  |= normal_to_normal" + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
+			log.println("  |= normal_to_normal: " + watch.elapsedSeconds() + " seconds, " + printNumNodes.apply(newTrans));
 
-			//			if (debug)
-			//			JDD.PrintMinterms(log, newTrans.copy(), "newTrans");
+//			if (debug)
+//			JDD.PrintMinterms(log, newTrans.copy(), "newTrans");
 
 			return newTrans;
 		}
 
 		default JDDNode transformNormalToNormal()
 		{
-			return JDD.Times(notrap(ROW), JDD.Not(getObjectiveNormalStates()), JDD.Not(getConditionNormalStates()), JDD.Not(getConditionUnsatisfied()),
-					notTau(), notrap(COLUMN), getOriginalModel().getTrans().copy());
+			return JDD.Times(notrap(ROW),
+			                 JDD.Not(getGoalFailStates()),
+			                 JDD.Not(getGoalStopStates()),
+			                 JDD.Not(getStopFailStates()),
+			                 JDD.Not(getInstantGoalStates()),
+			                 JDD.Not(getInstantFailStates()),
+			                 notTau(),
+			                 notrap(COLUMN),
+			                 getOriginalModel().getTrans().copy());
 		}
 
-		default JDDNode transformObjectiveToGoal()
+		default JDDNode transformToGoalFail()
 		{
-			return JDD.Times(notrap(ROW), getObjectiveNormalStates(), tau(), goal(COLUMN), getConditionNormalProbs());
+			JDDNode normalToGoal = JDD.Times(notrap(ROW),
+			                                 getGoalFailStates(),
+			                                 tau(),
+			                                 goal(COLUMN),
+			                                 getGoalFailProbs());
+
+			JDDNode oneMinusGoalFailProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getGoalFailProbs());
+			JDDNode normalToFail = JDD.Times(notrap(ROW),
+			                                 getGoalFailStates(),
+			                                 tau(),
+			                                 fail(COLUMN),
+			                                 oneMinusGoalFailProbs);
+
+			return JDD.Apply(JDD.MAX, normalToFail, normalToGoal);
 		}
 
-		default JDDNode transformObjectiveToFail()
+//		default JDDNode transformObjectiveToGoal()
+//		{
+//			return JDD.Times(notrap(ROW),
+//			                 getGoalFailStates(),
+//			                 tau(),
+//			                 goal(COLUMN),
+//			                 getGoalFailProbs());
+//		}
+//
+//		default JDDNode transformObjectiveToFail()
+//		{
+//			JDDNode oneMinusGoalFailProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getGoalFailProbs());
+//			return JDD.Times(notrap(ROW),
+//			                 getGoalFailStates(),
+//			                 tau(),
+//			                 fail(COLUMN),
+//			                 oneMinusGoalFailProbs);
+//		}
+
+		default JDDNode transformNormalToGoalStop()
 		{
-			JDDNode oneMinusConditionNormalProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getConditionNormalProbs());
-			return JDD.Times(notrap(ROW), getObjectiveNormalStates(), tau(), fail(COLUMN), oneMinusConditionNormalProbs);
+			JDDNode normalToGoal = JDD.Times(notrap(ROW),
+			                                 getGoalStopStates(),
+			                                 tau(),
+			                                 goal(COLUMN),
+			                                 getGoalStopProbs());
+
+			JDDNode oneMinusGoalStopProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getGoalStopProbs());
+			JDDNode normalToStop = JDD.Times(notrap(ROW),
+			                                 getGoalStopStates(),
+			                                 tau(),
+			                                 stop(COLUMN),
+			                                 oneMinusGoalStopProbs);
+
+			return JDD.Apply(JDD.MAX, normalToGoal, normalToStop);
 		}
 
-		default JDDNode transformConditionToGoal()
-		{
-			return JDD.Times(notrap(ROW), getConditionNormalStates(), tau(), goal(COLUMN), getObjectiveNormalProbs());
-		}
+//		default JDDNode transformConditionToGoal()
+//		{
+//			return JDD.Times(notrap(ROW),
+//			                 getGoalStopStates(),
+//			                 tau(),
+//			                 goal(COLUMN),
+//			                 getGoalStopProbsProbs());
+//		}
+//
+//		default JDDNode transformConditionToStop()
+//		{
+//			JDDNode oneMinusGoalStopProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getGoalStopProbsProbs());
+//			return JDD.Times(notrap(ROW),
+//			                 getGoalStopStates(),
+//			                 tau(),
+//			                 stop(COLUMN),
+//			                 oneMinusGoalStopProbs);
+//		}
 
-		default JDDNode transformConditionToStop()
+		default JDDNode transformNormalToStopFail()
 		{
-			JDDNode oneMinusObjectiveNormalProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getObjectiveNormalProbs());
-			return JDD.Times(notrap(ROW), getConditionNormalStates(), tau(), stop(COLUMN), oneMinusObjectiveNormalProbs);
+			JDDNode normalToStop = JDD.Times(notrap(ROW),
+			                                 getStopFailStates(),
+			                                 tau(),
+			                                 stop(COLUMN),
+			                                 getStopFailProbs());
+
+			JDDNode oneMinusStopFailProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), getStopFailProbs());
+			JDDNode normalToFail = JDD.Times(notrap(ROW),
+			                                 getStopFailStates(),
+			                                 tau(),
+			                                 fail(COLUMN),
+			                                 oneMinusStopFailProbs);
+
+			return JDD.Apply(JDD.MAX, normalToStop, normalToFail);
 		}
 
 		default JDDNode transformGoalSelfLoop()
 		{
-			return JDD.Times(goal(ROW), tau(), goal(COLUMN));
+			return JDD.Times(goal(ROW),
+			                 tau(),
+			                 goal(COLUMN));
 		}
 
 		default JDDNode transformFailSelfLoop()
 		{
-			return JDD.Times(fail(ROW), tau(), fail(COLUMN));
+			return JDD.Times(fail(ROW),
+			                 tau(),
+			                 fail(COLUMN));
 		}
 
 		default JDDNode transformStopSelfLoop()
 		{
-			return JDD.Times(stop(ROW), tau(), stop(COLUMN));
+			return JDD.Times(stop(ROW),
+			                 tau(),
+			                 stop(COLUMN));
 		}
 
-		default JDDNode transformUnsatisfiedToFail()
+		default JDDNode transformNormalToGoal()
 		{
-			return JDD.Times(notrap(ROW), getConditionUnsatisfied(), JDD.Not(getObjectiveNormalStates()), // do not deadlock normal-form states
-					tau(), fail(COLUMN));
+			return JDD.Times(notrap(ROW),
+			                 getInstantGoalStates(),
+			                 JDD.Not(getGoalFailStates()), // do not infer with probabilistic states
+			                 JDD.Not(getGoalStopStates()), // do not infer with probabilistic states
+			                 tau(),
+			                 goal(COLUMN));
+		}
+
+		default JDDNode transformNormalToFail()
+		{
+			return JDD.Times(notrap(ROW),
+			                 getInstantFailStates(),
+			                 JDD.Not(getGoalFailStates()), // do not infer with probabilistic states
+			                 tau(),
+			                 fail(COLUMN));
 		}
 
 		default JDDNode getTransformedStart() throws PrismException
 		{
-			// FIXME ALG: use states of interest as start function
-			JDDNode start = JDD.And(notrap(ROW), getOriginalModel().getStart().copy());
-			//			if (debug)
-			//				JDD.PrintMinterms(log, start.copy(), "start");
-			return start;
-			//			return getOriginalModel().getReach().copy();
+			return JDD.And(notrap(ROW), getStatesOfInterest());
+//			return JDD.And(notrap(ROW),
+//			               getOriginalModel().getStart().copy());
+		}
+
+
+
+		public static class DTMC extends ProbModelTransformation implements GoalFailStopOperator<ProbModel>
+		{
+			protected PrismLog log;
+
+			private ProbabilisticRedistribution goalFail;
+			private ProbabilisticRedistribution goalStop;
+			private ProbabilisticRedistribution stopFail;
+			protected JDDNode instantGoalStates;
+			protected JDDNode instantFailStates;
+			protected JDDNode statesOfInterest;
+
+
+
+			/**
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
+			 */
+			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
+			{
+				this(model, goalFail, goalStop, new ProbabilisticRedistribution(), instantGoalStates, instantFailStates, statesOfInterest, log);
+			}
+
+			/**
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
+			 */
+			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
+			{
+				super(model);
+				this.log = log;
+
+				// FIXME ALG: ensure that the state set do not overlap 
+//				assert (!JDD.AreIntersecting(goalFailStates, goalStopStates));
+//				assert (!JDD.AreIntersecting(goalFailStates, instantFailStates));
+
+				this.goalFail          = goalFail;
+				this.goalStop          = goalStop;
+				this.stopFail          = stopFail;
+				this.instantGoalStates = instantGoalStates;
+				this.instantFailStates = instantFailStates;
+				this.statesOfInterest  = statesOfInterest;
+			}
+
+			@Override
+			public ProbModel transform(ProbModel model) throws PrismException
+			{
+				return model.getTransformed(this);
+			}
+
+			@Override
+			public PrismLog getLog()
+			{
+				return log;
+			}
+
+			@Override
+			public ProbModel getOriginalModel()
+			{
+				return originalModel;
+			}
+
+			@Override
+			public JDDNode getGoalFailStates()
+			{
+				return goalFail.getStates();
+			}
+
+			@Override
+			public JDDNode getGoalFailProbs()
+			{
+				return goalFail.getProbabilities();
+			}
+
+			@Override
+			public JDDNode getGoalStopStates()
+			{
+				return goalStop.getStates();
+			}
+
+			@Override
+			public JDDNode getGoalStopProbs()
+			{
+				return goalStop.getProbabilities();
+			}
+
+			@Override
+			public JDDNode getStopFailStates()
+			{
+				return stopFail.getStates();
+			}
+
+			@Override
+			public JDDNode getStopFailProbs()
+			{
+				return stopFail.getProbabilities();
+			}
+
+			@Override
+			public JDDNode getInstantGoalStates()
+			{
+				return instantGoalStates.copy();
+			}
+
+			@Override
+			public JDDNode getInstantFailStates()
+			{
+				return instantFailStates.copy();
+			}
+
+			@Override
+			public JDDNode getStatesOfInterest()
+			{
+				return statesOfInterest.copy();
+			}
+
+			@Override
+			public JDDVars getExtraRowVars()
+			{
+				return extraRowVars;
+			}
+
+			@Override
+			public JDDVars getExtraColVars()
+			{
+				return extraColVars;
+			}
+
+			@Override
+			public void clear()
+			{
+				super.clear();
+				goalFail.clear();
+				goalStop.clear();
+				stopFail.clear();
+				JDD.Deref(instantGoalStates, instantFailStates, statesOfInterest);
+			}
+
+			@Override
+			public int getExtraStateVariableCount()
+			{
+				return GoalFailStopOperator.super.getExtraStateVariableCount();
+			}
+
+			@Override
+			public JDDNode getTransformedTrans() throws PrismException
+			{
+				return GoalFailStopOperator.super.getTransformedTrans();
+			}
+
+			@Override
+			public JDDNode getTransformedStart() throws PrismException
+			{
+				return GoalFailStopOperator.super.getTransformedStart();
+			}
+
+			@Override
+			public JDDNode tau()
+			{
+				return JDD.Constant(1);
+			}
+
+			@Override
+			public JDDNode notTau()
+			{
+				return JDD.Constant(1);
+			}
 		}
 
 
@@ -455,28 +780,43 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 		{
 			protected PrismLog log;
 
-			protected JDDNode objectiveNormalStates;
-			protected JDDNode objectiveNormalProbs;
-			protected JDDNode conditionNormalStates;
-			protected JDDNode conditionNormalProbs;
-			protected JDDNode conditionUnsatisfied;
+			private ProbabilisticRedistribution goalFail;
+			private ProbabilisticRedistribution goalStop;
+			private ProbabilisticRedistribution stopFail;
+			protected JDDNode instantGoalStates;
+			protected JDDNode instantFailStates;
+			protected JDDNode statesOfInterest;
+
+
 
 			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionNormalProbs, and conditionUnsatisfied</i> ]
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
 			 */
-			public MDP(NondetModel model, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs, JDDNode conditionNormalStates,
-					JDDNode conditionNormalProbs, JDDNode conditionUnsatisfied, PrismLog log) throws PrismException
+			public MDP(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
+			{
+				this(model, goalFail, goalStop, new ProbabilisticRedistribution(), instantGoalStates, instantFailStates, statesOfInterest, log);
+			}
+
+			/**
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
+			 */
+			public MDP(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
 			{
 				super(model);
 				this.log = log;
 
-				assert (!JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
+				// FIXME ALG: ensure that the state set do not overlap 
+//				assert (!JDD.AreIntersecting(goalFailStates, goalStopStates));
+//				assert (!JDD.AreIntersecting(goalFailStates, instantFailStates));
 
-				this.objectiveNormalStates = objectiveNormalStates;
-				this.objectiveNormalProbs  = objectiveNormalProbs;
-				this.conditionNormalStates = conditionNormalStates;
-				this.conditionNormalProbs  = conditionNormalProbs;
-				this.conditionUnsatisfied  = conditionUnsatisfied;
+				this.goalFail          = goalFail;
+				this.goalStop          = goalStop;
+				this.stopFail          = stopFail;
+				this.instantGoalStates = instantGoalStates;
+				this.instantFailStates = instantFailStates;
+				this.statesOfInterest  = statesOfInterest;
 			}
 
 			@Override
@@ -498,33 +838,57 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			}
 
 			@Override
-			public JDDNode getObjectiveNormalStates()
+			public JDDNode getGoalFailStates()
 			{
-				return objectiveNormalStates.copy();
+				return goalFail.getStates();
 			}
 
 			@Override
-			public JDDNode getObjectiveNormalProbs()
+			public JDDNode getGoalFailProbs()
 			{
-				return objectiveNormalProbs.copy();
+				return goalFail.getProbabilities();
 			}
 
 			@Override
-			public JDDNode getConditionNormalStates()
+			public JDDNode getGoalStopStates()
 			{
-				return conditionNormalStates.copy();
+				return goalStop.getStates();
 			}
 
 			@Override
-			public JDDNode getConditionNormalProbs()
+			public JDDNode getGoalStopProbs()
 			{
-				return conditionNormalProbs.copy();
+				return goalStop.getProbabilities();
 			}
 
 			@Override
-			public JDDNode getConditionUnsatisfied()
+			public JDDNode getStopFailStates()
 			{
-				return JDD.And(notrap(ROW), conditionUnsatisfied.copy());
+				return stopFail.getStates();
+			}
+
+			@Override
+			public JDDNode getStopFailProbs()
+			{
+				return stopFail.getProbabilities();
+			}
+
+			@Override
+			public JDDNode getInstantGoalStates()
+			{
+				return instantGoalStates.copy();
+			}
+
+			@Override
+			public JDDNode getInstantFailStates()
+			{
+				return instantFailStates.copy();
+			}
+
+			@Override
+			public JDDNode getStatesOfInterest()
+			{
+				return statesOfInterest.copy();
 			}
 
 			@Override
@@ -543,8 +907,10 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			public void clear()
 			{
 				super.clear();
-				// FIXME ALG: check deref!!!
-				JDD.Deref(objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionNormalProbs, conditionUnsatisfied);
+				goalFail.clear();
+				goalStop.clear();
+				stopFail.clear();
+				JDD.Deref(instantGoalStates, instantFailStates, statesOfInterest);
 			}
 
 			@Override
@@ -585,135 +951,6 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			public JDDNode notTau()
 			{
 				return JDD.Not(extraActionVars.getVar(0).copy());
-			}
-		}
-
-
-
-		public static class DTMC extends ProbModelTransformation implements GoalFailStopOperator<ProbModel>
-		{
-			protected PrismLog log;
-
-			protected JDDNode objectiveNormalStates;
-			protected JDDNode objectiveNormalProbs;
-			protected JDDNode conditionNormalStates;
-			protected JDDNode conditionNormalProbs;
-			protected JDDNode conditionUnsatisfied;
-
-			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, and conditionNormalProbs</i> ]
-			 */
-			public DTMC(ProbModel model, JDDNode objectiveNormalStates, JDDNode objectiveNormalProbs, JDDNode conditionNormalStates,
-					JDDNode conditionNormalProbs, JDDNode conditionUnsatisfied, PrismLog log) throws PrismException
-			{
-				super(model);
-				this.log = log;
-
-				assert (!JDD.AreIntersecting(objectiveNormalStates, conditionNormalStates));
-
-				this.objectiveNormalStates = objectiveNormalStates;
-				this.objectiveNormalProbs  = objectiveNormalProbs;
-				this.conditionNormalStates = conditionNormalStates;
-				this.conditionNormalProbs  = conditionNormalProbs;
-				this.conditionUnsatisfied  = conditionUnsatisfied;
-			}
-
-			@Override
-			public ProbModel transform(ProbModel model) throws PrismException
-			{
-				return model.getTransformed(this);
-			}
-
-			@Override
-			public PrismLog getLog()
-			{
-				return log;
-			}
-
-			@Override
-			public ProbModel getOriginalModel()
-			{
-				return originalModel;
-			}
-
-			@Override
-			public JDDNode getObjectiveNormalStates()
-			{
-				return objectiveNormalStates.copy();
-			}
-
-			@Override
-			public JDDNode getObjectiveNormalProbs()
-			{
-				return objectiveNormalProbs.copy();
-			}
-
-			@Override
-			public JDDNode getConditionNormalStates()
-			{
-				return conditionNormalStates.copy();
-			}
-
-			@Override
-			public JDDNode getConditionNormalProbs()
-			{
-				return conditionNormalProbs.copy();
-			}
-
-			@Override
-			public JDDNode getConditionUnsatisfied()
-			{
-				return JDD.And(notrap(ROW), conditionUnsatisfied.copy());
-			}
-
-			@Override
-			public JDDVars getExtraRowVars()
-			{
-				return extraRowVars;
-			}
-
-			@Override
-			public JDDVars getExtraColVars()
-			{
-				return extraColVars;
-			}
-
-			@Override
-			public void clear()
-			{
-				super.clear();
-				// FIXME ALG: check deref!!!
-				JDD.Deref(objectiveNormalStates, objectiveNormalProbs, conditionNormalStates, conditionNormalProbs, conditionUnsatisfied);
-			}
-
-			@Override
-			public int getExtraStateVariableCount()
-			{
-				return GoalFailStopOperator.super.getExtraStateVariableCount();
-			}
-
-			@Override
-			public JDDNode getTransformedTrans() throws PrismException
-			{
-				return GoalFailStopOperator.super.getTransformedTrans();
-			}
-
-			@Override
-			public JDDNode getTransformedStart() throws PrismException
-			{
-				return GoalFailStopOperator.super.getTransformedStart();
-			}
-
-			@Override
-			public JDDNode tau()
-			{
-				return JDD.Constant(1);
-			}
-
-			@Override
-			public JDDNode notTau()
-			{
-				return JDD.Constant(1);
 			}
 		}
 	}

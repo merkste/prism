@@ -5,7 +5,6 @@ import jdd.JDDNode;
 import acceptance.AcceptanceType;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import acceptance.AcceptanceReachDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
@@ -55,15 +54,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 		LTLModelChecker ltlMC = new LTLModelChecker(prism);
 		LTLModelChecker.LTLProduct<ProbModel> ltlProduct = ltlMC.constructProductMC(modelChecker, model, expression.getCondition(), statesOfInterest.copy(), allowedAcceptance);
 
-		JDDNode accepting;
-		if (ltlProduct.getAcceptance().getType().equals(AcceptanceType.REACH)) {
-			prism.getLog().println("\nSkipping BSCC computation...");
-			accepting = ((AcceptanceReachDD)ltlProduct.getAcceptance()).getGoalStates();
-		} else {
-			prism.getLog().println("\nComputing accepting BSCCs...");
-			accepting = ltlMC.findAcceptingBSCCs(ltlProduct.getAcceptance(), ltlProduct.getProductModel());
-			//StateValuesMTBDD.print(prism.getLog(), acceptingBSCCs.copy(), ltlProduct.getProductModel(), "acceptingBSCC");
-		}
+		JDDNode accepting = getLtlTransformer().findAcceptingStates(ltlProduct);
 		prism.getLog().println("\nComputing reachability probabilities...");
 		ProbModelChecker mcProduct = modelChecker.createNewModelChecker(prism, ltlProduct.getProductModel(), null);
 		StateValues probsProduct = mcProduct.checkProbUntil(ltlProduct.getProductModel().getReach(), accepting, false);

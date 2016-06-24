@@ -81,12 +81,20 @@ public abstract class SimplePathProperty implements Cloneable
 
 	public JDDNode getGoal()
 	{
+		// FIXME ALG: should return a copy
 		return goal;
 	}
 
 	public boolean isNegated()
 	{
 		return negated;
+	}
+
+	public SimplePathProperty negated()
+	{
+		SimplePathProperty clone = clone();
+		clone.negated = ! negated;
+		return clone;
 	}
 
 	/**
@@ -205,7 +213,14 @@ public abstract class SimplePathProperty implements Cloneable
 
 		public JDDNode getRemain()
 		{
+			// FIXME ALG: should return a copy
 			return remain;
+		}
+
+		@Override
+		public Until negated()
+		{
+			return (Until) super.negated();
 		}
 
 		/**
@@ -288,6 +303,12 @@ public abstract class SimplePathProperty implements Cloneable
 			return copy;
 		}
 
+		@Override
+		public Finally negated()
+		{
+			return (Finally) super.negated();
+		}
+
 		public static Expression normalizeUnboundedSimpleFinallyFormula(Expression expression, boolean convert)
 		{
 			requireUnboundedSimplePathFormula(expression);
@@ -361,6 +382,12 @@ public abstract class SimplePathProperty implements Cloneable
 			Next copy = this.copy();
 			copy.goal = JDD.And(copy.goal, model.getReach().copy());
 			return copy;
+		}
+
+		@Override
+		public Next negated()
+		{
+			return (Next) super.negated();
 		}
 
 		public static Expression normalizeUnboundedSimpleNextFormula(Expression expression, boolean convert)
