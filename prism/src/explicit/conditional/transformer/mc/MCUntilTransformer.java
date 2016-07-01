@@ -61,15 +61,15 @@ public class MCUntilTransformer extends MCConditionalTransformer
 
 
 		final Expression until = ExpressionInspector.normalizeExpression(condition);
-		final BitSet remain = getRemainStates(model, until);
-		final BitSet goal = getGoalStates(model, until);
-		final boolean negated = until instanceof ExpressionUnaryOp;
+		final BitSet remain    = getRemainStates(model, until);
+		final BitSet goal      = getGoalStates(model, until);
+		final boolean negated  = until instanceof ExpressionUnaryOp;
 		final boolean collapse = !absorbing;
-		
+
 		// 1. create mode 1 == conditional part
 		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
-		
+
 		// 2. create transformed model
 		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
 		final DTMCView transformedModel;
@@ -113,7 +113,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
 		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(condition)) {
-			// can optimize unbounded simple until conditions only
+			// can optimize non-negated unbounded simple until conditions only
 			return true;
 		}
 		final ExpressionTemporal conditionPath = (ExpressionTemporal) condition;

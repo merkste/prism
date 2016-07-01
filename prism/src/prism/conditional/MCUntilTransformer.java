@@ -19,6 +19,7 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.MCDeadlockTransformation;
 import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
@@ -49,10 +50,11 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
-		return transformModel(model, condition, statesOfInterest, ! requiresSecondMode(expression));
+		Until conditionPath  = new Until(condition, getModelChecker(), true);
+		return transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
 	}
 
-	protected ModelTransformation<ProbModel, ProbModel> transformModel(final ProbModel model, final Expression condition, final JDDNode statesOfInterest,
+	protected ModelTransformation<ProbModel, ProbModel> transformModel(final ProbModel model, final Until conditionPath, final JDDNode statesOfInterest,
 			final boolean deadlock) throws PrismException
 	{
 //>>> Debug: print states of interest
@@ -60,14 +62,10 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), statesOfInterest.copy());
 //		new StateValuesMTBDD(statesOfInterest.copy(), model).print(prism.getLog());
 
-		final Expression until = ExpressionInspector.normalizeExpression(condition);
-		final JDDNode remain = getRemainStates(model, until);
-		final JDDNode goal = getGoalStates(model, until);
-		final boolean negated = until instanceof ExpressionUnaryOp;
-
-		final JDDNode prob0 = computeProb0(model, remain, goal);
-		final JDDNode prob1 = computeProb1(model, remain, goal, prob0);
-		final JDDNode probs = computeProbabilities(model, remain, goal, prob0, prob1, negated);
+		// FIXME ALG: reuse prob0, prob1
+		final JDDNode prob0 = computeProb0(model, conditionPath);
+		final JDDNode prob1 = computeProb1(model, conditionPath);
+		final JDDNode probs = computeUntilProbs(model, conditionPath);
 
 		if (JDD.IsContainedIn(statesOfInterest, prob0)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
@@ -82,7 +80,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		JDDNode liftedProbs;
 		if (deadlock) {
 			// pivots from remain and goal;
-			JDDNode pivots = getPivots(model, remain, goal, negated);
+			JDDNode pivots = getPivots(model, conditionPath);
 			// deadlock in pivots
 			pivotTransformation = new MCDeadlockTransformation(model, pivots, statesOfInterest);
 			JDD.Deref(pivots);
@@ -90,10 +88,9 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			liftedProbs = probs.copy();
 		} else {
 			// pivots from prob0 or prob1;
-			JDDNode pivots = negated ? prob0.copy() : prob1.copy();
+			JDDNode pivots = prob1;
 			// switch mode in pivots
 			pivotTransformation = new MCPivotTransformation(model, pivots, statesOfInterest, true);
-			JDD.Deref(pivots);
 			// lift probs
 			liftedProbs = JDD.Apply(JDD.MAX, probs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
 		}
@@ -108,11 +105,12 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), liftedProbs.copy());
 //		new StateValuesMTBDD(liftedProbs.copy(), pivotModel).print(prism.getLog());
 
-		JDD.Deref(remain, goal, prob0, prob1, probs);
+		conditionPath.clear();
+		JDD.Deref(prob0, prob1, probs);
 
-		ProbModel pivotModel = pivotTransformation.getTransformedModel();
+		ProbModel pivotModel          = pivotTransformation.getTransformedModel();
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
-		liftedProbs = JDD.Times(liftedProbs, pivotModel.getReach().copy());
+		liftedProbs                   = JDD.Times(liftedProbs, pivotModel.getReach().copy());
 
 		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
 
@@ -137,26 +135,14 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}
 
-	public JDDNode getPivots(final ProbModel model, final JDDNode remain, final JDDNode goal, final boolean negated)
+	public JDDNode getPivots(final ProbModel model, final Until until)
 	{
-		if (!negated) {
+		if (! until.isNegated()) {
 			// pivots = goal
-			return goal.copy();
+			return until.getGoal().copy();
 		}
 		// pivots = ! (remain | goal)
-		return JDD.Not(JDD.Or(remain.copy(), goal.copy()));
-	}
-
-	protected JDDNode getRemainStates(final ProbModel model, final Expression expression) throws PrismException
-	{
-		final ExpressionTemporal until = (ExpressionTemporal) removeNegation(expression);
-		return checkExpression(model, until.getOperand1());
-	}
-
-	protected JDDNode getGoalStates(final ProbModel model, final Expression expression) throws PrismException
-	{
-		final ExpressionTemporal until = (ExpressionTemporal) removeNegation(expression);
-		return checkExpression(model, until.getOperand2());
+		return JDD.Not(JDD.Or(until.getRemain().copy(), until.getGoal().copy()));
 	}
 
 	protected Expression removeNegation(final Expression expression)
@@ -172,11 +158,11 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected boolean requiresSecondMode(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
-		if (!ExpressionInspector.isSimpleUntilFormula(condition)) {
-			// can optimize unbounded simple until conditions only
+		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(condition)) {
+			// can optimize non-negated unbounded simple until conditions only
 			return true;
 		}
-		final ExpressionTemporal conditionPath = (ExpressionTemporal) condition;
+		final ExpressionTemporal conditionTmp = (ExpressionTemporal) condition;
 
 		final Expression objective = expression.getObjective();
 		final Expression objectiveSubExpr;
@@ -192,7 +178,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		}
 		final ExpressionTemporal objectivePath = (ExpressionTemporal) objectiveSubExpr;
 
-		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionPath.getOperand2());
+		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionTmp.getOperand2());
 		Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(objectivePath.getOperand2());
 		if (conditionGoal != null && objectiveGoal != null) {
 			try {
@@ -215,32 +201,4 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		final StateValues stateValues = mc.checkExpression(expression, statesOfInterest);
 		return stateValues.convertToStateValuesMTBDD().getJDDNode();
 	}
-
-	private JDDNode computeProbabilities(final ProbModel model, final JDDNode remain, final JDDNode goal, final JDDNode prob0, final JDDNode prob1, final boolean negated) throws PrismException
-	{
-		ProbModelChecker mc = (ProbModelChecker) modelChecker.createModelChecker(model);
-		StateValues probabilities = mc.checkProbUntil(remain, goal, false);
-		if (negated) {
-			probabilities.subtractFromOne();
-		}
-		return probabilities.convertToStateValuesMTBDD().getJDDNode();
-	}
-
-//	private JDDNode computeProb0(final ProbModel model, JDDNode remain, JDDNode goal)
-//	{
-//		JDDNode trans01 = model.getTrans01();
-//		JDDNode reach   = model.getReach();
-//		JDDVars rowVars = model.getAllDDRowVars();
-//		JDDVars colVars = model.getAllDDColVars();
-//		return PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, remain, goal);
-//	}
-//
-//	private JDDNode computeProb1(final ProbModel model, JDDNode remain, JDDNode goal, JDDNode prob0)
-//	{
-//		JDDNode trans01 = model.getTrans01();
-//		JDDNode reach   = model.getReach();
-//		JDDVars rowVars = model.getAllDDRowVars();
-//		JDDVars colVars = model.getAllDDColVars();
-//		return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
-//	}
 }
