@@ -31,6 +31,7 @@ import java.util.function.Function;
 
 import common.iterable.CartesianProduct;
 import common.iterable.FunctionalIterable;
+import common.iterable.Interval;
 import prism.*;
 import parser.ast.*;
 import parser.ast.Module;
@@ -452,7 +453,7 @@ public class VarList
 	 * States will be generated on the fly during iteration.
 	 * Use with care!
 	 */
-	public FunctionalIterable<State> getAllStates() throws PrismLangException
+	public FunctionalIterable<Object[]> getAllAssignments() throws PrismLangException
 	{
 		for (Var var : vars) {
 			Type type = getType(var);
@@ -462,13 +463,16 @@ public class VarList
 			throw new PrismLangException("Cannot determine all values for a variable of type " + getType(var));
 		}
 
+		// convert variable list to list of domains
 		List<Boolean> booleans              = Arrays.asList(false, true);
-		Function<Var, Iterable<?>> toDomain = var -> (getType(var) instanceof TypeBool) ? booleans : new common.iterable.Interval(var.low, var.high + 1);
+		Function<Var, Iterable<?>> toDomain = var -> (getType(var) instanceof TypeBool)
+		                                              ? booleans
+		                                              : new Interval(var.low, var.high + 1);
 		FunctionalIterable<Var> variables   = FunctionalIterable.extend(vars);
 		Iterable<Iterable<?>> domains       = variables.map(toDomain);
 
-		Function<Object[], State> toState   = tuple -> new State(tuple, modulesFile);
-		return CartesianProduct.of(domains).map(toState);
+		// iterate states from Cartesian product
+		return CartesianProduct.mutableOf(domains);
 	}
 
 	/**
