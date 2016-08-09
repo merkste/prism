@@ -207,7 +207,7 @@ public class DTMCSparse extends DTMCExplicit
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator.FromInt<>(indices, getTransition);
+		return indices.map(getTransition).iterator();
 	}
 
 	@Override
@@ -221,7 +221,7 @@ public class DTMCSparse extends DTMCExplicit
 			}
 		};
 		final Interval indices = new Interval(rows[state], rows[state+1]);
-		return new MappingIterator.FromInt<>(indices, getTransitionWithAction);
+		return indices.map(getTransitionWithAction).iterator();
 	}
 
 	@Override
@@ -336,7 +336,7 @@ public class DTMCSparse extends DTMCExplicit
 		};
 		String s = "trans: [ ";
 		final IterableStateSet states = new IterableStateSet(numStates);
-		final Iterator<Entry<Integer, Distribution>> distributions = new MappingIterator.From<>(states, getDistribution);
+		final Iterator<Entry<Integer, Distribution>> distributions = states.map(getDistribution).iterator();
 		while (distributions.hasNext()) {
 			final Entry<Integer, Distribution> dist = distributions.next();
 			s += dist.getKey() + ": " + dist.getValue();
