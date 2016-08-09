@@ -29,7 +29,6 @@ package parser;
 import java.util.*;
 import java.util.function.Function;
 
-import common.iterable.MappingIterable;
 import common.iterable.CartesianProduct;
 import common.iterable.FunctionalIterable;
 import prism.*;
@@ -464,10 +463,11 @@ public class VarList
 
 		List<Boolean> booleans              = Arrays.asList(false, true);
 		Function<Var, Iterable<?>> toDomain = var -> (getType(var) instanceof TypeBool) ? booleans : new common.iterable.Interval(var.low, var.high + 1);
-		Iterable<Iterable<?>> varDomains    = new MappingIterable.From<>(vars, toDomain);
+		FunctionalIterable<Var> variables   = FunctionalIterable.extend(vars);
+		Iterable<Iterable<?>> domains       = variables.map(toDomain);
 
-		Function<Object[], State> toState  = tuple -> new State(tuple, modulesFile);
-		return CartesianProduct.of(varDomains).map(toState);
+		Function<Object[], State> toState   = tuple -> new State(tuple, modulesFile);
+		return CartesianProduct.of(domains).map(toState);
 	}
 
 	/**
