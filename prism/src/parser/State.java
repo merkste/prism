@@ -28,6 +28,7 @@ package parser;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntView;
@@ -50,7 +51,17 @@ public class State implements Comparable<State>
 	 */
 	public State(int n, ModelInfo mi)
 	{
-		varValues = new Object[n];
+		this(new Object[n], mi);
+	}
+
+	/**
+	 * Construct state from value array.
+	 * @param n Number of variables.
+	 */
+	public State(Object[] varValues, ModelInfo mi)
+	{
+		Objects.requireNonNull(varValues);
+		this.varValues = varValues;
 		this.modelInfo = mi;
 	}
 

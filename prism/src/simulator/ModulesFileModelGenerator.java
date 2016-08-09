@@ -1,6 +1,7 @@
 package simulator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import parser.State;
@@ -212,27 +213,27 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 			return getInitialStates().get(0);
 		}
 	}
-	
+
 	@Override
 	public List<State> getInitialStates() throws PrismException
 	{
-		List<State> initStates = new ArrayList<State>();
-		// Easy (normal) case: just one initial state
 		if (modulesFile.getInitialStates() == null) {
+			// Easy (normal) case: just one initial state
 			State state = modulesFile.getDefaultInitialState();
-			initStates.add(state);
+			return Collections.singletonList(state);
 		}
 		// Otherwise, there may be multiple initial states
-		// For now, we handle this is in a very inefficient way
-		else {
-			Expression init = modulesFile.getInitialStates();
-			List<State> allPossStates = varList.getAllStates();
-			for (State possState : allPossStates) {
-				if (init.evaluateBoolean(modulesFile.getConstantValues(), possState)) {
-					initStates.add(possState);
-				}
+		// For now, we handle this in a very inefficient way
+		ArrayList<State> initStates = new ArrayList<State>();
+		Expression init             = modulesFile.getInitialStates();
+		Values constants            = modulesFile.getConstantValues();
+		for (State state : varList.getAllStates()) {
+			// loop instead of filter function to handle PrismException
+			if (init.evaluateBoolean(constants, state)) {
+				initStates.add(state);
 			}
 		}
+		initStates.trimToSize();
 		return initStates;
 	}
 
