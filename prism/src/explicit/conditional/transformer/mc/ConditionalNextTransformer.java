@@ -13,8 +13,8 @@ import common.BitSetTools;
 import common.functions.Mapping;
 import common.functions.primitive.MappingInt;
 import common.functions.primitive.PredicateInt;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableBitSet;
-import common.iterable.MappingIterator;
 import common.iterable.Support;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -154,7 +154,7 @@ public class ConditionalNextTransformer extends PrismComponent
 				};
 			}
 
-			return new MappingIterator.From<>(model.getTransitionsIterator(state), conditionalProbability);
+			return FunctionalIterator.extend(model.getTransitionsIterator(state)).map(conditionalProbability);
 		}
 	}
 

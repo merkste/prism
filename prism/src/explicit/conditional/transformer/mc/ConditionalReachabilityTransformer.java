@@ -16,9 +16,8 @@ import common.functions.Mapping;
 import common.functions.Predicate;
 import common.functions.primitive.MappingInt;
 import common.functions.primitive.PredicateInt;
-import common.iterable.FilteringIterator;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableBitSet;
-import common.iterable.MappingIterator;
 import common.iterable.Support;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -193,8 +192,7 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 					return new AbstractMap.SimpleImmutableEntry<>(target, conditionalProbability);
 				}
 			};
-
-			return new MappingIterator.From<>(new FilteringIterator.Of<>(model.getTransitionsIterator(state), inSupport), conditionalProbability);
+			return FunctionalIterator.extend(model.getTransitionsIterator(state)).filter(inSupport).map(conditionalProbability);
 		}
 	}
 
