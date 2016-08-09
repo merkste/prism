@@ -11,7 +11,6 @@ import java.util.function.IntUnaryOperator;
 
 import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
-import common.iterable.FilteringIterator;
 import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
@@ -197,7 +196,7 @@ public class MDPEquiv extends MDPView
 		}
 		Iterator<Integer> successors = model.getSuccessorsIterator(originalState, originalChoice);
 		if (hasTransitionToNonRepresentative.get(originalState)) {
-			return FilteringIterator.dedupe(new MappingIterator.From<>(successors, this::mapStateToRestrictedModel));
+			return new MappingIterator.From<>(successors, this::mapStateToRestrictedModel).dedupe();
 		}
 		return successors;
 	}

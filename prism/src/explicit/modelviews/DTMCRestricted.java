@@ -11,12 +11,10 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
-import common.IteratorTools;
 import common.iterable.EmptyIterator;
-import common.iterable.FilteringIterable;
+import common.iterable.FunctionalIterable;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
-import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
 import parser.State;
 import parser.Values;
@@ -133,8 +131,8 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), states::get);
-		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
+		final FunctionalIterable<Integer> initialStates = FunctionalIterable.extend(model.getInitialStates());
+		return initialStates.filter(states::get).map(this::mapStateToRestrictedModel);
 	}
 
 	@Override

@@ -14,7 +14,8 @@ import common.BitSetTools;
 import common.functions.Relation;
 import common.iterable.ChainedIterator;
 import common.iterable.EmptyIterator;
-import common.iterable.FilteringIterator;
+import common.iterable.FunctionalIterable;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterator;
 import parser.State;
@@ -145,7 +146,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		if (transitions == null) {
 			return model.getTransitionsIterator(state);
 		}
-		return new FilteringIterator.Of<>(transitions, nonZero);
+		return FunctionalIterator.extend(transitions).filter(nonZero);
 	}
 
 
@@ -208,9 +209,9 @@ public class DTMCAlteredDistributions extends DTMCView
 				if (equivalenceClass == null) {
 					return null;
 				}
-				final MappingIterator<Integer, Iterator<Entry<Integer, Double>>> transitionIterators =
-						new MappingIterator.FromInt<>(new IterableBitSet(equivalenceClass), model::getTransitionsIterator);
-				return FilteringIterator.dedupe(new ChainedIterator.Of<>(transitionIterators));
+				final FunctionalIterable<Iterator<Entry<Integer, Double>>> transitionIterators =
+						new IterableBitSet(equivalenceClass).map((int s) -> model.getTransitionsIterator(s));
+				return new ChainedIterator.Of<>(transitionIterators).dedupe();
 			}
 		};
 		final DTMC reattached = new DTMCAlteredDistributions(model, reattach);

@@ -11,9 +11,7 @@ import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 
-import common.IteratorTools;
 import common.iterable.ChainedIterator;
-import common.iterable.FilteringIterator;
 import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
@@ -189,7 +187,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 			successorIterators[choice] = getSuccessorsIterator(state, choice);
 		}
 
-		return FilteringIterator.dedupe(new ChainedIterator.Of<>(successorIterators));
+		return new ChainedIterator.Of<>(successorIterators).dedupe();
 	}
 
 

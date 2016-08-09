@@ -14,7 +14,6 @@ import java.util.function.IntFunction;
 import common.BitSetTools;
 import common.functions.PairMapping;
 import common.iterable.IterableBitSet;
-import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
 import common.iterable.collections.ChainedList;
 import explicit.Distribution;
@@ -258,7 +257,7 @@ public class MDPAlteredDistributions extends MDPView
 						return choices;
 					}
 				};
-				return new ChainedList<Iterator<Entry<Integer, Double>>>(new MappingIterable.FromInt<>(new IterableBitSet(equivalenceClass), getOtherChoices));
+				return new ChainedList<>(new IterableBitSet(equivalenceClass).map(getOtherChoices));
 			}
 		};
 		final IntFunction<List<Object>> addActions = new IntFunction<List<Object>>()
@@ -289,7 +288,7 @@ public class MDPAlteredDistributions extends MDPView
 						return actions;
 					}
 				};
-				return new ChainedList<Object>(new MappingIterable.FromInt<>(new IterableBitSet(equivalenceClass), getOtherActions));
+				return new ChainedList<>(new IterableBitSet(equivalenceClass).map(getOtherActions));
 			}
 		};
 		final MDPView reattached = new MDPAdditionalChoices(droppedChoices, addChoices, addActions);

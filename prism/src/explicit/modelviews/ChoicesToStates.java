@@ -12,8 +12,8 @@ import java.util.function.Function;
 import common.BitSetTools;
 import common.functions.PairMapping;
 import common.functions.primitive.PairPredicateInt;
+import common.iterable.FunctionalIterator;
 import common.iterable.Interval;
-import common.iterable.MappingIterator;
 import explicit.DiracDistribution;
 import explicit.Distribution;
 import explicit.MDP;
@@ -72,7 +72,7 @@ public class ChoicesToStates
 						return new AbstractMap.SimpleImmutableEntry<>(target, probability);
 					}
 				};
-				return new MappingIterator.From<Entry<Integer, Double>, Entry<Integer, Double>>(transitions, redirect);
+				return FunctionalIterator.extend(transitions).map(redirect);
 			}
 		};
 		return new MDPAlteredDistributions(union, choiceMapping);

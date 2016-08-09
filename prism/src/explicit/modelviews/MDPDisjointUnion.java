@@ -12,8 +12,7 @@ import java.util.Map.Entry;
 
 import common.BitSetTools;
 import common.functions.Mapping;
-import common.iterable.ChainedIterable;
-import common.iterable.MappingIterable;
+import common.iterable.FunctionalIterable;
 import common.iterable.MappingIterator;
 import common.iterable.collections.ChainedList;
 import common.iterable.collections.UnionSet;
@@ -80,12 +79,13 @@ public class MDPDisjointUnion extends MDPView
 		return model1.getNumInitialStates() + model2.getNumInitialStates();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Iterable<Integer> getInitialStates()
 	{
-		final Iterable<Integer> initials1 = model1.getInitialStates();
-		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable.Of<>(initials1, new MappingIterable.From<>(initials2, shiftStateUp));
+		final FunctionalIterable<Integer> initials1 = FunctionalIterable.extend(model1.getInitialStates());
+		final FunctionalIterable<Integer> initials2 = FunctionalIterable.extend(model2.getInitialStates());
+		return initials1.chain(initials2.map(shiftStateUp));
 	}
 
 	@Override
@@ -309,7 +309,8 @@ public class MDPDisjointUnion extends MDPView
 				return equivalentStates;
 			}
 		};
-		return MDPAlteredDistributions.identifyStates(union, new MappingIterable.From<>(identify.entrySet(), equivalenceClass));
+		Iterable<BitSet> equivalenceClasses = FunctionalIterable.extend(identify.entrySet()).map(equivalenceClass);
+		return MDPAlteredDistributions.identifyStates(union, equivalenceClasses);
 	}
 
 	public static void main(final String[] args) throws PrismException

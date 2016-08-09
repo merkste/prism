@@ -11,12 +11,10 @@ import java.util.Map.Entry;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
-import common.IteratorTools;
-import common.iterable.FilteringIterable;
+import common.iterable.FunctionalIterable;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
-import common.iterable.MappingIterable;
 import common.iterable.MappingIterator;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;
@@ -114,8 +112,8 @@ public class MDPRestricted extends MDPView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		final FilteringIterable<Integer> initialStates = new FilteringIterable.Of<>(model.getInitialStates(), states::get);
-		return new MappingIterable.ToInt<>(initialStates, this::mapStateToRestrictedModel);
+		FunctionalIterable<Integer> initialStates = FunctionalIterable.extend(model.getInitialStates());
+		return initialStates.filter(states::get).map(this::mapStateToRestrictedModel);
 	}
 
 	@Override

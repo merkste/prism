@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
-import common.IteratorTools;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.Interval;
 import explicit.Distribution;

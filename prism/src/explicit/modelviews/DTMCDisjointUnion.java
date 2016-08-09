@@ -12,8 +12,7 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
-import common.iterable.ChainedIterable;
-import common.iterable.MappingIterable;
+import common.iterable.FunctionalIterable;
 import common.iterable.MappingIterator;
 import common.iterable.collections.ChainedList;
 import common.iterable.collections.UnionSet;
@@ -80,12 +79,13 @@ public class DTMCDisjointUnion extends DTMCView
 		return model1.getNumInitialStates() + model2.getNumInitialStates();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Iterable<Integer> getInitialStates()
 	{
-		final Iterable<Integer> initials1 = model1.getInitialStates();
-		final Iterable<Integer> initials2 = model2.getInitialStates();
-		return new ChainedIterable.Of<>(initials1, new MappingIterable.ToInt<>(initials2, shiftStateUp));
+		final FunctionalIterable<Integer> initials1 = FunctionalIterable.extend(model1.getInitialStates());
+		final FunctionalIterable<Integer> initials2 = FunctionalIterable.extend(model2.getInitialStates());
+		return initials1.chain(initials2.map(shiftStateUp));
 	}
 
 	@Override

@@ -11,7 +11,6 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 import java.util.function.IntFunction;
 
-import common.IteratorTools;
 import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
