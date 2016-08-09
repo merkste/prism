@@ -1,6 +1,5 @@
 package common.iterable;
 
-import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 public class Interval implements IterableInt
@@ -28,9 +27,9 @@ public class Interval implements IterableInt
 	}
 
 	@Override
-	public OfInt iterator()
+	public FunctionalPrimitiveIterator.OfInt iterator()
 	{
-		return stream().iterator();
+		return (FunctionalPrimitiveIterator.OfInt) FunctionalIterator.extend(stream().iterator());
 	}
 
 	public IntStream stream()

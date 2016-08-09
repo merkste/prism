@@ -29,7 +29,6 @@ package common.iterable;
 
 import java.util.BitSet;
 import java.util.NoSuchElementException;
-import java.util.PrimitiveIterator.OfInt;
 
 import common.IteratorTools;
 
@@ -70,7 +69,7 @@ public class IterableBitSet implements IterableInt
 	}
 
 	/** Implementation of the iterator over the set bits */
-	private class SetBitsIterator implements OfInt
+	private class SetBitsIterator implements FunctionalPrimitiveIterator.OfInt
 	{
 		private int current = -1;
 		private int next = set.nextSetBit(0);
@@ -104,7 +103,7 @@ public class IterableBitSet implements IterableInt
 	}
 
 	/** Implementation of the iterator over the cleared bits, requires that {@code maxIndex != null} */
-	private class ClearBitsIterator implements OfInt
+	private class ClearBitsIterator implements FunctionalPrimitiveIterator.OfInt
 	{
 		private int current = -1;
 		private int next = set.nextClearBit(0);
@@ -138,7 +137,7 @@ public class IterableBitSet implements IterableInt
 	}
 
 	@Override
-	public OfInt iterator()
+	public FunctionalPrimitiveIterator.OfInt iterator()
 	{
 		if (clearBits == false) {
 			return new SetBitsIterator();

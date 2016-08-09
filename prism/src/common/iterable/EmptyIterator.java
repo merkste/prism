@@ -1,10 +1,8 @@
 package common.iterable;
 
-import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.PrimitiveIterator;
 
-public abstract class EmptyIterator<T> implements Iterator<T>
+public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 {
 	private static final Of<?> OF           = new Of<>();
 	private static final OfInt OF_INT       = new OfInt();
@@ -45,7 +43,7 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfInt extends EmptyIterator<Integer> implements PrimitiveIterator.OfInt
+	public static class OfInt extends EmptyIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
 		private OfInt() {};
 
@@ -56,7 +54,7 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfLong extends EmptyIterator<Long> implements PrimitiveIterator.OfLong
+	public static class OfLong extends EmptyIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		private OfLong() {};
 
@@ -67,7 +65,7 @@ public abstract class EmptyIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfDouble extends EmptyIterator<Double> implements PrimitiveIterator.OfDouble
+	public static class OfDouble extends EmptyIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		private OfDouble() {};
 

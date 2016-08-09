@@ -1,8 +1,6 @@
 package common.iterable;
 
-import java.util.Iterator;
-
-public abstract class SingletonIterable<T> implements Iterable<T>
+public abstract class SingletonIterable<T> implements FunctionalIterable<T>
 {
 	public static class Of<T> extends SingletonIterable<T>
 	{
@@ -14,7 +12,7 @@ public abstract class SingletonIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return new SingletonIterator.Of<>(element);
 		}

@@ -5,97 +5,53 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.BinaryOperator;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoublePredicate;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntPredicate;
-import java.util.function.LongBinaryOperator;
-import java.util.function.LongPredicate;
-import java.util.function.Predicate;
-
-import common.iterable.FilteringIterator;
-import common.iterable.MappingIterator;
-
+import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.function.BinaryOperator;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.IntBinaryOperator;
+import java.util.function.LongBinaryOperator;
+
+import common.functions.Predicate;
+import common.iterable.FunctionalIterator;
+import common.iterable.FunctionalPrimitiveIterator;
+import common.iterable.FilteringIterator;
+import common.iterable.MappingIterator;
 
 public class IteratorTools
 {
+	@Deprecated
 	public static int count(final Iterable<?> iterable)
 	{
 		return count(iterable.iterator());
 	}
 
+	@Deprecated
 	public static int count(final Iterator<?> iterator)
 	{
-		if (iterator instanceof OfInt) {
-			return count((OfInt) iterator);
-		}
-		if (iterator instanceof OfLong) {
-			return count((OfLong) iterator);
-		}
-		if (iterator instanceof OfDouble) {
-			return count((OfDouble) iterator);
-		}
-
-		int count=0;
-		for (; iterator.hasNext(); iterator.next()) {
-			count++;
-		}
-		return count;
+		return FunctionalIterator.extend(iterator).count();
 	}
 
-	// call nextInt to avoid unnecessary boxing
-	public static int count(final OfInt iterator)
+	@Deprecated
+	public static int count(PrimitiveIterator<?, ?> iterator)
 	{
-		int count=0;
-		for (; iterator.hasNext(); iterator.nextInt()) {
-			count++;
-		}
-		return count;
+		return FunctionalIterator.extend(iterator).count();
 	}
 
-	// call nextLong to avoid unnecessary boxing
-	public static int count(final OfLong iterator)
-	{
-		int count=0;
-		for (; iterator.hasNext(); iterator.nextLong()) {
-			count++;
-		}
-		return count;
-	}
-
-	// call nextDouble to avoid unnecessary boxing
-	public static int count(final OfDouble iterator)
-	{
-		int count=0;
-		for (; iterator.hasNext(); iterator.nextDouble()) {
-			count++;
-		}
-		return count;
-	}
-
-	public static <T> int count(final Iterable<T> iterable, final Predicate<? super T> predicate)
+	@Deprecated
+	public static <T> int count(Iterable<T> iterable, Predicate<? super T> predicate)
 	{
 		return count(iterable.iterator(), predicate);
 	}
 
-	public static <T> int count(final Iterator<T> iterator, final Predicate<? super T> predicate)
+	@Deprecated
+	public static <T> int count(Iterator<T> iterator, Predicate<? super T> predicate)
 	{
-		if (iterator instanceof OfInt && predicate instanceof IntPredicate) {
-			return count(new FilteringIterator.OfInt((OfInt) iterator, (IntPredicate) predicate));
-		}
-		if (iterator instanceof OfLong && predicate instanceof LongPredicate) {
-			return count(new FilteringIterator.OfLong((OfLong) iterator, (LongPredicate) predicate));
-		}
-		if (iterator instanceof OfDouble && predicate instanceof DoublePredicate) {
-			return count(new FilteringIterator.OfDouble((OfDouble) iterator, (DoublePredicate) predicate));
-		}
-
-		return count(new FilteringIterator.Of<>(iterator, predicate));
+		return FunctionalIterator.extend(iterator).filter(predicate).count();
 	}
+
 
 	public static boolean and(final Iterator<Boolean> booleans)
 	{
@@ -267,70 +223,40 @@ public class IteratorTools
 		return sum;
 	}
 
+	@Deprecated
+	public static <T> Optional<T> reduce(Iterable<T> iterable, BinaryOperator<T> accumulator)
+	{
+		return reduce(iterable.iterator(), accumulator);
+	}
+
+	@Deprecated
 	public static <T> Optional<T> reduce(Iterator<T> iterator, BinaryOperator<T> accumulator)
 	{
-		if (! iterator.hasNext()) {
-			return Optional.empty();
-		}
-		return Optional.of(reduce(iterator, iterator.next(), accumulator));
+		return FunctionalIterator.extend(iterator).reduce(accumulator);
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> T reduce(Iterator<T> iterator, T identity, BinaryOperator<T> accumulator)
-	{
-		if (iterator instanceof OfInt && identity instanceof Integer && accumulator instanceof IntBinaryOperator) {
-			return (T)(Integer) reduce((OfInt) iterator, (Integer) identity, (IntBinaryOperator) accumulator);
-		}
-		if (iterator instanceof OfLong && identity instanceof Long && accumulator instanceof LongBinaryOperator) {
-			return (T)(Long) reduce((OfLong) iterator, (Long) identity, (LongBinaryOperator) accumulator);
-		}
-		if (iterator instanceof OfDouble && identity instanceof Double && accumulator instanceof DoubleBinaryOperator) {
-			return (T)(Double) reduce((OfDouble) iterator, (Double) identity, (DoubleBinaryOperator) accumulator);
-		}
-
-		T result = identity;
-		while(iterator.hasNext()) {
-			result = accumulator.apply(result, iterator.next());
-		}
-		return result;
-	}
-
+	@Deprecated
 	public static int reduce(OfInt iterator, int identity, IntBinaryOperator accumulator)
 	{
-		int result = identity;
-		while(iterator.hasNext()) {
-			result = accumulator.applyAsInt(result, iterator.nextInt());
-		}
-		return result;
+		return ((FunctionalPrimitiveIterator.OfInt) FunctionalIterator.extend(iterator)).reduce(identity, accumulator);
 	}
 
+	@Deprecated
 	public static long reduce(OfLong iterator, long identity, LongBinaryOperator accumulator)
 	{
-		long result = identity;
-		while(iterator.hasNext()) {
-			result = accumulator.applyAsLong(result, iterator.nextLong());
-		}
-		return result;
+		return ((FunctionalPrimitiveIterator.OfLong) FunctionalIterator.extend(iterator)).reduce(identity, accumulator);
 	}
 
+	@Deprecated
 	public static double reduce(OfDouble iterator, double identity, DoubleBinaryOperator accumulator)
 	{
-		double result = identity;
-		while(iterator.hasNext()) {
-			result = accumulator.applyAsDouble(result, iterator.nextDouble());
-		}
-		return result;
+		return ((FunctionalPrimitiveIterator.OfDouble) FunctionalIterator.extend(iterator)).reduce(identity, accumulator);
 	}
 
-	public static <T> void printIterator(final String name, final Iterator<T> iter)
+	public static <T> void printIterator(final String name, final Iterator<T> iterator)
 	{
-		System.out.print(name + " = [");
-		while (iter.hasNext()) {
-			System.out.print(iter.next());
-			if (iter.hasNext()) {
-				System.out.print(", ");
-			}
-		}
-		System.out.println("]");
+		System.out.print(name + " = ");
+		System.out.print(FunctionalIterator.extend(iterator).asString());
+		System.out.println();
 	}
 }

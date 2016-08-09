@@ -1,16 +1,17 @@
 package common.iterable;
 
-import java.util.PrimitiveIterator;
-
-public interface PrimitiveIterable<T, T_CONS>
+public interface FunctionalPrimitiveIterable<T, T_CONS> extends FunctionalIterable<T>
 {
-	public PrimitiveIterator<T, T_CONS> iterator();
+	@Override
+	public FunctionalPrimitiveIterator<T, T_CONS> iterator();
 
+	@Override
 	default boolean isEmpty()
 	{
 		return !iterator().hasNext();
 	}
 
+	
 	default void forEach(T_CONS action)
 	{
 		iterator().forEachRemaining(action);

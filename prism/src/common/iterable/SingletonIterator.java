@@ -1,13 +1,11 @@
 package common.iterable;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.PrimitiveIterator;
 
-public abstract class SingletonIterator<T> implements Iterator<T>
+public abstract class SingletonIterator<T> implements FunctionalIterator<T>
 {
 	public static class Of<T> extends SingletonIterator<T>
 	{
@@ -33,7 +31,7 @@ public abstract class SingletonIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfInt extends SingletonIterator<Integer> implements PrimitiveIterator.OfInt
+	public static class OfInt extends SingletonIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
 		private OptionalInt element;
 
@@ -57,7 +55,7 @@ public abstract class SingletonIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfLong extends SingletonIterator<Long> implements PrimitiveIterator.OfLong
+	public static class OfLong extends SingletonIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		private OptionalLong element;
 
@@ -81,7 +79,7 @@ public abstract class SingletonIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfDouble extends SingletonIterator<Double> implements PrimitiveIterator.OfDouble
+	public static class OfDouble extends SingletonIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		private OptionalDouble element;
 

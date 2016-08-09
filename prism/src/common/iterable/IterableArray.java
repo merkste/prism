@@ -1,10 +1,8 @@
 package common.iterable;
 
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.PrimitiveIterator;
 
-public abstract class IterableArray<T> implements Iterable<T>
+public abstract class IterableArray<T> implements FunctionalIterable<T>
 {
 	protected final int fromIndex;
 	protected final int toIndex;
@@ -38,9 +36,9 @@ public abstract class IterableArray<T> implements Iterable<T>
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
-			return Arrays.stream(elements, fromIndex, toIndex).iterator();
+			return FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
 		}
 	}
 
@@ -62,9 +60,9 @@ public abstract class IterableArray<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
-			return Arrays.stream(elements, fromIndex, toIndex).iterator();
+			return (FunctionalPrimitiveIterator.OfInt) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
 		}
 	}
 
@@ -86,9 +84,9 @@ public abstract class IterableArray<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfLong iterator()
+		public FunctionalPrimitiveIterator.OfLong iterator()
 		{
-			return Arrays.stream(elements, fromIndex, toIndex).iterator();
+			return (FunctionalPrimitiveIterator.OfLong) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
 		}
 	}
 
@@ -110,9 +108,9 @@ public abstract class IterableArray<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
-			return Arrays.stream(elements, fromIndex, toIndex).iterator();
+			return (FunctionalPrimitiveIterator.OfDouble) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
 		}
 	}
 }

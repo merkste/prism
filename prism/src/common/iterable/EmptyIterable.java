@@ -1,8 +1,6 @@
 package common.iterable;
 
-import java.util.Iterator;
-
-public abstract class EmptyIterable<T> implements Iterable<T>
+public abstract class EmptyIterable<T> implements FunctionalIterable<T>
 {
 	private static final Of<?> OF = new Of<>();
 	private static final OfInt OF_INT = new OfInt();
@@ -26,7 +24,7 @@ public abstract class EmptyIterable<T> implements Iterable<T>
 		private Of() {};
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return EmptyIterator.Of();
 		}

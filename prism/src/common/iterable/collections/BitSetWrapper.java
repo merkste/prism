@@ -3,9 +3,9 @@ package common.iterable.collections;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 
+import common.iterable.FunctionalPrimitiveIterator;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableInt;
 
@@ -23,7 +23,7 @@ public class BitSetWrapper implements Set<Integer>, IterableInt
 	}
 
 	@Override
-	public OfInt iterator()
+	public FunctionalPrimitiveIterator.OfInt iterator()
 	{
 		return IterableBitSet.getSetBits(bitSet).iterator();
 	}
@@ -43,7 +43,12 @@ public class BitSetWrapper implements Set<Integer>, IterableInt
 	@Override
 	public boolean contains(final Object o)
 	{
-		return (o instanceof Integer) && bitSet.get((Integer) o);
+		return (o instanceof Integer) && contains(((Integer) o).intValue());
+	}
+
+	public boolean contains(final int i)
+	{
+		return bitSet.get(i);
 	}
 
 	@Override

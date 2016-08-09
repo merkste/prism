@@ -44,7 +44,7 @@ import java.util.PrimitiveIterator;
  * iterators support it.
  */
 
-public abstract class ChainedIterator<T> implements Iterator<T>
+public abstract class ChainedIterator<T> implements FunctionalIterator<T>
 {
 	/** An iterator for the sequence of iterators that will be chained */
 	protected Iterator<? extends Iterator<? extends T>> iterators;
@@ -137,7 +137,7 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfInt extends ChainedIterator<Integer> implements PrimitiveIterator.OfInt
+	public static class OfInt extends ChainedIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
 		@SafeVarargs
 		public OfInt(PrimitiveIterator.OfInt... iterators)
@@ -163,7 +163,7 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfLong extends ChainedIterator<Long> implements PrimitiveIterator.OfLong
+	public static class OfLong extends ChainedIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		@SafeVarargs
 		public OfLong(PrimitiveIterator.OfLong... iterators)
@@ -190,7 +190,7 @@ public abstract class ChainedIterator<T> implements Iterator<T>
 	}
 
 
-	public static class OfDouble extends ChainedIterator<Double> implements PrimitiveIterator.OfDouble
+	public static class OfDouble extends ChainedIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		@SafeVarargs
 		public OfDouble(PrimitiveIterator.OfDouble... iterators)

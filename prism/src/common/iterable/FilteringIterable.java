@@ -1,20 +1,67 @@
 package common.iterable;
 
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Objects;
-import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
-public abstract class FilteringIterable<T> implements Iterable<T>
+public abstract class FilteringIterable<T> implements FunctionalIterable<T>
 {
 	protected final Iterable<T> iterable;
 
+	public static <T> FunctionalIterable<T> dedupe(Iterable<T> iterable)
+	{
+		return new DedupedIterable<>(iterable);
+	}
+
+	public static IterableDouble dedupe(IterableDouble iterable)
+	{
+		return new DedupedIterable<>(iterable).map((ToDoubleFunction<Double>) Double::doubleValue);
+	}
+
+	public static IterableInt dedupe(IterableInt iterable)
+	{
+		return new DedupedIterable<>(iterable).map((ToIntFunction<Integer>) Integer::intValue);
+	}
+
+	public static IterableLong dedupe(IterableLong iterable)
+	{
+		return new DedupedIterable<>(iterable).map((ToLongFunction<Long>) Long::longValue);
+	}
+
+	public static class DedupedIterable<E> implements FunctionalIterable<E>
+	{
+		protected FunctionalIterator<E> source;
+		protected IterableInt iterable;
+
+		public DedupedIterable(Iterable<E> source)
+		{
+			this.source   = FunctionalIterator.extend(source.iterator());
+			this.iterable = null;
+		}
+
+		@Override
+		public FunctionalIterator<E> iterator()
+		{
+			if (source == null) {
+				iterable.iterator();
+			}
+			Set<E> set = new HashSet<E>();
+			FilteringIterator.Of<E> iterator = new FilteringIterator.Of<>(source, set::add);
+			source = null;
+			return iterator;
+		}
+	}
+
 	public static <T> Iterable<T> nonNull(Iterable<T> iterable)
 	{
-		if (iterable instanceof PrimitiveIterable) {
+		if (iterable instanceof FunctionalPrimitiveIterable) {
 			return iterable;
 		}
 		return new FilteringIterable.Of<>(iterable, Objects::nonNull);
@@ -36,7 +83,7 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return new FilteringIterator.Of<>(iterable, predicate);
 		}
@@ -53,7 +100,7 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
 			return new FilteringIterator.OfInt((IterableInt) iterable, predicate);
 		}
@@ -70,7 +117,7 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfLong iterator()
+		public FunctionalPrimitiveIterator.OfLong iterator()
 		{
 			return new FilteringIterator.OfLong((IterableLong) iterable, predicate);
 		}
@@ -87,7 +134,7 @@ public abstract class FilteringIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public PrimitiveIterator.OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
 			return new FilteringIterator.OfDouble((IterableDouble) iterable, predicate);
 		}

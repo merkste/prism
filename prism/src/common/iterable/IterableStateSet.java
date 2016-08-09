@@ -28,7 +28,6 @@
 package common.iterable;
 
 import java.util.BitSet;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.function.IntPredicate;
 
 /**
@@ -101,7 +100,7 @@ public class IterableStateSet implements IterableInt
 	}
 
 	@Override
-	public OfInt iterator()
+	public FunctionalPrimitiveIterator.OfInt iterator()
 	{
 		return setOfStates.iterator();
 	}

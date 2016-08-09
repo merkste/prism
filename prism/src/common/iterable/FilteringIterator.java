@@ -12,7 +12,7 @@ import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
-public abstract class FilteringIterator<T> implements Iterator<T>
+public abstract class FilteringIterator<T> implements FunctionalIterator<T>
 {
 	protected final Iterator<T> iterator;
 	protected boolean hasNext;
@@ -53,7 +53,7 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static <T> Iterator<T> dedupe(final Iterator<T> iterator)
+	public static <T> FilteringIterator<T> dedupe(final Iterator<T> iterator)
 	{
 		final Set<T> elements = new HashSet<>();
 		return new FilteringIterator.Of<>(iterator, (Predicate<T>) elements::add);
@@ -130,7 +130,7 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfInt extends FilteringIterator<Integer> implements PrimitiveIterator.OfInt
+	public static class OfInt extends FilteringIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected final IntPredicate predicate;
 		private int next;
@@ -169,7 +169,7 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfLong extends FilteringIterator<Long> implements PrimitiveIterator.OfLong
+	public static class OfLong extends FilteringIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected final LongPredicate predicate;
 		private long next;
@@ -208,7 +208,7 @@ public abstract class FilteringIterator<T> implements Iterator<T>
 		}
 	}
 
-	public static class OfDouble extends FilteringIterator<Double> implements PrimitiveIterator.OfDouble
+	public static class OfDouble extends FilteringIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected final DoublePredicate predicate;
 		private double next;

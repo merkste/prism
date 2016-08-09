@@ -1,21 +1,23 @@
 package common.iterable;
 
-import java.util.Iterator;
-import java.util.PrimitiveIterator.OfDouble;
-import java.util.PrimitiveIterator.OfInt;
-import java.util.PrimitiveIterator.OfLong;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongFunction;
+import java.util.function.LongToDoubleFunction;
+import java.util.function.LongToIntFunction;
+import java.util.function.LongUnaryOperator;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-public abstract class MappingIterable<S, T> implements Iterable<T>
+public abstract class MappingIterable<S, T> implements FunctionalIterable<T>
 {
 	protected final Iterable<S> iterable;
 
@@ -26,16 +28,16 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 
 	public static class From<S, T> extends MappingIterable<S, T>
 	{
-		protected final Function<? super S, T> function;
+		protected final Function<? super S, ? extends T> function;
 
-		public From(Iterable<S> iterable, Function<? super S, T> function)
+		public From(Iterable<S> iterable, Function<? super S, ? extends T> function)
 		{
 			super(iterable);
 			this.function = function;
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return new MappingIterator.From<>(iterable, function);
 		}
@@ -60,7 +62,7 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
 			return new MappingIterator.ToInt<>(iterable, function);
 		}
@@ -86,7 +88,7 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
 			return new MappingIterator.ToDouble<>(iterable, function);
 		}
@@ -111,7 +113,7 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfLong iterator()
+		public FunctionalPrimitiveIterator.OfLong iterator()
 		{
 			return new MappingIterator.ToLong<>(iterable, function);
 		}
@@ -119,16 +121,16 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 
 	public static class FromInt<T> extends MappingIterable<Integer, T>
 	{
-		protected IntFunction<T> function;
+		protected IntFunction<? extends T> function;
 
-		public FromInt(IterableInt iterable, IntFunction<T> function)
+		public FromInt(IterableInt iterable, IntFunction<? extends T> function)
 		{
 			super(iterable);
 			this.function = function;
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return new MappingIterator.FromInt<T>((IterableInt) iterable, function);
 		}
@@ -145,7 +147,7 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
 			return new MappingIterator.FromIntToInt((IterableInt) iterable, function);
 		}
@@ -162,25 +164,41 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
 			return new MappingIterator.FromIntToDouble((IterableInt) iterable, function);
 		}
-
 	}
 
-	public static class FromDouble<T> extends MappingIterable<Double, T>
+	public static class FromIntToLong extends MappingIterable<Integer, Long> implements IterableLong
 	{
-		protected DoubleFunction<T> function;
+		protected IntToLongFunction function;
 
-		public FromDouble(IterableDouble iterable, DoubleFunction<T> function)
+		public FromIntToLong(IterableInt iterable, IntToLongFunction function)
 		{
 			super(iterable);
 			this.function = function;
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalPrimitiveIterator.OfLong iterator()
+		{
+			return new MappingIterator.FromIntToLong((IterableInt) iterable, function);
+		}
+	}
+
+	public static class FromDouble<T> extends MappingIterable<Double, T>
+	{
+		protected DoubleFunction<? extends T> function;
+
+		public FromDouble(IterableDouble iterable, DoubleFunction<? extends T> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalIterator<T> iterator()
 		{
 			return new MappingIterator.FromDouble<>((IterableDouble) iterable, function);
 		}
@@ -197,7 +215,7 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
 			return new MappingIterator.FromDoubleToInt((IterableDouble) iterable, function);
 		}
@@ -214,9 +232,94 @@ public abstract class MappingIterable<S, T> implements Iterable<T>
 		}
 
 		@Override
-		public OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
 			return new MappingIterator.FromDoubleToDouble((IterableDouble) iterable, function);
+		}
+	}
+
+	public static class FromDoubleToLong extends MappingIterable<Double, Long> implements IterableLong
+	{
+		protected DoubleToLongFunction function;
+
+		public FromDoubleToLong(IterableDouble iterable, DoubleToLongFunction function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalPrimitiveIterator.OfLong iterator()
+		{
+			return new MappingIterator.FromDoubleToLong((IterableDouble) iterable, function);
+		}
+	}
+
+	public static class FromLong<T> extends MappingIterable<Long, T>
+	{
+		protected LongFunction<? extends T> function;
+
+		public FromLong(IterableLong iterable, LongFunction<? extends T> function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalIterator<T> iterator()
+		{
+			return new MappingIterator.FromLong<>((IterableLong) iterable, function);
+		}
+	}
+
+	public static class FromLongToInt extends MappingIterable<Long, Integer> implements IterableInt
+	{
+		protected LongToIntFunction function;
+
+		public FromLongToInt(IterableLong iterable, LongToIntFunction function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalPrimitiveIterator.OfInt iterator()
+		{
+			return new MappingIterator.FromLongToInt((IterableLong) iterable, function);
+		}
+	}
+
+	public static class FromLongToDouble extends MappingIterable<Long, Double> implements IterableDouble
+	{
+		protected LongToDoubleFunction function;
+
+		public FromLongToDouble(IterableLong iterable, LongToDoubleFunction function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalPrimitiveIterator.OfDouble iterator()
+		{
+			return new MappingIterator.FromLongToDouble((IterableLong) iterable, function);
+		}
+	}
+
+	public static class FromLongToLong extends MappingIterable<Long, Long> implements IterableLong
+	{
+		protected LongUnaryOperator function;
+
+		public FromLongToLong(IterableLong iterable, LongUnaryOperator function)
+		{
+			super(iterable);
+			this.function = function;
+		}
+
+		@Override
+		public FunctionalPrimitiveIterator.OfLong iterator()
+		{
+			return new MappingIterator.FromLongToLong((IterableLong) iterable, function);
 		}
 	}
 }

@@ -3,10 +3,9 @@ package common.iterable;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.PrimitiveIterator;
 
 
-public abstract class ChainedIterable<T> implements Iterable<T>
+public abstract class ChainedIterable<T> implements FunctionalIterable<T>
 {
 	protected final Iterable<? extends Iterable<? extends T>> iterables;
 
@@ -35,7 +34,7 @@ public abstract class ChainedIterable<T> implements Iterable<T>
 		}
 
 		@Override
-		public Iterator<T> iterator()
+		public FunctionalIterator<T> iterator()
 		{
 			return new ChainedIterator.Of<>(new MappingIterator.From<>(iterables, Iterable::iterator));
 		}
@@ -56,7 +55,7 @@ public abstract class ChainedIterable<T> implements Iterable<T>
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public PrimitiveIterator.OfInt iterator()
+		public FunctionalPrimitiveIterator.OfInt iterator()
 		{
 			return new ChainedIterator.OfInt(new MappingIterator.From<>((Iterable<IterableInt>) iterables, IterableInt::iterator));
 		}
@@ -77,7 +76,7 @@ public abstract class ChainedIterable<T> implements Iterable<T>
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public PrimitiveIterator.OfLong iterator()
+		public FunctionalPrimitiveIterator.OfLong iterator()
 		{
 			return new ChainedIterator.OfLong(new MappingIterator.From<>((Iterable<IterableLong>) iterables, IterableLong::iterator));
 		}
@@ -98,7 +97,7 @@ public abstract class ChainedIterable<T> implements Iterable<T>
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public PrimitiveIterator.OfDouble iterator()
+		public FunctionalPrimitiveIterator.OfDouble iterator()
 		{
 			return new ChainedIterator.OfDouble(new MappingIterator.From<>((Iterable<IterableDouble>) iterables, IterableDouble::iterator));
 		}

@@ -1,7 +1,6 @@
 package common.iterable;
 
 import java.util.BitSet;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
@@ -61,9 +60,9 @@ public class Support implements PredicateInt, IterableInt
 	}
 
 	@Override
-	public OfInt iterator()
+	public FunctionalPrimitiveIterator.OfInt iterator()
 	{
-		return new FilteringIterator.OfInt(new Interval(0, values.length), this);
+		return new Interval(0, values.length).iterator().filter((IntPredicate) this);
 	}
 
 	public IntStream stream()
