@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
+import java.util.function.IntUnaryOperator;
 
 import common.BitSetTools;
-import common.IteratorTools;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.FilteringIterator;
 import common.iterable.IterableArray;
@@ -52,7 +52,7 @@ public class MDPEquiv extends MDPView
 				numChoices[representative] = model.getNumChoices(representative);
 			} else {
 				final IterableBitSet eqStates = new IterableBitSet(equivalenceClass);
-				numChoices[representative] = IteratorTools.sum(new MappingIterator.FromIntToInt(eqStates, model::getNumChoices));
+				numChoices[representative] = eqStates.map((IntUnaryOperator) model::getNumChoices).sum();
 				StateChoicePair[] choices = originalChoices[representative] = new StateChoicePair[numChoices[representative]];
 				assert representative == equivalenceClass.nextSetBit(0);
 				int choice = model.getNumChoices(representative);

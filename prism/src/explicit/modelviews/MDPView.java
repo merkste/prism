@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import common.IteratorTools;
 import common.iterable.ChainedIterator;
 import common.iterable.FilteringIterator;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import prism.ModelType;
@@ -239,7 +240,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	@Override
 	public int getNumTransitions(final int state, final int choice)
 	{
-		return IteratorTools.count(getTransitionsIterator(state, choice));
+		return FunctionalIterator.extend(getTransitionsIterator(state, choice)).count();
 	}
 
 	@Override

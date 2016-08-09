@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.function.IntFunction;
 
 import common.IteratorTools;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import explicit.DTMC;
@@ -174,7 +175,7 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	@Override
 	public int getNumTransitions(final int state)
 	{
-		return IteratorTools.count(getTransitionsIterator(state));
+		return FunctionalIterator.extend(getTransitionsIterator(state)).count();
 	}
 
 	@Override

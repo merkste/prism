@@ -127,7 +127,7 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public int getNumInitialStates()
 	{
-		return IteratorTools.count(getInitialStates());
+		return getInitialStates().count();
 	}
 
 	@Override

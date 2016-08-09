@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.IntPredicate;
 
 import common.BitSetTools;
 import common.IteratorTools;
@@ -126,7 +127,7 @@ public class MDPDroppedChoices extends MDPView
 	public int getNumChoices(final int state)
 	{
 		// FIXME ALG: consider loop instead of Interval for performance
-		return IteratorTools.count(new Interval(model.getNumChoices(state)), preserved.curry(state));
+		return new Interval(model.getNumChoices(state)).filter((IntPredicate)preserved.curry(state)).count();
 	}
 
 	@Override

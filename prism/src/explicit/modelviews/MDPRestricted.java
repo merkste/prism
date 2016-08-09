@@ -108,7 +108,7 @@ public class MDPRestricted extends MDPView
 	@Override
 	public int getNumInitialStates()
 	{
-		return IteratorTools.count(getInitialStates());
+		return getInitialStates().count();
 	}
 
 	@Override
