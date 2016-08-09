@@ -163,7 +163,7 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	public StateValues projectToOriginalModel(StateValues sv) throws PrismException
 	{
 		// the resulting state values have one value per state in the original model
-		StateValues result = new StateValues(sv.type, getOriginalModel().getNumStates());
+		StateValues result = new StateValues(sv.type, getOriginalModel());
 
 		// iterate over all the initial states in the product
 		for (Integer productState : productModel.getInitialStates()) {
