@@ -171,7 +171,14 @@ public interface FunctionalIterator<E> extends Iterator<E>
 	@SuppressWarnings("unchecked")
 	default FunctionalIterator<E> chain(Iterator<? extends E>... iterators)
 	{
-		return new ChainedIterator.Of<>(unwrap(), new ChainedIterator.Of<>(iterators));
+		switch (iterators.length) {
+		case 0:
+			return this;
+		case 1:
+			return new ChainedIterator.Of<>(unwrap(), iterators[0]);
+		default:
+			return new ChainedIterator.Of<>(unwrap(), new ChainedIterator.Of<>(iterators));
+		}
 	}
 
 	default FunctionalIterator<E> chain(Iterator<Iterator<? extends E>> iterators)

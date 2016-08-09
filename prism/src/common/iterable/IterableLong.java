@@ -19,7 +19,14 @@ public interface IterableLong extends Iterable<Long>, FunctionalPrimitiveIterabl
 	// Transforming Methods
 	default IterableLong chain(IterableLong... iterables)
 	{
-		return new ChainedIterable.OfLong(this, new ChainedIterable.OfLong(iterables));
+		switch (iterables.length) {
+		case 0:
+			return this;
+		case 1:
+			return new ChainedIterable.OfLong(this, iterables[0]);
+		default:
+			return new ChainedIterable.OfLong(this, new ChainedIterable.OfLong(iterables));
+		}
 	}
 
 	@Override

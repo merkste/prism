@@ -42,7 +42,14 @@ public interface FunctionalIterable<E> extends Iterable<E>
 	@SuppressWarnings("unchecked")
 	default FunctionalIterable<E> chain(Iterable<? extends E>... iterables)
 	{
-		return new ChainedIterable.Of<>(this, new ChainedIterable.Of<>(iterables));
+		switch (iterables.length) {
+		case 0:
+			return this;
+		case 1:
+			return new ChainedIterable.Of<>(this, iterables[0]);
+		default:
+			return new ChainedIterable.Of<>(this, new ChainedIterable.Of<>(iterables));
+		}
 	}
 
 	default FunctionalIterable<E> chain(Iterable<Iterable<? extends E>> iterables)

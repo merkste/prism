@@ -19,7 +19,14 @@ public interface IterableDouble extends Iterable<Double>, FunctionalPrimitiveIte
 	// Transforming Methods
 	default IterableDouble chain(IterableDouble... iterables)
 	{
-		return new ChainedIterable.OfDouble(this, new ChainedIterable.OfDouble(iterables));
+		switch (iterables.length) {
+		case 0:
+			return this;
+		case 1:
+			return new ChainedIterable.OfDouble(this, iterables[0]);
+		default:
+			return new ChainedIterable.OfDouble(this, new ChainedIterable.OfDouble(iterables));
+		}
 	}
 
 	@Override

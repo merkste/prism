@@ -45,7 +45,14 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		// Transforming Methods
 		default FunctionalPrimitiveIterator.OfDouble chain(PrimitiveIterator.OfDouble... iterators)
 		{
-			return new ChainedIterator.OfDouble(unwrap(), new ChainedIterator.OfDouble(iterators));
+			switch (iterators.length) {
+			case 0:
+				return this;
+			case 1:
+				return new ChainedIterator.OfDouble(unwrap(), iterators[0]);
+			default:
+				return new ChainedIterator.OfDouble(unwrap(), new ChainedIterator.OfDouble(iterators));
+			}
 		}
 
 		@Override
@@ -397,7 +404,14 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		// Transforming Methods
 		default FunctionalPrimitiveIterator.OfInt chain(PrimitiveIterator.OfInt... iterators)
 		{
-			return new ChainedIterator.OfInt(unwrap(), new ChainedIterator.OfInt(iterators));
+			switch (iterators.length) {
+			case 0:
+				return this;
+			case 1:
+				return new ChainedIterator.OfInt(unwrap(), iterators[0]);
+			default:
+				return new ChainedIterator.OfInt(unwrap(), new ChainedIterator.OfInt(iterators));
+			}
 		}
 
 		@Override
@@ -750,7 +764,14 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		// Transforming Methods
 		default FunctionalPrimitiveIterator.OfLong chain(PrimitiveIterator.OfLong... iterators)
 		{
-			return new ChainedIterator.OfLong(unwrap(), new ChainedIterator.OfLong(iterators));
+			switch (iterators.length) {
+			case 0:
+				return this;
+			case 1:
+				return new ChainedIterator.OfLong(unwrap(), iterators[0]);
+			default:
+				return new ChainedIterator.OfLong(unwrap(), new ChainedIterator.OfLong(iterators));
+			}
 		}
 
 		@Override

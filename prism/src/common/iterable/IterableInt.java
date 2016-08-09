@@ -19,7 +19,14 @@ public interface IterableInt extends Iterable<Integer>, FunctionalPrimitiveItera
 	// Transforming Methods
 	default IterableInt chain(IterableInt... iterables)
 	{
-		return new ChainedIterable.OfInt(this, new ChainedIterable.OfInt(iterables));
+		switch (iterables.length) {
+		case 0:
+			return this;
+		case 1:
+			return new ChainedIterable.OfInt(this, iterables[0]);
+		default:
+			return new ChainedIterable.OfInt(this, new ChainedIterable.OfInt(iterables));
+		}
 	}
 
 	@Override
