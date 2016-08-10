@@ -11,17 +11,17 @@ public enum Restriction
 		public BitSet getStateSet(final Model model, final BitSet states)
 		{
 			return new ReachabilityComputer(model).computeSuccStar(states);
-
 		}
 	},
+
 	TRANSITIVE_CLOSURE_SAFE {
 		public BitSet getStateSet(final Model model, final BitSet states)
 		{
 			assert states.equals(TRANSITIVE_CLOSURE.getStateSet(model, states));
 			return states;
-
 		}
 	},
+
 	STRICT;
 
 	public BitSet getStateSet(final Model model, final BitSet states) {
