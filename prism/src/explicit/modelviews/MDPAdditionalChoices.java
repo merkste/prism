@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 
 import common.BitSetTools;
 import common.functions.primitive.MappingInt;
@@ -229,12 +230,17 @@ public class MDPAdditionalChoices extends MDPView
 
 	public static MDPView addSelfLoops(final MDP model, final BitSet states)
 	{
-		final MappingInt<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new MappingInt<List<Iterator<Entry<Integer, Double>>>>()
+		return addSelfLoops(model, states::get);
+	}
+
+	public static MDPView addSelfLoops(final MDP model, final IntPredicate states)
+	{
+		final IntFunction<List<Iterator<Entry<Integer, Double>>>> addSelfLoops = new IntFunction<List<Iterator<Entry<Integer, Double>>>>()
 		{
 			@Override
 			public List<Iterator<Entry<Integer, Double>>> apply(final int state)
 			{
-				if (states.get(state)) {
+				if (states.test(state)) {
 					return Collections.singletonList(DiracDistribution.iterator(state));
 				}
 				return null;
