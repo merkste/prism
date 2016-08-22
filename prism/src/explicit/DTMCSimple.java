@@ -133,36 +133,45 @@ public class DTMCSimple extends DTMCExplicit implements ModelSimple
 	@Override
 	public void buildFromPrismExplicit(String filename) throws PrismException
 	{
-		String s, ss[];
-		int i, j, n, lineNum = 0;
-		double prob;
-
 		// Open file for reading, automatic close when done
+		int lineNum = 0;
 		try (BufferedReader in = new BufferedReader(new FileReader(new File(filename)))) {
 			// Parse first line to get num states
-			s = in.readLine();
+			String line = in.readLine();
 			lineNum = 1;
-			if (s == null) {
+			if (line == null) {
 				throw new PrismException("Missing first line of .tra file");
 			}
-			ss = s.split(" ");
-			n = Integer.parseInt(ss[0]);
+			String[] infos = line.split(" ");
+			if (infos.length < 2) {
+				throw new PrismException("First line of .tra file must read #states, #transitions");
+			}
+			int n = Integer.parseInt(infos[0]);
 			// Initialise
 			initialise(n);
 			// Go though list of transitions in file
-			s = in.readLine();
+			line = in.readLine();
 			lineNum++;
-			while (s != null) {
-				s = s.trim();
-				if (s.length() > 0) {
-					ss = s.split(" ");
-					i = Integer.parseInt(ss[0]);
-					j = Integer.parseInt(ss[1]);
-					prob = Double.parseDouble(ss[2]);
-					setProbability(i, j, prob);
+			while (line != null) {
+				line = line.trim();
+				if (line.length() > 0) {
+					String[] transition = line.split(" ");
+					int source = Integer.parseInt(transition[0]);
+					int target = Integer.parseInt(transition[1]);
+					double prob = Double.parseDouble(transition[2]);
+
+					if (source < 0 || source >= numStates) {
+						throw new PrismException("Problem in .tra file (line " + lineNum + "): illegal state index");
+					}
+					// add transition
+					setProbability(source, target, prob);
 				}
-				s = in.readLine();
+				line = in.readLine();
 				lineNum++;
+			}
+			// check integrity
+			if (getNumTransitions() != Integer.parseInt(infos[1])) {
+				throw new PrismException("Problem in .tra file: unexpected number of transitions: " + getNumTransitions());
 			}
 		} catch (IOException e) {
 			throw new PrismException("File I/O error reading from \"" + filename + "\": " + e.getMessage());
