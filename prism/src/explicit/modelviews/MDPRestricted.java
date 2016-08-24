@@ -371,8 +371,13 @@ public class MDPRestricted extends MDPView
 
 	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states, final Restriction restriction)
 	{
+		return transform(model, states, states, restriction);
+	}
+
+	public static BasicModelTransformation<MDP, MDPRestricted> transform(final MDP model, final BitSet states, final BitSet statesOfInterest, final Restriction restriction)
+	{
 		final MDPRestricted restricted = new MDPRestricted(model, states, restriction);
-		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(states);
+		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(statesOfInterest);
 		return new BasicModelTransformation<>(model, restricted, transformedStates, restricted.mappingToRestrictedModel);
 	}
 
