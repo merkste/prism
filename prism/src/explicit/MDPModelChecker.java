@@ -547,10 +547,18 @@ public class MDPModelChecker extends ProbModelChecker
 		if (exportAdv) {
 			// Prune strategy
 			restrictStrategyToReachableStates(mdp, strat);
-			// Export
-			PrismLog out = new PrismFileLog(exportAdvFilename);
-			new DTMCFromMDPMemorylessAdversary(mdp, strat).exportToPrismExplicitTra(out);
-			out.close();
+//			// Export
+//			PrismLog out = new PrismFileLog(exportAdvFilename);
+//			new DTMCFromMDPMemorylessAdversary(mdp, strat).exportToPrismExplicitTra(out);
+//			out.close();
+			// export result and scheduler
+			MDStrategyArray stratArray = new MDStrategyArray(mdp, strat);
+			try (PrismFileLog out = new PrismFileLog(exportAdvFilename)) {
+				out.println("state probability choice action");
+				for (int s = 0, numStates = mdp.getNumStates(); s < numStates; s++) {
+					out.println(s + " " + res.soln[s] + " " + stratArray.getChoiceIndex(s) + " " + stratArray.getChoiceAction(s));
+				}
+			}
 		}
 
 		// Update time taken
