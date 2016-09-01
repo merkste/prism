@@ -36,7 +36,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final Expression until = removeNegation(condition);
-		return ExpressionInspector.isSimpleUntilFormula(until);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
 	public boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)

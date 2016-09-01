@@ -41,7 +41,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final Expression until = ExpressionInspector.removeNegation(condition);
-		return ExpressionInspector.isSimpleUntilFormula(until);
+		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
 	@Override
