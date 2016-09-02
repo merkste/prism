@@ -49,7 +49,6 @@ import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionProb;
-import parser.ast.ExpressionQuantileExpNormalForm;
 import parser.ast.ExpressionQuantileProb;
 import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionReward;
@@ -154,9 +153,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 		else if (expr instanceof ExpressionQuantileProb) {
 			res = checkExpressionQuantile((ExpressionQuantileProb) expr, statesOfInterest);
-		}
-		else if (expr instanceof ExpressionQuantileExpNormalForm) {
-			throw new PrismNotSupportedException("Expectation quantiles not supported yet in symbolic engine.");
 		}
 		// Otherwise, use the superclass
 		else {
