@@ -92,6 +92,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_TERM_CRIT						= "prism.termCrit";//"prism.termination";
 	public static final	String PRISM_TERM_CRIT_PARAM				= "prism.termCritParam";//"prism.terminationEpsilon";
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
+	public static final String PRISM_EXPORT_ITERATIONS				= "prism.exportIterations";
 	public static final String PRISM_DO_REORDER						= "prism.doReorder";
 	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
 
@@ -287,6 +288,8 @@ public class PrismSettings implements Observer
 																			"Epsilon value to use for checking termination of iterative numerical methods." },
 			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			new Integer(10000),															"0,",																						
 																			"Maximum number of iterations to perform if iterative methods do not converge." },
+			{ BOOLEAN_TYPE,		PRISM_EXPORT_ITERATIONS,				"Export iterations (debug/visualisation)",			"4.3.11",			false,														"",																						
+																			"Export solution vectors for iteration algorithms to iterations.html"},
 			// MODEL CHECKING OPTIONS:
 
 			{ BOOLEAN_TYPE,		PRISM_PRECOMPUTATION,					"Use precomputation",					"2.1",			new Boolean(true),															"",																							
@@ -1124,6 +1127,10 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
+		}
+		// export iterations
+		else if (sw.equals("exportiterations")) {
+			set(PRISM_EXPORT_ITERATIONS, true);
 		}
 		
 		// MODEL CHECKING OPTIONS:

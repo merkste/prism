@@ -1068,6 +1068,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			}
 		}
 		jdd.SanityJDD.enabled = settings.getBoolean(PrismSettings.PRISM_JDD_SANITY_CHECKS);
+		PrismSparse.SetExportIterations(settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS));
 	}
 
 	//------------------------------------------------------------------------------
