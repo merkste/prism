@@ -1,0 +1,35 @@
+#! /usr/bin/perl -w
+
+use strict;
+
+my $every;
+
+while (@ARGV) {
+  if ($ARGV[0] =~ /^--/) {
+    my $arg = shift @ARGV;
+    
+    if ($arg =~ /^--every=(\d+)$/) {
+      $every = $1;
+    } else {
+      die "Unknown argument: $arg\n";
+    }
+  } else {
+    last;
+  }
+}
+
+my $cur = 0;
+while (<>) {
+  if (/^addVector/) {
+    $cur++ if (/,0\);/);
+    if (defined $every) {
+      if (($cur-1) % $every == 0) {
+	print;
+      }
+    } else {
+      print;
+    }
+  } else {
+    print;
+  }
+}
