@@ -48,6 +48,7 @@ import prism.PrismFileLog;
 import prism.PrismLog;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
+import prism.PrismNotSupportedException;
 import prism.PrismUtils;
 import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
@@ -2104,6 +2105,11 @@ public class MDPModelChecker extends ProbModelChecker
 		timer = System.currentTimeMillis();
 		mainLog.println("Starting value iteration (" + (min ? "min" : "max") + ")...");
 
+		ExportIterations iterationsExport = null;
+		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
+			iterationsExport = new ExportIterations("Explicit ReachRewards value iteration");
+		}
+
 		// Store num states
 		n = mdp.getNumStates();
 
@@ -2134,6 +2140,9 @@ public class MDPModelChecker extends ProbModelChecker
 		if (known != null)
 			unknown.andNot(known);
 
+		if (iterationsExport != null)
+			iterationsExport.exportVector(soln, 0);
+
 		// Start iterations
 		iters = 0;
 		done = false;
@@ -2142,6 +2151,10 @@ public class MDPModelChecker extends ProbModelChecker
 			iters++;
 			// Matrix-vector multiply and min/max ops
 			mdp.mvMultRewMinMax(soln, mdpRewards, min, soln2, unknown, false, strat);
+
+			if (iterationsExport != null)
+				iterationsExport.exportVector(soln2, 0);
+
 			// Check termination
 			done = PrismUtils.doublesAreClose(soln, soln2, termCritParam, termCrit == TermCrit.ABSOLUTE);
 			// Swap vectors for next iter
@@ -2149,6 +2162,9 @@ public class MDPModelChecker extends ProbModelChecker
 			soln = soln2;
 			soln2 = tmpsoln;
 		}
+
+		if (iterationsExport != null)
+			iterationsExport.close();
 
 		// Finished value iteration
 		timer = System.currentTimeMillis() - timer;
