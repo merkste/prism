@@ -123,11 +123,6 @@ def getAutoFilesInDir(dir):
 def getMatchingAutoFilesInDir(dir, modelFile):
     return getFilesInDir(dir, lambda file: isAutoFile(file) and startsWith(modelFile, dir, file))
 
-# Get a list of all out files in a directory
-
-def getOutFilesInDir(dir):
-    return getFilesInDir(dir, isOutFile, false)
-
 # Get a list of all out files in a directory whose prefix matches a model file name
 
 def getMatchingOutFilesInDir(dir, modelFile):
