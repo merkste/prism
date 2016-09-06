@@ -89,6 +89,10 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			JDDNode stateRewards = null;
 			JDDNode transRewards = null;
 
+			if (rs != null && model.getModelType() == ModelType.CTMC) {
+				throw new PrismNotSupportedException("Quantile computations with reward bounds are not supported for CTMCs");
+			}
+
 			int i;
 			// get reward info
 			if (rs == null) {
