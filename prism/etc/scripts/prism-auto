@@ -308,18 +308,19 @@ def runPrism(args, dir=""):
     else:
         prismArgs = [options.prismExec] + args
     if options.echo or options.echoFull:
+        suffix = []
+        if options.logDir:
+            if options.echoFull:
+                suffix += (['|', 'tee'] if options.test else ['>'])
+            else:
+                suffix += ['-mainlog']
+            logFile = os.path.relpath(os.path.join(options.logDir, createLogFileName(args, dir)))
+            suffix += [quote(logFile)]
         if options.echoFull:
             prismArgs = ['echo', quote(' '.join(prismArgs)), ';'] + prismArgs
-            if options.logDir:
-                logFile = os.path.relpath(os.path.join(options.logDir, createLogFileName(args, dir)))
-                logFile = quote(logFile)
-                if options.test:
-                    prismArgs += ['|', 'tee', logFile]
-                else:
-                    prismArgs += ['>', logFile]
             if options.test:
-                prismArgs += ['|', 'grep "Testing result:"']
-        print(' '.join(prismArgs))
+                suffix += ['|', 'grep "Testing result:"']
+        print(' '.join(prismArgs + suffix))
         return
     print(' '.join(prismArgs))
     # create log files
