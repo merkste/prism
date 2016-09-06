@@ -190,7 +190,9 @@ public class ProbModelChecker extends NonProbModelChecker
 		                                                                (ExpressionQuantileProbNormalForm) transformed.getTransformedExpression(),
 		                                                                transformed.getTransformedStatesOfInterest());
 
+		JDD.Deref(statesOfInterest);
 		result = transformed.projectToOriginalModel(result);
+		transformed.clear();
 
 // TODO(JK): support verification
 //		if (getQuantileVerifyResult()) {
