@@ -21,6 +21,7 @@ import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.StateModelChecker;
 import prism.StateValues;
+import prism.StochModel;
 
 public abstract class QuantileCalculator extends PrismComponent implements Clearable {
 	protected QuantileCalculatorContext qcc;
@@ -183,7 +184,9 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 			activeRefs.release(transRewards, goalStates, remainStates);
 			QuantileCalculator qc;
-			if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
+			if (model.getModelType() == ModelType.CTMC) {
+				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, transRewards, goalStates, remainStates);
+			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
 				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, transRewards, goalStates, remainStates);
 			} else {
 				qc = new QuantileCalculatorSymbolic(parent, mc, model, transRewards, goalStates, remainStates);
