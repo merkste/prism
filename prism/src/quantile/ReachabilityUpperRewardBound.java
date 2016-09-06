@@ -60,7 +60,8 @@ public abstract class ReachabilityUpperRewardBound extends ReachabilityQuantile 
 		JDDNode remain = qcc.getRemainStates();
 		JDDNode goal = qcc.getGoalStates();
 		
-		if (qcc.getModel().getModelType() == ModelType.DTMC) {
+		if (qcc.getModel().getModelType() == ModelType.DTMC ||
+		    qcc.getModel().getModelType() == ModelType.CTMC) {
 			ProbModelChecker mc = (ProbModelChecker) qcc.getModelChecker();
 			qc.getLog().println("Precomputation for upper reward bound: P(a U b)");
 			sv = mc.checkProbUntil(remain,

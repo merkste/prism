@@ -7,6 +7,7 @@ import prism.ModelType;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.PrismException;
+import prism.PrismNotSupportedException;
 import prism.StateValuesMTBDD;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -24,7 +25,11 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 		
 		JDDNode canAvoidGoal = null;
 		JDDNode canAvoidPosR = null;
-		if (model.getModelType() == ModelType.DTMC) {
+		if (model.getModelType() == ModelType.CTMC) {
+			// nothing to do
+			canAvoidGoal = JDD.Constant(0);
+			canAvoidPosR = JDD.Constant(0);
+		} else if (model.getModelType() == ModelType.DTMC) {
 			qc.getLog().println("Determine P(a U b)=0 to identify states that can never reach the goal...");
 			canAvoidGoal = PrismMTBDD.Prob0(model.getTrans01(),
 			                                model.getReach(),
@@ -33,7 +38,7 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 			                                remain,
 			                                goal);
 			qc.getLog().println("Found "+JDD.GetNumMintermsString(canAvoidGoal, model.getNumDDRowVars())+" states.");
-			
+
 			// for DTMCs at the moment, when transitions rewards are not supported,
 			// transition rewards = state rewards 
 			JDDNode posRStates = qcc.getTransRewards();
@@ -63,14 +68,17 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 			
 			qc.getLog().println("Determine Pmin(a U posR)=0 to identify states that can avoid reaching a positive reward...");
 			canAvoidPosR = PositiveRewardReachabilityTransformation.computeProb0EReachPosR(qcc);
+		} else if (model.getModelType() == ModelType.CTMC) {
+			// nothing to do
 		} else {
 			throw new PrismException("Quantile only for DTMC/MDP");
 		}
-		
+
 		JDD.Deref(remain);
 		JDD.Deref(goal);
 		zeroStates = JDD.Or(canAvoidGoal, canAvoidPosR);
-		qc.getLog().println(JDD.GetNumMintermsString(zeroStates, model.getNumDDRowVars())+" states satisfy Pmin(a U posR)=0 or Pmin(a U b)=0.");
+		String operator = (model.getModelType() == ModelType.MDP) ? "Pmin" : "P"; 
+		qc.getLog().println(JDD.GetNumMintermsString(zeroStates, model.getNumDDRowVars())+" states satisfy " + operator + "(a U posR)=0 or " + operator + "(a U b)=0.");
 	}
 	
 	public void clear()
@@ -101,7 +109,10 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 
 	@Override
 	public StateValuesMTBDD getInfinityStateValues() throws PrismException {
-		if (qcc.getModel().getModelType() == ModelType.MDP) {
+		if (qcc.getModel().getModelType() == ModelType.DTMC ||
+		    qcc.getModel().getModelType() == ModelType.CTMC) {
+			return getInfinityStateValuesForMC();
+		} else if (qcc.getModel().getModelType() == ModelType.MDP) {
 			NondetModel ndModel = (NondetModel) qcc.getModel();
 			NondetModelChecker ndMC = (NondetModelChecker) qcc.getModelChecker();
 			
@@ -137,8 +148,7 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 			svMaxD.subtractFromOne();
 			return svMaxD;
 		} else {
-			// TODO: DTMC
-			return null;
+			throw new PrismNotSupportedException("Can not compute infinite states for " + qcc.getModel().getModelType());
 		}
 	}
 }

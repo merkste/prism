@@ -6,7 +6,9 @@ import prism.Model;
 import prism.ModelType;
 import prism.NondetModelChecker;
 import prism.PrismException;
+import prism.ProbModel;
 import prism.ProbModelChecker;
+import prism.SCCComputer;
 import prism.StateValuesMTBDD;
 
 public abstract class ReachabilityLowerRewardBound extends ReachabilityQuantile {
@@ -36,7 +38,6 @@ public abstract class ReachabilityLowerRewardBound extends ReachabilityQuantile 
 		JDDNode goal = qcc.getGoalStates();
 		
 		if (model.getModelType() == ModelType.DTMC) {
-			
 			ProbModelChecker mc = (ProbModelChecker) qcc.getModelChecker();
 			qc.getLog().println("Calculate P(a U b) for x_0...");
 			sv = mc.checkProbUntil(remain,
@@ -64,4 +65,58 @@ public abstract class ReachabilityLowerRewardBound extends ReachabilityQuantile 
 		return result;
 	}
 
+	// for DTMC and CTMC
+	public StateValuesMTBDD getInfinityStateValuesForMC() throws PrismException {
+		ProbModel model = (ProbModel) qcc.getModel();
+		ProbModelChecker mc = (ProbModelChecker) qcc.getModelChecker();
+		
+		// quantile = P[ a U>=? b ] < p
+		// infinity <=> P([]a & []<>b & []<>posR) >= p
+		//              1 - P(<> (!a | []!b | []!posR) >= p
+		//              1 - P(<> D) >= p
+	
+		JDDNode D = JDD.Not(qcc.getRemainStates()); // !a
+		D = JDD.And(D, model.getReach().copy());
+
+		SCCComputer computer = SCCComputer.createSCCComputer(qc, model);
+		computer.computeBSCCs();
+
+		JDDNode goalStates = qcc.getGoalStates();
+		for (JDDNode bscc : computer.getBSCCs()) {
+			boolean includeInD = false;
+			if (!JDD.AreIntersecting(bscc, goalStates)) {
+				includeInD = true;
+			} else {
+				// [] !posR?
+				if (model.getModelType() == ModelType.CTMC) {
+					// time always goes on, so always posR
+					includeInD = false;
+				}
+				JDDNode statesWithPosRew = qcc.getStatesWithPosRewardTransitions();
+				if (!JDD.AreIntersecting(bscc, statesWithPosRew)) {
+					includeInD = true;
+				}
+				JDD.Deref(statesWithPosRew);
+			}
+			if (includeInD) {
+				D = JDD.Or(D, bscc);
+			} else {
+				JDD.Deref(bscc);
+			}
+		}
+		JDD.Deref(computer.getNotInBSCCs());
+		JDD.Deref(goalStates);
+
+		// calculate P(<> D)
+		qcc.getLog().println("Compute P(<> D)...");
+		StateValuesMTBDD svMaxD =mc.checkProbUntil(model.getReach(), // remain = true
+		                                           D,
+		                                           false // quantitative
+		                                          ).convertToStateValuesMTBDD();
+
+		JDD.Deref(D);
+
+		svMaxD.subtractFromOne();
+		return svMaxD;
+	}
 }
