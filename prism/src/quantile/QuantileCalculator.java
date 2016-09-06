@@ -81,7 +81,7 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			expr.findAllBoundQuantileVariables();
 
 			if (model.getModelType() == ModelType.DTMC) {
-				throw new PrismException("Symbolic quantiles currently only for MDP.");
+				throw new PrismException("Symbolic quantiles currently only for MDP and CTMC.");
 			}
 
 			Object rs = expr.getRewardStructIndex();
