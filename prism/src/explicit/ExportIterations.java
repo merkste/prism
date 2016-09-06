@@ -89,6 +89,6 @@ class ExportIterations {
 	/** Print footer, export log */
 	public void close()
 	{
-		log.println("init();display(0);\n</script>\n</body></html>");
+		log.println("init();\n</script>\n</body></html>");
 	}
 }

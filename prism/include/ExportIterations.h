@@ -67,7 +67,7 @@ public:
 
 	/** Destructor, close file */
 	~ExportIterations() {
-		fprintf(fp, "init();display(0);\n</script>\n</body></html>\n");
+		fprintf(fp, "init();\n</script>\n</body></html>\n");
 		fclose(fp);
 	}
 };
