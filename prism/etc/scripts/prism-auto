@@ -301,12 +301,9 @@ def walk(dir, meth):
 
 def runPrism(args, dir=""):
     if options.test:
-        if options.testAll: args.append("-testall")
-        else: args.append("-test")
-    if options.nailgun:
-        prismArgs = [options.ngprism] + args
-    else:
-        prismArgs = [options.prismExec] + args
+        args.append('-testall' if options.testAll else '-test')
+    prismArgs = [options.ngprism] if options.nailgun else [options.prismExec]
+    prismArgs += args
     if options.echo or options.echoFull:
         suffix = []
         if options.logDir:
@@ -325,10 +322,10 @@ def runPrism(args, dir=""):
     print(' '.join(prismArgs))
     # create log files
     if options.logDir:
-        logFile = os.path.join(options.logDir, createLogFileName(args, dir))
+        logFile   = os.path.join(options.logDir, createLogFileName(args, dir))
         prismArgs = prismArgs + ['-mainlog', logFile]
     elif options.test:
-        logFile = tempfile.NamedTemporaryFile(delete=False).name
+        logFile   = tempfile.NamedTemporaryFile(delete=False).name
         prismArgs = prismArgs + ['-mainlog', logFile]
     # run prism
     exitCode = subprocess.Popen(prismArgs).wait()
