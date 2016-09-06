@@ -57,7 +57,9 @@ class ExportIterations {
 		log.println("<title>" + title + "</title>");
 		log.println("<link rel='stylesheet' href='https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.css'>");
 		log.println("<script src=\"https://d3js.org/d3.v4.min.js\"></script>");
-		log.println("<body><svg></svg>");
+		log.println("<body>");
+		log.println("<h1>" + title + "</h1>");
+		log.println("<svg></svg>");
 		log.println("<script src=\"https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.js\"></script>");
 		log.println("<script>");
 	}

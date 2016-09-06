@@ -48,7 +48,9 @@ public:
 		fprintf(fp, "<title>%s</title>", title);
 		fprintf(fp, "<link rel='stylesheet' href='https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.css'>\n");
 		fprintf(fp, "<script src=\"https://d3js.org/d3.v4.min.js\"></script>\n");
-		fprintf(fp, "<body><svg></svg>\n");
+		fprintf(fp, "<body>\n");
+		fprintf(fp, "<h1>%s</h1>", title);
+		fprintf(fp, "<svg></svg>");
 		fprintf(fp, "<script src=\"https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.js\"></script>\n");
 		fprintf(fp, "<script>");
 	}
