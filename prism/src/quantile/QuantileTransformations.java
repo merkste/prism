@@ -27,8 +27,8 @@ import prism.PrismNotSupportedException;
 import prism.StateModelChecker;
 import prism.StateValues;
 
-public class QuantileTransformations {
-
+public class QuantileTransformations
+{
 	private static ExpressionProb checkForExpressionProb(ExpressionQuantileProb e) throws PrismException
 	{
 		if (!(e.getInnerFormula() instanceof ExpressionProb))
@@ -65,6 +65,15 @@ public class QuantileTransformations {
 			throw new PrismException("No quantile variable in bounds, no computation needed");
 		}
 
+		if (model.getModelType() == ModelType.CTMC) {
+			if (bounds.countBounds() > 1)
+				throw new PrismNotSupportedException("For CTMCs, only a single bound is supported");
+			if (bounds.hasStepBounds())
+				throw new PrismNotSupportedException("For CTMCs, step bounds are not supported");
+			if (bounds.hasRewardBounds())
+				throw new PrismNotSupportedException("For CTMCs, reward bounds are not supported");
+		}
+
 		if (bounds.countBounds() > 1) {
 			ModelExpressionTransformation<M, M> transformed =
 					(ModelExpressionTransformation<M, M>) transformAdditionalBounds(pmc, model, e, statesOfInterest);
@@ -94,8 +103,9 @@ public class QuantileTransformations {
 
 		int adjustment = 0;
 
-		if (formulaBoundStrict) {
+		if (formulaBoundStrict && model.getModelType() != ModelType.CTMC) {
 			// computation engine only supports non-strict bounds on temporal operator
+			// for CTMC, strictness is irrelevant
 			if (formulaLowerBound) {
 				// make bound non-strict
 				quantileBound.setLowerBound(quantileBound.getLowerBound(), false);
@@ -107,7 +117,7 @@ public class QuantileTransformations {
 			}
 		}
 
-		boolean formulaIncreasing = !formulaLowerBound;  // until & !lowerBound => increasing
+		boolean formulaIncreasing = !formulaLowerBound; // until & !lowerBound => increasing
 
 		Object rewardStructIndex = null;
 		if (quantileBound.isRewardBound()) {
@@ -127,7 +137,7 @@ public class QuantileTransformations {
 
 		MinMax minMaxP = MinMax.min();
 		if (model.getModelType() == ModelType.MDP) {
-			OpRelOpBound op = innerFormula.getRelopBoundInfo(null);
+			OpRelOpBound op = innerFormula.getRelopBoundInfo(pmc.getConstantValues());
 			minMaxP = op.getMinMax(model.getModelType());
 		}
 
@@ -158,7 +168,10 @@ public class QuantileTransformations {
 
 			normalForm.setInnerFormula(newInnerFormula);
 			normalForm.setQuantileVariable(e.getQuantileVariable());
-			normalForm.setResultAdjustment(adjustment);
+			if (model.getModelType() != ModelType.CTMC) {
+				// set adjustment for DTMC & MDP; for CTMC, don't need any adjustment
+				normalForm.setResultAdjustment(adjustment);
+			}
 
 			return new ModelExpressionTransformationIdentity<M>((M) model, e, normalForm, statesOfInterest.copy());
 		}
@@ -184,7 +197,10 @@ public class QuantileTransformations {
 
 		normalForm.setInnerFormula(newInnerFormula);
 		normalForm.setQuantileVariable(e.getQuantileVariable());
-		normalForm.setResultAdjustment(adjustment - 1);
+		if (model.getModelType() != ModelType.CTMC){
+			// set adjustment for DTMC & MDP; for CTMC, don't need any adjustment
+			normalForm.setResultAdjustment(adjustment - 1);
+		}
 
 		return new ModelExpressionTransformationIdentity<M>((M) model, e, normalForm, statesOfInterest.copy());
 	}
