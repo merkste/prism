@@ -199,6 +199,9 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 			final NondetModel ndModel = (NondetModel)qcc.getModel();
 
 			class Transformation extends NondetModelTransformation {
+				public static final boolean ROW = false;
+				public static final boolean COL = true;
+
 				public Transformation(NondetModel model) {
 					super(model);
 				}
@@ -292,9 +295,9 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 					if (qcc.debugDetailed()) qcc.debugDD(ndModel.getTrans().copy(), "tr");
 
 					if (qcc.debugDetailed()) qcc.debugDD(tr0(), "tr0");
-					if (qcc.debugDetailed()) qcc.debugDD(normalState(false), "normalState");
-					if (qcc.debugDetailed()) qcc.debugDD(goalState(false), "goalState");
-					if (qcc.debugDetailed()) qcc.debugDD(failState(false), "failState");
+					if (qcc.debugDetailed()) qcc.debugDD(normalState(ROW), "normalState");
+					if (qcc.debugDetailed()) qcc.debugDD(goalState(ROW), "goalState");
+					if (qcc.debugDetailed()) qcc.debugDD(failState(ROW), "failState");
 					if (qcc.debugDetailed()) qcc.debugDD(tau(), "tau");
 					if (qcc.debugDetailed()) qcc.debugDD(xTau.copy(), "xTau");
 					
@@ -305,19 +308,19 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 					maybeStates = JDD.And(maybeStates, JDD.Not(zeroStates.copy()));
 					maybeStates = JDD.And(maybeStates, JDD.Not(oneStates.copy()));
 
-					JDDNode trans = JDD.Times(normalState(false),
+					JDDNode trans = JDD.Times(normalState(ROW),
 					                          tr0(),
 					                          maybeStates.copy(),
-					                          normalState(true),
+					                          normalState(COL),
 					                          notTau());
 					result = trans;
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (1)");
 					
-					trans = JDD.Times(normalState(false),
+					trans = JDD.Times(normalState(ROW),
 					                  tau(),
 					                  maybeStates.copy(),
 					                  tauStates.copy(),
-					                  goalState(true),
+					                  goalState(COL),
 					                  xTau.copy());
 					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (2)");
 					result = JDD.Apply(JDD.MAX, result, trans);
@@ -329,44 +332,44 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 					                                 xTau.copy());
 					if (qcc.debugDetailed()) qcc.debugDD(oneMinusXTau.copy(), "1- xTau");
 
-					trans = JDD.Times(normalState(false),
+					trans = JDD.Times(normalState(ROW),
 					                  tau(),
 					                  maybeStates.copy(),
 					                  tauStates.copy(),
-					                  failState(true),
+					                  failState(COL),
 					                  oneMinusXTau);
 					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (3)");
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (3)");
 
 					
-					trans = JDD.Times(normalState(false),
+					trans = JDD.Times(normalState(ROW),
 					                  tau(),
 					                  zeroStates.copy(),
-					                  failState(true));
+					                  failState(COL));
 					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (4)");
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (4)");
 
 
-					trans = JDD.Times(normalState(false),
+					trans = JDD.Times(normalState(ROW),
 					                 tau(),
 					                 oneStates.copy(),
-					                 goalState(true));
+					                 goalState(COL));
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (5)");
 
 					
-					trans = JDD.Times(goalState(false),
+					trans = JDD.Times(goalState(ROW),
 					                 tau(),
-					                 goalState(true));
+					                 goalState(COL));
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (6)");
 
 					
-					trans = JDD.Times(failState(false),
+					trans = JDD.Times(failState(ROW),
 					                  tau(),
-					                  failState(true));
+					                  failState(COL));
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (7)");
 
@@ -375,10 +378,10 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 					JDDNode deadlockStates = JDD.Or(tr0States, tauStates.copy());
 					deadlockStates = JDD.And(ndModel.getReach().copy(), JDD.Not(deadlockStates));
 
-					trans = JDD.Times(normalState(false),
+					trans = JDD.Times(normalState(ROW),
 					                  deadlockStates,
 					                  tau(),
-					                  failState(true));
+					                  failState(COL));
 					result = JDD.Apply(JDD.MAX, result, trans);
 					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (8)");
 
@@ -392,9 +395,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 				@Override
 				public JDDNode getTransformedStart() {
 					JDDNode reach = ndModel.getReach();
-					
-					JDD.Ref(reach);
-					JDDNode newStart = JDD.Apply(JDD.TIMES, reach, normalState(false));
+
+					JDDNode newStart = JDD.Apply(JDD.TIMES, reach.copy(), normalState(ROW));
 					return newStart;
 				}
 				
