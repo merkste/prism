@@ -79,6 +79,10 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 			
 			JDDNode tr_r = entry.getValue().copy();
 			
+			// Compute the target level for this transition by
+			// doing the necessary subtraction:
+			//  upper bound = i -r
+			//  lower bound = max{0, i-r}
 			int i_minus_r = q.doSubstraction(i, r);
 			if (qcc.debugLevel() >= 2) getLog().println("Iteration "+i+", transitions with reward "+r+" = "+i_minus_r+"...");
 			if (i_minus_r < 0) {
