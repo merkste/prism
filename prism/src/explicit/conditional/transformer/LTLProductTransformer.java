@@ -48,25 +48,30 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	public LabeledDA constructDA(final M model, final Expression expression, final AcceptanceType...acceptanceTypes)
 			throws PrismException
 	{
-		final Vector<BitSet> labels = new Vector<BitSet>();
+		Vector<BitSet> labels                   = new Vector<BitSet>();
 		DA<BitSet,? extends AcceptanceOmega> da = null;
 
-		// If formula is co-safe, check whether acceptance REACH is allowed
 		if (Expression.isCoSafeLTLSyntactic(expression, true)) {
-			for (int i=0; i<acceptanceTypes.length; i++) {
-				if (acceptanceTypes[i] == AcceptanceType.REACH) {
-					getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
-					da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, AcceptanceType.REACH, AcceptanceType.RABIN);
-					if (da.getAcceptance().getType() == AcceptanceType.REACH) {
-						getLog().println("Success.");
-					} else {
-						getLog().println("Failed. Falling back to other acceptance types.");
-					}
-					break;
+			boolean containsRabin = false, containsReach = false;
+			for (AcceptanceType type : acceptanceTypes) {
+				containsRabin |= type == AcceptanceType.RABIN;
+				containsReach |= type == AcceptanceType.REACH;
+			}
+			if (containsReach) {
+				getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
+				da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, AcceptanceType.REACH, AcceptanceType.RABIN);
+				if (da.getAcceptance().getType() == AcceptanceType.REACH) {
+					getLog().println("Success.");
+				} else if (containsRabin){
+					getLog().println("Failed. Falling back to acceptance RABIN.");
+				} else {
+					getLog().println("Failed. Falling back to other acceptance types and build new automaton.");
+					da     = null;
+					labels.clear();
 				}
 			}
 		}
-		// Either formula is co-safe or construction of acceptance REACH failed.
+		// Either formula is not co-safe or construction of acceptance REACH failed and RABIN is not allowed.
 		if (da == null) {
 			da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, acceptanceTypes);
 		}
@@ -81,7 +86,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		final DA<BitSet, ? extends AcceptanceOmega> automaton = labeledDA.getAutomaton();
 		final Vector<BitSet> labels = labeledDA.getLabels();
 
-		mainLog.println("\nConstructing MC-" + automaton.getAutomataType() + " product...");
+		mainLog.println("\nConstructing " + model.getModelType() + "-" + automaton.getAutomataType() + " product...");
 		final LTLProduct<M> product;
 		if (model instanceof DTMC) {
 			product = (LTLProduct<M>) ltlModelChecker.constructProductModel(automaton, (DTMC)model, labels, statesOfInterest);
