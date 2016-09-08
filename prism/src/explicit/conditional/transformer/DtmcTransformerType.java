@@ -33,15 +33,20 @@ public enum DtmcTransformerType
 		return include;
 	}
 
-	public static String getSpecificationHelp() throws PrismException
+	public static String getSpecificationHelp()
 	{
 		String specification = "all? ( -? (";
 		for (DtmcTransformerType type : DtmcTransformerType.values()) {
-			specification += type.name() + " |";
+			specification += type.name() + " | ";
 		}
-		specification = specification.substring(0, specification.length() - 1);
+		specification = specification.substring(0, specification.length() - 3);
 		specification += ")*";
-		return "All, and " + getValuesOf("quotient,all") + " (preceeded by '-' for exlusion)";
+		try {
+			return "All, and " + getValuesOf("quotient,all") + " (preceeded by '-' for exlusion)";
+		} catch (PrismException e) {
+			// Generating a help text must not throw
+			throw new RuntimeException(e);
+		}
 	}
 
 	private static DtmcTransformerType valueOfIgnoringCase(final String name) throws PrismException

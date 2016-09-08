@@ -33,15 +33,20 @@ public enum MdpTransformerType
 		return include;
 	}
 
-	public static String getSpecificationHelp() throws PrismException
+	public static String getSpecificationHelp()
 	{
 		String specification = "all? ( -? (";
 		for (MdpTransformerType type : MdpTransformerType.values()) {
-			specification += type.name() + " |";
+			specification += type.name() + " | ";
 		}
-		specification = specification.substring(0, specification.length() - 1);
+		specification = specification.substring(0, specification.length() - 3);
 		specification += ")*";
-		return "All, and " + getValuesOf("all") + " (preceeded by '-' for exlusion)";
+		try {
+			return "All, and " + getValuesOf("all") + " (preceeded by '-' for exlusion)";
+		} catch (PrismException e) {
+			// Generating a help text must not throw
+			throw new RuntimeException(e);
+		}
 	}
 
 	private static MdpTransformerType valueOfIgnoringCase(final String name) throws PrismException
