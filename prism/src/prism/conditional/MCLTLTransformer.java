@@ -45,6 +45,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 			JDDNode statesOfInterest)
 			throws PrismException {
 
+		// FIXME ALG: allow all acceptance types
 		AcceptanceType[] allowedAcceptance = {
 				AcceptanceType.REACH,
 				AcceptanceType.RABIN,

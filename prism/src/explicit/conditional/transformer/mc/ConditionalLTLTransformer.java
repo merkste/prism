@@ -20,6 +20,7 @@ import explicit.conditional.transformer.LTLProductTransformer;
 
 public class ConditionalLTLTransformer extends PrismComponent
 {
+	// FIXME ALG: allow all acceptance types
 	private static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.STREETT, AcceptanceType.GENERIC};
 
 	private final LTLProductTransformer<DTMC> ltlTransformer;

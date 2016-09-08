@@ -33,8 +33,8 @@ import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewNormalFormTransformer<M, MC>
 {
 	// FIXME ALG: Generalize acceptance types: DMTC=all, MDP=REACH, STREETT
-//	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
-	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.STREETT};
+	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
+//	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.STREETT};
 
 
 
