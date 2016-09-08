@@ -67,7 +67,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		// 1) Objective: compute simple path property
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		Expression objectiveTmp  = objective.getExpression();
-		Until objectivePath      = new Finally(objectiveTmp, getModelChecker(), true);
+		Until objectivePath      = new Until(objectiveTmp, getModelChecker(), true);
 
 		// 2) Condition: build omega automaton
 		Expression conditionTmp = expression.getCondition();
