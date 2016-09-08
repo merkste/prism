@@ -70,7 +70,7 @@ public class DTMCModelChecker extends ProbModelChecker
 	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
 		switch (model.getModelType()) {
 		case DTMC:
-//			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+//			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)
 //			    && (expression.getObjective() instanceof ExpressionProb)) {
 //				mainLog.println("\nConverting DTMC to MDPSparse");
 //				long buildTime = System.currentTimeMillis();

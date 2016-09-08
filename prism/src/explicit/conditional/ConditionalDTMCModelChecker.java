@@ -99,8 +99,8 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 	public ConditionalTransformer<DTMC> selectModelTransformer(final DTMC model, final ExpressionConditional expression) throws PrismException
 	{
 		ConditionalTransformer<DTMC> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)) {
-			final String specification = settings.getString(PrismSettings.CONDITIONAL_MDP);
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
+			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 			for (MdpTransformerType type : types) {
 				switch (type) {
@@ -124,9 +124,9 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 				}
 			}
 		} else {
-			final String specification = settings.getString(PrismSettings.CONDITIONAL_MC);
+			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
 			final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_TRANSFORMATIONS)) {
+			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_METHODS)) {
 				for (DtmcTransformerType type : types) {
 					switch (type) {
 					case Finally:

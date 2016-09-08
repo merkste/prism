@@ -147,11 +147,11 @@ public class PrismSettings implements Observer
 	public static final String PRISM_FAU_ARRAYTHRESHOLD				= "prism.fau.arraythreshold";
 
 	//Conditional Model Checking
-	public static final String CONDITIONAL_USE_VIRTUAL_MODELS           = "conditional.useVirtualModels";
-	public static final String CONDITIONAL_USE_LEGACY_TRANSFORMATIONS   = "conditional.useLegacyTransformations";
-	public static final String CONDITIONAL_MC                           = "conditional.dtmc";
-	public static final String CONDITIONAL_MDP                          = "conditional.mdp";
-	public static final String CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS = "conditional.usMDPTransformationsForMCs";
+	public static final String CONDITIONAL_USE_VIRTUAL_MODELS = "conditional.use.virtualModels";
+	public static final String CONDITIONAL_USE_LEGACY_METHODS = "conditional.use.legacyMethods";
+	public static final String CONDITIONAL_USE_RESET_FOR_MC   = "conditional.use.resetForMC";
+	public static final String CONDITIONAL_PATTERNS_SCALE     = "conditional.patterns.scale";
+	public static final String CONDITIONAL_PATTERNS_RESET     = "conditional.patterns.reset";
 
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
@@ -400,18 +400,17 @@ public class PrismSettings implements Observer
 																			"For fast adaptive uniformisation (FAU), the length of initial time interval to analyse." },
 		},
 		{
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,			"Use virtual models for computation",	"4.2",			new Boolean(false),		"",
-																			"Compute properties in virtual models" },
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_LEGACY_TRANSFORMATIONS,	"Use legacy transformations",	"4.2",					new Boolean(false),		"",
-																			"Use legacy prototypye implementation of model transformations" },
-			{ BOOLEAN_TYPE,		CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS,	"DTMC: Use MDP transformations",	"4.2",			new Boolean(false),		"",
-																			"Treat DTMCs as MDPs and use MDP transformations." },
-			// FIXME ALG: add description
-			{ STRING_TYPE,		CONDITIONAL_MC,							"MC: Enabled DTMC transformations",	"4.2",			"all",		"",
-																			"<add description>" },
-			// FIXME ALG: add description
-			{ STRING_TYPE,		CONDITIONAL_MDP,						"MDP: Enabled MDP transformations",	"4.2",			"all",		"",
-																			"<add description>" },
+			// CONDITIONAL MODEL CHECKING
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,		"Use virtual models for computation",	"4.2",			new Boolean(false),		"",
+																		"Compute conditional probabilities and expectations in virtual models." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_LEGACY_METHODS,		"Use legacy methods",	"4.2",					new Boolean(false),		"",
+																		"Use legacy implementation of methods for conditional probabilities and expectations." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_RESET_FOR_MC,		"Use reset method for Markov Chains",	"4.2",			new Boolean(false),		"",
+																		"Use reset method for DTMCs and CTMCs instead scale method." },
+			{ STRING_TYPE,		CONDITIONAL_PATTERNS_SCALE,			"Set patterns for scale method",	"4.2",			"all",		"",
+																		"Use the first applicable pattern for the scale method from a list of: " + DtmcTransformerType.getSpecificationHelp()},
+			{ STRING_TYPE,		CONDITIONAL_PATTERNS_RESET,			"Set patterns for reset method",	"4.2",			"all",		"",
+																		"Use the first applicable pattern for the scale method from a list of: " + MdpTransformerType.getSpecificationHelp()},
 		},
 		{
 			{ INTEGER_TYPE,		SIMULATOR_DEFAULT_NUM_SAMPLES,			"Default number of samples",			"4.0",		new Integer(1000),			"1,",
@@ -1670,19 +1669,19 @@ public class PrismSettings implements Observer
 		else if (sw.equals("usevirtualmodels")) {
 			set(CONDITIONAL_USE_VIRTUAL_MODELS, true);
 		}
-		else if (sw.equals("uselegacytransformations")) {
-			set(CONDITIONAL_USE_LEGACY_TRANSFORMATIONS, true);
+		else if (sw.equals("uselegacymethods")) {
+			set(CONDITIONAL_USE_LEGACY_METHODS, true);
 		}
-		else if (sw.equals("mcusemdptransformations")) {
-			set(CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS, true);
+		else if (sw.equals("useresetformc")) {
+			set(CONDITIONAL_USE_RESET_FOR_MC, true);
 		}
-		else if (sw.equals("conditionalmc")) {
+		else if (sw.equals("patternsscale")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
 				try {
 					// check for syntactic correctness
 					DtmcTransformerType.getValuesOf(spec);
-					set(PrismSettings.CONDITIONAL_MC, spec);
+					set(PrismSettings.CONDITIONAL_PATTERNS_SCALE, spec);
 				} catch (PrismException e) {
 					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + DtmcTransformerType.getSpecificationHelp() + ")");
 				}
@@ -1690,14 +1689,14 @@ public class PrismSettings implements Observer
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}
 		}
-		else if (sw.equals("conditionalmdp")) {
+		else if (sw.equals("patternsreset")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
 				try {
 					MdpTransformerType.getValuesOf(spec);
 					// check for syntactic correctness
 					MdpTransformerType.getValuesOf(spec);
-					set(PrismSettings.CONDITIONAL_MDP, spec);
+					set(PrismSettings.CONDITIONAL_PATTERNS_RESET, spec);
 				} catch (PrismException e) {
 					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + MdpTransformerType.getSpecificationHelp() + ")");
 				}
@@ -1879,11 +1878,11 @@ public class PrismSettings implements Observer
 		mainLog.println("-paramdagmaxerror <b> .......... Maximal error probability allowed for DAG function representation [default: 1E-100]");
 		mainLog.println();
 		mainLog.println("CONDITIONAL MODEL CHECKING OPTIONS:");
-		mainLog.println("-usevirtualmodels .............. Enable computation of properties in virtual models.");
-		mainLog.println("-uselegacytransformations ...... Use legacy prototypye implementation of model transformations.");
-		mainLog.println("-mcusemdptransformations ....... Treat DTMCs as MDPs and use MDP transformations.");
-		mainLog.println("-conditionalmc ................. <add description>.");
-		mainLog.println("-conditionalmdp ................ <add description>.");
+		mainLog.println("-usevirtualmodels .............. Use virtual models for computation");
+		mainLog.println("-uselegacymethods .............. Use legacy methods");
+		mainLog.println("-useresetformc ................. Use reset method for Markov Chains");
+		mainLog.println("-patternsscale ................. Set patterns for scale method: " + DtmcTransformerType.getSpecificationHelp());
+		mainLog.println("-patternsreset ................. Set patterns for reset method: " + MdpTransformerType.getSpecificationHelp());
 		mainLog.println();
 		mainLog.println("FAST ADAPTIVE UNIFORMISATION (FAU) OPTIONS:");
 		mainLog.println("-fauepsilon <x> ................ Set probability threshold of birth process in FAU [default: 1e-6]");

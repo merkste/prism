@@ -118,7 +118,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	}
 
 	private NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException {
-		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_MDP);
+		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
 		for (MdpTransformerType type : types) {

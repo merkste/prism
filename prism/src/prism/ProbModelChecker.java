@@ -451,7 +451,7 @@ public class ProbModelChecker extends NonProbModelChecker
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
 		switch (model.getModelType()) {
 		case DTMC:
-//			if (settings.getBoolean(PrismSettings.CONDITIONAL_DTMC_USE_MDP_TRANSFORMATIONS)
+//			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)
 //			    && (expression.getObjective() instanceof ExpressionProb)) {
 //				prism.getLog().println("\nConverting DTMC to MDP");
 //				long buildTime = System.currentTimeMillis();

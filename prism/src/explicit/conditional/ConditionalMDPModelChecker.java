@@ -165,11 +165,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 	public ConditionalTransformer<MDP> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
 	{
-		final String specification = settings.getString(PrismSettings.CONDITIONAL_MDP);
+		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
 		ConditionalTransformer<MDP> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_TRANSFORMATIONS)) {
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_METHODS)) {
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
