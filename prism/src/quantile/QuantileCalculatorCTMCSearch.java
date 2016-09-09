@@ -16,7 +16,6 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
-import prism.PrismUtils;
 import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
@@ -95,40 +94,59 @@ public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 
 		long iterations = 0;
 
-		double upper = 1.0;
+		// current lower and upper bounds, initially undefined
+		double lower = 0.0;
+		double upper = 0.0;
+
+		// the bound that will be currently tests
+		double testing = 0.0;
+
 		boolean done = false;
 		while (!done) {
 			if (q instanceof ReachabilityLowerRewardBound) {
-				bound.setLowerBound(new ExpressionLiteral(TypeDouble.getInstance(), upper));
+				bound.setLowerBound(new ExpressionLiteral(TypeDouble.getInstance(), testing));
 			} else {
-				bound.setUpperBound(new ExpressionLiteral(TypeDouble.getInstance(), upper));
+				bound.setUpperBound(new ExpressionLiteral(TypeDouble.getInstance(), testing));
 			}
 
 			iterations++;
-			mainLog.println("=== Exponential search, iteration " + iterations + ", testing bound = " + upper+ ", " + e);
+			mainLog.println("=== Exponential search, iteration " + iterations + ", testing bound = " + testing + ", " + e);
 			StateValuesMTBDD sv = pmc.checkExpression(e, stateOfInterest.copy()).convertToStateValuesMTBDD();
 			sv.filter(stateOfInterest);
-			mainLog.println("\n=== Result for bound " + upper + ": " + JDD.FindMax(sv.getJDDNode()));
+			mainLog.println("\n=== Result for bound " + testing + ": " + JDD.FindMax(sv.getJDDNode()));
 
+			// check against the P threshold
 			JDDNode res = sv.getBDDFromInterval(relOp, threshold);
 			if (JDD.AreIntersecting(res, stateOfInterest)) {
-				// true, found an upper bound
+				// successful, P threshold is met, found an upper bound
+				upper = testing; 
 				done = true;
 			} else {
-				upper = upper * 2.0;
+				// unsuccessful, P threshold is not (yet) met, update testing bound
+
+				// we know that testing was not successful, so we remember that as the new lower bound
+				lower = testing;
+
+				if (testing == 0.0) {
+					// jump from 0 (initial iteration) to 1.0
+					testing = 1.0;
+				} else {
+					// double bound
+					testing *= 2.0;
+				}
 			}
 			JDD.Deref(res);
 			sv.clear();
 		}
 
-		getLog().println("\n=== Found upper bound " + upper +", switching to binary search...");
+		getLog().println("\n=== Found upper bound " + upper +" and lower bound " + lower + ", switching to binary search...");
 
 		double precision = settings.getDouble(PrismSettings.QUANTILE_CTMC_PRECISION);
 
-		double lower = 0.0;
 		done = false;
 		while (!done) {
-			double testing = (upper + lower) / 2.0;
+			// select mid-point
+			testing = (upper + lower) / 2.0;
 
 			if (q instanceof ReachabilityLowerRewardBound) {
 				bound.setLowerBound(new ExpressionLiteral(TypeDouble.getInstance(), testing));
@@ -142,20 +160,20 @@ public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 			sv.filter(stateOfInterest);
 			mainLog.println("\n=== Result for bound " + testing + ": " + JDD.FindMax(sv.getJDDNode()));
 
-
+			// check against the P threshold
 			JDDNode res = sv.getBDDFromInterval(relOp, threshold);
 			if (JDD.AreIntersecting(res, stateOfInterest)) {
-				// true, found a new upper bound
+				// successful, P threshold is met, found an improved upper bound
 				upper = testing;
 			} else {
-				// false, found a new lower bound
+				// unsuccessful, P threshold is not met, found an improved lower bound
 				lower = testing;
 			}
 			JDD.Deref(res);
 			sv.clear();
 
-			double diff = Math.abs(upper - lower);
-			if (diff <= precision) {
+			double diff = upper - lower;
+			if (diff <= precision) {  // always true as well if lower < upper (might happen due to numerical rounding) 
 				done = true;
 			}
 			if (done) {
