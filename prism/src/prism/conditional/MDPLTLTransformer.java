@@ -43,8 +43,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 	@Override
 	public boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
 	{
-		final Expression condition = expression.getCondition();
-		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
+		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
@@ -53,8 +52,8 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 		if (!super.canHandleObjective(model, expression)) {
 			return false;
 		}
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), objective.getExpression());
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		return getLtlTransformer().canHandle(model, objective.getExpression());
 	}
 
 	@Override

@@ -5,7 +5,6 @@ import jdd.JDDNode;
 import acceptance.AcceptanceType;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
 import prism.ModelTransformation;
@@ -27,8 +26,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 	@Override
 	public boolean canHandleCondition(ProbModel model, ExpressionConditional expression) throws PrismLangException
 	{
-		final Expression condition = expression.getCondition();
-		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), condition);
+		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override

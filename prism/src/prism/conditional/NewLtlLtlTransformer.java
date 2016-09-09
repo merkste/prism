@@ -11,7 +11,6 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
-import prism.LTLModelChecker;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
@@ -46,15 +45,14 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-//		return getLtlTransformer().canHandle(model, objective.getExpression());
-		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), objective.getExpression());
+		return getLtlTransformer().canHandle(model, objective.getExpression());
 	}
 
 	@Override
 	default boolean canHandleCondition(M model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression.getCondition());
+		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
