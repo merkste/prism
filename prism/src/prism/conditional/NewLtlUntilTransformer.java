@@ -127,8 +127,6 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		return configureOperator(model, new ProbabilisticRedistribution(), goalStop, new ProbabilisticRedistribution(), instantGoalStates, instantFailStates, statesOfInterest);
 	}
 
-	JDDNode computeNormalFormProbs(M model, Until until) throws PrismException;
-
 	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
 
 
@@ -146,12 +144,6 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		{
 			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
 			return transformNormalFormReach(product, conditionPath);
-		}
-
-		@Override
-		public JDDNode computeNormalFormProbs(ProbModel model, Until until) throws PrismException
-		{
-			return computeUntilProbs(model, until);
 		}
 
 		@Override
@@ -174,9 +166,9 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		public Pair<GoalFailStopTransformation<NondetModel>, ExpressionConditional> transformNormalForm(LTLProduct<NondetModel> product, Until conditionPath)
 				throws PrismException
 		{
-//			if (product.getAcceptance().getType() == AcceptanceType.REACH) {
-//				return transformNormalFormReach(product, conditionPath);
-//			}
+			if (product.getAcceptance().getType() == AcceptanceType.REACH) {
+				return transformNormalFormReach(product, conditionPath);
+			}
 
 			NondetModel productModel = product.getProductModel();
 			JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
@@ -230,7 +222,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			JDD.Deref(succConditionSatisfied);
 
 			// compute probabilities for objective
-			JDDNode conditionSatisfiedProbabilities = computeNormalFormProbs(productModel, objectivePath);
+			JDDNode conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
 			objectivePath.clear();
 
 			ProbabilisticRedistribution conditionSat = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
@@ -268,7 +260,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			Finally objectivePath           = new Finally(productModel, acceptStates.copy());
 
 			// compute probabilities for objective
-			JDDNode conditionSatisfiedProbabilities = computeNormalFormProbs(productModel, objectivePath);
+			JDDNode conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
 			objectivePath.clear();
 
 			ProbabilisticRedistribution conditionSatisfied = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
@@ -290,12 +282,6 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 
 			// transform goal-fail-stop
 			return configureOperator(productModel, conditionSatisfied, instantGoalStates, conditionFalsified, statesOfInterest);
-		}
-
-		@Override
-		public JDDNode computeNormalFormProbs(NondetModel model, Until until) throws PrismException
-		{
-			return computeUntilMaxProbs(model, until);
 		}
 
 		@Override
