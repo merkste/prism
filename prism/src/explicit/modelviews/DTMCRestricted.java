@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.IntPredicate;
+import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.iterable.EmptyIterator;
@@ -131,8 +132,9 @@ public class DTMCRestricted extends DTMCView
 	@Override
 	public IterableInt getInitialStates()
 	{
-		final FunctionalIterable<Integer> initialStates = FunctionalIterable.extend(model.getInitialStates());
-		return initialStates.filter(states::get).map(this::mapStateToRestrictedModel);
+		FunctionalIterable<Integer> initialStates = FunctionalIterable.extend(model.getInitialStates());
+		// superfluous (ToIntFunction<Integer>) required to circumvent strange build bug
+		return initialStates.filter(states::get).map((ToIntFunction<Integer>)this::mapStateToRestrictedModel);
 	}
 
 	@Override
