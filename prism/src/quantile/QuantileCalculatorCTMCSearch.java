@@ -185,7 +185,7 @@ public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 
 		timer.stop("(" + iterations + " calls to CTMC model checker during search)");
 
-		JDDNode result = JDD.ITE(stateOfInterest.copy(), JDD.Constant(lower), JDD.Constant(0));
+		JDDNode result = JDD.ITE(stateOfInterest.copy(), JDD.Constant(upper), JDD.Constant(0));
 		return new StateValuesMTBDD(result, model);
 	}
 
