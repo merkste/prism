@@ -28,6 +28,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	@Override
 	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression) throws PrismLangException
 	{
+		// FIXME ALG: Should check whether formula can be turned into ExpressionProb
 		return LTLModelChecker.isSupportedLTLFormula(ModelType.DTMC, expression.getCondition());
 	}
 
