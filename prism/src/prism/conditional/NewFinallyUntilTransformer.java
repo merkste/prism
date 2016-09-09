@@ -1,5 +1,10 @@
 package prism.conditional;
 
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import explicit.MinMax;
 import explicit.conditional.ExpressionInspector;
 import jdd.JDD;
@@ -10,6 +15,7 @@ import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.ECComputerDefault;
+import prism.Model;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
@@ -89,16 +95,13 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 
 		// FIXME ALG: reuse precomputation?
 		// compute redistribution for satisfied objective
-		ProbabilisticRedistribution objectiveSatisfied = computeRedistribution(model, objectivePath, conditionPath);
+		ProbabilisticRedistribution objectiveSatisfied = redistributeProb1MaxProbs(model, objectivePath, conditionPath);
 
 		// compute redistribution for satisfied condition
-		ProbabilisticRedistribution conditionSatisfied = computeRedistribution(model, conditionPath, objectivePath);
+		ProbabilisticRedistribution conditionSatisfied = redistributeProb1MaxProbs(model, conditionPath, objectivePath);
 
 		// compute redistribution for falsified objective
-		JDDNode objectiveFalsifiedStates               = computeProb0(model, objectivePath);
-		JDDNode objectiveFalsifiedProbabilities        = computeUntilMinProbs(model, conditionPath);
-		ProbabilisticRedistribution objectiveFalsified = new ProbabilisticRedistribution(objectiveFalsifiedStates, objectiveFalsifiedProbabilities);
-//		ProbabilisticRedistribution objectiveFalsified = new ProbabilisticRedistribution();
+		ProbabilisticRedistribution objectiveFalsified = redistributeProb0MinProbs(model, objectivePath, conditionPath);
 
 		// compute states where objective and condition can be satisfied
 		JDDNode instantGoalStates = computeInstantGoalStates(model, objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates.copy());
@@ -134,15 +137,24 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 	JDDNode computeInstantGoalStates(M model, Until objectivePath, JDDNode objectiveSatisfiedStates, JDDNode objectiveFalsifiedStates, Until conditionPath, JDDNode conditionSatisfiedStates, JDDNode conditionFalsifiedStates)
 			throws PrismException;
 
-	default ProbabilisticRedistribution computeRedistribution(M model, Until pathStates, Until pathProbs)
+	default ProbabilisticRedistribution redistributeProb1MaxProbs(M model, Until pathProb1, Until pathMaxProbs)
 			throws PrismException
 	{
-		JDDNode states        = computeProb1(model, pathStates);
-		JDDNode probabilities = computeNormalFormProbs(model, pathProbs);
+		JDDNode states        = computeProb1(model, pathProb1);
+		JDDNode probabilities = computeUntilMaxProbs(model, pathMaxProbs);
 		return new ProbabilisticRedistribution(states, probabilities);
 	}
 
-	JDDNode computeNormalFormProbs(M model, Until until) throws PrismException;
+	default ProbabilisticRedistribution redistributeProb0MinProbs(M model, Until pathProb0, Until pathMinProbs)
+			throws PrismException
+	{
+		JDDNode states               = computeProb0(model, pathProb0);
+		JDDNode probabilities        = computeUntilMinProbs(model, pathMinProbs);
+		return new ProbabilisticRedistribution(states, probabilities);
+	}
+
+
+	JDDNode computeUntilMaxProbs(M model, Until until) throws PrismException;
 
 	JDDNode computeUntilMinProbs(M model, Until until) throws PrismException;
 
@@ -151,20 +163,55 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 
 	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyUntilTransformer<ProbModel, ProbModelChecker>
 	{
+		protected Map<Entry<? extends Model, ? extends SimplePathProperty>, JDDNode> cache;
+
 		public DTMC(ProbModelChecker modelChecker)
 		{
 			super(modelChecker);
+			this.cache = new HashMap<>();
+		}
+
+		public void clear()
+		{
+			cache.values().forEach(JDD::Deref);
+			cache.clear();
+		}
+
+		/**
+		 * Override to enable caching of probabilities.
+		 *
+		 * @see NewFinallyUntilTransformer#transformNormalForm(ProbModel, Until, Until, JDDNode)
+		 */
+		@Override
+		public Pair<GoalFailStopTransformation<ProbModel>, ExpressionConditional> transformNormalForm(ProbModel model, Until objectivePath, Until conditionPath, JDDNode statesOfInterest)
+				throws PrismException
+		{
+			Pair<GoalFailStopTransformation<ProbModel>, ExpressionConditional> result = NewFinallyUntilTransformer.super.transformNormalForm(model, objectivePath, conditionPath, statesOfInterest);
+			clear();
+			return result;
 		}
 
 		@Override
-		public JDDNode computeNormalFormProbs(ProbModel model, Until until) throws PrismException
+		public JDDNode computeUntilMaxProbs(ProbModel model, Until until) throws PrismException
 		{
 			return computeUntilProbs(model, until);
 		}
 
+		@Override
 		public JDDNode computeUntilMinProbs(ProbModel model, Until until) throws PrismException
 		{
 			return computeUntilProbs(model, until);
+		}
+
+		@Override
+		public JDDNode computeUntilProbs(ProbModel model, Until until) throws PrismException
+		{
+			Entry<? extends Model, ? extends SimplePathProperty> params = new AbstractMap.SimpleImmutableEntry<>(model, until);
+			if (! cache.containsKey(params)) {
+				JDDNode probabilities = super.computeUntilProbs(model, until);
+				cache.put(params, probabilities);
+			}
+			return cache.get(params).copy();
 		}
 
 		@Override
@@ -183,12 +230,6 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		public MDP(NondetModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public JDDNode computeNormalFormProbs(NondetModel model, Until until) throws PrismException
-		{
-			return computeUntilMaxProbs(model, until);
 		}
 
 		@Override
