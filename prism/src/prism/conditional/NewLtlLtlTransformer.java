@@ -236,24 +236,12 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			objectiveAndConditionProduct.setAcceptance(objectiveAndConditionAcceptance);
 
 			// 5) Objective & Condition Goal States
+			// compute states where objective and condition can be satisfied
 			JDDNode instantGoalStates = findAcceptingStatesMax(objectiveAndConditionProduct);
-//		JDDNode acceptObjectiveAndCondition = getLtlTransformer().findAcceptingStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
-//		Finally objectiveAndConditionPath   = new Finally(objectiveAndConditionModel, acceptObjectiveAndCondition);
-//		objectiveAndConditionAcceptance.clear();
-//		// Scheduler will enforce acceptance to maximize probability
-//		JDDNode instantGoalStates = computeSurelySatisfied(objectiveAndConditionModel, objectiveAndConditionPath);
-//		vs
-//		JDDNode instantGoalStates = computeMaybeSatisfied(objectiveAndConditionModel, objectiveAndConditionPath);
-//		objectiveAndConditionPath.clear();
-////		JDDNode instantGoalStates = acceptObjectiveAndCondition;
 
 			// transform goal-fail-stop
 			GoalFailStopOperator<NondetModel> operator             = configureOperator(objectiveAndConditionModel, instantGoalStates, conditionFalsifiedLifted, objectiveAndConditionStatesOfInterest);
 			GoalFailStopTransformation<NondetModel> transformation = new GoalFailStopTransformation<>(objectiveAndConditionModel, operator, badStatesLifted);
-//			transformation                                         = transformation.compose(objectiveAndConditionProduct);
-//getLog().print("\ngoal-state:");
-//new StateValuesMTBDD(transformation.getTransformedModel().getLabelDD(transformation.getGoalLabel()), transformation.getTransformedModel()).print(getLog());
-//getLog().println();
 			// build expression
 			ExpressionLabel goal                        = new ExpressionLabel(transformation.getGoalLabel());
 			ExpressionTemporal transformedObjectiveTmp  = Expression.Finally(goal);
