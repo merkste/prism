@@ -127,8 +127,13 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 	default ProbabilisticRedistribution redistributeProb1MaxProbs(M model, Until pathProb1, Until pathMaxProbs)
 			throws PrismException
 	{
-		JDDNode states        = computeProb1(model, pathProb1);
-		JDDNode probabilities = computeUntilMaxProbs(model, pathMaxProbs);
+		JDDNode states = computeProb1(model, pathProb1);
+		JDDNode probabilities;
+		if (states.equals(JDD.ZERO)) {
+			probabilities = JDD.Constant(0);
+		} else {
+			probabilities = computeUntilMaxProbs(model, pathMaxProbs);
+		}
 		return new ProbabilisticRedistribution(states, probabilities);
 	}
 
@@ -211,6 +216,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			JDDNode nonAcceptingStates                     = JDD.Or(badStates.copy(), conditionFalsifiedStates.copy());
 			ProbabilisticRedistribution objectiveFalsified = redistributeProb0MaxProbs(productModel, objectivePath, nonAcceptingStates);
 
+			// compute states where objective and condition can be satisfied
 			JDDNode instantGoalStates = computeInstantGoalStates(productModel, objectivePath, objectiveFalsified.getStates(), conditionPath, conditionFalsifiedStates.copy());
 
 			// transform goal-fail-stop
@@ -234,12 +240,18 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		public ProbabilisticRedistribution redistributeProb0MaxProbs(NondetModel model, Until pathStates, JDDNode nonAcceptingStates)
 				throws PrismException
 		{
-			JDDNode states           = computeProb0A(model, pathStates);
-			Finally nonAcceptingPath = new Finally(model, nonAcceptingStates);
-			JDDNode maxProbabilities = computeUntilMaxProbs(model, nonAcceptingPath);
-			nonAcceptingPath.clear();
-			// inverse probabilities to match redistribution target states
-			return new ProbabilisticRedistribution(states, JDD.Apply(JDD.MINUS, model.getReach().copy(), maxProbabilities));
+			JDDNode states = computeProb0A(model, pathStates);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				Finally nonAcceptingPath = new Finally(model, nonAcceptingStates);
+				JDDNode maxProbabilities = computeUntilMaxProbs(model, nonAcceptingPath);
+				nonAcceptingPath.clear();
+				// inverse probabilities to match redistribution target states
+				probabilities = JDD.Apply(JDD.MINUS, model.getReach().copy(), maxProbabilities);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		/**

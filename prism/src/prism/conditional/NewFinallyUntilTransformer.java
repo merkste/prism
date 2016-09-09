@@ -140,16 +140,26 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 	default ProbabilisticRedistribution redistributeProb1MaxProbs(M model, Until pathProb1, Until pathMaxProbs)
 			throws PrismException
 	{
-		JDDNode states        = computeProb1(model, pathProb1);
-		JDDNode probabilities = computeUntilMaxProbs(model, pathMaxProbs);
+		JDDNode states = computeProb1(model, pathProb1);
+		JDDNode probabilities;
+		if (states.equals(JDD.ZERO)) {
+			probabilities = JDD.Constant(0);
+		} else {
+			probabilities = computeUntilMaxProbs(model, pathMaxProbs);
+		}
 		return new ProbabilisticRedistribution(states, probabilities);
 	}
 
 	default ProbabilisticRedistribution redistributeProb0MinProbs(M model, Until pathProb0, Until pathMinProbs)
 			throws PrismException
 	{
-		JDDNode states               = computeProb0(model, pathProb0);
-		JDDNode probabilities        = computeUntilMinProbs(model, pathMinProbs);
+		JDDNode states = computeProb0(model, pathProb0);
+		JDDNode probabilities;
+		if (states.equals(JDD.ZERO)) {
+			probabilities = JDD.Constant(0);
+		} else {
+			probabilities = computeUntilMinProbs(model, pathMinProbs);
+		}
 		return new ProbabilisticRedistribution(states, probabilities);
 	}
 

@@ -212,27 +212,29 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		{
 			NondetModel productModel = product.getProductModel();
 
-			// compute normal-form states for condition (including all satisfying MECs)
-			JDDNode conditionSatisfiedStates = computeProb1A(productModel, conditionPath);
-
-			// compute accepting states in succ*(conditionSatisfied) (ECs or REACH states)
-			JDDNode succConditionSatisfied   = computeSuccStar(productModel, conditionSatisfiedStates);
-			JDDNode acceptSuccCondition      = getLtlTransformer().findAcceptingStates(product, succConditionSatisfied);
-			Finally objectivePath            = new Finally(productModel, acceptSuccCondition);
-			JDD.Deref(succConditionSatisfied);
-
-			// compute probabilities for objective
-			JDDNode conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
-			objectivePath.clear();
-
-			ProbabilisticRedistribution conditionSat = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
+			// compute redistribution for satisfied condition
+			JDDNode conditionSatisfiedStates = computeProb1A(productModel, conditionPath); // includes all satisfying MECs
+			JDDNode conditionSatisfiedProbabilities;
+			if (conditionSatisfiedStates.equals(JDD.ZERO)) {
+				conditionSatisfiedProbabilities = JDD.Constant(0);
+			} else {
+				// compute accepting states in succ*(conditionSatisfied) (ECs or REACH states)
+				JDDNode succConditionSatisfied   = computeSuccStar(productModel, conditionSatisfiedStates);
+				JDDNode acceptSuccCondition      = getLtlTransformer().findAcceptingStates(product, succConditionSatisfied);
+				JDD.Deref(succConditionSatisfied);
+				// compute probabilities for objective
+				Finally objectivePath            = new Finally(productModel, acceptSuccCondition);
+				conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
+				objectivePath.clear();
+			}
+			ProbabilisticRedistribution conditionSatisfied = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
 
 			// compute accepting ECs to be normalized to goal
 			JDDNode instantGoalStates;
 			if (conditionPath.isNegated()) {
 				// ECs might satisfy objective and condition
 				// -> exclude all states that falsify or satisfy the condition for sure
-				JDDNode restrict  = JDD.And(productModel.getReach().copy(), JDD.Not(JDD.Or(conditionFalsified.copy(), conditionSatisfiedStates.copy())));
+				JDDNode restrict  = JDD.And(productModel.getReach().copy(), JDD.Not(JDD.Or(conditionFalsified.copy(), conditionSatisfied.getStates())));
 				instantGoalStates = findAcceptingStatesMax(product, restrict, true);
 			} else {
 				// ECs do not matter, since they are visited after the (non-negated) condition has already been satisfied
@@ -240,7 +242,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			}
 
 			// transform goal-fail-stop
-			return configureOperator(productModel, conditionSat, instantGoalStates, conditionFalsified, statesOfInterest);
+			return configureOperator(productModel, conditionSatisfied, instantGoalStates, conditionFalsified, statesOfInterest);
 		}
 
 		/**
@@ -252,17 +254,21 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		{
 			NondetModel productModel = product.getProductModel();
 
-			// compute normal-form states for condition (including all satisfying MECs)
-			JDDNode conditionSatisfiedStates = computeProb1A(productModel, conditionPath);
-
 			// compute accepting states  (ECs or REACH states)
 			JDDNode acceptStates            = getLtlTransformer().findAcceptingStates(product);
-			Finally objectivePath           = new Finally(productModel, acceptStates.copy());
 
-			// compute probabilities for objective
-			JDDNode conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
-			objectivePath.clear();
-
+			// compute redistribution for satisfied condition
+			// compute normal-form states for condition (including all satisfying MECs)
+			JDDNode conditionSatisfiedStates = computeProb1A(productModel, conditionPath);
+			JDDNode conditionSatisfiedProbabilities;
+			if (conditionSatisfiedStates.equals(JDD.ZERO)) {
+				conditionSatisfiedProbabilities = JDD.Constant(0);
+			} else {
+				// compute probabilities for objective
+				Finally objectivePath           = new Finally(productModel, acceptStates.copy());
+				conditionSatisfiedProbabilities = computeUntilMaxProbs(productModel, objectivePath);
+				objectivePath.clear();
+			}
 			ProbabilisticRedistribution conditionSatisfied = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
 
 			// compute accepting ECs to be normalized to goal
@@ -270,7 +276,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			if (conditionPath.isNegated()) {
 				// ECs might satisfy objective and condition
 				// -> exclude all states that falsify or satisfy the condition for sure
-				JDDNode restrict  = JDD.Not(JDD.Or(conditionFalsified.copy(), conditionSatisfiedStates.copy()));
+				JDDNode restrict  = JDD.Not(JDD.Or(conditionFalsified.copy(), conditionSatisfied.getStates()));
 				// -> refine only accepting ECs
 				restrict          = JDD.And(restrict, acceptStates);
 				instantGoalStates = findAcceptingStatesMax(product, restrict, true);
