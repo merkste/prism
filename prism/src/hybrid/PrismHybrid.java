@@ -113,6 +113,12 @@ public class PrismHybrid
 		PH_SetTechLog(log);
 	}
 
+	private static native void PH_SetExportIterations(boolean value);
+	public static void SetExportIterations(boolean value)
+	{
+		PH_SetExportIterations(value);
+	}
+
 	//------------------------------------------------------------------------------
 	// error message
 	//------------------------------------------------------------------------------
