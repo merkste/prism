@@ -83,7 +83,14 @@ class ExportIterations {
 		log.print("addVector([");
 		for (int i = 0; i < soln.length; i++) {
 			if (i>0) log.print(",");
-			log.print(soln[i]);
+			double d = soln[i];
+			if (d == Double.POSITIVE_INFINITY) {
+				log.print("Infinity");
+			} else if (d == Double.NEGATIVE_INFINITY) {
+				log.print("-Infinity");
+			} else {
+				log.print(d);
+			}
 		}
 		log.print("]," + type + ");\n");
 	}

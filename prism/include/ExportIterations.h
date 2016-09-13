@@ -30,6 +30,7 @@
 
 #include <cstdio>
 #include <string>
+#include <cmath>
 
 class ExportIterations {
 private:
@@ -45,14 +46,14 @@ public:
 		fprintf(fp, "<!DOCTYPE html>\n");
 		fprintf(fp, "<html><head>\n");
 		fprintf(fp, "<meta charset=\"utf-8\">\n");
-		fprintf(fp, "<title>%s</title>", title);
+		fprintf(fp, "<title>%s</title>\n", title);
 		fprintf(fp, "<link rel='stylesheet' href='https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.css'>\n");
 		fprintf(fp, "<script src=\"https://d3js.org/d3.v4.min.js\"></script>\n");
 		fprintf(fp, "<body>\n");
-		fprintf(fp, "<h1>%s</h1>", title);
-		fprintf(fp, "<svg></svg>");
+		fprintf(fp, "<h1>%s</h1>\n", title);
+		fprintf(fp, "<svg></svg>\n");
 		fprintf(fp, "<script src=\"https://wwwtcs.inf.tu-dresden.de/~klein/intern/interval-vis/vis-vectors.js\"></script>\n");
-		fprintf(fp, "<script>");
+		fprintf(fp, "<script>\n");
 	}
 
 	/**
@@ -62,14 +63,22 @@ public:
 		fprintf(fp, "addVector([");
 		for (int i = 0; i < n; i++) {
 			if (i>0) fprintf(fp, ",");
-			fprintf(fp, "%f", soln[i]);
+			double d = soln[i];
+			if (isinf(d)) {
+				if (d > 0)
+					fprintf(fp, "Infinity");
+				else
+					fprintf(fp, "-Infinity");
+			} else {
+				fprintf(fp, "%f", soln[i]);
+			}
 		}
 		fprintf(fp, "],0);\n");
 	}
 
 	/** Destructor, close file */
 	~ExportIterations() {
-		fprintf(fp, "init();\n</script>\n</body></html>\n");
+		fprintf(fp, "\ninit();\n</script>\n</body></html>\n");
 		fclose(fp);
 	}
 };
