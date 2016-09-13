@@ -621,14 +621,7 @@ public class QuantileUtilities
 		getLog().println("Solving quantile using algorithm for quantitative probability thresholds.");
 		long timer = System.currentTimeMillis();
 		final Context4ExpressionQuantileProb context;
-		if (expressionQuantile.pickMaximum() && model.getModelType()==ModelType.MDP && getMultiStateSolutionMethod()==MultiStateSolutionMethod.INTERVAL_ITERATION){
-			final Pair<BitSet, BitSet> invariantStatesAndGoalStates = computeInvariantStatesAndGoalStates(model.getModel(), expressionQuantile);
-			final Triplet<RewardWrapperMDP, BitSet, BitSet> intervalIterationTransformation = ((RewardWrapperMDP) model).collapseZeroRewardMECs(invariantStatesAndGoalStates.getFirst(), invariantStatesAndGoalStates.getSecond(), getDebugLevel(), statesOfInterest);
-			model = intervalIterationTransformation.getFirst();
-			context = generateSuitableContext(model, expressionQuantile, intervalIterationTransformation.getSecond(), intervalIterationTransformation.getThird(), ((RewardWrapperMDP) model).getModelTransformation().getTransformedStatesOfInterest());
-		} else {
-			context = generateSuitableContext(model, expressionQuantile, statesOfInterest);
-		}
+		context = generateSuitableContext(model, expressionQuantile, statesOfInterest);
 		getLog().println("\nTime for context generation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.");
 		timer = System.currentTimeMillis();
 		finiteQuantileStates = context.determineFiniteQuantileStates();
@@ -773,14 +766,7 @@ public class QuantileUtilities
 		final ExpressionQuantileProbNormalForm expressionQuantile = getExpressionQuantileProbNormalForm(expressionTemporal, minMax, temporalOperatorBound.hasUpperBound(), negateResult);
 		RewardWrapper wrappedModel = RewardWrapper.wrapModelAndReward(probModelChecker, model, rewards);
 		final Context4ExpressionQuantileProb context;
-		if (expressionQuantile.pickMaximum() && wrappedModel.getModelType()==ModelType.MDP && getMultiStateSolutionMethod()==MultiStateSolutionMethod.INTERVAL_ITERATION){
-			final Pair<BitSet, BitSet> invariantStatesAndGoalStates = computeInvariantStatesAndGoalStates(wrappedModel.getModel(), expressionQuantile);
-			final Triplet<RewardWrapperMDP, BitSet, BitSet> intervalIterationTransformation = ((RewardWrapperMDP) wrappedModel).collapseZeroRewardMECs(invariantStatesAndGoalStates.getFirst(), invariantStatesAndGoalStates.getSecond(), getDebugLevel(), statesOfInterest);
-			wrappedModel = intervalIterationTransformation.getFirst();
-			context = generateSuitableContext(wrappedModel, expressionQuantile, intervalIterationTransformation.getSecond(), intervalIterationTransformation.getThird(), ((RewardWrapperMDP) wrappedModel).getModelTransformation().getTransformedStatesOfInterest());
-		} else {
-			context = generateSuitableContext(wrappedModel, expressionQuantile, statesOfInterest);
-		}
+		context = generateSuitableContext(wrappedModel, expressionQuantile, statesOfInterest);
 		getLog().println("\nTime for context generation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.");
 		ModelCheckerResult res = computeRewardBoundedReachability(context, getBound(temporalOperatorBound), negateResult);
 		shutdownWorkerPool();
