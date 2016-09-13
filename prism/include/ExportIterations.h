@@ -70,7 +70,7 @@ public:
 				else
 					fprintf(fp, "-Infinity");
 			} else {
-				fprintf(fp, "%f", soln[i]);
+				fprintf(fp, "%.17g", soln[i]);
 			}
 		}
 		fprintf(fp, "],%d);\n", type);
