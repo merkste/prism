@@ -203,7 +203,7 @@ jboolean forwards	// forwards or backwards?
 	if (PS_GetFlagExportIterations()) {
 		std::string title("PS_SOR (");
 		title += forwards?"":"Backwards ";
-		title += (omega == 1.0)?"Gauss-Seidel":"SOR";
+		title += (omega == 1.0)?"Gauss-Seidel":("SOR omega=" + std::to_string(omega));
 		title += ")";
 		iterationExport.reset(new ExportIterations(title.c_str()));
 		iterationExport->exportVector(soln, n, 0);

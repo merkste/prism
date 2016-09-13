@@ -197,6 +197,4 @@ double *cmsc_negative_row_sums(CMSCSparseMatrix *cmscsm, bool transpose);
 
 //------------------------------------------------------------------------------
 
-bool PS_GetFlagExportIterations();
-
 #endif // SPARSE_H

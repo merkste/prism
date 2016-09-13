@@ -202,7 +202,7 @@ jdouble omega		// omega (over-relaxation parameter)
 	std::unique_ptr<ExportIterations> iterationExport;
 	if (PS_GetFlagExportIterations()) {
 		std::string title("PS_JOR (");
-		title += (omega == 1.0)?"Jacobi":"JOR";
+		title += (omega == 1.0)?"Jacobi": ("JOR omega=" + std::to_string(omega));
 		title += ")";
 
 		iterationExport.reset(new ExportIterations(title.c_str()));
