@@ -1200,6 +1200,11 @@ public class MDPModelChecker extends ProbModelChecker
 		timer = System.currentTimeMillis();
 		mainLog.println("Starting value iteration (" + (min ? "min" : "max") + ")...");
 
+		ExportIterations iterationsExport = null;
+		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
+			iterationsExport = new ExportIterations("Explicit MDP ReachProbs value iteration");
+		}
+
 		// Store num states
 		n = mdp.getNumStates();
 
@@ -1232,6 +1237,9 @@ public class MDPModelChecker extends ProbModelChecker
 		if (known != null)
 			unknown.andNot(known);
 
+		if (iterationsExport != null)
+			iterationsExport.exportVector(soln, 0);
+
 		// Start iterations
 		iters = 0;
 		done = false;
@@ -1239,6 +1247,10 @@ public class MDPModelChecker extends ProbModelChecker
 			iters++;
 			// Matrix-vector multiply and min/max ops
 			mdp.mvMultMinMax(soln, min, soln2, unknown, false, strat);
+
+			if (iterationsExport != null)
+				iterationsExport.exportVector(soln2, 0);
+
 			// Check termination
 			done = PrismUtils.doublesAreClose(soln, soln2, termCritParam, termCrit == TermCrit.ABSOLUTE);
 			// Swap vectors for next iter
@@ -1251,6 +1263,9 @@ public class MDPModelChecker extends ProbModelChecker
 		timer = System.currentTimeMillis() - timer;
 		mainLog.print("Value iteration (" + (min ? "min" : "max") + ")");
 		mainLog.println(" took " + iters + " iterations and " + timer / 1000.0 + " seconds.");
+
+		if (iterationsExport != null)
+			iterationsExport.close();
 
 		// Non-convergence is an error (usually)
 		if (!done && errorOnNonConverge) {
@@ -1292,6 +1307,11 @@ public class MDPModelChecker extends ProbModelChecker
 		timer = System.currentTimeMillis();
 		mainLog.println("Starting Gauss-Seidel (" + (min ? "min" : "max") + ")...");
 
+		ExportIterations iterationsExport = null;
+		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
+			iterationsExport = new ExportIterations("Explicit MDP ReachProbs Gauss-Seidel iteration");
+		}
+
 		// Store num states
 		n = mdp.getNumStates();
 
@@ -1323,6 +1343,9 @@ public class MDPModelChecker extends ProbModelChecker
 		if (known != null)
 			unknown.andNot(known);
 
+		if (iterationsExport != null)
+			iterationsExport.exportVector(soln, 0);
+
 		// Start iterations
 		iters = 0;
 		done = false;
@@ -1330,6 +1353,10 @@ public class MDPModelChecker extends ProbModelChecker
 			iters++;
 			// Matrix-vector multiply
 			maxDiff = mdp.mvMultGSMinMax(soln, min, unknown, false, termCrit == TermCrit.ABSOLUTE, strat);
+
+			if (iterationsExport != null)
+				iterationsExport.exportVector(soln, 0);
+
 			// Check termination
 			done = maxDiff < termCritParam;
 		}
@@ -1338,6 +1365,9 @@ public class MDPModelChecker extends ProbModelChecker
 		timer = System.currentTimeMillis() - timer;
 		mainLog.print("Gauss-Seidel");
 		mainLog.println(" took " + iters + " iterations and " + timer / 1000.0 + " seconds.");
+
+		if (iterationsExport != null)
+			iterationsExport.close();
 
 		// Non-convergence is an error (usually)
 		if (!done && errorOnNonConverge) {
