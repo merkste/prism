@@ -73,7 +73,7 @@ public:
 				fprintf(fp, "%f", soln[i]);
 			}
 		}
-		fprintf(fp, "],0);\n");
+		fprintf(fp, "],%d);\n", type);
 	}
 
 	/** Destructor, close file */
