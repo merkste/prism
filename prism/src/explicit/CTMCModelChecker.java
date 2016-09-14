@@ -940,6 +940,50 @@ public class CTMCModelChecker extends ProbModelChecker
 	}
 
 	/**
+	 * Prob0 precomputation algorithm,
+	 * i.e. determine the states of a CTMC which, with probability 0,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param ctmc The CTMC
+	 * @param remain Remain in these states (optional: {@code null} means "all")
+	 * @param target Target states
+	 */
+	public BitSet prob0(CTMC ctmc, BitSet remain, BitSet target)
+			throws PrismException
+	{
+		// Construct embedded DTMC and do computation on that
+		mainLog.println("Building embedded DTMC...");
+		DTMC dtmcEmb = ctmc.getImplicitEmbeddedDTMC();
+		if (preRel) {
+			PredecessorRelation pre = dtmcEmb.getPredecessorRelation(this, true);
+			return createDTMCModelChecker().prob0(dtmcEmb, remain, target, pre);
+		} else {
+			return createDTMCModelChecker().prob0(dtmcEmb, remain, target);
+		}
+	}
+
+	/**
+	 * Prob1 precomputation algorithm,
+	 * i.e. determine the states of a CTMC which, with probability 1,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param ctmc The CTMC
+	 * @param remain Remain in these states (optional: {@code null} means "all")
+	 * @param target Target states
+	 */
+	public BitSet prob1(CTMC ctmc, BitSet remain, BitSet target)
+			throws PrismException
+	{
+		// Construct embedded DTMC and do computation on that
+		mainLog.println("Building embedded DTMC...");
+		DTMC dtmcEmb = ctmc.getImplicitEmbeddedDTMC();
+		if (preRel) {
+			PredecessorRelation pre = dtmcEmb.getPredecessorRelation(this, true);
+			return createDTMCModelChecker().prob1(dtmcEmb, remain, target, pre);
+		} else {
+			return createDTMCModelChecker().prob1(dtmcEmb, remain, target);
+		}
+	}
+
+	/**
 	 * Simple test program.
 	 */
 	public static void main(String args[])
