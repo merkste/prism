@@ -297,8 +297,8 @@ public class MDPDisjointUnion extends MDPView
 	// FIXME ALG: reconsider interface types
 	public static MDP MDPUnion(final MDP model1, final MDP model2, final Map<Integer, Integer> identify)
 	{
-		final MDPDisjointUnion union = new MDPDisjointUnion(model1, model2);
-		final Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new Mapping<Entry<Integer, Integer>, BitSet>()
+		MDPDisjointUnion union = new MDPDisjointUnion(model1, model2);
+		Mapping<Entry<Integer, Integer>, BitSet> equivalenceClass = new Mapping<Entry<Integer, Integer>, BitSet>()
 		{
 			@Override
 			public final BitSet apply(final Entry<Integer, Integer> id)
@@ -310,7 +310,8 @@ public class MDPDisjointUnion extends MDPView
 			}
 		};
 		Iterable<BitSet> equivalenceClasses = FunctionalIterable.extend(identify.entrySet()).map(equivalenceClass);
-		return MDPAlteredDistributions.identifyStates(union, equivalenceClasses);
+		EquivalenceRelationInteger equivalence = new EquivalenceRelationInteger(equivalenceClasses);
+		return MDPEquiv.transform(union, equivalence, true).getTransformedModel();
 	}
 
 	public static void main(final String[] args) throws PrismException
