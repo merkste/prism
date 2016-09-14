@@ -109,4 +109,87 @@ public:
 
 };
 
+/**
+ * Measure for determining the difference between the upper and lower values in
+ * an interval iteration.
+ * In relative mode, the difference is scaled by the mid-point between upper and lower value.
+ */
+class MeasureSupNormInterval {
+private:
+	// relative mode?
+	const bool relative;
+	// the current maximal value
+	double sup_norm;
+
+public:
+	/** Constructor, set relative flag */
+	MeasureSupNormInterval(bool relative) : relative(relative) {
+		reset();
+	}
+
+	/** Reset for new measurement */
+	void reset() {
+		sup_norm = 0.0;
+	}
+
+	/** Relative mode? */
+	bool isRelative() const {
+		return relative;
+	}
+
+	/**
+	 * Do the measurement for an upper and lower value pair.
+	 * For relative mode, the midpoint between lower and upper is used as the divisor.
+	 */
+	inline void measure(double lower, double upper) {
+		double x;
+
+		// special case: one of the values is infinite (this can happen e.g. for non-converging
+		// iterations when the values grow extremely large and overflow to infinity).
+		if (isinf(lower) || isinf(upper)) {
+			x = std::numeric_limits<double>::infinity();
+		} else {
+			// compute difference
+			// we don't use fabs like for MeasureSupNorm, as we want x to become negative
+			// in situations where upper < lower (should only happen due to numerical inaccuracies / rounding)
+			x = upper - lower;
+			// we clamp to zero for negative values
+			if (x < 0)
+				x = 0;
+
+			if (relative && x != 0.0) {
+				// for relative mode: divide by midpoint
+				// We take the absolute value of the midpoint to ensure that
+				// x does not flip signs.
+				// Note: if the midpoint is 0.0, then x will become +inf, as x!=0
+				// This should not happen for probability and non-negative reward computations
+				// but might occur if negative rewards are allowed
+				double midpoint = fabs((upper + lower) / 2.0);
+				x /= fabs(midpoint);
+			}
+		}
+
+		// sup_norm = max { x, sup_norm }
+		if (x > sup_norm) {
+			sup_norm = x;
+		}
+	}
+
+	/**
+	 * Do the measurement for a pair of arrays (lower and upper bounds) of size n.
+	 * For relative mode, the midpoints are used as the divisors.
+	 */
+	inline void measure(const double *lower, const double *upper, std::size_t n) {
+		for (std::size_t i = 0; i < n; i++) {
+			measure(lower[i], upper[i]);
+		}
+	}
+
+	/** Return the measured value */
+	double value() const {
+		return sup_norm;
+	}
+
+};
+
 #endif
