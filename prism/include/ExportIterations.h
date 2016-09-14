@@ -32,6 +32,11 @@
 #include <string>
 #include <cmath>
 
+#include <cudd.h>
+#include <dd.h>
+#include "dv.h"
+#include <odd.h>
+
 class ExportIterations {
 private:
 	FILE *fp;
@@ -74,6 +79,21 @@ public:
 			}
 		}
 		fprintf(fp, "],%d);\n", type);
+	}
+
+	/**
+	 * Export the given MTBDD vector, with num_rvars row variables,
+	 * odd for reachable state space and type (0= normal, VI from below, 1 = VI from above)
+	 */
+	void exportVector(DdNode *dd, DdNode **rvars, int num_rvars, ODDNode* odd, int type)
+	{
+		double* vec = mtbdd_to_double_vector(ddman, dd, rvars, num_rvars, odd);
+
+		// get number of states
+		int n = odd->eoff + odd->toff;
+
+		exportVector(vec, n, type);
+		delete[] vec;
 	}
 
 	/** Destructor, close file */
