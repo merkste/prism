@@ -79,6 +79,9 @@ public:
 				// x remains non-negative. v2 can become negative e.g.
 				// during iterations with over-relaxation with large
 				// omega values.
+				// Note: if v2 is 0, then x will become +inf for x>0 and NaN for x=0, i.e., v1=v2=0
+				// In the later case, the max computation below will ignore the NaN,
+				// as NaN > y is false for all y
 				x /= fabs(v2);
 			}
 		}
