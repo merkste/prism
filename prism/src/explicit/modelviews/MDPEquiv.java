@@ -285,6 +285,9 @@ public class MDPEquiv extends MDPView
 
 	public StateChoicePair mapToOriginalModel(final int state, final int choice)
 	{
+		if (! identify.isRepresentative(state)) {
+			throw new IndexOutOfBoundsException("choice index out of bounds");
+		}
 		StateChoicePair[] stateChoicePairs = originalChoices[state];
 		if (stateChoicePairs == null) {
 			return null;
@@ -327,19 +330,18 @@ public class MDPEquiv extends MDPView
 		Distribution choice = new Distribution();
 		choice.add(1, 0.5);
 		choice.add(2, 0.5);
-		mdpSimple.addChoice(0, choice);
+		mdpSimple.addActionLabelledChoice(0, choice, 'a');
 		choice = new Distribution();
 		choice.add(2, 1.0);
-		mdpSimple.addChoice(1, choice);
+		mdpSimple.addActionLabelledChoice(1, choice, 'b');
 		choice = new Distribution();
 		choice.add(1, 1.0);
-		mdpSimple.addChoice(2, choice);
+		mdpSimple.addActionLabelledChoice(2, choice, 'c');
 		System.out.println("original = " + mdpSimple);
 
 		EquivalenceRelationInteger eq = new EquivalenceRelationInteger(new IterableArray.Of<>(BitSetTools.asBitSet(1,2)));
 		MDPEquiv equiv = new MDPEquiv(mdpSimple, eq);
 		System.out.println("identify = " + equiv);
-
 		equiv.findDeadlocks(true);
 		System.out.println("fixed    = " + equiv);
 	}
