@@ -19,12 +19,17 @@ import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
+import explicit.ModelTransformation;
 import explicit.ReachabilityComputer;
 import parser.State;
 import parser.Values;
 import parser.VarList;
 import prism.PrismException;
 
+/**
+ * An MDPEquiv is the quotient MDP with respect to an equivalence relation.
+ * For efficiency, non-representative states are not removed but deadlocked.
+ */
 public class MDPEquiv extends MDPView
 {
 	public static final boolean COMPLEMENT = true;
@@ -299,9 +304,20 @@ public class MDPEquiv extends MDPView
 
 	//--- static methods ---
 
-	public static BasicModelTransformation<MDP, MDPEquiv> transform(MDP model, EquivalenceRelationInteger identify)
+	public static ModelTransformation<MDP, ? extends MDP> transform(MDP model, EquivalenceRelationInteger identify)
 	{
-		return new BasicModelTransformation<>(model, new MDPEquiv(model, identify));
+		return transform(model, identify, false);
+	}
+
+	public static ModelTransformation<MDP, ? extends MDP> transform(MDP model, EquivalenceRelationInteger identify, boolean removeNonRepresentatives)
+	{
+		BasicModelTransformation<MDP,MDPEquiv> quotient = new BasicModelTransformation<>(model, new MDPEquiv(model, identify));
+		if (! removeNonRepresentatives) {
+			return quotient;
+		}
+		BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
+		BasicModelTransformation<MDP, MDPRestricted> restriction = MDPRestricted.transform(quotient.getTransformedModel(), representatives, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		return restriction.compose(quotient);
 	}
 
 	public static BasicModelTransformation<MDP, MDPEquiv> transformDroppingLoops(MDP model, EquivalenceRelationInteger identify)
