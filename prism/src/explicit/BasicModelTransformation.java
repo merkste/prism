@@ -157,12 +157,12 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		return result;
 	}
 
-	public <M extends Model> BasicModelTransformation<M, TM> compose(final ModelTransformation<M, ? extends OM> inner) throws PrismException
+	public <M extends Model> BasicModelTransformation<M, TM> compose(final ModelTransformation<M, ? extends OM> inner)
 	{
 		return new BasicModelTransformation<>(this.nest(inner));
 	}
 
-	public <M extends Model> ModelTransformationNested<M, OM, TM> nest(final ModelTransformation<M, ? extends OM> inner) throws PrismException
+	public <M extends Model> ModelTransformationNested<M, OM, TM> nest(final ModelTransformation<M, ? extends OM> inner)
 	{
 		return new ModelTransformationNested<>(inner, this);
 	}
