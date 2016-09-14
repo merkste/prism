@@ -27,6 +27,8 @@ import prism.PrismException;
 
 public class MDPEquiv extends MDPView
 {
+	public static final boolean COMPLEMENT = true;
+
 	protected MDP model;
 	protected EquivalenceRelationInteger identify;
 	protected int[] numChoices;
@@ -42,8 +44,8 @@ public class MDPEquiv extends MDPView
 		final int numStates = model.getNumStates();
 		this.numChoices = new int[numStates];
 		this.originalChoices = new StateChoicePair[numStates][];
-		for (OfInt representativeIterator = new IterableStateSet(identify.nonRepresentatives, numStates, true).iterator(); representativeIterator.hasNext();){
-			final int representative = representativeIterator.nextInt();
+		for (OfInt representatives = new IterableStateSet(identify.nonRepresentatives, numStates, COMPLEMENT).iterator(); representatives.hasNext();) {
+			final int representative = representatives.nextInt();
 			BitSet equivalenceClass = this.identify.getEquivalenceClassOrNull(representative);
 			if (equivalenceClass == null || equivalenceClass.cardinality() == 1) {
 				//the equivalence-class consists only of one state
@@ -259,15 +261,15 @@ public class MDPEquiv extends MDPView
 		return new SimpleImmutableEntry<>(target, probability);
 	}
 
-	protected class StateChoicePair
+	public static class StateChoicePair
 	{
 		final int state;
 		final int choice;
 
-		protected StateChoicePair(final int theState, final int theChoice)
+		protected StateChoicePair(final int state, final int choice)
 		{
-			state = theState;
-			choice = theChoice;
+			this.state = state;
+			this.choice = choice;
 		}
 
 		public int getState()
@@ -281,7 +283,7 @@ public class MDPEquiv extends MDPView
 		}
 	}
 
-	protected StateChoicePair mapToOriginalModel(final int state, final int choice)
+	public StateChoicePair mapToOriginalModel(final int state, final int choice)
 	{
 		StateChoicePair[] stateChoicePairs = originalChoices[state];
 		if (stateChoicePairs == null) {
