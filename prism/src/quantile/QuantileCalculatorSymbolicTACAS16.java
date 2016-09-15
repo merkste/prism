@@ -9,108 +9,28 @@ import java.util.Map.Entry;
 import common.StopWatch;
 import jdd.JDD;
 import jdd.JDDNode;
-import jdd.SanityJDD;
-import mtbdd.PrismMTBDD;
+import jdd.JDDVars;
 import parser.ast.RelOp;
 import prism.Model;
 import prism.ModelType;
 import prism.NondetModel;
+import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
-import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class QuantileCalculatorSymbolic extends QuantileCalculator
+public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculator
 {
-	private JDDNode statesWithZeroRewTrans;
-	private NondetModel modelZeroRewFragment;
 
-	public QuantileCalculatorSymbolic(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
+	public QuantileCalculatorSymbolicTACAS16(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException
 	{
 		super(parent, mc, model, transRewards, goalStates, remainStates);
-
-		statesWithZeroRewTrans = qcc.getStatesWithZeroRewardTransitions();
-
-		JDDNode tr_0 = qcc.getTransitionsWithReward(0);
-		if (tr_0 != null && !tr_0.equals(JDD.ZERO)) {
-			if (model.getModelType() == ModelType.MDP) {
-				NondetModel mdp = (NondetModel)model;
-				NondetModelTransformation transform = 
-					new NondetModelTransformation(mdp) {
-
-					@Override
-					public int getExtraStateVariableCount()
-					{
-						return 0;
-					}
-
-					@Override
-					public int getExtraActionVariableCount()
-					{
-						return 1;
-					}
-
-					public JDDNode tau()
-					{
-						return JDD.And(extraActionVars.getVar(0).copy(), originalModel.getAllDDNondetVars().allZero());
-					}
-
-					public JDDNode notTau()
-					{
-						return JDD.Not(extraActionVars.getVar(0).copy());
-					}
-
-					@Override
-					public JDDNode getTransformedTrans()
-					{
-						JDDNode trans = qcc.getTransitionsWithReward(0);
-						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans_zero");
-						trans = JDD.Times(trans, notTau());
-						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans_zero'");
-
-						JDDNode statesWithoutZeroRewTrans = JDD.And(originalModel.getReach().copy(), JDD.Not(statesWithZeroRewTrans.copy()));
-						if (qcc.debugDetailed()) qcc.debugDD(statesWithoutZeroRewTrans.copy(), "statesWithoutZeroRewTrans");
-
-						JDDNode selfLoops = JDD.Identity(originalModel.getAllDDRowVars(), originalModel.getAllDDColVars());
-						selfLoops = JDD.And(selfLoops, statesWithoutZeroRewTrans);
-						selfLoops = JDD.And(tau(), selfLoops);
-						if (qcc.debugDetailed()) qcc.debugDD(selfLoops.copy(), "selfLoops'");
-
-						trans = JDD.Apply(JDD.MAX, trans, selfLoops);
-						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans''");
-						return trans;
-					}
-
-					@Override
-					public JDDNode getTransformedStart()
-					{
-						return originalModel.getStart().copy();
-					}
-
-					@Override
-					public JDDNode getReachableStates() {
-						return originalModel.getReach().copy();
-					}
-				};
-				modelZeroRewFragment = mdp.getTransformed(transform);
-				qcc.getLog().println("Zero reward fragment: ");
-				modelZeroRewFragment.printTransInfo(qcc.getLog());
-
-				try {
-					modelZeroRewFragment.exportToFile(Prism.EXPORT_DOT, true, new File("zero-rew.dot"));
-				} catch (FileNotFoundException e) {}
-				transform.clear();
-			} else {
-				throw new PrismNotSupportedException("Model type " + model.getModelType() + " not supported");
-			}
-		}
-		JDD.Deref(tr_0);
 	}
 
 	public JDDNode step(CalculatedProbabilities x, int i) throws PrismException {
@@ -247,8 +167,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 		result = JDD.Apply(JDD.TIMES, result, statesWithValue.copy());
 
 		if (qcc.debugLevel() >= 1) {
-			StateValuesMTBDD.print(getLog(), statesWithValue.copy(), model, "States with value after positive reward actions");
-			StateValuesMTBDD.print(getLog(), result.copy(), model, "x_"+i+" after positive reward actions");
+			StateValuesMTBDD.print(getLog(), statesWithValue, model, "States with value after positive reward actions");
+			StateValuesMTBDD.print(getLog(), result, model, "x_"+i+" after positive reward actions");
 		}
 
 		timer.stop();
@@ -256,12 +176,11 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 		// handle potential zero reward steps
 		timer.start("handling of zero reward states / transitions");
 		result = stepZeroReward(result, statesWithValue, i, min);
+		timer.stop();
 
 		if (qcc.debugLevel() >= 1) {
 			StateValuesMTBDD.print(getLog(), result.copy(), model, "x_"+i+" after zero reward handling");
 		}
-
-		timer.stop();
 
 		return result;
 	}
@@ -269,7 +188,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 	/** [REFS: <i>result<i>, DEREFS: xTau, tauStates]*/
 	public JDDNode stepZeroReward(final JDDNode xTau, final JDDNode tauStates, final int i, boolean min) throws PrismException {
 		JDDNode result;
-
+		final boolean compact = true;
+		
 		JDDNode tr_0 = qcc.getTransitionsWithReward(0);
 		if (tr_0 == null || tr_0.equals(JDD.ZERO)) {
 			// no zero reward transitions -> nothing to do
@@ -282,42 +202,278 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 		JDD.Deref(tr_0);
 
 		getLog().println("Handle zero-reward states/transitions...");
-
+		
 		if (qcc.getModel().getModelType() == ModelType.MDP) {
-			JDDNode alternativeValues = xTau.copy();
-			if (min) {
-				// for min, set reachable states without an alternative to max value, i.e., 1
-				alternativeValues = JDD.ITE(tauStates.copy(), alternativeValues, modelZeroRewFragment.getReach().copy());
-			}
+			final NondetModel ndModel = (NondetModel)qcc.getModel();
 
-			JDDNode yes = q.getOneStates(i);
-			JDDNode maybe = JDD.And(modelZeroRewFragment.getReach().copy(), JDD.Not(q.getZeroStates(i)));
+			class Transformation extends NondetModelTransformation {
+				public static final boolean ROW = false;
+				public static final boolean COL = true;
 
-			if (SanityJDD.enabled) {
-				JDDNode tmp = JDD.GreaterThan(alternativeValues.copy(), 0);
-				SanityJDD.checkIsContainedIn(tmp, modelZeroRewFragment.getReach());
-				JDD.Deref(tmp);
-				SanityJDD.checkIsContainedIn(tauStates, modelZeroRewFragment.getReach());
-			}
+				public Transformation(NondetModel model) {
+					super(model);
+				}
 
-			result = PrismMTBDD.NondetUntilWithAlternative(modelZeroRewFragment.getTrans(),
-			                                               modelZeroRewFragment.getODD(),
-			                                               modelZeroRewFragment.getNondetMask(),
-			                                               modelZeroRewFragment.getAllDDRowVars(),
-			                                               modelZeroRewFragment.getAllDDColVars(),
-			                                               modelZeroRewFragment.getAllDDNondetVars(),
-			                                               yes,
-			                                               maybe,
-			                                               tauStates,
-			                                               alternativeValues,
-			                                               min);
+				@Override
+				public int getExtraStateVariableCount() {
+					return 2;
+				}
+
+				@Override
+				public int getExtraActionVariableCount() {
+					return 1;
+				}
+
+				private JDDNode normalState(boolean col) {
+					JDDNode v0 = col ? extraColVars.getVar(0) : extraRowVars.getVar(0);
+					JDDNode v1 = col ? extraColVars.getVar(1) : extraRowVars.getVar(1);
+					
+					return JDD.And(JDD.Not(v0.copy()), JDD.Not(v1.copy()));
+				}
+
+				public JDDNode goalState(boolean col) {
+					JDDNode v0 = col ? extraColVars.getVar(0) : extraRowVars.getVar(0);
+					JDDNode v1 = col ? extraColVars.getVar(1) : extraRowVars.getVar(1);
+					
+					JDDNode result = JDD.And(v0.copy(), v1.copy());
+					if (compact) {
+						result = JDD.And(result, allZeroOriginalStates(col));
+					}
+					return result;
+				}
+				
+				private JDDNode failState(boolean col) {
+					JDDNode v0 = col ? extraColVars.getVar(0) : extraRowVars.getVar(0);
+					JDDNode v1 = col ? extraColVars.getVar(1) : extraRowVars.getVar(1);
+					
+					JDDNode result = JDD.And(v0.copy(), JDD.Not(v1.copy()));
+					if (compact) {
+						result = JDD.And(result, allZeroOriginalStates(col));
+					}
+					return result;
+				}
+
+				private JDDNode tau() {
+					JDDNode tau = extraActionVars.getVar(0).copy();
+					
+					if (compact) {
+						tau = JDD.And(tau, allZeroOriginalActions());
+					}
+					return tau;
+				}
+				
+				private JDDNode notTau() {
+					JDDNode tau = extraActionVars.getVar(0).copy();
+					
+					return JDD.Not(tau);
+				}
+				
+				private JDDNode tr0() {
+					JDDNode tr0 = qcc.getTransitionsWithReward(0);
+
+					return tr0;
+				}
+
+				private JDDNode allZero(JDDVars vars) {
+					JDDNode result = JDD.Constant(1.0);
+					for (int i = 0; i< vars.getNumVars(); i++) {
+						JDD.Ref(vars.getVar(i));
+						result = JDD.And(result, JDD.Not(vars.getVar(i)));
+					}
+					return result;
+				}
+				
+				private JDDNode allZeroOriginalActions() {
+					return allZero(ndModel.getAllDDNondetVars());
+				}
+				
+				private JDDNode allZeroOriginalStates(boolean col) {
+					if (col) {
+						return allZero(ndModel.getAllDDColVars());
+					} else {
+						return allZero(ndModel.getAllDDRowVars());
+					}
+				}
+
+				
+				@Override
+				public JDDNode getTransformedTrans() {
+					JDDNode result;
+
+					if (qcc.debugDetailed()) qcc.debugDD(ndModel.getTrans().copy(), "tr");
+
+					if (qcc.debugDetailed()) qcc.debugDD(tr0(), "tr0");
+					if (qcc.debugDetailed()) qcc.debugDD(normalState(ROW), "normalState");
+					if (qcc.debugDetailed()) qcc.debugDD(goalState(ROW), "goalState");
+					if (qcc.debugDetailed()) qcc.debugDD(failState(ROW), "failState");
+					if (qcc.debugDetailed()) qcc.debugDD(tau(), "tau");
+					if (qcc.debugDetailed()) qcc.debugDD(xTau.copy(), "xTau");
+					
+					JDDNode zeroStates = q.getZeroStates(i);
+					JDDNode oneStates = q.getOneStates(i);
+					
+					JDDNode maybeStates = ndModel.getReach().copy();
+					maybeStates = JDD.And(maybeStates, JDD.Not(zeroStates.copy()));
+					maybeStates = JDD.And(maybeStates, JDD.Not(oneStates.copy()));
+
+					JDDNode trans = JDD.Times(normalState(ROW),
+					                          tr0(),
+					                          maybeStates.copy(),
+					                          normalState(COL),
+					                          notTau());
+					result = trans;
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (1)");
+					
+					trans = JDD.Times(normalState(ROW),
+					                  tau(),
+					                  maybeStates.copy(),
+					                  tauStates.copy(),
+					                  goalState(COL),
+					                  xTau.copy());
+					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (2)");
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (2)");
+
+					
+					JDDNode oneMinusXTau = JDD.Apply(JDD.MINUS,
+					                                 JDD.Constant(1.0),
+					                                 xTau.copy());
+					if (qcc.debugDetailed()) qcc.debugDD(oneMinusXTau.copy(), "1- xTau");
+
+					trans = JDD.Times(normalState(ROW),
+					                  tau(),
+					                  maybeStates.copy(),
+					                  tauStates.copy(),
+					                  failState(COL),
+					                  oneMinusXTau);
+					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (3)");
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (3)");
+
+					
+					trans = JDD.Times(normalState(ROW),
+					                  tau(),
+					                  zeroStates.copy(),
+					                  failState(COL));
+					if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans (4)");
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (4)");
+
+
+					trans = JDD.Times(normalState(ROW),
+					                 tau(),
+					                 oneStates.copy(),
+					                 goalState(COL));
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (5)");
+
+					
+					trans = JDD.Times(goalState(ROW),
+					                 tau(),
+					                 goalState(COL));
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (6)");
+
+					
+					trans = JDD.Times(failState(ROW),
+					                  tau(),
+					                  failState(COL));
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (7)");
+
+					
+					JDDNode tr0States = thereExistsChoiceStates(tr0(), ndModel);
+					JDDNode deadlockStates = JDD.Or(tr0States, tauStates.copy());
+					deadlockStates = JDD.And(ndModel.getReach().copy(), JDD.Not(deadlockStates));
+
+					trans = JDD.Times(normalState(ROW),
+					                  deadlockStates,
+					                  tau(),
+					                  failState(COL));
+					result = JDD.Apply(JDD.MAX, result, trans);
+					if (qcc.debugDetailed()) qcc.debugDD(result.copy(), "result (8)");
+
+					JDD.Deref(oneStates);
+					JDD.Deref(zeroStates);
+					JDD.Deref(maybeStates);
+
+					return result;
+				}
+
+				@Override
+				public JDDNode getTransformedStart() {
+					JDDNode reach = ndModel.getReach();
+
+					JDDNode newStart = JDD.Apply(JDD.TIMES, reach.copy(), normalState(ROW));
+					return newStart;
+				}
+				
+				public StateValuesMTBDD projectToOriginal(StateValuesMTBDD sv) throws PrismException
+				{
+					JDDNode filter = normalState(false);
+					sv.filter(filter);
+					JDD.Deref(filter);
+					if (qcc.debugDetailed()) qcc.debugDD(sv.getJDDNode().copy(), "sv after filter");
+					
+					StateValuesMTBDD svOriginal = sv.sumOverDDVars(extraRowVars, qcc.getModel()).convertToStateValuesMTBDD();
+					sv.clear();
+					if (qcc.debugDetailed()) qcc.debugDD(svOriginal.getJDDNode().copy(), "sv after sum");
+					return svOriginal;
+				}
+			};
+
+			Transformation transform = new Transformation(ndModel);
+			getLog().println("Transform MDP to zero-reward fragment...");
+			NondetModel transformed = ndModel.getTransformed(transform);
+			getLog().println("\nTransformed MDP:");
+			transformed.printTransInfo(getLog());
+
+			JDDNode target = q.getOneStates(i);
+			target = JDD.Or(target, transform.goalState(false));
+			if (qcc.debugDetailed()) qcc.debugDD(target.copy(), "target");
 			
-			JDD.Deref(alternativeValues, yes, maybe);
+			JDDNode remain = qcc.getRemainStates();
+
+			try {
+				if (qcc.debugLevel() > 1) {
+					transformed.exportToFile(Prism.EXPORT_DOT, true, new File("transformed-zero-rew-mdp"+i+".dot"));
+					StateValuesMTBDD.print(getLog(), target, transformed, "Target states");
+				}
+			} catch (FileNotFoundException e) {}
+			
+			if (qcc.debugLevel() > 1) transformed.dump(qcc.getLog());
+			
+			
+			getLog().println("\nDo reachability analysis in transformed MDP...");
+			NondetModelChecker mcTransformed = (NondetModelChecker)qcc.getModelChecker().createModelChecker(transformed);
+
+			remain = JDD.And(remain, transformed.getReach().copy());
+			target = JDD.And(target, transformed.getReach().copy());
+
+			StateValuesMTBDD sv = 
+				mcTransformed.checkProbUntil(remain,
+				                             target,
+				                             false,  // quantitative
+				                             min).convertToStateValuesMTBDD();
+			
+			JDD.Deref(remain);
+			JDD.Deref(target);
+			
+			getLog().println("Reachability analysis done.");
+			if (qcc.debugDetailed()) qcc.debugDD(sv.getJDDNode().copy(), "sv");
+			sv = transform.projectToOriginal(sv);
+			if (qcc.debugDetailed()) qcc.debugDD(sv.getJDDNode().copy(), "sv");
+			
+			result = sv.getJDDNode().copy();
+			sv.clear();
+			
+			transformed.clear();
+			transform.clear();
 		} else {
 			// TODO DTMC
 			result = null;
 		}
-
+		
 		JDD.Deref(xTau);
 		JDD.Deref(tauStates);
 
@@ -401,7 +557,7 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 			x.storeProbabilities(iteration, x_i.copy());
 			x.advanceWindow(iteration, qcc.getMaxReward());
 			if (qcc.debugLevel() >= 1) {
-				StateValuesMTBDD.print(getLog(), x_i.copy(), model, "x_"+iteration);
+				StateValuesMTBDD.print(getLog(), x_i, model, "x_"+iteration);
 			}
 
 			// reset todoAll
@@ -497,16 +653,6 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 
 			return svResult;
 		}
-	}
-
-	@Override
-	public void clear()
-	{
-		if (statesWithZeroRewTrans != null)
-			JDD.Deref(statesWithZeroRewTrans);
-		if (modelZeroRewFragment != null)
-			modelZeroRewFragment.clear();
-		super.clear();
 	}
 
 }

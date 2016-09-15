@@ -151,6 +151,7 @@ public class PrismSettings implements Observer
 	public static final String PRISM_FAU_ARRAYTHRESHOLD				= "prism.fau.arraythreshold";
     // TODO(JK): Move to Quantile section
 	public static final String QUANTILE_USE_BIGSTEP					= "quantile.useBigStep";
+	public static final String QUANTILE_USE_TACAS16					= "quantile.useTACAS16";
 
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
@@ -415,7 +416,8 @@ public class PrismSettings implements Observer
 			{ DOUBLE_TYPE,		PRISM_PARAM_DAG_MAX_ERROR,				"Parametric model checking max. DAG error",	"4.1",			new Double(1E-100),															"",
 																			"Maximal error probability (i.e. maximum probability of of a wrong result) in DAG function representation used for parametric model checking." },
 			// TODO(JK): Move to correct location
-			{ BOOLEAN_TYPE,	QUANTILE_USE_BIGSTEP,		"use the symbolic big-step approach",	"4.1",	new Boolean(false),	"",	"Use the symbolic big-step approach."},
+			{ BOOLEAN_TYPE,	QUANTILE_USE_BIGSTEP,		"use the symbolic big-step approach",	"4.3.1",	new Boolean(false),	"",	"Use the symbolic big-step approach."},
+			{ BOOLEAN_TYPE,	QUANTILE_USE_TACAS16,		"use the TACAS'16 version of symbolic quantile computations",	"4.3.1",	new Boolean(false),	"",	"Use the TACAS'16 variant of symbolic quantile computations"},
 			
 			// FAST ADAPTIVE UNIFORMISATION																
 			{ DOUBLE_TYPE,      PRISM_FAU_EPSILON,						"FAU epsilon",		 					"4.1",   	 	new Double(1E-6),     													"",
@@ -1531,6 +1533,10 @@ public class PrismSettings implements Observer
 		else if (sw.equals("quantileBigStep")) {
 			// TODO(JK): move to quantile section
 			set(QUANTILE_USE_BIGSTEP, true);
+		}
+		else if (sw.equals("quantileTACAS16")) {
+			// TODO(JK): move to quantile section
+			set(QUANTILE_USE_TACAS16, true);
 		}
 
 		else if (sw.equals("allowltl2wdba")) {

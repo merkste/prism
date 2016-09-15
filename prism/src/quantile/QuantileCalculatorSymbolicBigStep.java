@@ -15,7 +15,7 @@ import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class QuantileCalculatorSymbolicBigStep extends QuantileCalculatorSymbolic
+public class QuantileCalculatorSymbolicBigStep extends QuantileCalculatorSymbolicTACAS16
 {
 	
 	public QuantileCalculatorSymbolicBigStep(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates,
