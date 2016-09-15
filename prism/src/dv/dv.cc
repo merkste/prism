@@ -32,6 +32,8 @@
 // local function prototypes
 
 static void mtbdd_to_double_vector_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, int level, ODDNode *odd, long o, long n, double *res);
+static void mtbdd01_to_bool_vector_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, int level, ODDNode *odd, long o, long n, std::vector<bool>* res);
+static void mtbdd01_to_list_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, int level, ODDNode *odd, long o, long n, std::list<long>* res);
 static DdNode *double_vector_to_mtbdd_rec(DdManager *ddman, double *vec, DdNode **vars, int num_vars, int level, ODDNode *odd, long o);
 static DdNode *double_vector_to_bdd_rec(DdManager *ddman, double *vec, int rel_op, double value1, double value2, DdNode **vars, int num_vars, int level, ODDNode *odd, long o);
 static void filter_double_vector_rec(DdManager *ddman, double *vec, DdNode *filter, double d, DdNode **vars, int num_vars, int level, ODDNode *odd, long o);
@@ -102,6 +104,128 @@ void mtbdd_to_double_vector_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int
 
 	mtbdd_to_double_vector_rec(ddman, e, vars, num_vars, level+1, odd->e, o, n, res);
 	mtbdd_to_double_vector_rec(ddman, t, vars, num_vars, level+1, odd->t, o+odd->eoff, n, res);
+}
+
+PlainOrDistVector* mtbdd_to_plain_or_dist_vector(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, ODDNode *odd, bool tryToCompact)
+{
+	// determine size
+	long n = odd->eoff + odd->toff;
+
+	double* vec = mtbdd_to_double_vector(ddman, dd, vars, num_vars, odd);
+	DistVector *dist = NULL;
+	// try and convert to compact form if required
+	if (tryToCompact) {
+		if ((dist = double_vector_to_dist(vec, n))) {
+			delete[] vec;
+			vec = NULL;
+			// successful, return dist
+			return new PlainOrDistVector(dist, n);
+		}
+	}
+	// return double array
+	return new PlainOrDistVector(vec, n);
+}
+
+//------------------------------------------------------------------------------
+
+// converts a 0/1-mtbdd to a bitset (vector<bool>)
+// throws std::bad_alloc on out-of-memory
+
+EXPORT std::vector<bool>* mtbdd01_to_bool_vector(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, ODDNode *odd)
+{
+	long i, n;
+	std::vector<bool> *res;
+
+	// determine size
+	n = odd->eoff + odd->toff;
+	// create vector
+	res = new std::vector<bool>(n, false);
+	// build vector recursively
+	mtbdd01_to_bool_vector_rec(ddman, dd, vars, num_vars, 0, odd, 0, n, res);
+
+	return res;
+}
+
+void mtbdd01_to_bool_vector_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, int level, ODDNode *odd, long o, long n, std::vector<bool>* res)
+{
+	DdNode *e, *t;
+
+	if (dd == Cudd_ReadZero(ddman)) return;
+
+	if (level == num_vars) {
+		if (o < 0 || o >= n) {
+			printf("Internal error: Can not convert MTBDD to bool vector: Value out of range of the ODD (does the MTBDD encode non-reachable states?)\n");
+			exit(1);
+		}
+		double v = Cudd_V(dd);
+		if (v == 1.0) {
+			(*res)[o] = true;
+		} else if (v != 0.0) {
+			printf("Internal error: Can not convert MTBDD to bool vector: Not a 0/1-MTBDD\n");
+			exit(1);
+		}
+		return;
+	}
+	else if (dd->index > vars[level]->index) {
+		e = t = dd;
+	}
+	else {
+		e = Cudd_E(dd);
+		t = Cudd_T(dd);
+	}
+
+	mtbdd01_to_bool_vector_rec(ddman, e, vars, num_vars, level+1, odd->e, o, n, res);
+	mtbdd01_to_bool_vector_rec(ddman, t, vars, num_vars, level+1, odd->t, o+odd->eoff, n, res);
+}
+
+//------------------------------------------------------------------------------
+
+// converts a 0/1-mtbdd to a list of indizes
+// throws std::bad_alloc on out-of-memory
+
+EXPORT std::list<long>* mtbdd01_to_list(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, ODDNode *odd)
+{
+	long i, n;
+	std::list<long> *res;
+
+	// create vector
+	res = new std::list<long>();
+	// build vector recursively
+	mtbdd01_to_list_rec(ddman, dd, vars, num_vars, 0, odd, 0, n, res);
+
+	return res;
+}
+
+void mtbdd01_to_list_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_vars, int level, ODDNode *odd, long o, long n, std::list<long>* res)
+{
+	DdNode *e, *t;
+
+	if (dd == Cudd_ReadZero(ddman)) return;
+
+	if (level == num_vars) {
+		if (o < 0 || o >= n) {
+			printf("Internal error: Can not convert MTBDD to list: Value out of range of the ODD (does the MTBDD encode non-reachable states?)\n");
+			exit(1);
+		}
+		double v = Cudd_V(dd);
+		if (v == 1.0) {
+			res->push_back(o);
+		} else if (v != 0.0) {
+			printf("Internal error: Can not convert MTBDD to list: Not a 0/1-MTBDD\n");
+			exit(1);
+		}
+		return;
+	}
+	else if (dd->index > vars[level]->index) {
+		e = t = dd;
+	}
+	else {
+		e = Cudd_E(dd);
+		t = Cudd_T(dd);
+	}
+
+	mtbdd01_to_list_rec(ddman, e, vars, num_vars, level+1, odd->e, o, n, res);
+	mtbdd01_to_list_rec(ddman, t, vars, num_vars, level+1, odd->t, o+odd->eoff, n, res);
 }
 
 //------------------------------------------------------------------------------
