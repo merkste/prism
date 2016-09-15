@@ -454,7 +454,16 @@ public class PrismMTBDD
 		if (ptr == 0) throw new PrismException(getErrorMessage());
 		return JDD.ptrToNode(ptr);
 	}
-	
+
+	// pctl until (nondeterministic/mdp), with alternative state values
+	private static native long PM_NondetUntilWithAlternative(long trans, long odd, long mask, long rv, int nrv, long cv, int ncv, long ndv, int nndv, long yes, long maybe, long alternativeValueStates, long alternativeValues, boolean minmax);
+	public static JDDNode NondetUntilWithAlternative(JDDNode trans, ODDNode odd, JDDNode nondetMask, JDDVars rows, JDDVars cols, JDDVars nondet, JDDNode yes, JDDNode maybe, JDDNode alternativeValueStates, JDDNode alternativeValues, boolean minmax) throws PrismException
+	{
+		long ptr = PM_NondetUntilWithAlternative(trans.ptr(), odd.ptr(), nondetMask.ptr(), rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(), yes.ptr(), maybe.ptr(), alternativeValueStates.ptr(), alternativeValues.ptr(), minmax);
+		if (ptr == 0) throw new PrismException(getErrorMessage());
+		return JDD.ptrToNode(ptr);
+	}
+
 	// pctl inst reward (nondeterministic/mdp)
 	private static native long PM_NondetInstReward(long trans, long sr, long odd, long mask, long rv, int nrv, long cv, int ncv, long ndv, int nndv, int time, boolean minmax, long init);
 	public static JDDNode NondetInstReward(JDDNode trans, JDDNode sr, ODDNode odd, JDDNode nondetMask, JDDVars rows, JDDVars cols, JDDVars nondet, int time, boolean minmax, JDDNode init) throws PrismException

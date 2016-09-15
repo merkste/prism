@@ -177,6 +177,14 @@ JNIEXPORT jlong JNICALL Java_mtbdd_PrismMTBDD_PM_1NondetUntil
 
 /*
  * Class:     mtbdd_PrismMTBDD
+ * Method:    PM_NondetUntilWithAlternative
+ * Signature: (JJJJIJIJIJJJJZ)J
+ */
+JNIEXPORT jlong JNICALL Java_mtbdd_PrismMTBDD_PM_1NondetUntilWithAlternative
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jint, jlong, jint, jlong, jint, jlong, jlong, jlong, jlong, jboolean);
+
+/*
+ * Class:     mtbdd_PrismMTBDD
  * Method:    PM_NondetInstReward
  * Signature: (JJJJJIJIJIIZJ)J
  */
