@@ -19,6 +19,7 @@ import prism.NondetModelTransformation;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismNative;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.StateModelChecker;
@@ -270,6 +271,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 	public JDDNode stepZeroReward(final JDDNode xTau, final JDDNode tauStates, final int i, boolean min) throws PrismException {
 		JDDNode result;
 
+		PrismNative.setDefaultExportIterationsFilename("quantile-" + i + ".html");
+		
 		JDDNode tr_0 = qcc.getTransitionsWithReward(0);
 		if (tr_0 == null || tr_0.equals(JDD.ZERO)) {
 			// no zero reward transitions -> nothing to do
@@ -507,6 +510,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculator
 		if (modelZeroRewFragment != null)
 			modelZeroRewFragment.clear();
 		super.clear();
+
+		PrismNative.setDefaultExportIterationsFilename("iterations.html");
 	}
 
 }
