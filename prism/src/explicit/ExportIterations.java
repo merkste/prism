@@ -36,11 +36,13 @@ import prism.PrismLog;
  *
  */
 class ExportIterations {
-	PrismLog log;
+	private static String defaultFilename = "iterations.html";
+
+	private PrismLog log;
 
 	public ExportIterations(String title) throws PrismException
 	{
-		this(title, PrismFileLog.create("iterations.html"));
+		this(title, PrismFileLog.create(defaultFilename));
 	}
 
 	/**
@@ -99,5 +101,20 @@ class ExportIterations {
 	public void close()
 	{
 		log.println("init();\n</script>\n</body></html>");
+	}
+
+	public static void setDefaultFilename(String newDefaultFilename)
+	{
+		defaultFilename = newDefaultFilename;
+	}
+
+	public static String getDefaultFilename()
+	{
+		return defaultFilename;
+	}
+
+	public static void resetDefaultFilename()
+	{
+		defaultFilename = "iterations.html";
 	}
 }

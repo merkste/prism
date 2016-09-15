@@ -35,6 +35,7 @@
 #include <cudd.h>
 #include <dd.h>
 #include "dv.h"
+#include "prism.h"
 #include <odd.h>
 
 class ExportIterations {
@@ -45,7 +46,7 @@ public:
 	/**
 	 * Constructor, provide filename.
 	 */
-	ExportIterations(const char* title = "", const char* filename = "iterations.html") {
+	ExportIterations(const char* title = "", const char* filename = get_export_iterations_filename()) {
 		fp = fopen(filename, "w");
 
 		fprintf(fp, "<!DOCTYPE html>\n");
