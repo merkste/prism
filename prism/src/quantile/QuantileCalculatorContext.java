@@ -59,7 +59,7 @@ public class QuantileCalculatorContext extends TransitionsByRewardsInfo {
 	public void debugVector(PrismLog log, JDDNode dd, Model model, String name) throws PrismException
 	{
 		if (debugLevel >= 2)
-			StateValuesMTBDD.print(getLog(), dd, model, name);
+			StateValuesMTBDD.print(getLog(), dd.copy(), model, name);
 	}
 
 
