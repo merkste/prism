@@ -139,7 +139,7 @@ public:
 
 	/**
 	 * Do the measurement for an upper and lower value pair.
-	 * For relative mode, the midpoint between lower and upper is used as the divisor.
+	 * For relative mode, the lower value is used as the divisor.
 	 */
 	inline void measure(double lower, double upper) {
 		double x;
@@ -158,14 +158,13 @@ public:
 				x = 0;
 
 			if (relative && x != 0.0) {
-				// for relative mode: divide by midpoint
-				// We take the absolute value of the midpoint to ensure that
+				// for relative mode: divide by lower
+				// taking lower ensures that if the actual value should happen to be
+				// the lower value, that then the relative precision is satisfied.
+				// We take the absolute value of the lower to ensure that
 				// x does not flip signs.
-				// Note: if the midpoint is 0.0, then x will become +inf, as x!=0
-				// This should not happen for probability and non-negative reward computations
-				// but might occur if negative rewards are allowed
-				double midpoint = fabs((upper + lower) / 2.0);
-				x /= fabs(midpoint);
+				// Note: if lower is 0.0, then x will become +inf, as x!=0
+				x /= fabs(lower);
 			}
 		}
 
