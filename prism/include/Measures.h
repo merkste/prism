@@ -29,7 +29,7 @@
 #define MEASURE_H
 
 #include <cstddef>  // for std::size_t type
-#include <cmath>
+#include <math.h>  // for isinf
 #include <limits>
 
 /**
