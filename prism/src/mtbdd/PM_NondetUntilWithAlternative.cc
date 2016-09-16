@@ -35,6 +35,7 @@
 #include "jnipointer.h"
 #include "ExportIterations.h"
 #include "prism.h"
+#include <memory>
 
 //------------------------------------------------------------------------------
 
