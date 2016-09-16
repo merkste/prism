@@ -26,7 +26,7 @@ import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class QuantileCalculatorSymbolic extends QuantileCalculator
+public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 {
 	private JDDNode statesWithZeroRewTrans;
 	private NondetModel modelZeroRewFragment;

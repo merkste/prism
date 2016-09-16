@@ -24,7 +24,7 @@ import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculator
+public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymbolicBase
 {
 
 	public QuantileCalculatorSymbolicTACAS16(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)

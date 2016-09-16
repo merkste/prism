@@ -7,10 +7,12 @@ import jdd.JDD;
 import jdd.JDDNode;
 import jdd.TemporaryJDDRefs;
 import parser.ast.Expression;
+import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuantileProbNormalForm;
 import parser.ast.ExpressionTemporal;
 import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
+import prism.IntegerBound;
 import prism.Model;
 import prism.ModelType;
 import prism.NondetModel;
@@ -67,6 +69,9 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 	public abstract StateValues iteration(JDDNode statesOfInterest, RelOp relOp, List<Double> thresholdsP, int result_adjustment) throws PrismException;
 	public abstract JDDNode stepZeroReward(final JDDNode xTau, final JDDNode tauStates, final int i, boolean min) throws PrismException;
+
+	/** Compute the values x_s,bound */
+	public abstract StateValues computeForBound(int bound) throws PrismException;
 
 	public static StateValues checkExpressionQuantile(PrismComponent parent, StateModelChecker mc, Model model, ExpressionQuantileProbNormalForm expr, JDDNode statesOfInterest) throws PrismException {
 		// restrict statesOfInterest to the reachable part of the model
@@ -225,4 +230,149 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			return result;
 		}
 	}
+
+	public static StateValues checkRewardBoundedSimplePathFormula(PrismComponent parent, StateModelChecker mc, Model model, ExpressionTemporal exprTemp, boolean min, JDDNode statesOfInterest) throws PrismException {
+		JDD.Deref(statesOfInterest);
+
+		// try-with-resource: activeRefs, hold the currenty active JDDNodes
+		// on exception or on leaving the try block, they will be automaticall derefed
+		try (TemporaryJDDRefs activeRefs = new TemporaryJDDRefs()) {
+			if (model.getModelType() != ModelType.MDP) {
+				throw new PrismException("Symbolic reward bounded probability computations via the quantile engine currently only for MDP.");
+			}
+
+			if (exprTemp.getBounds().countBounds() != 1) {
+				throw new PrismNotSupportedException("Only one bound");
+			}
+			TemporalOperatorBound rewardBound = exprTemp.getBounds().getBounds().get(0);
+			Object rs = rewardBound.getRewardStructureIndex();
+
+			JDDNode stateRewards = null;
+			JDDNode transRewards = null;
+
+			int i;
+			// get reward info
+			if (rs == null) {
+				// step
+				stateRewards = JDD.Constant(1.0);
+				transRewards = JDD.Constant(0.0);
+			} else {
+				if (model.getNumRewardStructs() == 0) {
+					throw new PrismException("Model has no rewards specified");
+				} else if (rs instanceof Expression) {
+					i = ((Expression) rs).evaluateInt(mc.getConstantValues());
+					rs = new Integer(i); // for better error reporting below
+					stateRewards = model.getStateRewards(i - 1).copy();
+					transRewards = model.getTransRewards(i - 1).copy();
+				} else if (rs instanceof String) {
+					stateRewards = model.getStateRewards((String) rs).copy();
+					transRewards = model.getTransRewards((String) rs).copy();
+				} else {
+					throw new PrismException("Unknown reward info "+rs.getClass());
+				}
+			}
+
+			activeRefs.register(stateRewards);
+			activeRefs.register(transRewards);
+
+			if (stateRewards == null || transRewards == null) {
+				throw new PrismException("Invalid reward structure index \"" + rs + "\"");
+			}
+
+			if (exprTemp.getOperator() != ExpressionTemporal.P_F &&
+			    exprTemp.getOperator() != ExpressionTemporal.P_U) {
+				throw new PrismNotSupportedException("Only support F and U in quantile");
+			}
+
+			if (rewardBound.hasLowerBound() && rewardBound.hasUpperBound()) {
+				throw new PrismLangException("Can not have upper and lower bound in quantile");
+			}
+
+			if (!rewardBound.hasLowerBound() && !rewardBound.hasUpperBound()) {
+				// TODO: handle
+				throw new PrismLangException("Trivial case: no reward bound");
+			}
+
+			int bound;
+			if (rewardBound.hasLowerBound()) {
+				bound = rewardBound.getLowerBound().evaluateInt(mc.getConstantValues());
+				if (rewardBound.lowerBoundIsStrict()) {
+					bound += 1;
+				}
+			} else {
+				bound = rewardBound.getUpperBound().evaluateInt(mc.getConstantValues());
+				if (rewardBound.upperBoundIsStrict()) {
+					bound -= 1;
+				}
+			}
+
+			if (bound < 0) {
+				throw new PrismException("Invalid effective bound: " + bound);
+			}
+
+			JDDNode goalStates = mc.checkExpressionDD(exprTemp.getOperand2(), JDD.Constant(1));
+			activeRefs.register(goalStates);
+
+			JDDNode remainStates;
+			if (exprTemp.getOperator() == ExpressionTemporal.P_U) {
+				remainStates = mc.checkExpressionDD(exprTemp.getOperand1(), JDD.Constant(1));
+			} else {
+				remainStates = JDD.Constant(1.0);
+			}
+			activeRefs.register(remainStates);
+
+			// --- Reward normalization
+			if (model.getModelType() == ModelType.DTMC) {
+				if (!transRewards.equals(JDD.ZERO)) {
+					throw new PrismException("Quantiles for DTMC are not supported for transition rewards");
+				}
+			}
+
+			// TODO: ensure integer rewards...
+
+			// incorporate state rewards to transition rewards
+			activeRefs.release(stateRewards);
+			activeRefs.release(transRewards);
+			transRewards = JDD.Apply(JDD.PLUS, stateRewards, transRewards);
+			activeRefs.register(transRewards);
+
+			// --- Calculator generation
+
+			activeRefs.release(transRewards, goalStates, remainStates);
+			QuantileCalculator qc;
+			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
+			if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
+			    engine.equals("Hybrid") || engine.equals("Sparse")) {
+				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, transRewards, goalStates, remainStates);
+				qc.getLog().println("Using TACAS'16 variant of quantile computation...");
+			} else {
+				qc = new QuantileCalculatorSymbolic(parent, mc, model, transRewards, goalStates, remainStates);
+			}
+			activeRefs.register(qc);
+
+			ReachabilityQuantile q;
+			boolean universal = min;
+			boolean rewardBoundLower = rewardBound.hasLowerBound();
+			if (universal) {
+				if (rewardBoundLower) {
+					q = new ReachabilityLowerRewardBoundUniversal(qc, qc.qcc);
+				} else {
+					q = new ReachabilityUpperRewardBoundUniversal(qc, qc.qcc);
+				}
+			} else {
+				if (rewardBoundLower) {
+					q = new ReachabilityLowerRewardBoundExistential(qc, qc.qcc);
+				} else {
+					q = new ReachabilityUpperRewardBoundExistential(qc, qc.qcc);
+				}
+			}
+			activeRefs.register(q);
+			((QuantileCalculator)qc).setReachabilityQuantile(q);
+
+			StateValues result = qc.computeForBound(bound);
+
+			return result;
+		}
+	}
+
 }

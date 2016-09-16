@@ -59,6 +59,7 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
+import parser.ast.TemporalOperatorBounds;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -960,23 +961,14 @@ public class NondetModelChecker extends NonProbModelChecker
 		boolean negated = false;
 		StateValues probs = null;
 
+		
 		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
 		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
 
-		if (exprTemp.getBounds().hasRewardBounds() ||
-		    exprTemp.getBounds().countTimeBoundsDiscrete() > 1) {
-			// We have reward bounds or multiple time / step bounds
-			// transform model and expression and recurse
-			
-			List<TemporalOperatorBound> boundsToReplace = exprTemp.getBounds().getStepBoundsForDiscreteTime();
-			if (!boundsToReplace.isEmpty()) {
-				// exempt first time bound, is handled by standard simple path formula procedure
-				boundsToReplace.remove(0);
-			}
-			boundsToReplace.addAll(exprTemp.getBounds().getRewardBounds());
-
+		final List<TemporalOperatorBound> boundsToReplace = getBoundsForReplacement(exprTemp.getBounds(), settings.getBoolean(PrismSettings.PRISM_BOUNDS_VIA_COUNTERS));
+		if (! boundsToReplace.isEmpty()){
 			ModelExpressionTransformation<NondetModel, NondetModel> transformed = 
-			    CounterTransformation.replaceBoundsWithCounters(this, model, expr, boundsToReplace, statesOfInterest);
+				    CounterTransformation.replaceBoundsWithCounters(this, model, expr, boundsToReplace, statesOfInterest);
 			mainLog.println("\nPerforming actual calculations for\n");
 			mainLog.println("MDP:  ");
 			transformed.getTransformedModel().printTransInfo(mainLog);
@@ -988,31 +980,34 @@ public class NondetModelChecker extends NonProbModelChecker
 			transformed.clear();
 			return svOriginal;
 		}
-
-		// handle straighforwardly
+		assert (exprTemp.getBounds().countRewardBounds() + exprTemp.getBounds().countTimeBoundsDiscrete() <= 1);
+		assert (! settings.getBoolean(PrismSettings.PRISM_BOUNDS_VIA_COUNTERS)
+				| (exprTemp.getBounds().countRewardBounds() == 0 & exprTemp.getBounds().countTimeBoundsDiscrete() == 0));
+		
+		// handle straightforwardly
 
 		// Negation		
-		if (expr instanceof ExpressionUnaryOp &&
-		    ((ExpressionUnaryOp)expr).getOperator() == ExpressionUnaryOp.NOT) {
+		if (Expression.isNot(expr)) {
 			// mark as negated, switch from min to max and vice versa
 			negated = true;
 			min = !min;
-			expr = ((ExpressionUnaryOp)expr).getOperand();
+			exprTemp = (ExpressionTemporal) ((ExpressionUnaryOp)expr).getOperand();
 		}
 
-		if (expr instanceof ExpressionTemporal) {
-			exprTemp = (ExpressionTemporal) expr;
-			// Next
-			if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
-				probs = checkProbNext(exprTemp, min, statesOfInterest);
-			}
-			// Until
-			else if (exprTemp.getOperator() == ExpressionTemporal.P_U) {
-				if (exprTemp.hasBounds()) {
-					probs = checkProbBoundedUntil(exprTemp, min, statesOfInterest);
-				} else {
-					probs = checkProbUntil(exprTemp, qual, min, statesOfInterest);
-				}
+		// Next
+		if (exprTemp.getOperator() == ExpressionTemporal.P_X) {
+			probs = checkProbNext(exprTemp, min, statesOfInterest);
+		}
+		// Until
+		else if (exprTemp.getOperator() == ExpressionTemporal.P_U) {
+			if (exprTemp.getBounds().countRewardBounds() > 0 ||
+			    (settings.getBoolean(PrismSettings.QUANTILE_BACKEND_FOR_TIME_BOUND) && exprTemp.getBounds().countTimeBoundsDiscrete() > 0)){
+
+				probs = QuantileCalculator.checkRewardBoundedSimplePathFormula(prism, this, model, exprTemp, min, statesOfInterest);
+			} else if (exprTemp.hasBounds()) {
+				probs = checkProbBoundedUntil(exprTemp, min, statesOfInterest);
+			} else {
+				probs = checkProbUntil(exprTemp, qual, min, statesOfInterest);
 			}
 		}
 
@@ -2414,7 +2409,39 @@ public class NondetModelChecker extends NonProbModelChecker
 		return result;
 	}
 
-	
+	protected static List<TemporalOperatorBound> getBoundsForReplacement(final TemporalOperatorBounds temporalOperatorBounds, final boolean useCounterForAllBounds) throws PrismLangException
+	{
+		final List<TemporalOperatorBound> boundsToReplace = new ArrayList<>();
+		if (useCounterForAllBounds){
+			boundsToReplace.addAll(temporalOperatorBounds.getRewardBounds());
+			boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+			return boundsToReplace;
+		}
+		final int numberOfRewardBounds = temporalOperatorBounds.countRewardBounds();
+		final int numberOfTimeBounds = temporalOperatorBounds.countTimeBoundsDiscrete();
+		if (numberOfRewardBounds + numberOfTimeBounds >= 2){
+			//at least one bound needs to be replaced by counters ...
+			if (numberOfRewardBounds > 0){
+				boundsToReplace.addAll(temporalOperatorBounds.getRewardBounds());
+				//calculate very first reward bound using quantile-backend
+				boundsToReplace.remove(0);
+				//at least one reward bound ==> use quantile-backend
+				// ==> replace each time-bound using counters
+				boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+				return boundsToReplace;
+			}
+			assert (numberOfRewardBounds == 0);
+			assert (numberOfTimeBounds >= 2);
+			boundsToReplace.addAll(temporalOperatorBounds.getStepBoundsForDiscreteTime());
+			//one time bound can be calculated either by standard simple path formula procedure or by quantile-backend
+			boundsToReplace.remove(0);
+			return boundsToReplace;
+		}
+		assert (numberOfRewardBounds + numberOfTimeBounds <= 1);
+		//since there is at most 1 bound given, there is no need to replace any bound
+		return boundsToReplace;
+	}
+
 }
 
 // ------------------------------------------------------------------------------
