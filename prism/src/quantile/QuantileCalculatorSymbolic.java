@@ -103,9 +103,6 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 				qcc.getLog().println("Zero reward fragment: ");
 				modelZeroRewFragment.printTransInfo(qcc.getLog());
 
-				try {
-					modelZeroRewFragment.exportToFile(Prism.EXPORT_DOT, true, new File("zero-rew.dot"));
-				} catch (FileNotFoundException e) {}
 				transform.clear();
 			} else {
 				throw new PrismNotSupportedException("Model type " + model.getModelType() + " not supported");
