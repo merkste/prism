@@ -25,10 +25,10 @@ import prism.StochModelChecker;
 public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 {
 
-	public QuantileCalculatorCTMCSearch(PrismComponent parent, StateModelChecker mc, StochModel model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
+	public QuantileCalculatorCTMCSearch(PrismComponent parent, StateModelChecker mc, StochModel model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException
 	{
-		super(parent, mc, model, transRewards, goalStates, remainStates);
+		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 	}
 
 	public StateValues iteration(JDDNode statesOfInterest, RelOp relOp, List<Double> thresholdsP, int result_adjustment) throws PrismException {

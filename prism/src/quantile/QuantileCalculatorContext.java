@@ -16,9 +16,9 @@ public class QuantileCalculatorContext extends TransitionsByRewardsInfo {
 	private StateModelChecker mc;
 	private int debugLevel = 0;
 
-	public QuantileCalculatorContext(PrismComponent parent, Model model, StateModelChecker mc, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
+	public QuantileCalculatorContext(PrismComponent parent, Model model, StateModelChecker mc, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
 	{
-		super(parent, model, transRewards);
+		super(parent, model, stateRewards, transRewards);
 		this.mc = mc;
 		this.goalStates = goalStates;
 		this.remainStates = remainStates;

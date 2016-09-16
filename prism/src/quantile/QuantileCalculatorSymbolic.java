@@ -31,10 +31,10 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 	private JDDNode statesWithZeroRewTrans;
 	private NondetModel modelZeroRewFragment;
 
-	public QuantileCalculatorSymbolic(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
+	public QuantileCalculatorSymbolic(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException
 	{
-		super(parent, mc, model, transRewards, goalStates, remainStates);
+		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 
 		statesWithZeroRewTrans = qcc.getStatesWithZeroRewardTransitions();
 

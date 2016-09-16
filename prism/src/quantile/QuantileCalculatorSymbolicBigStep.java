@@ -18,10 +18,10 @@ import prism.StateValuesMTBDD;
 public class QuantileCalculatorSymbolicBigStep extends QuantileCalculatorSymbolicTACAS16
 {
 	
-	public QuantileCalculatorSymbolicBigStep(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates,
+	public QuantileCalculatorSymbolicBigStep(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates,
 			JDDNode remainStates) throws PrismException
 	{
-		super(parent, mc, model, transRewards, goalStates, remainStates);
+		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 	}
 
 	public StateValues iteration(JDDNode statesOfInterest, RelOp relOp, List<Double> thresholdsP, int result_adjustment) throws PrismException

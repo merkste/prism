@@ -27,10 +27,10 @@ import prism.StateValuesMTBDD;
 public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymbolicBase
 {
 
-	public QuantileCalculatorSymbolicTACAS16(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
+	public QuantileCalculatorSymbolicTACAS16(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException
 	{
-		super(parent, mc, model, transRewards, goalStates, remainStates);
+		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 	}
 
 	public JDDNode step(CalculatedProbabilities x, int i) throws PrismException {

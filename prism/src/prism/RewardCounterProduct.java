@@ -67,7 +67,7 @@ public class RewardCounterProduct<M extends Model> extends Product<M>
 	 * @throws PrismException
 	 */
 	static public RewardCounterProduct<NondetModel> generate(PrismComponent parent, NondetModel originalModel, JDDNode trRewards, int limit, JDDNode statesOfInterest) throws PrismException {
-		TransitionsByRewardsInfo info = new TransitionsByRewardsInfo(parent, originalModel, trRewards);
+		TransitionsByRewardsInfo info = new TransitionsByRewardsInfo(parent, originalModel, JDD.Constant(0), trRewards);
 		RewardCounterTransformationAdd transform = new RewardCounterTransformationAdd(originalModel, info, limit, statesOfInterest);
 	
 		NondetModel transformedModel = originalModel.getTransformed(transform);
@@ -87,7 +87,7 @@ public class RewardCounterProduct<M extends Model> extends Product<M>
 	 * @throws PrismException
 	 */
 	static public RewardCounterProduct<ProbModel> generate(PrismComponent parent, ProbModel originalModel, JDDNode trRewards, int limit, JDDNode statesOfInterest) throws PrismException {
-		TransitionsByRewardsInfo info = new TransitionsByRewardsInfo(parent, originalModel, trRewards);
+		TransitionsByRewardsInfo info = new TransitionsByRewardsInfo(parent, originalModel, JDD.Constant(0), trRewards);
 		RewardCounterTransformationAdd transform = new RewardCounterTransformationAdd(originalModel, info, limit, statesOfInterest);
 	
 		ProbModel transformedModel = originalModel.getTransformed(transform);

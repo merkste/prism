@@ -29,10 +29,10 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 	protected QuantileCalculatorContext qcc;
 	protected ReachabilityQuantile q;
 
-	public QuantileCalculator(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
+	public QuantileCalculator(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
 	{
 		super(parent);
-		qcc = new QuantileCalculatorContext(this, model, mc, transRewards, goalStates, remainStates);
+		qcc = new QuantileCalculatorContext(this, model, mc, stateRewards, transRewards, goalStates, remainStates);
 	}
 	
 	private void setReachabilityQuantile(ReachabilityQuantile q) {
@@ -183,28 +183,22 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 			// TODO: ensure integer rewards...
 
-			// incorporate state rewards to transition rewards
-			activeRefs.release(stateRewards);
-			activeRefs.release(transRewards);
-			transRewards = JDD.Apply(JDD.PLUS, stateRewards, transRewards);
-			activeRefs.register(transRewards);
-
 			// --- Calculator generation
 
-			activeRefs.release(transRewards, goalStates, remainStates);
+			activeRefs.release(stateRewards, transRewards, goalStates, remainStates);
 			QuantileCalculator qc;
 			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
 
 			if (model.getModelType() == ModelType.CTMC) {
-				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, stateRewards, transRewards, goalStates, remainStates);
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
-				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
 			           engine.equals("Hybrid") || engine.equals("Sparse")) {
-				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 				qc.getLog().println("Using TACAS'16 variant of quantile computation...");
 			} else {
-				qc = new QuantileCalculatorSymbolic(parent, mc, model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorSymbolic(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			}
 			activeRefs.register(qc);
 
@@ -333,12 +327,6 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 			// TODO: ensure integer rewards...
 
-			// incorporate state rewards to transition rewards
-			activeRefs.release(stateRewards);
-			activeRefs.release(transRewards);
-			transRewards = JDD.Apply(JDD.PLUS, stateRewards, transRewards);
-			activeRefs.register(transRewards);
-
 			// --- Calculator generation
 
 			activeRefs.release(transRewards, goalStates, remainStates);
@@ -346,10 +334,10 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
 			if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
 			    engine.equals("Hybrid") || engine.equals("Sparse")) {
-				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 				qc.getLog().println("Using TACAS'16 variant of quantile computation...");
 			} else {
-				qc = new QuantileCalculatorSymbolic(parent, mc, model, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorSymbolic(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			}
 			activeRefs.register(qc);
 

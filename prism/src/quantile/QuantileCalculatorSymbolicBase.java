@@ -13,9 +13,9 @@ import prism.StateValuesMTBDD;
 public abstract class QuantileCalculatorSymbolicBase extends QuantileCalculator {
 
 	
-	public QuantileCalculatorSymbolicBase(PrismComponent parent, StateModelChecker mc, Model model, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
+	public QuantileCalculatorSymbolicBase(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates) throws PrismException
 	{
-		super(parent, mc, model, transRewards, goalStates, remainStates);
+		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 	}
 
 	public abstract JDDNode step(CalculatedProbabilities x, int i) throws PrismException;

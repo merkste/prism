@@ -12,14 +12,18 @@ public class TransitionsByRewardsInfo extends PrismComponent
 {
 	protected Model model;
 	protected TreeMap<Integer, JDDNode> rewToTrans = new TreeMap<Integer, JDDNode>();
+	protected JDDNode stateRewardsOriginal;
+	protected JDDNode transRewardsOriginal;
 	protected JDDNode transRewards;
 	private Integer maxReward = null;
 
-	public TransitionsByRewardsInfo(PrismComponent parent, Model model, JDDNode transRewards) throws PrismException
+	public TransitionsByRewardsInfo(PrismComponent parent, Model model, JDDNode stateRewards, JDDNode transRewards) throws PrismException
 	{
 		super(parent);
 		this.model = model;
-		this.transRewards = transRewards;
+		this.stateRewardsOriginal = stateRewards;
+		this.transRewardsOriginal = transRewards;
+		this.transRewards = JDD.Apply(JDD.PLUS, stateRewards.copy(), transRewards.copy());
 
 		splitTransitionMatrix(false);
 	}
@@ -27,6 +31,16 @@ public class TransitionsByRewardsInfo extends PrismComponent
 	public Model getModel()
 	{
 		return model;
+	}
+
+	public JDDNode getStateRewardsOriginal()
+	{
+		return stateRewardsOriginal.copy();
+	}
+
+	public JDDNode getTransRewardsOriginal()
+	{
+		return transRewardsOriginal.copy();
 	}
 
 	public JDDNode getTransRewards()
@@ -150,6 +164,8 @@ public class TransitionsByRewardsInfo extends PrismComponent
 
 	public void clear()
 	{
+		if (stateRewardsOriginal != null) JDD.Deref(stateRewardsOriginal);
+		if (transRewardsOriginal != null) JDD.Deref(transRewardsOriginal);
 		if (transRewards != null) JDD.Deref(transRewards);
 
 		for (JDDNode tr : rewToTrans.values()) {
