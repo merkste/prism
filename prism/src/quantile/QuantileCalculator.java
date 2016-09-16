@@ -193,11 +193,14 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 			activeRefs.release(transRewards, goalStates, remainStates);
 			QuantileCalculator qc;
+			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
+
 			if (model.getModelType() == ModelType.CTMC) {
 				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, transRewards, goalStates, remainStates);
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
 				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, transRewards, goalStates, remainStates);
-			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16)) {
+			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
+			           engine.equals("Hybrid") || engine.equals("Sparse")) {
 				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, transRewards, goalStates, remainStates);
 				qc.getLog().println("Using TACAS'16 variant of quantile computation...");
 			} else {
