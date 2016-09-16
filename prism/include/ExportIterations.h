@@ -30,7 +30,7 @@
 
 #include <cstdio>
 #include <string>
-#include <cmath>
+#include <math.h>
 
 #include <cudd.h>
 #include <dd.h>
