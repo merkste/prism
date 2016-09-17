@@ -8,13 +8,14 @@ import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.function.IntUnaryOperator;
+import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
-import common.iterable.MappingIterator;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
@@ -203,7 +204,7 @@ public class MDPEquiv extends MDPView
 		}
 		Iterator<Integer> successors = model.getSuccessorsIterator(originalState, originalChoice);
 		if (hasTransitionToNonRepresentative.get(originalState)) {
-			return new MappingIterator.From<>(successors, this::mapStateToRestrictedModel).dedupe();
+			return FunctionalIterator.extend(successors).map((ToIntFunction<Integer>) identify::getRepresentative).dedupe();
 		}
 		return successors;
 	}
@@ -226,7 +227,7 @@ public class MDPEquiv extends MDPView
 		}
 		Iterator<Entry<Integer, Double>> transitions = model.getTransitionsIterator(originalState, originalChoice);
 		if (hasTransitionToNonRepresentative.get(originalState)) {
-			return new MappingIterator.From<>(transitions, this::mapTransitionToRestrictedModel);
+			return FunctionalIterator.extend(transitions).map(this::mapToRepresentative);
 		}
 		return transitions;
 	}
@@ -254,16 +255,15 @@ public class MDPEquiv extends MDPView
 
 	//--- instance methods ---
 
-	public Integer mapStateToRestrictedModel(final int state)
+	public Entry<Integer, Double> mapToRepresentative(final Entry<Integer, Double> transition)
 	{
-		return identify.getRepresentative(state);
-	}
-
-	public SimpleImmutableEntry<Integer, Double> mapTransitionToRestrictedModel(final Entry<Integer, Double> transition)
-	{
-		final Integer target = identify.getRepresentative(transition.getKey());
-		final Double probability = transition.getValue();
-		return new SimpleImmutableEntry<>(target, probability);
+		int state          = transition.getKey();
+		int representative = identify.getRepresentative(state);
+		if (state == representative) {
+			return transition;
+		}
+		Double probability = transition.getValue();
+		return new SimpleImmutableEntry<>(representative, probability);
 	}
 
 	public static class StateChoicePair
@@ -341,22 +341,22 @@ public class MDPEquiv extends MDPView
 
 	public static void main(String[] args) throws PrismException
 	{
-		MDPSimple mdpSimple = new MDPSimple();
-		mdpSimple.addStates(3);
+		MDPSimple mdp = new MDPSimple();
+		mdp.addStates(3);
 		Distribution choice = new Distribution();
 		choice.add(1, 0.5);
 		choice.add(2, 0.5);
-		mdpSimple.addActionLabelledChoice(0, choice, 'a');
+		mdp.addActionLabelledChoice(0, choice, 'a');
 		choice = new Distribution();
 		choice.add(2, 1.0);
-		mdpSimple.addActionLabelledChoice(1, choice, 'b');
+		mdp.addActionLabelledChoice(1, choice, 'b');
 		choice = new Distribution();
 		choice.add(1, 1.0);
-		mdpSimple.addActionLabelledChoice(2, choice, 'c');
-		System.out.println("original = " + mdpSimple);
+		mdp.addActionLabelledChoice(2, choice, 'c');
+		System.out.println("original = " + mdp);
 
 		EquivalenceRelationInteger eq = new EquivalenceRelationInteger(new IterableArray.Of<>(BitSetTools.asBitSet(1,2)));
-		MDPEquiv equiv = new MDPEquiv(mdpSimple, eq);
+		MDPEquiv equiv = new MDPEquiv(mdp, eq);
 		System.out.println("identify = " + equiv);
 		equiv.findDeadlocks(true);
 		System.out.println("fixed    = " + equiv);
