@@ -68,6 +68,19 @@ public class TransitionsByRewardsInfo extends PrismComponent
 		return result;
 	}
 
+	public JDDNode getTransitionsWithPosReward()
+	{
+		JDDNode tr01_pos = JDD.GreaterThan(transRewards.copy(), 0.0);
+		return JDD.Apply(JDD.TIMES, tr01_pos, model.getTrans().copy());
+	}
+
+	public JDDNode getTransitionsWithZeroReward()
+	{
+		JDDNode tr01_pos = JDD.GreaterThan(transRewards.copy(), 0.0);
+		JDDNode tr01_zero = JDD.And(JDD.Not(tr01_pos), model.getTrans01().copy());
+		return JDD.Apply(JDD.TIMES, tr01_zero, model.getTrans().copy());
+	}
+
 	public JDDNode getStatesWithPosRewardTransitions()
 	{
 		JDDNode tr01_pos = JDD.GreaterThan(transRewards.copy(), 0.0);
