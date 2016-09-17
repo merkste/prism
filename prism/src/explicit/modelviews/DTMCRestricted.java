@@ -85,10 +85,10 @@ public class DTMCRestricted extends DTMCView
 			if (state < index) {
 				firstModified = index;
 			}
-			redirectTransitions = new BitSet(numStates);
-			redirectTransitions.set(firstModified, model.getNumStates());
-			redirectTransitions = new ReachabilityComputer(model).computePre(redirectTransitions);
 		}
+		redirectTransitions = new BitSet(numStates);
+		redirectTransitions.set(firstModified, model.getNumStates());
+		redirectTransitions = new ReachabilityComputer(model).computePre(redirectTransitions);
 	}
 
 	public DTMCRestricted(final DTMCRestricted restricted)
