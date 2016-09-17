@@ -62,12 +62,12 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 		 * Pre-seeding: for min, set zeroStates, for max, set one states
 		 */
 		if (min) {
-			JDDNode zeroStates = q.getZeroStates(i);
+			JDDNode zeroStates = q.getZeroStates(i==0);
 			result = JDD.Apply(JDD.TIMES, result, JDD.Not(zeroStates.copy()));
 			statesWithValue = JDD.Or(statesWithValue, zeroStates);
 		} else {
 			// max
-			JDDNode oneStates = q.getOneStates(i);
+			JDDNode oneStates = q.getOneStates(i==0);
 			result = JDD.Apply(JDD.MAX, result, oneStates.copy());
 			statesWithValue = JDD.Or(statesWithValue, oneStates);
 		}
@@ -154,11 +154,11 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 		 * Post-processing: for min, set OneStates, for max, set zero states
 		 */
 		if (min) {
-			JDDNode oneStates = q.getOneStates(i);
+			JDDNode oneStates = q.getOneStates(i==0);
 			result = JDD.Apply(JDD.MAX, result, oneStates.copy());
 			statesWithValue = JDD.Or(statesWithValue, oneStates);
 		} else {
-			JDDNode zeroStates = q.getZeroStates(i);
+			JDDNode zeroStates = q.getZeroStates(i==0);
 			result = JDD.Apply(JDD.TIMES, result, JDD.Not(zeroStates.copy()));
 			statesWithValue = JDD.Or(statesWithValue, zeroStates);
 		}
@@ -309,8 +309,8 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 					if (qcc.debugDetailed()) qcc.debugDD(tau(), "tau");
 					if (qcc.debugDetailed()) qcc.debugDD(xTau.copy(), "xTau");
 					
-					JDDNode zeroStates = q.getZeroStates(i);
-					JDDNode oneStates = q.getOneStates(i);
+					JDDNode zeroStates = q.getZeroStates(i==0);
+					JDDNode oneStates = q.getOneStates(i==0);
 					
 					JDDNode maybeStates = ndModel.getReach().copy();
 					maybeStates = JDD.And(maybeStates, JDD.Not(zeroStates.copy()));
@@ -428,7 +428,7 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			getLog().println("\nTransformed MDP:");
 			transformed.printTransInfo(getLog());
 
-			JDDNode target = q.getOneStates(i);
+			JDDNode target = q.getOneStates(i==0);
 			target = JDD.Or(target, transform.goalState(false));
 			if (qcc.debugDetailed()) qcc.debugDD(target.copy(), "target");
 			

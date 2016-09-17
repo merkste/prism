@@ -16,13 +16,13 @@ public abstract class ReachabilityUpperRewardBound extends ReachabilityQuantile 
 	}
 
 	@Override
-	public JDDNode getOneStates(int i)
+	public JDDNode getOneStates(boolean forIterationZero)
 	{
 		return qcc.getGoalStates();
 	}
 	
 	@Override
-	public JDDNode getZeroStates(int i) {
+	public JDDNode getZeroStates(boolean forIterationZero) {
 		return JDD.And(qcc.getModel().getReach().copy(),
 	                   JDD.And(JDD.Not(qcc.getGoalStates()),
 	                           JDD.Not(qcc.getRemainStates())));
@@ -36,11 +36,11 @@ public abstract class ReachabilityUpperRewardBound extends ReachabilityQuantile 
 	@Override
 	public JDDNode getProbabilitiesForBase() throws PrismException {
 		// set x = 1 for the one states
-		JDDNode one = getOneStates(0);
+		JDDNode one = getOneStates(true);
 		JDDNode x = one.copy();
 		if (qcc.debugDetailed()) qcc.debugDD(x.copy(), "x");
 
-		JDDNode zero = getZeroStates(0);
+		JDDNode zero = getZeroStates(true);
 
 		JDDNode statesWithKnownValue = JDD.Or(one, zero);
 

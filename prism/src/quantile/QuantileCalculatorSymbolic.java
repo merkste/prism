@@ -140,12 +140,12 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 		 * Pre-seeding: for min, set zeroStates, for max, set one states
 		 */
 		if (min) {
-			JDDNode zeroStates = q.getZeroStates(i);
+			JDDNode zeroStates = q.getZeroStates(i==0);
 			result = JDD.Apply(JDD.TIMES, result, JDD.Not(zeroStates.copy()));
 			statesWithValue = JDD.Or(statesWithValue, zeroStates);
 		} else {
 			// max
-			JDDNode oneStates = q.getOneStates(i);
+			JDDNode oneStates = q.getOneStates(i==0);
 			result = JDD.Apply(JDD.MAX, result, oneStates.copy());
 			statesWithValue = JDD.Or(statesWithValue, oneStates);
 		}
@@ -232,11 +232,11 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 		 * Post-processing: for min, set OneStates, for max, set zero states
 		 */
 		if (min) {
-			JDDNode oneStates = q.getOneStates(i);
+			JDDNode oneStates = q.getOneStates(i==0);
 			result = JDD.Apply(JDD.MAX, result, oneStates.copy());
 			statesWithValue = JDD.Or(statesWithValue, oneStates);
 		} else {
-			JDDNode zeroStates = q.getZeroStates(i);
+			JDDNode zeroStates = q.getZeroStates(i==0);
 			result = JDD.Apply(JDD.TIMES, result, JDD.Not(zeroStates.copy()));
 			statesWithValue = JDD.Or(statesWithValue, zeroStates);
 		}
@@ -290,8 +290,8 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 				alternativeValues = JDD.ITE(tauStates.copy(), alternativeValues, modelZeroRewFragment.getReach().copy());
 			}
 
-			JDDNode yes = q.getOneStates(i);
-			JDDNode maybe = JDD.And(modelZeroRewFragment.getReach().copy(), JDD.Not(q.getZeroStates(i)));
+			JDDNode yes = q.getOneStates(i==0);
+			JDDNode maybe = JDD.And(modelZeroRewFragment.getReach().copy(), JDD.Not(q.getZeroStates(i==0)));
 
 			if (SanityJDD.enabled) {
 				JDDNode tmp = JDD.GreaterThan(alternativeValues.copy(), 0);

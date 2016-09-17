@@ -21,12 +21,12 @@ public class ReachabilityLowerRewardBoundUniversal extends ReachabilityLowerRewa
 	}
 
 	@Override
-	public JDDNode getZeroStates(int i) {
+	public JDDNode getZeroStates(boolean forIterationZero) {
 		return JDD.Constant(0.0);
 	}
 
 	@Override
-	public JDDNode getOneStates(int i) {
+	public JDDNode getOneStates(boolean forIterationZero) {
 		return JDD.Constant(0.0);
 	}
 

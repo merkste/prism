@@ -21,8 +21,8 @@ public abstract class ReachabilityQuantile implements Clearable {
 
 	public abstract boolean min();
 
-	public abstract JDDNode getZeroStates(int i);
-	public abstract JDDNode getOneStates(int i);
+	public abstract JDDNode getZeroStates(boolean forIterationZero);
+	public abstract JDDNode getOneStates(boolean forIterationZero);
 	public abstract JDDNode getProbabilitiesForBase() throws PrismException;
 
 	public abstract StateValuesMTBDD getInfinityStateValues() throws PrismException;

@@ -22,10 +22,10 @@ public class ReachabilityUpperRewardBoundUniversal extends ReachabilityUpperRewa
 		return true;
 	}
 	
-	public JDDNode getZeroStates(int i) {
-		JDDNode zeroStates = super.getZeroStates(i);
+	public JDDNode getZeroStates(boolean forIterationZero) {
+		JDDNode zeroStates = super.getZeroStates(forIterationZero);
 		
-		if (i==0) {
+		if (forIterationZero) {
 			// we are universal, the existence of positive
 			// reward transitions for some state that is not a goal state
 			// => 0
@@ -33,7 +33,7 @@ public class ReachabilityUpperRewardBoundUniversal extends ReachabilityUpperRewa
 			statesWithPosR = JDD.And(statesWithPosR,
 			                         qcc.getModel().getReach().copy());
 			statesWithPosR = JDD.And(statesWithPosR,
-			                         JDD.Not(getOneStates(0)));
+			                         JDD.Not(getOneStates(forIterationZero)));
 			
 			zeroStates = JDD.Or(zeroStates, statesWithPosR);
 		}

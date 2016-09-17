@@ -94,8 +94,8 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 	}
 
 	@Override
-	public JDDNode getZeroStates(int i) {
-		if (i >= 1) {
+	public JDDNode getZeroStates(boolean forIterationZero) {
+		if (!forIterationZero) {
 			return zeroStates.copy();
 		}
 		return JDD.Constant(0.0);
@@ -103,7 +103,7 @@ public class ReachabilityLowerRewardBoundExistential extends ReachabilityLowerRe
 	
 
 	@Override
-	public JDDNode getOneStates(int i) {
+	public JDDNode getOneStates(boolean forIterationZero) {
 		return JDD.Constant(0.0);
 	}
 
