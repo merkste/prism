@@ -477,6 +477,7 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return new ChainedIterator.Of<>(map(function));
 		}
 
+		// FIXME ALG: consider removing specialized methods to make type inference easier
 		default <T> FunctionalIterator<T> flatMap(IntFunction<? extends Iterator<? extends T>> function)
 		{
 			return new ChainedIterator.Of<>(map(function));
