@@ -319,7 +319,8 @@ jboolean lower		// lower reward bound computation?
 	// vectors
 	double *tmpsoln = NULL;
 	double *solnQuantiles = NULL;
-	PlainOrDistVector *vBase = NULL, *vOneStates = NULL, *vZeroStates = NULL, *vStateRews = NULL;
+	PlainOrDistVector *vBase = NULL, *vStateRews = NULL;
+	std::vector<bool> *vOneStates = NULL, *vZeroStates = NULL;
 	std::list<long> *todo = NULL, *infStateList = NULL;
 	int* vTaRews = NULL;
 	// timing stuff
@@ -359,9 +360,11 @@ jboolean lower		// lower reward bound computation?
 #endif
 
 	vBase = get_vector(env, base, rvars, num_rvars, odd, &kbt, "base probabilities");
-	vZeroStates = get_vector(env, zeroStates, rvars, num_rvars, odd, &kbt, "zero states");
-	vOneStates = get_vector(env, oneStates, rvars, num_rvars, odd, &kbt, "one states");
 	vStateRews = get_vector(env, stateRews, rvars, num_rvars, odd, &kbt, "state rewards");
+
+	PH_PrintToMainLog(env, "Allocating bitsets for one and zero states... ");
+	vZeroStates = mtbdd01_to_bool_vector(ddman, zeroStates, rvars, num_rvars, odd);
+	vOneStates = mtbdd01_to_bool_vector(ddman, oneStates, rvars, num_rvars, odd);
 
 	PH_PrintToMainLog(env, "Allocating list of states of interest... ");
 	todo = mtbdd01_to_list(ddman, statesOfInterest, rvars, num_rvars, odd);
@@ -459,15 +462,21 @@ jboolean lower		// lower reward bound computation?
 		 * Pre-seeding: for min, set zeroStates, for max, set one states
 		 */
 		if (min) {
-					JDDNode zeroStates = q.getZeroStates(i==0);
-					result = JDD.Apply(JDD.TIMES, result, JDD.Not(zeroStates.copy()));
-					statesWithValue = JDD.Or(statesWithValue, zeroStates);
-				} else {
-					// max
-					JDDNode oneStates = q.getOneStates(i==0);
-					result = JDD.Apply(JDD.MAX, result, oneStates.copy());
-					statesWithValue = JDD.Or(statesWithValue, oneStates);
+			for (i = 0; i < n; i++) {
+				if ((*vZeroStates)[i]) {
+					soln2[i] = 0.0;
 				}
+			}
+			// TODO? tatesWithValue = JDD.Or(statesWithValue, zeroStates);
+		} else {
+			// max
+			for (i = 0; i < n; i++) {
+				if ((*vOneStates)[i]) {
+					soln2[i] = 1.0;
+				}
+			}
+			// TODO? statesWithValue = JDD.Or(statesWithValue, oneStates);
+		}
 
 		for (i = 0; i < nm; i++) {
 			int taRew = vTaRews[i];
@@ -476,16 +485,26 @@ jboolean lower		// lower reward bound computation?
 			print_vector(env, soln2, n, name.c_str());
 		}
 
-
-
-		// sort out anything that's still -1
-		// (should just be yes/no states)
-		// TODO: clamp to zero?
-		for (i = 0; i < n; i++) {
-			if (soln2[i] < 0) {
-				soln2[i] = vOneStates->getValue(i);
+		/*
+		 * Post-processing: for min, set OneStates, for max, set zero states
+		 */
+		if (min) {
+			for (i = 0; i < n; i++) {
+				if ((*vOneStates)[i]) {
+					soln2[i] = 1.0;
+				}
+			}
+		} else {
+			// max
+			for (i = 0; i < n; i++) {
+				if ((*vZeroStates)[i]) {
+					soln2[i] = 0.0;
+				}
 			}
 		}
+
+		// soln2 still -1?
+		// TODO Zero rewards
 
 		// check if we are done
 		for (auto it = todo->begin(); it != todo->end(); ) {
