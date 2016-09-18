@@ -194,9 +194,11 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
 				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
-			           engine.equals("Hybrid") || engine.equals("Sparse")) {
+			           engine.equals("Sparse")) {
 				qc = new QuantileCalculatorSymbolicTACAS16(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 				qc.getLog().println("Using TACAS'16 variant of quantile computation...");
+			} else if (engine.equals("Hybrid")) {
+				qc = new QuantileCalculatorHybrid(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			} else {
 				qc = new QuantileCalculatorSymbolic(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			}
