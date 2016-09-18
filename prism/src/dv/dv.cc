@@ -188,6 +188,8 @@ EXPORT std::list<long>* mtbdd01_to_list(DdManager *ddman, DdNode *dd, DdNode **v
 	long i, n;
 	std::list<long> *res;
 
+	// determine size
+	n = odd->eoff + odd->toff;
 	// create vector
 	res = new std::list<long>();
 	// build vector recursively
@@ -204,7 +206,7 @@ void mtbdd01_to_list_rec(DdManager *ddman, DdNode *dd, DdNode **vars, int num_va
 
 	if (level == num_vars) {
 		if (o < 0 || o >= n) {
-			printf("Internal error: Can not convert MTBDD to list: Value out of range of the ODD (does the MTBDD encode non-reachable states?)\n");
+			printf("Internal error: Can not convert MTBDD to list: Value out of range of the ODD (does the MTBDD encode non-reachable states?) %ld\n", o);
 			exit(1);
 		}
 		double v = Cudd_V(dd);
