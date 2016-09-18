@@ -52,10 +52,10 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 //static HDDNode *zero;
 //static int num_levels;
 //static bool compact_sm;
-static double *sm_dist;
-static int sm_dist_shift;
-static int sm_dist_mask;
-static double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
+//static double *sm_dist;
+//static int sm_dist_shift;
+//static int sm_dist_mask;
+//static double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
 
 static void print_vector(JNIEnv* env, double* v, int n, const char* name)
 {
@@ -239,6 +239,131 @@ struct PositiveRewRecursion {
 	}
 };
 
+struct ZeroRewRecursion {
+	double* soln;
+	double* soln3;
+
+	HDDNode *zero;
+	int num_levels;
+	bool compact_sm;
+	double *sm_dist;
+	int sm_dist_shift;
+	int sm_dist_mask;
+
+	ZeroRewRecursion(double *soln, double *soln3) :
+		soln(soln)
+	{
+	}
+
+	void forAction(HDDMatrix *hddm)
+	{
+		zero = hddm->zero;
+		num_levels = hddm->num_levels;
+
+		compact_sm = hddm->compact_sm;
+		if (compact_sm) {
+			sm_dist = hddm->dist;
+			sm_dist_shift = hddm->dist_shift;
+			sm_dist_mask = hddm->dist_mask;
+		}
+		mult_rec(hddm->top, 0, 0, 0);
+	}
+
+	void mult_rec(HDDNode *hdd, int level, int row_offset, int col_offset)
+	{
+		HDDNode *e, *t;
+
+		// if it's the zero node
+		if (hdd == zero) {
+			return;
+		}
+		// or if we've reached a submatrix
+		// (check for non-null ptr but, equivalently, we could just check if level==l_sm)
+		else if (hdd->sm.ptr) {
+			if (!compact_sm) {
+				mult_rm((RMSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
+			} else {
+				mult_cmsr((CMSRSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
+			}
+			return;
+		}
+		// or if we've reached the bottom
+		else if (level == num_levels) {
+			//printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
+			if (soln3[row_offset] < 0) soln3[row_offset] = 0;
+			soln3[row_offset] += soln[col_offset] * hdd->type.val;
+			return;
+		}
+		// otherwise recurse
+		e = hdd->type.kids.e;
+		if (e != zero) {
+			mult_rec(e->type.kids.e, level+1, row_offset, col_offset);
+			mult_rec(e->type.kids.t, level+1, row_offset, col_offset+e->off.val);
+		}
+		t = hdd->type.kids.t;
+		if (t != zero) {
+			mult_rec(t->type.kids.e, level+1, row_offset+hdd->off.val, col_offset);
+			mult_rec(t->type.kids.t, level+1, row_offset+hdd->off.val, col_offset+t->off.val);
+		}
+	}
+
+	void mult_rm(RMSparseMatrix *rmsm, int row_offset, int col_offset)
+	{
+		int i2, j2, l2, h2;
+		int sm_n = rmsm->n;
+		int sm_nnz = rmsm->nnz;
+		double *sm_non_zeros = rmsm->non_zeros;
+		unsigned char *sm_row_counts = rmsm->row_counts;
+		int *sm_row_starts = (int *)rmsm->row_counts;
+		bool sm_use_counts = rmsm->use_counts;
+		unsigned int *sm_cols = rmsm->cols;
+
+		// loop through rows of submatrix
+		l2 = sm_nnz; h2 = 0;
+		for (i2 = 0; i2 < sm_n; i2++) {
+
+			// loop through entries in this row
+			if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
+			else { l2 = h2; h2 += sm_row_counts[i2]; }
+			for (j2 = l2; j2 < h2; j2++) {
+				int r = row_offset + i2;
+				if (soln3[r] < 0) soln3[r] = 0;
+				soln3[r] += soln[col_offset + sm_cols[j2]] * sm_non_zeros[j2];
+				//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + sm_cols[j2], sm_non_zeros[j2]);
+			}
+		}
+	}
+
+	void mult_cmsr(CMSRSparseMatrix *cmsrsm, int row_offset, int col_offset)
+	{
+		int i2, j2, l2, h2;
+		int sm_n = cmsrsm->n;
+		int sm_nnz = cmsrsm->nnz;
+		unsigned char *sm_row_counts = cmsrsm->row_counts;
+		int *sm_row_starts = (int *)cmsrsm->row_counts;
+		bool sm_use_counts = cmsrsm->use_counts;
+		unsigned int *sm_cols = cmsrsm->cols;
+
+		// loop through rows of submatrix
+		l2 = sm_nnz; h2 = 0;
+		for (i2 = 0; i2 < sm_n; i2++) {
+
+			// loop through entries in this row
+			if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
+			else { l2 = h2; h2 += sm_row_counts[i2]; }
+			for (j2 = l2; j2 < h2; j2++) {
+				int r = row_offset + i2;
+				if (soln3[r] < 0) soln3[r] = 0;
+				soln3[r] += soln[col_offset + (int)(sm_cols[j2] >> sm_dist_shift)] * sm_dist[(int)(sm_cols[j2] & sm_dist_mask)];
+				//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + (int)(sm_cols[j2] >> sm_dist_shift), sm_dist[(int)(sm_cols[j2] & sm_dist_mask)]);
+			}
+		}
+	}
+
+};
+
+
+
 //------------------------------------------------------------------------------
 
 JNIEXPORT jlong __jlongpointer JNICALL Java_hybrid_PrismHybrid_PH_1NondetProbQuantile
@@ -318,6 +443,7 @@ jboolean lower		// lower reward bound computation?
 	HDDNode *hdd = NULL;
 	// vectors
 	double *tmpsoln = NULL;
+	double *soln = NULL, *soln3 = NULL;
 	double *solnQuantiles = NULL;
 	PlainOrDistVector *vBase = NULL, *vStateRews = NULL;
 	std::vector<bool> *vOneStates = NULL, *vZeroStates = NULL;
@@ -453,57 +579,67 @@ jboolean lower		// lower reward bound computation?
 	iters = 1;
 	while (!done)  // TODO maxiters?
 	{
-		soln2 = store.advance();
+		double* soln2 = store.advance();
 
 		PH_PrintToMainLog(env, "Iteration %d\n", iters);
-		PositiveRewRecursion posRewCompute(soln2, store, *vStateRews, rvars, num_rvars, iters, lower, min);
+		PositiveRewRecursion posRewCompute(soln3, store, *vStateRews, rvars, num_rvars, iters, lower, min);
 
 		/*
-		 * Pre-seeding: for min, set zeroStates, for max, set one states
+		 * Pre-seeding: for min, set zeroStates, for max, set one states, else set -1
 		 */
-		if (min) {
-			for (i = 0; i < n; i++) {
-				if ((*vZeroStates)[i]) {
-					soln2[i] = 0.0;
-				}
+		for (i = 0; i < n; i++) {
+			soln2[i] = -1.0;
+			if (min && (*vZeroStates)[i]) {
+				soln2[i] = 0.0;
 			}
-			// TODO? tatesWithValue = JDD.Or(statesWithValue, zeroStates);
-		} else {
-			// max
-			for (i = 0; i < n; i++) {
-				if ((*vOneStates)[i]) {
-					soln2[i] = 1.0;
-				}
+			if (!min && (*vOneStates)[i]) {
+				soln2[i] = 1.0;
 			}
-			// TODO? statesWithValue = JDD.Or(statesWithValue, oneStates);
 		}
 
 		for (i = 0; i < nm; i++) {
 			int taRew = vTaRews[i];
+
+			for (j = 0; j < n; j++) {
+				soln3[j] = soln2[j];
+			}
+
 			posRewCompute.forAction(hddmsPositive->choices[i], taRew, transStateActRews);
-			std::string name = "after action " + std::to_string(i);
+			std::string name = "soln3 after action " + std::to_string(i);
+			print_vector(env, soln3, n, name.c_str());
+
+			// min/max
+			for (j = 0; j < n; j++) {
+				if (soln3[j] >= 0) {
+					if (soln2[j] < 0) {
+						soln2[j] = soln3[j];
+					} else if (min) {
+						if (soln3[j] < soln2[j]) soln2[j] = soln3[j];
+					} else {
+						if (soln3[j] > soln2[j]) soln2[j] = soln3[j];
+					}
+				}
+			}
+
+			name = "soln2 after action " + std::to_string(i);
 			print_vector(env, soln2, n, name.c_str());
 		}
 
 		/*
 		 * Post-processing: for min, set OneStates, for max, set zero states
 		 */
-		if (min) {
-			for (i = 0; i < n; i++) {
-				if ((*vOneStates)[i]) {
-					soln2[i] = 1.0;
-				}
+		for (i = 0; i < n; i++) {
+			if (min && (*vOneStates)[i]) {
+				soln2[i] = 1.0;
 			}
-		} else {
-			// max
-			for (i = 0; i < n; i++) {
-				if ((*vZeroStates)[i]) {
-					soln2[i] = 0.0;
-				}
+			if (!min && (*vZeroStates)[i]) {
+				soln2[i] = 0;
 			}
 		}
 
+		print_vector(env, soln2, n, "soln2 after postprocessing");
 		// soln2 still -1?
+
 		// TODO Zero rewards
 
 		// check if we are done
@@ -683,7 +819,7 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 }
 
 //------------------------------------------------------------------------------
-
+#if 0
 //-----------------------------------------------------------------------------------
 
 static void mult_rm(RMSparseMatrix *rmsm, int row_offset, int col_offset)
@@ -743,3 +879,4 @@ static void mult_cmsr(CMSRSparseMatrix *cmsrsm, int row_offset, int col_offset)
 
 //------------------------------------------------------------------------------
 
+#endif
