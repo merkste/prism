@@ -251,7 +251,7 @@ struct ZeroRewRecursion {
 	int sm_dist_mask;
 
 	ZeroRewRecursion(double *soln, double *soln3) :
-		soln(soln)
+		soln(soln), soln3(soln3)
 	{
 	}
 
@@ -434,16 +434,17 @@ jboolean lower		// lower reward bound computation?
 	// mtbdds
 //	DdNode *a = NULL;
 	// model stats
-	int n, nm;
+	int n, nm, nmZero;
 	// flags
 	bool compact_y;
 	// matrix mtbdds
 	HDDMatrices *hddmsPositive = NULL;
+	HDDMatrices *hddmsZero = NULL;
 	HDDMatrix *hddm = NULL;
 	HDDNode *hdd = NULL;
 	// vectors
 	double *tmpsoln = NULL;
-	double *soln = NULL, *soln3 = NULL;
+	double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
 	double *solnQuantiles = NULL;
 	PlainOrDistVector *vBase = NULL, *vStateRews = NULL;
 	std::vector<bool> *vOneStates = NULL, *vZeroStates = NULL;
@@ -466,7 +467,7 @@ jboolean lower		// lower reward bound computation?
 	// get number of states
 	n = odd->eoff + odd->toff;
 	
-	// build hdds for matrix
+	// build hdds for matrix (positive reward fragment)
 	PH_PrintToMainLog(env, "\nBuilding hybrid MTBDD matrices for positive reward fragment... ");
 	hddmsPositive = build_hdd_matrices_mdp(transPositive, NULL, rvars, cvars, num_rvars, ndvars, num_ndvars, odd);
 	nm = hddmsPositive->nm;
@@ -484,6 +485,26 @@ jboolean lower		// lower reward bound computation?
 	PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddms->l_sm_min, hddms->l_sm_max, hddms->num_sm, hddms->compact_sm, hddms->nm);
 	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 #endif
+
+
+	if (transZero != Cudd_ReadZero(ddman)) {
+		// build hdds for matrix (zero reward fragment)
+		PH_PrintToMainLog(env, "\nBuilding hybrid MTBDD matrices for zero reward fragment... ");
+		hddmsZero = build_hdd_matrices_mdp(transZero, NULL, rvars, cvars, num_rvars, ndvars, num_ndvars, odd);
+		nmZero = hddmsZero->nm;
+		kb = hddmsZero->mem_nodes;
+		kbt += kb;
+		PH_PrintToMainLog(env, "[nm=%d, levels=%d, nodes=%d] ", hddmsZero->nm, hddmsZero->num_levels, hddmsZero->num_nodes);
+		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
+
+		// add sparse bits
+		PH_PrintToMainLog(env, "Adding sparse bits... ");
+		add_sparse_matrices_mdp(hddmsZero, compact);
+		kb = hddmsZero->mem_sm;
+		kbt += kb;
+		PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddmsZero->l_sm_min, hddmsZero->l_sm_max, hddmsZero->num_sm, hddmsZero->compact_sm, hddmsZero->nm);
+		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
+	}
 
 	vBase = get_vector(env, base, rvars, num_rvars, odd, &kbt, "base probabilities");
 	vStateRews = get_vector(env, stateRews, rvars, num_rvars, odd, &kbt, "state rewards");
@@ -503,11 +524,12 @@ jboolean lower		// lower reward bound computation?
 	// create solution/iteration vectors
 	PH_PrintToMainLog(env, "Allocating iteration vectors... ");
 	soln = new double[n];
+	soln2 = new double[n];
 	soln3 = new double[n];
 	solnQuantiles = new double[n];
 	kb = n*8.0/1024.0;
-	kbt += 3*kb;
-	PH_PrintMemoryToMainLog(env, "[3 x ", kb, "]\n");
+	kbt += 4*kb;
+	PH_PrintMemoryToMainLog(env, "[4 x ", kb, "]\n");
 
 	int window = (int)DD_FindMax(ddman, maxRewForState);
 
@@ -579,7 +601,7 @@ jboolean lower		// lower reward bound computation?
 	iters = 1;
 	while (!done)  // TODO maxiters?
 	{
-		double* soln2 = store.advance();
+		double* solnPos = store.advance();
 
 		PH_PrintToMainLog(env, "Iteration %d\n", iters);
 		PositiveRewRecursion posRewCompute(soln3, store, *vStateRews, rvars, num_rvars, iters, lower, min);
@@ -588,12 +610,12 @@ jboolean lower		// lower reward bound computation?
 		 * Pre-seeding: for min, set zeroStates, for max, set one states, else set -1
 		 */
 		for (i = 0; i < n; i++) {
-			soln2[i] = -1.0;
+			solnPos[i] = -1.0;
 			if (min && (*vZeroStates)[i]) {
-				soln2[i] = 0.0;
+				solnPos[i] = 0.0;
 			}
 			if (!min && (*vOneStates)[i]) {
-				soln2[i] = 1.0;
+				solnPos[i] = 1.0;
 			}
 		}
 
@@ -601,7 +623,7 @@ jboolean lower		// lower reward bound computation?
 			int taRew = vTaRews[i];
 
 			for (j = 0; j < n; j++) {
-				soln3[j] = soln2[j];
+				soln3[j] = solnPos[j];
 			}
 
 			posRewCompute.forAction(hddmsPositive->choices[i], taRew, transStateActRews);
@@ -611,18 +633,18 @@ jboolean lower		// lower reward bound computation?
 			// min/max
 			for (j = 0; j < n; j++) {
 				if (soln3[j] >= 0) {
-					if (soln2[j] < 0) {
-						soln2[j] = soln3[j];
+					if (solnPos[j] < 0) {
+						solnPos[j] = soln3[j];
 					} else if (min) {
-						if (soln3[j] < soln2[j]) soln2[j] = soln3[j];
+						if (soln3[j] < solnPos[j]) solnPos[j] = soln3[j];
 					} else {
-						if (soln3[j] > soln2[j]) soln2[j] = soln3[j];
+						if (soln3[j] > solnPos[j]) solnPos[j] = soln3[j];
 					}
 				}
 			}
 
-			name = "soln2 after action " + std::to_string(i);
-			print_vector(env, soln2, n, name.c_str());
+			name = "solnPos after action " + std::to_string(i);
+			print_vector(env, solnPos, n, name.c_str());
 		}
 
 		/*
@@ -630,34 +652,132 @@ jboolean lower		// lower reward bound computation?
 		 */
 		for (i = 0; i < n; i++) {
 			if (min && (*vOneStates)[i]) {
-				soln2[i] = 1.0;
+				solnPos[i] = 1.0;
 			}
 			if (!min && (*vZeroStates)[i]) {
-				soln2[i] = 0;
+				solnPos[i] = 0;
 			}
 		}
 
-		print_vector(env, soln2, n, "soln2 after postprocessing");
-		// soln2 still -1?
+		print_vector(env, solnPos, n, "solnPos after postprocessing");
 
-		// TODO Zero rewards
+		// ------------------ Zero reward fragment --------------------------
 
-		// check if we are done
+		// start iterations
+		int zIters = 0;
+		bool zDone = false;
+
+		// initialise with values computed with positive rewards
+		for (j = 0; j < n; j++) {
+			soln[j] = solnPos[j];
+			if (soln[j] < 0)  // no pos reward state
+				soln[j] = 0.0;
+		}
+
+		if (hddmsZero == NULL) {
+			zDone = true;
+		}
+
+		while (!zDone && zIters < max_iters) {
+			zIters++;
+
+			PH_PrintToMainLog(env, "Zero reward iteration %d\n", zIters);
+
+			// initialise array for storing mins/maxs to -1s
+			// (allows us to keep track of rows not visited)
+			for (i = 0; i < n; i++) {
+				soln2[i] = -1;
+			}
+
+			ZeroRewRecursion zeroRewCompute(soln, soln3);
+
+			// do matrix multiplication and min/max
+			for (i = 0; i < nmZero; i++) {
+				// start off all -1
+				// (allows us to keep track of rows not visited)
+				for (j = 0; j < n; j++) {
+					soln3[j] = -1;
+				}
+
+				// matrix multiply
+				zeroRewCompute.forAction(hddmsZero->choices[i]);
+
+				// min/max
+				for (j = 0; j < n; j++) {
+					if (soln3[j] >= 0) {
+						if (soln2[j] < 0) {
+							soln2[j] = soln3[j];
+						} else if (min) {
+							if (soln3[j] < soln2[j]) soln2[j] = soln3[j];
+						} else {
+							if (soln3[j] > soln2[j]) soln2[j] = soln3[j];
+						}
+					}
+				}
+			}
+
+			// do additional min/max for posRew
+			for (j = 0; j < n; j++) {
+				if (solnPos[j] >= 0) {
+					if (soln2[j] < 0) {
+						soln2[j] = solnPos[j];
+					} else if (min) {
+						if (solnPos[j] < soln2[j]) soln2[j] = solnPos[j];
+					} else {
+						if (solnPos[j] > soln2[j]) soln2[j] = solnPos[j];
+					}
+				}
+				assert(soln2[j] >= 0);
+			}
+
+			// check convergence
+			sup_norm = 0.0;
+			for (i = 0; i < n; i++) {
+				x = fabs(soln2[i] - soln[i]);
+				if (term_crit == TERM_CRIT_RELATIVE) {
+					x /= soln2[i];
+				}
+				if (x > sup_norm) sup_norm = x;
+			}
+			if (sup_norm < term_crit_param) {
+				zDone = true;
+			}
+
+			// print occasional status update
+			if ((util_cpu_time() - start3) > UPDATE_DELAY) {
+				PH_PrintToMainLog(env, "Iteration %d: max %sdiff=%f", zIters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
+				PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start2)/1000));
+				start3 = util_cpu_time();
+			}
+
+			print_vector(env, soln2, n, "after iteration");
+			// prepare for next iteration
+			tmpsoln = soln;
+			soln = soln2;
+			soln2 = tmpsoln;
+		}
+
+		// store computed values...
+		for (j = 0; j < n; j++) {
+			solnPos[j] = soln[j];
+		}
+
+		// check against thresholds if we are done
 		for (auto it = todo->begin(); it != todo->end(); ) {
 			int s = *it;
 			bool sDone = false;
 			switch (relOp) {
 			case LT:
-				sDone = soln2[s] < threshold;
+				sDone = soln[s] < threshold;
 				break;
 			case LEQ:
-				sDone = soln2[s] <= threshold;
+				sDone = soln[s] <= threshold;
 				break;
 			case GT:
-				sDone = soln2[s] > threshold;
+				sDone = soln[s] > threshold;
 				break;
 			case GEQ:
-				sDone = soln2[s] >= threshold;
+				sDone = soln[s] >= threshold;
 				break;
 			}
 
@@ -788,6 +908,8 @@ jboolean lower		// lower reward bound computation?
 
 	// free memory
 	if (hddmsPositive) delete hddmsPositive;
+	if (hddmsZero) delete hddmsZero;
+
 	if (vBase) delete vBase;
 	if (vOneStates) delete vOneStates;
 	if (vZeroStates) delete vZeroStates;
