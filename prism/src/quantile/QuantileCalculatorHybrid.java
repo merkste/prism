@@ -141,6 +141,9 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		qcc.debugVector(getLog(), maxRewForState, ndModel, "maxRewForState");
 		qcc.debugVector(getLog(), todo, ndModel, "todo");
 
+		qcc.debugDD(transPositive, "transPositive");
+		qcc.debugDD(transZero, "transZero");
+		
 		try {
 			DoubleVector soln =
 					PrismHybrid.NondetProbQuantile(transPositive,

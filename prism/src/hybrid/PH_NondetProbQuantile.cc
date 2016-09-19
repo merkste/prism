@@ -38,6 +38,8 @@
 #include "PrismHybridGlob.h"
 #include "jnipointer.h"
 #include "prism.h"
+#include "ExportIterations.h"
+#include <memory>
 #include <new>
 #include <limits>
 #include <string>
@@ -56,6 +58,7 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 //static int sm_dist_shift;
 //static int sm_dist_mask;
 //static double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
+static bool debug = false;
 
 static void print_vector(JNIEnv* env, double* v, int n, const char* name)
 {
@@ -186,7 +189,8 @@ struct PositiveRewRecursion {
 			//printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
 
 			assert(Cudd_IsConstant(tsaRew));
-			int rew = sRew.getValue(row_offset) + taRew + Cudd_V(tsaRew);
+			int rew = sRew.getValue(row_offset) + taRew + (int)Cudd_V(tsaRew);
+			//printf("rew = %d (%d + %d + %d)\n", rew, (int)sRew.getValue(row_offset), taRew, (int)Cudd_V(tsaRew));
 			// Compute the target level for this transition by
 			// doing the necessary subtraction:
 			//  upper bound = i - r
@@ -199,13 +203,8 @@ struct PositiveRewRecursion {
 			double storedValue;
 			if (rewLevel < 0) {
 				// the transitions with reward r are invalid
-				if (!min) {
-					// for max, we can simply ignore them
-					return;
-				} else {
-					// for min, we set the storedValue to 0
-					storedValue = 0.0;
-				}
+				// we set the storedValue to 0
+				storedValue = 0.0;
 			} else {
 				storedValue = store.getForLevel(rewLevel)[col_offset];
 			}
@@ -213,17 +212,23 @@ struct PositiveRewRecursion {
 			if (soln[row_offset] < 0) soln[row_offset] = 0;
 			double prob = hdd->type.val;
 			soln[row_offset] += storedValue * prob;
+			//printf("row = %d, stored=%g, probs=%g\n", row_offset, storedValue, prob);
 			return;
 		}
 
 		// otherwise recurse
 		DdNode *tsaRew_t, *tsaRew_e;
 		int index = rvars[level]->index;
-		if (Cudd_IsConstant(tsaRew) || index < tsaRew->index) {
+		if (Cudd_IsConstant(tsaRew)) {
 			tsaRew_t = tsaRew_e = tsaRew;
+			//printf("tsaRecursion (constant %g) %p %p %p: %d r=%d %d t=%d e=%d\n", Cudd_V(tsaRew), tsaRew, tsaRew_t, tsaRew_e, level, rvars[level]->index, tsaRew->index, tsaRew_t->index, tsaRew_e->index);
+		} else if (index < tsaRew->index) {
+			tsaRew_t = tsaRew_e = tsaRew;
+			// printf("tsaRecursion (same) %p %p %p: l=%d r=%d %d t=%d e=%d\n", tsaRew, tsaRew_t, tsaRew_e, level, rvars[level]->index, tsaRew->index, tsaRew_t->index, tsaRew_e->index);
 		} else {
 			tsaRew_t = Cudd_T(tsaRew);
 			tsaRew_e = Cudd_E(tsaRew);
+			// printf("tsaRecursion (recur) %p %p %p: l=%d r=%d %d t=%d e=%d\n", tsaRew, tsaRew_t, tsaRew_e, level, rvars[level]->index, tsaRew->index, tsaRew_t->index, tsaRew_e->index);
 		}
 
 		e = hdd->type.kids.e;
@@ -450,6 +455,7 @@ jboolean lower		// lower reward bound computation?
 	std::vector<bool> *vOneStates = NULL, *vZeroStates = NULL;
 	std::list<long> *todo = NULL, *infStateList = NULL;
 	int* vTaRews = NULL;
+	DdNode** vTsaRews = NULL;
 	// timing stuff
 	long start1, start2, start3, stop;
 	double time_taken, time_for_setup, time_for_iters;
@@ -555,13 +561,26 @@ jboolean lower		// lower reward bound computation?
 				return ptr_to_jlong(NULL);
 			}
 			vTaRews[i] = iv;
-			PH_PrintToMainLog(env, "taRew[%d] = %d\n", i, iv);
+			if (debug) {
+				PH_PrintToMainLog(env, "taRew[%d] = %d\n", i, iv);
+			}
 			Cudd_RecursiveDeref(ddman, ta);
 		} else {
 			PH_SetErrorMessage("Something went quite wrong (1)");
 			// TODO: Memory leak!
 			return ptr_to_jlong(NULL);
 		}
+	}
+
+	PH_PrintToMainLog(env, "Allocating/populating storage for state-action rewards (for %d actions)... \n", nm);
+	vTsaRews = new DdNode*[nm];
+	for (i = 0; i < nm; i++) {
+		DdNode* cube = hddmsPositive->cubes[i];
+		Cudd_Ref(cube);
+		Cudd_Ref(transStateActRews);
+		DdNode* tsa = DD_Apply(ddman, APPLY_TIMES, cube, transStateActRews);
+		tsa = DD_MaxAbstract(ddman, tsa, ndvars, num_ndvars);
+		vTsaRews[i] = tsa;
 	}
 
 	// print total memory usage
@@ -586,8 +605,6 @@ jboolean lower		// lower reward bound computation?
 	}
 
 	store.storeForLevel(0, *vBase);
-	delete vBase;
-	vBase = NULL;
 
 	// get setup time
 	stop = util_cpu_time();
@@ -597,13 +614,43 @@ jboolean lower		// lower reward bound computation?
 
 	PH_PrintToMainLog(env, "\nStarting iterations...\n");
 
-	bool done = false;
+	iters = 0;
+	// check against thresholds if we are done (for i = 0)
+	for (auto it = todo->begin(); it != todo->end(); ) {
+		int s = *it;
+		bool sDone = false;
+		switch (relOp) {
+		case LT:
+			sDone = vBase->getValue(s) < threshold;
+			break;
+		case LEQ:
+			sDone = vBase->getValue(s) <= threshold;
+			break;
+		case GT:
+			sDone = vBase->getValue(s) > threshold;
+			break;
+		case GEQ:
+			sDone = vBase->getValue(s) >= threshold;
+			break;
+		}
+
+		if (sDone) {
+			solnQuantiles[s] = iters;
+			it = todo->erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	done = todo->empty();
+
 	iters = 1;
 	while (!done)  // TODO maxiters?
 	{
 		double* solnPos = store.advance();
 
-		PH_PrintToMainLog(env, "Iteration %d\n", iters);
+		PH_PrintToMainLog(env, "Quantile iteration %d\n", iters);
+		long startPosRew = util_cpu_time();
 		PositiveRewRecursion posRewCompute(soln3, store, *vStateRews, rvars, num_rvars, iters, lower, min);
 
 		/*
@@ -626,9 +673,11 @@ jboolean lower		// lower reward bound computation?
 				soln3[j] = solnPos[j];
 			}
 
-			posRewCompute.forAction(hddmsPositive->choices[i], taRew, transStateActRews);
-			std::string name = "soln3 after action " + std::to_string(i);
-			print_vector(env, soln3, n, name.c_str());
+			posRewCompute.forAction(hddmsPositive->choices[i], taRew, vTsaRews[i]);
+			if (debug) {
+				std::string name = "soln3 after action " + std::to_string(i);
+				print_vector(env, soln3, n, name.c_str());
+			}
 
 			// min/max
 			for (j = 0; j < n; j++) {
@@ -643,8 +692,10 @@ jboolean lower		// lower reward bound computation?
 				}
 			}
 
-			name = "solnPos after action " + std::to_string(i);
-			print_vector(env, solnPos, n, name.c_str());
+			if (debug) {
+				std::string name = "solnPos after action " + std::to_string(i);
+				print_vector(env, solnPos, n, name.c_str());
+			}
 		}
 
 		/*
@@ -659,7 +710,10 @@ jboolean lower		// lower reward bound computation?
 			}
 		}
 
-		print_vector(env, solnPos, n, "solnPos after postprocessing");
+		if (debug) {
+			print_vector(env, solnPos, n, "solnPos after postprocessing");
+		}
+		PH_PrintToMainLog(env, "Quantile iteration %d, positive rewards in %.2f seconds\n", iters, ((double)(util_cpu_time() - startPosRew)/1000));
 
 		// ------------------ Zero reward fragment --------------------------
 
@@ -678,10 +732,9 @@ jboolean lower		// lower reward bound computation?
 			zDone = true;
 		}
 
+		long startZeroRew = start3 = util_cpu_time();
 		while (!zDone && zIters < max_iters) {
 			zIters++;
-
-			PH_PrintToMainLog(env, "Zero reward iteration %d\n", zIters);
 
 			// initialise array for storing mins/maxs to -1s
 			// (allows us to keep track of rows not visited)
@@ -744,18 +797,22 @@ jboolean lower		// lower reward bound computation?
 			}
 
 			// print occasional status update
-			if ((util_cpu_time() - start3) > UPDATE_DELAY) {
-				PH_PrintToMainLog(env, "Iteration %d: max %sdiff=%f", zIters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
-				PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start2)/1000));
+			if ((util_cpu_time() - start3) > 0) {//UPDATE_DELAY) {
+				PH_PrintToMainLog(env, "Quantile iteration %d, zero reward iteration %d: max %sdiff=%f", iters, zIters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
+				PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start3)/1000));
 				start3 = util_cpu_time();
 			}
 
-			print_vector(env, soln2, n, "after iteration");
+			if (debug)
+				print_vector(env, soln2, n, "after iteration");
+
 			// prepare for next iteration
 			tmpsoln = soln;
 			soln = soln2;
 			soln2 = tmpsoln;
 		}
+
+		PH_PrintToMainLog(env, "Quantile iteration %d, zero reward in %.2f seconds\n", iters, ((double)(util_cpu_time() - startZeroRew)/1000));
 
 		// store computed values...
 		for (j = 0; j < n; j++) {
@@ -788,107 +845,18 @@ jboolean lower		// lower reward bound computation?
 				++it;
 			}
 		}
+		done = todo->empty();
 
 		++iters;
-		done = todo->empty();
 	}
 
-
-#if 0
-		// start iterations
-	iters = 0;
-	done = false;
-	
-	while (!done && iters < max_iters) {
-		
-		iters++;
-		
-		// initialise array for storing mins/maxs to -1s
-		// (allows us to keep track of rows not visited)
-		for (i = 0; i < n; i++) {
-			soln2[i] = -1;
-		}
-		
-		// do matrix multiplication and min/max
-		for (i = 0; i < nm; i++) {
-			
-			// store stuff to be used globally
-			hddm = hddms->choices[i];
-			hdd = hddm->top;
-			zero = hddm->zero;
-			num_levels = hddm->num_levels;
-			compact_sm = hddm->compact_sm;
-			if (compact_sm) {
-				sm_dist = hddm->dist;
-				sm_dist_shift = hddm->dist_shift;
-				sm_dist_mask = hddm->dist_mask;
-			}
-			
-			// start off all -1
-			// (allows us to keep track of rows not visited)
-			for (j = 0; j < n; j++) {
-				soln3[j] = -1;
-			}
-			
-			// matrix multiply
-			mult_rec(hdd, 0, 0, 0);
-			
-			// min/max
-			for (j = 0; j < n; j++) {
-				if (soln3[j] >= 0) {
-					if (soln2[j] < 0) {
-						soln2[j] = soln3[j];
-					} else if (min) {
-						if (soln3[j] < soln2[j]) soln2[j] = soln3[j];
-					} else {
-						if (soln3[j] > soln2[j]) soln2[j] = soln3[j];
-					}
-				}
-			}
-		}
-		
-		// sort out anything that's still -1
-		// (should just be yes/no states)
-		for (i = 0; i < n; i++) {
-			if (soln2[i] < 0) {
-				soln2[i] = (!compact_y) ? (yes_vec[i]) : (yes_dist->dist[yes_dist->ptrs[i]]);
-			}
-		}
-		
-		// check convergence
-		sup_norm = 0.0;
-		for (i = 0; i < n; i++) {
-			x = fabs(soln2[i] - soln[i]);
-			if (term_crit == TERM_CRIT_RELATIVE) {
-				x /= soln2[i];
-			}
-			if (x > sup_norm) sup_norm = x;
-		}
-		if (sup_norm < term_crit_param) {
-			done = true;
-		}
-		
-		// print occasional status update
-		if ((util_cpu_time() - start3) > UPDATE_DELAY) {
-			PH_PrintToMainLog(env, "Iteration %d: max %sdiff=%f", iters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
-			PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start2)/1000));
-			start3 = util_cpu_time();
-		}
-		
-		// prepare for next iteration
-		tmpsoln = soln;
-		soln = soln2;
-		soln2 = tmpsoln;
-	}
-#endif
-	
 	// stop clocks
 	stop = util_cpu_time();
 	time_for_iters = (double)(stop - start2)/1000;
 	time_taken = (double)(stop - start1)/1000;
 	
 	// print iterations/timing info
-	PH_PrintToMainLog(env, "\nQuantile iterations: %d iterations in %.2f seconds (average %.6f, setup %.2f)\n", iters, time_taken, time_for_iters/iters, time_for_setup);
+	PH_PrintToMainLog(env, "Quantile iterations: %d iterations in %.2f seconds (average %.6f, setup %.2f)\n", iters, time_taken, time_for_iters/iters, time_for_setup);
 
 	// if the iterative method didn't terminate, this is an error
 	if (!done) { delete soln; soln = NULL; PH_SetErrorMessage("Iterative method did not converge within %d iterations.\nConsider using a different numerical method or increasing the maximum number of iterations", iters); }
@@ -901,9 +869,11 @@ jboolean lower		// lower reward bound computation?
 	}
 
 	// TODO: correct cleanup on error
-	PH_PrintToMainLog(env, "Results\n");
-	for (i=0;i<n;i++) {
-		PH_PrintToMainLog(env, "%d = %g\n", i, solnQuantiles[i]);
+	if (debug) {
+		PH_PrintToMainLog(env, "Results\n");
+		for (i=0;i<n;i++) {
+			PH_PrintToMainLog(env, "%d = %g\n", i, solnQuantiles[i]);
+		}
 	}
 
 	// free memory
@@ -915,6 +885,11 @@ jboolean lower		// lower reward bound computation?
 	if (vZeroStates) delete vZeroStates;
 	if (vStateRews) delete vStateRews;
 	if (vTaRews) delete[] vTaRews;
+	if (vTsaRews) {
+		for (i = 0; i < nm; i++)
+			Cudd_RecursiveDeref(ddman, vTsaRews[i]);
+		delete[] vTsaRews;
+	}
 
 	if (todo) delete todo;
 	if (infStateList) delete infStateList;
@@ -936,7 +911,8 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 	if (vec->compact()) PH_PrintToMainLog(env, "[dist=%d, compact] ", vec->dist->num_dist);
 	PH_PrintMemoryToMainLog(env, "[", vec->getKb(), "]\n");
 
-	print_vector(env, *vec, name);
+	if (debug)
+		print_vector(env, *vec, name);
 	return vec;
 }
 
