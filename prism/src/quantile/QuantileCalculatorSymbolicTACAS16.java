@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import common.StopWatch;
 import explicit.ExportIterations;
@@ -491,10 +492,12 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 
 		boolean printResultsAsTheyHappen = true;
 
-		List<JDDNode> results = new ArrayList<JDDNode>();
-		List<JDDNode> todos = new ArrayList<JDDNode>();
-		for (@SuppressWarnings("unused") Double threshold : thresholdsP) {
-			results.add(JDD.PLUS_INFINITY.copy());
+        TreeMap<Double, JDDNode> results = new TreeMap<Double, JDDNode>();
+        List<JDDNode> todos = new ArrayList<JDDNode>();
+		for (double threshold : thresholdsP) {
+			if (!results.containsKey(threshold)) {
+				results.put(threshold, JDD.PLUS_INFINITY.copy());
+			}
 
 			JDDNode todo = statesOfInterest.copy();
 			todo = JDD.And(todo, model.getReach().copy());
@@ -532,9 +535,8 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			if (todo.equals(JDD.ZERO) && printResultsAsTheyHappen) {
 				// we newly have calculated the values for this threshold
 
-				StateValuesMTBDD sv = new StateValuesMTBDD(results.get(t).copy(), model);
-
-				qcc.getLog().println("\nFYI: Results for threshold "+thresholdsP.get(t)+":");
+				StateValuesMTBDD sv = new StateValuesMTBDD(results.get(threshold).copy(), model);
+				qcc.getLog().println("\nFYI: Results for threshold " + threshold + ":");
 				sv.printFiltered(qcc.getLog(), statesOfInterest);
 				sv.clear();
 			}
@@ -593,7 +595,7 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 				JDDNode xThresholdNew = JDD.And(todo.copy(), xThreshold);
 				if (qcc.debugDetailed()) qcc.debugVector(getLog(),  xThresholdNew, model, "xThresholdNew");
 
-				JDDNode result = results.get(t);
+				JDDNode result = results.get(threshold);
 
 				// set values for xThresholdNew
 				int result_value = iteration + result_adjustment;
@@ -610,14 +612,13 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 
 				todoAll = JDD.Or(todoAll, todo.copy());
 				todos.set(t, todo);
-				results.set(t, result);
+				results.put(threshold, result);
 				
 				if (todo.equals(JDD.ZERO) && printResultsAsTheyHappen) {
 					// we newly have calculated the values for this threshold
 
-					StateValuesMTBDD sv = new StateValuesMTBDD(results.get(t).copy(), model);
-
-					qcc.getLog().println("\nFYI: Results for threshold "+thresholdsP.get(t)+":");
+					StateValuesMTBDD sv = new StateValuesMTBDD(results.get(threshold).copy(), model);
+					qcc.getLog().println("\nFYI: Results for threshold " + threshold + ":");
 					sv.printFiltered(qcc.getLog(), statesOfInterest);
 					sv.clear();
 				}
@@ -651,19 +652,20 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 		}
 
 		if (results.size()==1) {
-			return new StateValuesMTBDD(results.get(0), model);
+			return new StateValuesMTBDD(results.firstEntry().getValue(), model);
 		} else {
 			// multiple threshold case
 			
 			// return results for last threshold (extra reference)
-			StateValuesMTBDD svResult = new StateValuesMTBDD(results.get(results.size()-1).copy(), model);
+			double lastThreshold = thresholdsP.get(thresholdsP.size() - 1);
+			StateValuesMTBDD svResult = new StateValuesMTBDD(results.get(lastThreshold).copy(), model);
 			
 			// print all results
-			for (int t = 0; t < results.size(); t++) {
-				StateValuesMTBDD sv = new StateValuesMTBDD(results.get(t), model);
+			for (Entry<Double, JDDNode> entry : results.entrySet()) {
+				StateValuesMTBDD sv = new StateValuesMTBDD(entry.getValue(), model);
 
 				qcc.getLog().printSeparator();
-				qcc.getLog().println("\nResults for threshold "+thresholdsP.get(t)+":");
+				qcc.getLog().println("\nResults for threshold " + entry.getKey() + ":");
 				sv.printFiltered(qcc.getLog(), statesOfInterest);
 				sv.clear();
 			}
