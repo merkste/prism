@@ -5,6 +5,7 @@ import java.util.Set;
 
 import common.iterable.collections.AdaptiveSet;
 import explicit.quantile.dataStructure.previousValues.PreviousValues;
+import explicit.ExportIterations;
 import explicit.quantile.dataStructure.previousValues.AllStatesUniformSteps;
 import explicit.quantile.dataStructure.previousValues.PositiveRewardSuccessorsUniformSteps;
 import explicit.quantile.dataStructure.previousValues.PositiveRewardSuccessorsIndividualSteps;
@@ -56,6 +57,11 @@ public class CalculatedValues
 		previousValues = PreviousValuesStorage.valueOf(storage).getPreviousValuesStorage(model, considerParallelComputations);
 		currentValues = new double[model.getNumStates()];
 		Arrays.fill(currentValues, UNDEFINED);
+	}
+	
+	public void exportCurrentValues(ExportIterations export)
+	{
+		export.exportVector(currentValues);
 	}
 
 	public double[] getCurrentValues()

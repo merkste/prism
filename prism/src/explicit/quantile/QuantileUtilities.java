@@ -27,6 +27,7 @@ import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import prism.ModelType;
 import prism.PrismException;
+import prism.PrismFileLog;
 import prism.PrismLangException;
 import prism.PrismLog;
 import prism.PrismSettings;
@@ -37,6 +38,7 @@ import explicit.CTMCModelChecker;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
+import explicit.ExportIterations;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MinMax;
@@ -466,6 +468,10 @@ public class QuantileUtilities
 		final long timer = System.currentTimeMillis();
 		initialiseCalculations(context);
 		CalculatedValues values = new CalculatedValues(context.getModel(), probModelChecker.getSettings().getString(PrismSettings.QUANTILE_VALUES_STORAGE), calculateZeroRewardStatesInParallel());
+		ExportIterations iterationsExport = null;
+		if (probModelChecker.getSettings().getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
+			iterationsExport = new ExportIterations("Quantile (explicit)", PrismFileLog.create("quantile.html"));
+		}
 		getLog().println("\n" + values.previousValuesInfoString());
 		int currentReward = 0;
 		//just for logging reasons
@@ -484,6 +490,9 @@ public class QuantileUtilities
 					getLog().println("s_" + state + " " + context.getModel().getModel().getStatesList().get(state) + " -> " + values.getCurrentValue(state));
 				getLog().println();
 			}
+			if (iterationsExport != null) {
+				values.exportCurrentValues(iterationsExport);
+			}
 			assert (values.allStatesAreDefined()) : "NOT all states' values have been computed!";
 			updateValues4Logging(valuesForCurrentIteration, context.getStatesOfInterest(), values.getCurrentValues());
 			setQuantileForReward(currentReward, context, values.getCurrentValues(), timer);
@@ -496,6 +505,11 @@ public class QuantileUtilities
 			values.mergeCurrentValuesIntoPreviousValues(currentReward);
 			currentReward++;
 		}
+
+		if (iterationsExport != null) {
+			iterationsExport.close();
+		}
+
 		return prepareResults(context.getModel().getNumStates(), timer, currentReward+1, valuesForCurrentIteration, valuesForPreviousIteration);
 	}
 
