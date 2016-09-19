@@ -26,6 +26,7 @@
 
 package explicit;
 
+import dv.DoubleVector;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismLog;
@@ -35,7 +36,7 @@ import prism.PrismLog;
  * a numerical iteration algorithm.
  *
  */
-class ExportIterations {
+public class ExportIterations {
 	private static String defaultFilename = "iterations.html";
 
 	private PrismLog log;
@@ -86,18 +87,48 @@ class ExportIterations {
 		for (int i = 0; i < soln.length; i++) {
 			if (i>0) log.print(",");
 			double d = soln[i];
-			if (d == Double.POSITIVE_INFINITY) {
-				log.print("Infinity");
-			} else if (d == Double.NEGATIVE_INFINITY) {
-				log.print("-Infinity");
-			} else {
-				log.print(d);
-			}
+			exportValue(d);
 		}
 		log.print("]," + type + ");\n");
 	}
 
-	/** Print footer, export log */
+	/**
+	 * Export the given vector.
+	 * @param soln the value vector
+	 */
+	public void exportVector(DoubleVector soln)
+	{
+		exportVector(soln, 0);
+	}
+
+	/**
+	 * Export the given vector.
+	 * @param soln the value vector
+	 * @param type the vector type (0 = normal, VI from below, 1 = VI from above)
+	 */
+	public void exportVector(DoubleVector soln, int type) 
+	{
+		log.print("addVector([");
+		for (int i = 0, n = soln.getSize(); i < n; i++) {
+			if (i>0) log.print(",");
+			double d = soln.getElement(i);
+			exportValue(d);
+		}
+		log.print("]," + type + ");\n");
+	}
+
+	private void exportValue(double d)
+	{
+		if (d == Double.POSITIVE_INFINITY) {
+			log.print("Infinity");
+		} else if (d == Double.NEGATIVE_INFINITY) {
+			log.print("-Infinity");
+		} else {
+			log.print(d);
+		}
+	}
+
+/** Print footer, export log */
 	public void close()
 	{
 		log.println("init();\n</script>\n</body></html>");
