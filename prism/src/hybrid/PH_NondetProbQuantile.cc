@@ -45,19 +45,9 @@
 #include <string>
 
 // local prototypes
-static void mult_rec(HDDNode *hdd, int level, int row_offset, int col_offset);
-static void mult_rm(RMSparseMatrix *rmsm, int row_offset, int col_offset);
-static void mult_cmsr(CMSRSparseMatrix *cmsrsm, int row_offset, int col_offset);
 static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int num_vars, ODDNode *odd, double* kbt, const char* name);
 
-// globals (used by local functions)
-//static HDDNode *zero;
-//static int num_levels;
-//static bool compact_sm;
-//static double *sm_dist;
-//static int sm_dist_shift;
-//static int sm_dist_mask;
-//static double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
+// global
 static const bool debug = false;
 
 static void print_vector(JNIEnv* env, double* v, int n, const char* name)
@@ -455,13 +445,9 @@ jboolean lower		// lower reward bound computation?
 //	DdNode *a = NULL;
 	// model stats
 	int n, nm, nmZero;
-	// flags
-	bool compact_y;
 	// matrix mtbdds
 	HDDMatrices *hddmsPositive = NULL;
 	HDDMatrices *hddmsZero = NULL;
-	HDDMatrix *hddm = NULL;
-	HDDNode *hdd = NULL;
 	// vectors
 	double *tmpsoln = NULL;
 	double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
@@ -965,64 +951,3 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 }
 
 //------------------------------------------------------------------------------
-#if 0
-//-----------------------------------------------------------------------------------
-
-static void mult_rm(RMSparseMatrix *rmsm, int row_offset, int col_offset)
-{
-	int i2, j2, l2, h2;
-	int sm_n = rmsm->n;
-	int sm_nnz = rmsm->nnz;
-	double *sm_non_zeros = rmsm->non_zeros;
-	unsigned char *sm_row_counts = rmsm->row_counts;
-	int *sm_row_starts = (int *)rmsm->row_counts;
-	bool sm_use_counts = rmsm->use_counts;
-	unsigned int *sm_cols = rmsm->cols;
-	
-	// loop through rows of submatrix
-	l2 = sm_nnz; h2 = 0;
-	for (i2 = 0; i2 < sm_n; i2++) {
-		
-		// loop through entries in this row
-		if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
-		else { l2 = h2; h2 += sm_row_counts[i2]; }
-		for (j2 = l2; j2 < h2; j2++) {
-			int r = row_offset + i2;
-			if (soln3[r] < 0) soln3[r] = 0;
-			soln3[r] += soln[col_offset + sm_cols[j2]] * sm_non_zeros[j2];
-			//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + sm_cols[j2], sm_non_zeros[j2]);
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------------
-
-static void mult_cmsr(CMSRSparseMatrix *cmsrsm, int row_offset, int col_offset)
-{
-	int i2, j2, l2, h2;
-	int sm_n = cmsrsm->n;
-	int sm_nnz = cmsrsm->nnz;
-	unsigned char *sm_row_counts = cmsrsm->row_counts;
-	int *sm_row_starts = (int *)cmsrsm->row_counts;
-	bool sm_use_counts = cmsrsm->use_counts;
-	unsigned int *sm_cols = cmsrsm->cols;
-	
-	// loop through rows of submatrix
-	l2 = sm_nnz; h2 = 0;
-	for (i2 = 0; i2 < sm_n; i2++) {
-		
-		// loop through entries in this row
-		if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
-		else { l2 = h2; h2 += sm_row_counts[i2]; }
-		for (j2 = l2; j2 < h2; j2++) {
-			int r = row_offset + i2;
-			if (soln3[r] < 0) soln3[r] = 0;
-			soln3[r] += soln[col_offset + (int)(sm_cols[j2] >> sm_dist_shift)] * sm_dist[(int)(sm_cols[j2] & sm_dist_mask)];
-			//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + (int)(sm_cols[j2] >> sm_dist_shift), sm_dist[(int)(sm_cols[j2] & sm_dist_mask)]);
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
-
-#endif
