@@ -396,8 +396,6 @@ jlong __jlongpointer _base,   // base probabilities (x_s,0)
 jlong __jlongpointer o,	// 'one' states (always value 1)
 jlong __jlongpointer z,	// 'zero' states (always value 0)
 jlong __jlongpointer _infStates,	// 'infinity' states
-jlong __jlongpointer _sPos,	// 'maybe' states (at least one positive reward transition)
-jlong __jlongpointer _sZero,	// 'maybe' states (with at least one zero reward transition)
 jlong __jlongpointer _maxRewForState,	// max reward per state
 jlong __jlongpointer _statesOfInterest,		// states of interest
 jstring _thresholdOp,  // the threshold operator
@@ -421,8 +419,6 @@ jboolean lower		// lower reward bound computation?
 	DdNode *oneStates = jlong_to_DdNode(o);	// 'one' states (always value 1)
 	DdNode *zeroStates = jlong_to_DdNode(z);	// 'zero' states (always value 0)
 	DdNode *infStates = jlong_to_DdNode(_infStates);	// 'infinity' states
-	DdNode *statesWithPos = jlong_to_DdNode(_sPos);	// 'maybe' states (at least one positive reward transition)
-	DdNode *statesWithZero = jlong_to_DdNode(_sZero);	// 'maybe' states (with at least one zero reward transition)
 	DdNode *maxRewForState = jlong_to_DdNode(_maxRewForState);	// max reward per state
 	DdNode *statesOfInterest = jlong_to_DdNode(_statesOfInterest);	// states of interest
 

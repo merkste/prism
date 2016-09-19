@@ -234,12 +234,12 @@ public class PrismHybrid
 
 	// prob quantile (nondeterministic/mdp)
 	private static native long PH_NondetProbQuantile(long transPositive, long transZero, long odd, long rows, int nrv, long cols, int ncv, long nondet, int nndv,
-	                                                 long srew, long tarew, long tsarew, long base, long one, long zero, long inf, long sPosRew, long sZeroRew, long maxRewForState, long statesOfInterest, String thresholdOp, double threshold, boolean min, boolean lower);
+	                                                 long srew, long tarew, long tsarew, long base, long one, long zero, long inf, long maxRewForState, long statesOfInterest, String thresholdOp, double threshold, boolean min, boolean lower);
 	public static DoubleVector NondetProbQuantile(JDDNode transPositive, JDDNode transZero, ODDNode odd, JDDVars rows, JDDVars cols, JDDVars nondet,
-	                                              JDDNode srew, JDDNode tarew, JDDNode tsarew, JDDNode base, JDDNode one, JDDNode zero, JDDNode inf, JDDNode sPosRew, JDDNode sZeroRew, JDDNode maxRewForState, JDDNode statesOfInterest, String thresholdOp, double threshold, boolean min, boolean lower) throws PrismException
+	                                              JDDNode srew, JDDNode tarew, JDDNode tsarew, JDDNode base, JDDNode one, JDDNode zero, JDDNode inf, JDDNode maxRewForState, JDDNode statesOfInterest, String thresholdOp, double threshold, boolean min, boolean lower) throws PrismException
 	{
 		long ptr = PH_NondetProbQuantile(transPositive.ptr(), transZero.ptr(), odd.ptr(), rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(),
-		                                 srew.ptr(), tarew.ptr(), tsarew.ptr(), base.ptr(), one.ptr(), zero.ptr(), inf.ptr(), sPosRew.ptr(), sZeroRew.ptr(), maxRewForState.ptr(), statesOfInterest.ptr(), thresholdOp, threshold, min, lower);
+		                                 srew.ptr(), tarew.ptr(), tsarew.ptr(), base.ptr(), one.ptr(), zero.ptr(), inf.ptr(), maxRewForState.ptr(), statesOfInterest.ptr(), thresholdOp, threshold, min, lower);
 		if (ptr == 0) throw new PrismException(getErrorMessage());
 		return new DoubleVector(ptr, (int)(odd.getEOff() + odd.getTOff()));
 	}

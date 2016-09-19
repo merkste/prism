@@ -138,10 +138,10 @@ JNIEXPORT jlong JNICALL Java_hybrid_PrismHybrid_PH_1NondetReachReward
 /*
  * Class:     hybrid_PrismHybrid
  * Method:    PH_NondetProbQuantile
- * Signature: (JJJJIJIJIJJJJJJJJJJJLjava/lang/String;DZZ)J
+ * Signature: (JJJJIJIJIJJJJJJJJJLjava/lang/String;DZZ)J
  */
 JNIEXPORT jlong JNICALL Java_hybrid_PrismHybrid_PH_1NondetProbQuantile
-  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jint, jlong, jint, jlong, jint, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jstring, jdouble, jboolean, jboolean);
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jint, jlong, jint, jlong, jint, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jstring, jdouble, jboolean, jboolean);
 
 /*
  * Class:     hybrid_PrismHybrid

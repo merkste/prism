@@ -124,9 +124,6 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		JDDNode one = q.getOneStates(false);
 		JDDNode zero = q.getZeroStates(false);
 
-		JDDNode sPosRew = qcc.getStatesWithPosRewardTransitions();
-		JDDNode sZeroRew = qcc.getStatesWithZeroRewardTransitions();
-
 		JDDNode maxRewForState = qcc.getTransRewards();
 		maxRewForState = JDD.MaxAbstract(maxRewForState, ndModel.getAllDDColVars());
 		maxRewForState = JDD.MaxAbstract(maxRewForState, ndModel.getAllDDNondetVars());
@@ -136,8 +133,6 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		qcc.debugVector(getLog(), zero, ndModel, "zero");
 		qcc.debugVector(getLog(), one, ndModel, "one");
 		qcc.debugVector(getLog(), infinityStates, ndModel, "infinity");
-		qcc.debugVector(getLog(), sPosRew, ndModel, "sPosRew");
-		qcc.debugVector(getLog(), sZeroRew, ndModel, "sZeroRew");
 		qcc.debugVector(getLog(), maxRewForState, ndModel, "maxRewForState");
 		qcc.debugVector(getLog(), todo, ndModel, "todo");
 
@@ -161,8 +156,6 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 					                               one,
 					                               zero,
 					                               infinityStates,
-					                               sPosRew,
-					                               sZeroRew,
 					                               maxRewForState,
 					                               todo,
 					                               thresholdOp,
@@ -184,8 +177,6 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 			JDD.Deref(zero);
 			JDD.Deref(one);
 			JDD.Deref(infinityStates);
-			JDD.Deref(sPosRew);
-			JDD.Deref(sZeroRew);
 			JDD.Deref(maxRewForState);
 			JDD.Deref(todo);
 		}
