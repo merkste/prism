@@ -184,6 +184,34 @@ struct PositiveRewRecursion {
 		mult_rec(hddm->top, tsaRew, 0, 0, 0);
 	}
 
+	void handle_terminal(int row_offset, int col_offset, int tsaRew, double prob) {
+		int rew = sRew.getValue(row_offset) + taRew + tsaRew;
+		if (debug) printf("rew = %d (%d + %d + %d)\n", rew, (int)sRew.getValue(row_offset), taRew, tsaRew);
+		// Compute the target level for this transition by
+		// doing the necessary subtraction:
+		//  upper bound = i - r
+		//  lower bound = max{0, i-r}
+		int rewLevel = curIteration - rew;
+		if (lower && rewLevel < 0) {
+			rewLevel = 0;
+		}
+
+		double storedValue;
+		if (rewLevel < 0) {
+			// the transitions with reward r are invalid
+			// we set the storedValue to 0
+			storedValue = 0.0;
+		} else {
+			storedValue = store.getForLevel(rewLevel)[col_offset];
+		}
+
+		if (soln[row_offset] < 0) soln[row_offset] = 0;
+		soln[row_offset] += storedValue * prob;
+		if (debug) printf("row = %d, stored=%g, probs=%g, result=%g\n", row_offset, storedValue, prob, soln[row_offset]);
+		if (debug) printf("soln(%d)=%f\n", row_offset, soln[row_offset]);
+		return;
+	}
+
 	void mult_rec(HDDNode *hdd,  DdNode *tsaRew, int level, int row_offset, int col_offset)
 	{
 		HDDNode *e, *t;
@@ -209,31 +237,8 @@ struct PositiveRewRecursion {
 			if (debug) printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
 
 			assert(Cudd_IsConstant(tsaRew));
-			int rew = sRew.getValue(row_offset) + taRew + (int)Cudd_V(tsaRew);
-			if (debug) printf("rew = %d (%d + %d + %d)\n", rew, (int)sRew.getValue(row_offset), taRew, (int)Cudd_V(tsaRew));
-			// Compute the target level for this transition by
-			// doing the necessary subtraction:
-			//  upper bound = i - r
-			//  lower bound = max{0, i-r}
-			int rewLevel = curIteration - rew;
-			if (lower && rewLevel < 0) {
-				rewLevel = 0;
-			}
-
-			double storedValue;
-			if (rewLevel < 0) {
-				// the transitions with reward r are invalid
-				// we set the storedValue to 0
-				storedValue = 0.0;
-			} else {
-				storedValue = store.getForLevel(rewLevel)[col_offset];
-			}
-
-			if (soln[row_offset] < 0) soln[row_offset] = 0;
 			double prob = hdd->type.val;
-			soln[row_offset] += storedValue * prob;
-			if (debug) printf("row = %d, stored=%g, probs=%g, result=%g\n", row_offset, storedValue, prob, soln[row_offset]);
-			if (debug) printf("soln(%d)=%f\n", row_offset, soln[row_offset]);
+			handle_terminal(row_offset, col_offset, Cudd_V(tsaRew), prob);
 			return;
 		}
 
