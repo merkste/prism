@@ -58,17 +58,7 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 					@Override
 					public int getExtraActionVariableCount()
 					{
-						return 1;
-					}
-
-					public JDDNode tau()
-					{
-						return JDD.And(extraActionVars.getVar(0).copy(), originalModel.getAllDDNondetVars().allZero());
-					}
-
-					public JDDNode notTau()
-					{
-						return JDD.Not(extraActionVars.getVar(0).copy());
+						return 0;
 					}
 
 					@Override
@@ -76,19 +66,6 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 					{
 						JDDNode trans = qcc.getTransitionsWithReward(0);
 						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans_zero");
-						trans = JDD.Times(trans, notTau());
-						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans_zero'");
-
-						JDDNode statesWithoutZeroRewTrans = JDD.And(originalModel.getReach().copy(), JDD.Not(statesWithZeroRewTrans.copy()));
-						if (qcc.debugDetailed()) qcc.debugDD(statesWithoutZeroRewTrans.copy(), "statesWithoutZeroRewTrans");
-
-						JDDNode selfLoops = JDD.Identity(originalModel.getAllDDRowVars(), originalModel.getAllDDColVars());
-						selfLoops = JDD.And(selfLoops, statesWithoutZeroRewTrans);
-						selfLoops = JDD.And(tau(), selfLoops);
-						if (qcc.debugDetailed()) qcc.debugDD(selfLoops.copy(), "selfLoops'");
-
-						trans = JDD.Apply(JDD.MAX, trans, selfLoops);
-						if (qcc.debugDetailed()) qcc.debugDD(trans.copy(), "trans''");
 						return trans;
 					}
 
@@ -101,6 +78,11 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 					@Override
 					public JDDNode getReachableStates() {
 						return originalModel.getReach().copy();
+					}
+					
+					@Override
+					public boolean deadlocksAreFine() {
+						return true;
 					}
 				};
 				modelZeroRewFragment = mdp.getTransformed(transform);
