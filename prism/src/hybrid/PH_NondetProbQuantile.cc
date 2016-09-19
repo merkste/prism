@@ -58,7 +58,7 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 //static int sm_dist_shift;
 //static int sm_dist_mask;
 //static double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
-static bool debug = false;
+static const bool debug = false;
 
 static void print_vector(JNIEnv* env, double* v, int n, const char* name)
 {
@@ -74,6 +74,17 @@ static void print_vector(JNIEnv* env, PlainOrDistVector& v, const char* name)
 	long n=v.n;
 	for (long i=0;i<n;i++) {
 		PH_PrintToMainLog(env, "%ld: %g\n", i, v.getValue(i));
+	}
+}
+
+static void print_vector(JNIEnv* env, std::vector<bool>& v, const char* name)
+{
+	PH_PrintToMainLog(env, "Bitvector %s:\n", name);
+	long n=v.size();
+	for (long i=0;i<n;i++) {
+		if (v[i]) {
+			PH_PrintToMainLog(env, "%ld\n", i);
+		}
 	}
 }
 
@@ -186,11 +197,11 @@ struct PositiveRewRecursion {
 #endif
 		// or if we've reached the bottom
 		else if (level == num_levels) {
-			//printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
+			if (debug) printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
 
 			assert(Cudd_IsConstant(tsaRew));
 			int rew = sRew.getValue(row_offset) + taRew + (int)Cudd_V(tsaRew);
-			//printf("rew = %d (%d + %d + %d)\n", rew, (int)sRew.getValue(row_offset), taRew, (int)Cudd_V(tsaRew));
+			if (debug) printf("rew = %d (%d + %d + %d)\n", rew, (int)sRew.getValue(row_offset), taRew, (int)Cudd_V(tsaRew));
 			// Compute the target level for this transition by
 			// doing the necessary subtraction:
 			//  upper bound = i - r
@@ -212,7 +223,8 @@ struct PositiveRewRecursion {
 			if (soln[row_offset] < 0) soln[row_offset] = 0;
 			double prob = hdd->type.val;
 			soln[row_offset] += storedValue * prob;
-			//printf("row = %d, stored=%g, probs=%g\n", row_offset, storedValue, prob);
+			if (debug) printf("row = %d, stored=%g, probs=%g, result=%g\n", row_offset, storedValue, prob, soln[row_offset]);
+			if (debug) printf("soln(%d)=%f\n", row_offset, soln[row_offset]);
 			return;
 		}
 
@@ -294,9 +306,10 @@ struct ZeroRewRecursion {
 		}
 		// or if we've reached the bottom
 		else if (level == num_levels) {
-			//printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
+			if (debug) printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
 			if (soln3[row_offset] < 0) soln3[row_offset] = 0;
 			soln3[row_offset] += soln[col_offset] * hdd->type.val;
+			if (debug) printf("soln3(%d)=%f\n", row_offset, soln3[row_offset]);
 			return;
 		}
 		// otherwise recurse
@@ -334,7 +347,8 @@ struct ZeroRewRecursion {
 				int r = row_offset + i2;
 				if (soln3[r] < 0) soln3[r] = 0;
 				soln3[r] += soln[col_offset + sm_cols[j2]] * sm_non_zeros[j2];
-				//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + sm_cols[j2], sm_non_zeros[j2]);
+				if (debug) printf("(%d,%d)=%f\n", row_offset + i2, col_offset + sm_cols[j2], sm_non_zeros[j2]);
+				if (debug) printf("soln3(%d)=%f\n", r, soln3[r]);
 			}
 		}
 	}
@@ -360,7 +374,8 @@ struct ZeroRewRecursion {
 				int r = row_offset + i2;
 				if (soln3[r] < 0) soln3[r] = 0;
 				soln3[r] += soln[col_offset + (int)(sm_cols[j2] >> sm_dist_shift)] * sm_dist[(int)(sm_cols[j2] & sm_dist_mask)];
-				//printf("(%d,%d)=%f\n", row_offset + i2, col_offset + (int)(sm_cols[j2] >> sm_dist_shift), sm_dist[(int)(sm_cols[j2] & sm_dist_mask)]);
+				if (debug) printf("(%d,%d)=%f\n", row_offset + i2, col_offset + (int)(sm_cols[j2] >> sm_dist_shift), sm_dist[(int)(sm_cols[j2] & sm_dist_mask)]);
+				if (debug) printf("soln3(%d)=%f\n", r, soln3[r]);
 			}
 		}
 	}
@@ -517,7 +532,9 @@ jboolean lower		// lower reward bound computation?
 
 	PH_PrintToMainLog(env, "Allocating bitsets for one and zero states... ");
 	vZeroStates = mtbdd01_to_bool_vector(ddman, zeroStates, rvars, num_rvars, odd);
+	if (debug) print_vector(env, *vZeroStates, "zero states");
 	vOneStates = mtbdd01_to_bool_vector(ddman, oneStates, rvars, num_rvars, odd);
+	if (debug) print_vector(env, *vOneStates, "one states");
 
 	PH_PrintToMainLog(env, "Allocating list of states of interest... ");
 	todo = mtbdd01_to_list(ddman, statesOfInterest, rvars, num_rvars, odd);
@@ -651,32 +668,25 @@ jboolean lower		// lower reward bound computation?
 	done = todo->empty();
 
 	iters = 1;
-	while (!done)  // TODO maxiters?
+	while (!done)
 	{
 		double* solnPos = store.advance();
+
+		// reset solnPos to -1.0 everywhere
+		for (i = 0; i < n; i++) {
+			solnPos[i] = -1.0;
+		}
 
 		PH_PrintToMainLog(env, "Quantile iteration %d\n", iters);
 		long startPosRew = util_cpu_time();
 		PositiveRewRecursion posRewCompute(soln3, store, *vStateRews, rvars, num_rvars, iters, lower, min);
 
-		/*
-		 * Pre-seeding: for min, set zeroStates, for max, set one states, else set -1
-		 */
-		for (i = 0; i < n; i++) {
-			solnPos[i] = -1.0;
-			if (min && (*vZeroStates)[i]) {
-				solnPos[i] = 0.0;
-			}
-			if (!min && (*vOneStates)[i]) {
-				solnPos[i] = 1.0;
-			}
-		}
 
 		for (i = 0; i < nm; i++) {
 			int taRew = vTaRews[i];
 
 			for (j = 0; j < n; j++) {
-				soln3[j] = solnPos[j];
+				soln3[j] = -1;
 			}
 
 			posRewCompute.forAction(hddmsPositive->choices[i], taRew, vTsaRews[i]);
@@ -705,13 +715,12 @@ jboolean lower		// lower reward bound computation?
 		}
 
 		/*
-		 * Post-processing: for min, set OneStates, for max, set zero states
+		 * Post-processing: set one states and set zero states
 		 */
 		for (i = 0; i < n; i++) {
-			if (min && (*vOneStates)[i]) {
+			if ((*vOneStates)[i]) {
 				solnPos[i] = 1.0;
-			}
-			if (!min && (*vZeroStates)[i]) {
+			} else if ((*vZeroStates)[i]) {
 				solnPos[i] = 0;
 			}
 		}
@@ -730,7 +739,7 @@ jboolean lower		// lower reward bound computation?
 		// initialise with values computed with positive rewards
 		for (j = 0; j < n; j++) {
 			soln[j] = solnPos[j];
-			if (soln[j] < 0)  // no pos reward state
+			if (soln[j] < 0)  // for negative (no pos reward transitions) initialise with 0
 				soln[j] = 0.0;
 		}
 
@@ -741,6 +750,11 @@ jboolean lower		// lower reward bound computation?
 		long startZeroRew = start3 = util_cpu_time();
 		while (!zDone && zIters < max_iters) {
 			zIters++;
+
+			if (debug) {
+				std::string name = "soln for zIters = " + std::to_string(zIters);
+				print_vector(env, soln, n, name.c_str());
+			}
 
 			// initialise array for storing mins/maxs to -1s
 			// (allows us to keep track of rows not visited)
@@ -761,6 +775,11 @@ jboolean lower		// lower reward bound computation?
 				// matrix multiply
 				zeroRewCompute.forAction(hddmsZero->choices[i]);
 
+				if (debug) {
+					std::string name = "soln3 for zIters = " + std::to_string(zIters) + " and action " + std::to_string(i);
+					print_vector(env, soln3, n, name.c_str());
+				}
+
 				// min/max
 				for (j = 0; j < n; j++) {
 					if (soln3[j] >= 0) {
@@ -773,11 +792,25 @@ jboolean lower		// lower reward bound computation?
 						}
 					}
 				}
+
+				if (debug) {
+					std::string name = "soln2 for zIters = " + std::to_string(zIters) + " and action " + std::to_string(i);
+					print_vector(env, soln2, n, name.c_str());
+				}
 			}
 
-			// do additional min/max for posRew
+			if (debug) {
+				std::string name = "soln2 for zIters = " + std::to_string(zIters) +" after actions";
+				print_vector(env, soln2, n, name.c_str());
+			}
+
+			// do additional min/max for posRew, reset zero/one states
 			for (j = 0; j < n; j++) {
-				if (solnPos[j] >= 0) {
+				if ((*vOneStates)[j]) {
+					soln2[j] = 1.0;
+				} else if ((*vZeroStates)[j]) {
+					soln2[j] = 0.0;
+				} else if (solnPos[j] >= 0) {
 					if (soln2[j] < 0) {
 						soln2[j] = solnPos[j];
 					} else if (min) {
@@ -787,6 +820,11 @@ jboolean lower		// lower reward bound computation?
 					}
 				}
 				assert(soln2[j] >= 0);
+			}
+
+			if (debug) {
+				std::string name = "soln2 for zIters = " + std::to_string(zIters) +" after min/max with solnPos";
+				print_vector(env, soln2, n, name.c_str());
 			}
 
 			// check convergence
@@ -803,7 +841,7 @@ jboolean lower		// lower reward bound computation?
 			}
 
 			// print occasional status update
-			if ((util_cpu_time() - start3) > 0) {//UPDATE_DELAY) {
+			if ((util_cpu_time() - start3) > UPDATE_DELAY) {
 				PH_PrintToMainLog(env, "Quantile iteration %d, zero reward iteration %d: max %sdiff=%f", iters, zIters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
 				PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start3)/1000));
 				start3 = util_cpu_time();

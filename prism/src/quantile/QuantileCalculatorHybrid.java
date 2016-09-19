@@ -27,7 +27,7 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 			throws PrismException
 	{
 		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
-		qcc.setDebugLevel(2);
+		// qcc.setDebugLevel(2);
 	}
 
 	@Override
@@ -141,9 +141,11 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		qcc.debugVector(getLog(), maxRewForState, ndModel, "maxRewForState");
 		qcc.debugVector(getLog(), todo, ndModel, "todo");
 
-		qcc.debugDD(transPositive, "transPositive");
-		qcc.debugDD(transZero, "transZero");
-		
+		if (qcc.debugDetailed()) {
+			qcc.debugDD(transPositive.copy(), "transPositive");
+			qcc.debugDD(transZero.copy(), "transZero");
+		}
+
 		try {
 			DoubleVector soln =
 					PrismHybrid.NondetProbQuantile(transPositive,
