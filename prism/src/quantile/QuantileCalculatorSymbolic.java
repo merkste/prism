@@ -1,7 +1,5 @@
 package quantile;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -17,11 +15,9 @@ import prism.Model;
 import prism.ModelType;
 import prism.NondetModel;
 import prism.NondetModelTransformation;
-import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
-import prism.PrismLog;
 import prism.PrismNative;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
