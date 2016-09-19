@@ -53,11 +53,10 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		}
 		NondetModel ndModel = (NondetModel) qcc.getModel();
 
-		if (thresholdsP.size() > 1) {
-			throw new PrismNotSupportedException("Search for quantile value only supported for a single threshold");
+		double[] thresholdValues = new double[thresholdsP.size()];
+		for (int i = 0; i< thresholdsP.size(); i++) {
+			thresholdValues[i] = thresholdsP.get(i);
 		}
-
-		double threshold = thresholdsP.get(0);
 		String thresholdOp = relOp.toString();
 
 		StopWatch timer = new StopWatch(mainLog);
@@ -67,31 +66,6 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		StateValuesMTBDD infinityStateValues = q.getInfinityStateValues();
 
 		timer.stop();
-
-		JDDNode todo = statesOfInterest.copy();
-		todo = JDD.And(todo, ndModel.getReach().copy());
-		qcc.debugVector(getLog(), todo, ndModel, "todo (1)");
-
-		JDDNode infinityStates = q.getInfinityStates(infinityStateValues, relOp, threshold);
-		infinityStates = JDD.And(infinityStates, ndModel.getReach().copy());
-
-		JDDNode todoAndInfinityStates = JDD.And(todo.copy(), infinityStates.copy());
-		
-		getLog().println("States where the quantile equals infinity (threshold "+threshold+"): " 
-				+ JDD.GetNumMintermsString(infinityStates, ndModel.getAllDDRowVars().n())
-				+ " overall, "
-				+ JDD.GetNumMintermsString(todoAndInfinityStates, ndModel.getAllDDRowVars().n())
-				+ " of the states of interest.");
-
-		if (qcc.debugDetailed()) qcc.debugDD(infinityStates.copy(), "infinityStates");
-		todo = JDD.And(todo, JDD.Not(infinityStates.copy()));
-		JDD.Deref(todoAndInfinityStates);
-		infinityStateValues.clear();
-
-		if (todo.equals(JDD.ZERO)) {
-			JDD.Deref(todo);
-			return new StateValuesMTBDD(JDD.ITE(infinityStates, JDD.PLUS_INFINITY.copy(), JDD.Constant(0)), ndModel);
-		}
 
 		JDDNode transPositive = qcc.getTransitionsWithPosReward();
 		JDDNode transZero = qcc.getTransitionsWithZeroReward();
@@ -132,14 +106,16 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 		qcc.debugVector(getLog(), base, ndModel, "base");
 		qcc.debugVector(getLog(), zero, ndModel, "zero");
 		qcc.debugVector(getLog(), one, ndModel, "one");
-		qcc.debugVector(getLog(), infinityStates, ndModel, "infinity");
+		qcc.debugVector(getLog(), infinityStateValues.getJDDNode(), ndModel, "infinityStateValues");
 		qcc.debugVector(getLog(), maxRewForState, ndModel, "maxRewForState");
-		qcc.debugVector(getLog(), todo, ndModel, "todo");
+		qcc.debugVector(getLog(), statesOfInterest, ndModel, "statesOfInterest");
 
 		if (qcc.debugDetailed()) {
 			qcc.debugDD(transPositive.copy(), "transPositive");
 			qcc.debugDD(transZero.copy(), "transZero");
 		}
+
+		boolean printResultsAsTheyHappen = true;
 
 		try {
 			DoubleVector soln =
@@ -155,13 +131,14 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 					                               base,
 					                               one,
 					                               zero,
-					                               infinityStates,
+					                               infinityStateValues.getJDDNode(),
 					                               maxRewForState,
-					                               todo,
+					                               statesOfInterest,
 					                               thresholdOp,
-					                               threshold,
+					                               thresholdValues,
 					                               q.min(),
-					                               q instanceof ReachabilityLowerRewardBound);
+					                               q instanceof ReachabilityLowerRewardBound,
+					                               printResultsAsTheyHappen);
 
 			return new StateValuesDV(soln, ndModel);
 		} finally {
@@ -176,9 +153,9 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
 			JDD.Deref(base);
 			JDD.Deref(zero);
 			JDD.Deref(one);
-			JDD.Deref(infinityStates);
 			JDD.Deref(maxRewForState);
-			JDD.Deref(todo);
+
+			infinityStateValues.clear();
 		}
 	}
 

@@ -40,6 +40,8 @@
 #include "prism.h"
 #include "ExportIterations.h"
 #include <memory>
+#include <vector>
+#include <map>
 #include <new>
 #include <limits>
 #include <string>
@@ -49,6 +51,8 @@ static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int
 
 // global
 static const bool debug = false;
+
+enum relOp_t {LT, LEQ, GT, GEQ};
 
 static void print_vector(JNIEnv* env, double* v, int n, const char* name)
 {
@@ -76,6 +80,21 @@ static void print_vector(JNIEnv* env, std::vector<bool>& v, const char* name)
 			PH_PrintToMainLog(env, "%ld\n", i);
 		}
 	}
+}
+
+inline bool check_treshold(enum relOp_t relOp, double value, double threshold) {
+	switch (relOp) {
+	case LT:
+		return value < threshold;
+	case LEQ:
+		return value <= threshold;
+	case GT:
+		return value > threshold;
+	case GEQ:
+		return value >= threshold;
+	}
+	assert(false);
+	return false;
 }
 
 struct CalculatedProbabilities
@@ -395,13 +414,14 @@ jlong __jlongpointer _tsarew, // trans rewards, depending on states and action
 jlong __jlongpointer _base,   // base probabilities (x_s,0)
 jlong __jlongpointer o,	// 'one' states (always value 1)
 jlong __jlongpointer z,	// 'zero' states (always value 0)
-jlong __jlongpointer _infStates,	// 'infinity' states
+jlong __jlongpointer _infValues,	// 'infinity' state values
 jlong __jlongpointer _maxRewForState,	// max reward per state
 jlong __jlongpointer _statesOfInterest,		// states of interest
 jstring _thresholdOp,  // the threshold operator
-jdouble threshold,	// the threshold
+jdoubleArray _thresholds,	// the threshold
 jboolean min,		// min or max probabilities (true = min, false = max)
-jboolean lower		// lower reward bound computation?
+jboolean lower,		// lower reward bound computation?
+jboolean printResultsAsTheyHappen  // print results as they happen
 )
 {
 	// cast function parameters
@@ -418,12 +438,12 @@ jboolean lower		// lower reward bound computation?
 	DdNode *base = jlong_to_DdNode(_base);   // base probabilities (x_s,0)
 	DdNode *oneStates = jlong_to_DdNode(o);	// 'one' states (always value 1)
 	DdNode *zeroStates = jlong_to_DdNode(z);	// 'zero' states (always value 0)
-	DdNode *infStates = jlong_to_DdNode(_infStates);	// 'infinity' states
+	DdNode *infValues = jlong_to_DdNode(_infValues);	// 'infinity' state values
 	DdNode *maxRewForState = jlong_to_DdNode(_maxRewForState);	// max reward per state
 	DdNode *statesOfInterest = jlong_to_DdNode(_statesOfInterest);	// states of interest
 
+	enum relOp_t relOp;
 	const char *thresholdOp = env->GetStringUTFChars(_thresholdOp, 0);
-	enum {LT, LEQ, GT, GEQ} relOp;
 	if (strcmp(thresholdOp, "<") == 0) {
 		relOp = LT;
 	} else if (strcmp(thresholdOp, "<=") == 0) {
@@ -437,6 +457,14 @@ jboolean lower		// lower reward bound computation?
 		return 0;
 	}
 
+	std::vector<double> thresholds;
+	int numThresholds = env->GetArrayLength(_thresholds);
+	double *__thresholds = env->GetDoubleArrayElements(_thresholds, NULL);
+	for (int i = 0; i < numThresholds; i++) {
+		thresholds.push_back(__thresholds[i]);
+	}
+	env->ReleaseDoubleArrayElements(_thresholds, __thresholds, JNI_ABORT);
+
 	// mtbdds
 //	DdNode *a = NULL;
 	// model stats
@@ -447,10 +475,10 @@ jboolean lower		// lower reward bound computation?
 	// vectors
 	double *tmpsoln = NULL;
 	double *soln = NULL, *soln2 = NULL, *soln3 = NULL;
-	double *solnQuantiles = NULL;
-	PlainOrDistVector *vBase = NULL, *vStateRews = NULL;
+	std::map<double, double*> solnQuantiles;
+	PlainOrDistVector *vBase = NULL, *vStateRews = NULL, *vInf = NULL;
 	std::vector<bool> *vOneStates = NULL, *vZeroStates = NULL;
-	std::list<long> *todo = NULL, *infStateList = NULL;
+	std::list<long> *todo = NULL;
 	int* vTaRews = NULL;
 	DdNode** vTsaRews = NULL;
 	// timing stuff
@@ -522,19 +550,28 @@ jboolean lower		// lower reward bound computation?
 	todo = mtbdd01_to_list(ddman, statesOfInterest, rvars, num_rvars, odd);
 	PH_PrintToMainLog(env, "%ld entries\n", todo->size());
 
-	PH_PrintToMainLog(env, "Allocating list of infinity states... ");
-	infStateList = mtbdd01_to_list(ddman, infStates, rvars, num_rvars, odd);
-	PH_PrintToMainLog(env, "%ld entries\n", infStateList->size());
+	vInf = get_vector(env, infValues, rvars, num_rvars, odd, &kbt, "infinity state values");
 
 	// create solution/iteration vectors
 	PH_PrintToMainLog(env, "Allocating iteration vectors... ");
 	soln = new double[n];
 	soln2 = new double[n];
 	soln3 = new double[n];
-	solnQuantiles = new double[n];
 	kb = n*8.0/1024.0;
-	kbt += 4*kb;
-	PH_PrintMemoryToMainLog(env, "[4 x ", kb, "]\n");
+	kbt += 3*kb;
+	PH_PrintMemoryToMainLog(env, "[3 x ", kb, "]\n");
+
+	PH_PrintToMainLog(env, "Allocating solution vectors... ");
+	for (i = 0; i < thresholds.size(); i++) {
+		double *v = new double[n];
+		for (j = 0; j < n; j++)
+			v[j] = -1.0;
+		// TODO: check for multiple writes
+		solnQuantiles[thresholds[i]] = v;
+	}
+	kb = thresholds.size() * n*8.0/1024.0;
+	kbt += kb;
+	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 
 	int window = (int)DD_FindMax(ddman, maxRewForState);
 
@@ -585,18 +622,25 @@ jboolean lower		// lower reward bound computation?
 	// print total memory usage
 	PH_PrintMemoryToMainLog(env, "TOTAL: [", kbt, "]\n");
 
-	for (i = 0; i < n; i++) {
-		solnQuantiles[i] = -1.0;
-	}
-
-	for (int s : *infStateList) {
-		solnQuantiles[s] = std::numeric_limits<double>::infinity();
-	}
-
-	// remove infinity states from the todo list
+	// process thresholds against infinity values
 	for (auto it = todo->begin(); it != todo->end(); ) {
 		int s = *it;
-		if (solnQuantiles[s] == std::numeric_limits<double>::infinity()) {
+		bool sDone = true;
+		for (double threshold : thresholds) {
+			if (solnQuantiles[threshold][s] != -1)
+				continue;
+
+			// for infinity, check negation of threshold
+			if (!check_treshold(relOp, vInf->getValue(s), threshold)) {
+				solnQuantiles[threshold][s] = std::numeric_limits<double>::infinity();
+				if (printResultsAsTheyHappen) {
+					PH_PrintToMainLog(env, "FYI: Results for threshold %g and state %d = Infinity\n", threshold, s);
+				}
+			} else {
+				sDone = false;
+			}
+		}
+		if (sDone) {
 			it = todo->erase(it);
 		} else {
 			++it;
@@ -620,27 +664,24 @@ jboolean lower		// lower reward bound computation?
 	PH_PrintToMainLog(env, "\nStarting iterations...\n");
 
 	iters = 0;
-	// check against thresholds if we are done (for i = 0)
+	// check against thresholds (for i = 0)
 	for (auto it = todo->begin(); it != todo->end(); ) {
 		int s = *it;
-		bool sDone = false;
-		switch (relOp) {
-		case LT:
-			sDone = vBase->getValue(s) < threshold;
-			break;
-		case LEQ:
-			sDone = vBase->getValue(s) <= threshold;
-			break;
-		case GT:
-			sDone = vBase->getValue(s) > threshold;
-			break;
-		case GEQ:
-			sDone = vBase->getValue(s) >= threshold;
-			break;
-		}
+		bool sDone = true;
+		for (double threshold : thresholds) {
+			if (solnQuantiles[threshold][s] != -1)
+				continue;
 
+			if (check_treshold(relOp, vBase->getValue(s), threshold)) {
+				solnQuantiles[threshold][s] = 0;
+				if (printResultsAsTheyHappen) {
+					PH_PrintToMainLog(env, "FYI: Results for threshold %g and state %d = 0\n", threshold, s);
+				}
+			} else {
+				sDone = false;
+			}
+		}
 		if (sDone) {
-			solnQuantiles[s] = iters;
 			it = todo->erase(it);
 		} else {
 			++it;
@@ -849,27 +890,24 @@ jboolean lower		// lower reward bound computation?
 			iterationExport->exportVector(store.getForLevel(iters), n, 0);
 		}
 
-		// check against thresholds if we are done
+		// check against thresholds
 		for (auto it = todo->begin(); it != todo->end(); ) {
 			int s = *it;
-			bool sDone = false;
-			switch (relOp) {
-			case LT:
-				sDone = soln[s] < threshold;
-				break;
-			case LEQ:
-				sDone = soln[s] <= threshold;
-				break;
-			case GT:
-				sDone = soln[s] > threshold;
-				break;
-			case GEQ:
-				sDone = soln[s] >= threshold;
-				break;
-			}
+			bool sDone = true;
+			for (double threshold : thresholds) {
+				if (solnQuantiles[threshold][s] != -1)
+					continue;
 
+				if (check_treshold(relOp, soln[s], threshold)) {
+					solnQuantiles[threshold][s] = iters;
+					if (printResultsAsTheyHappen) {
+						PH_PrintToMainLog(env, "FYI: Results for threshold %g and state %d = %d\n", threshold, s, iters);
+					}
+				} else {
+					sDone = false;
+				}
+			}
 			if (sDone) {
-				solnQuantiles[s] = iters;
 				it = todo->erase(it);
 			} else {
 				++it;
@@ -898,12 +936,31 @@ jboolean lower		// lower reward bound computation?
 		soln = 0;
 	}
 
-	// TODO: correct cleanup on error
-	if (debug) {
-		PH_PrintToMainLog(env, "Results\n");
-		for (i=0;i<n;i++) {
-			PH_PrintToMainLog(env, "%d = %g\n", i, solnQuantiles[i]);
+	// result output
+	if (thresholds.size() > 1) {
+		for (auto& entry : solnQuantiles) {
+			PH_PrintToMainLog(env, "\n---------------------------------------------------------------------");
+			PH_PrintToMainLog(env, "\nResults for threshold %g:\n", entry.first);
+			for (j = 0; j < n; j++) {
+				double v = entry.second[j];
+				if (v < 0)
+					continue;
+				else {
+					if (isinf(v) && v > 0) {
+						PH_PrintToMainLog(env, "%d:=Infinity\n", j, v);
+					} else {
+						PH_PrintToMainLog(env, "%d:=%.1f\n", j, v);
+					}
+				}
+			}
 		}
+		PH_PrintToMainLog(env, "\n---------------------------------------------------------------------");
+	}
+
+	double *result = solnQuantiles.rbegin()->second;
+	solnQuantiles.erase(solnQuantiles.rbegin()->first);
+	for (auto& entry : solnQuantiles) {
+		delete[] entry.second;
 	}
 
 	// free memory
@@ -922,13 +979,12 @@ jboolean lower		// lower reward bound computation?
 	}
 
 	if (todo) delete todo;
-	if (infStateList) delete infStateList;
 
 	if (soln3) delete[] soln3;
 
 	env->ReleaseStringUTFChars(_thresholdOp, thresholdOp);
 
-	return ptr_to_jlong(solnQuantiles);
+	return ptr_to_jlong(result);
 }
 
 //------------------------------------------------------------------------------
