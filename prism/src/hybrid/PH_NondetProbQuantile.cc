@@ -170,6 +170,10 @@ struct PositiveRewRecursion {
 
 	HDDNode *zero;
 	int num_levels;
+	bool compact_sm;
+	double *sm_dist;
+	int sm_dist_shift;
+	int sm_dist_mask;
 
 	PositiveRewRecursion(double *soln, CalculatedProbabilities& store, PlainOrDistVector& sRew, DdNode** rvars, int nrvars, int curIteration, bool lower, bool min) :
 		soln(soln), store(store), sRew(sRew), rvars(rvars), nrvars(nrvars), curIteration(curIteration), lower(lower), min(min)
@@ -181,6 +185,14 @@ struct PositiveRewRecursion {
 		this->taRew = taRew;
 		zero = hddm->zero;
 		num_levels = hddm->num_levels;
+
+		compact_sm = hddm->compact_sm;
+		if (compact_sm) {
+			sm_dist = hddm->dist;
+			sm_dist_shift = hddm->dist_shift;
+			sm_dist_mask = hddm->dist_mask;
+		}
+
 		mult_rec(hddm->top, tsaRew, 0, 0, 0);
 	}
 
@@ -220,18 +232,17 @@ struct PositiveRewRecursion {
 		if (hdd == zero) {
 			return;
 		}
-#if 0
-	// or if we've reached a submatrix
-	// (check for non-null ptr but, equivalently, we could just check if level==l_sm)
-	else if (hdd->sm.ptr) {
-		if (!compact_sm) {
-			mult_rm((RMSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
-		} else {
-			mult_cmsr((CMSRSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
+		// or if we've reached a submatrix
+		// (check for non-null ptr but, equivalently, we could just check if level==l_sm)
+		else if (hdd->sm.ptr) {
+			assert(Cudd_IsConstant(tsaRew) && Cudd_V(tsaRew) == 0.0);
+			if (!compact_sm) {
+				mult_rm((RMSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
+			} else {
+				mult_cmsr((CMSRSparseMatrix *)hdd->sm.ptr, row_offset, col_offset);
+			}
+			return;
 		}
-		return;
-	}
-#endif
 		// or if we've reached the bottom
 		else if (level == num_levels) {
 			if (debug) printf("(%d,%d)=%f\n", row_offset, col_offset, hdd->type.val);
@@ -268,6 +279,60 @@ struct PositiveRewRecursion {
 			mult_rec(t->type.kids.t, tsaRew_t, level+1, row_offset+hdd->off.val, col_offset+t->off.val);
 		}
 	}
+
+	void mult_rm(RMSparseMatrix *rmsm, int row_offset, int col_offset)
+	{
+		int i2, j2, l2, h2;
+		int sm_n = rmsm->n;
+		int sm_nnz = rmsm->nnz;
+		double *sm_non_zeros = rmsm->non_zeros;
+		unsigned char *sm_row_counts = rmsm->row_counts;
+		int *sm_row_starts = (int *)rmsm->row_counts;
+		bool sm_use_counts = rmsm->use_counts;
+		unsigned int *sm_cols = rmsm->cols;
+
+		// loop through rows of submatrix
+		l2 = sm_nnz; h2 = 0;
+		for (i2 = 0; i2 < sm_n; i2++) {
+
+			// loop through entries in this row
+			if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
+			else { l2 = h2; h2 += sm_row_counts[i2]; }
+			for (j2 = l2; j2 < h2; j2++) {
+				int r = row_offset + i2;
+				int c = col_offset + sm_cols[j2];
+				int prob = sm_non_zeros[j2];
+				handle_terminal(r, c, 0, prob);
+			}
+		}
+	}
+
+	void mult_cmsr(CMSRSparseMatrix *cmsrsm, int row_offset, int col_offset)
+	{
+		int i2, j2, l2, h2;
+		int sm_n = cmsrsm->n;
+		int sm_nnz = cmsrsm->nnz;
+		unsigned char *sm_row_counts = cmsrsm->row_counts;
+		int *sm_row_starts = (int *)cmsrsm->row_counts;
+		bool sm_use_counts = cmsrsm->use_counts;
+		unsigned int *sm_cols = cmsrsm->cols;
+
+		// loop through rows of submatrix
+		l2 = sm_nnz; h2 = 0;
+		for (i2 = 0; i2 < sm_n; i2++) {
+
+			// loop through entries in this row
+			if (!sm_use_counts) { l2 = sm_row_starts[i2]; h2 = sm_row_starts[i2+1]; }
+			else { l2 = h2; h2 += sm_row_counts[i2]; }
+			for (j2 = l2; j2 < h2; j2++) {
+				int r = row_offset + i2;
+				int c = col_offset + (int)(sm_cols[j2] >> sm_dist_shift);
+				double prob = sm_dist[(int)(sm_cols[j2] & sm_dist_mask)];
+				handle_terminal(r, c, 0, prob);
+			}
+		}
+	}
+
 };
 
 struct ZeroRewRecursion {
@@ -512,16 +577,15 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	PH_PrintToMainLog(env, "[nm=%d, levels=%d, nodes=%d] ", hddmsPositive->nm, hddmsPositive->num_levels, hddmsPositive->num_nodes);
 	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 
-#if 0
-	// add sparse bits
-	PH_PrintToMainLog(env, "Adding sparse bits... ");
-	add_sparse_matrices_mdp(hddms, compact);
-	kb = hddms->mem_sm;
-	kbt += kb;
-	PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddms->l_sm_min, hddms->l_sm_max, hddms->num_sm, hddms->compact_sm, hddms->nm);
-	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
-#endif
-
+	if (transStateActRews == Cudd_ReadZero(ddman)) {
+		// add sparse bits
+		PH_PrintToMainLog(env, "Adding sparse bits... ");
+		add_sparse_matrices_mdp(hddmsPositive, compact);
+		kb = hddmsPositive->mem_sm;
+		kbt += kb;
+		PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddmsPositive->l_sm_min, hddmsPositive->l_sm_max, hddmsPositive->num_sm, hddmsPositive->compact_sm, hddmsPositive->nm);
+		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
+	}
 
 	if (transZero != Cudd_ReadZero(ddman)) {
 		// build hdds for matrix (zero reward fragment)
