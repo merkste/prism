@@ -606,6 +606,12 @@ jboolean lower		// lower reward bound computation?
 
 	store.storeForLevel(0, *vBase);
 
+	std::unique_ptr<ExportIterations> iterationExport;
+	if (PH_GetFlagExportIterations()) {
+		iterationExport.reset(new ExportIterations("PH_NondetProbQuantile", "quantile.html"));
+		iterationExport->exportVector(store.getForLevel(0), n, 0);
+	}
+
 	// get setup time
 	stop = util_cpu_time();
 	time_for_setup = (double)(stop - start2)/1000;
@@ -817,6 +823,10 @@ jboolean lower		// lower reward bound computation?
 		// store computed values...
 		for (j = 0; j < n; j++) {
 			solnPos[j] = soln[j];
+		}
+
+		if (iterationExport) {
+			iterationExport->exportVector(store.getForLevel(iters), n, 0);
 		}
 
 		// check against thresholds if we are done
