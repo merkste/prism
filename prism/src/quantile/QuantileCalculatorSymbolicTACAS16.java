@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import common.StopWatch;
+import explicit.ExportIterations;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
@@ -19,9 +20,11 @@ import prism.NondetModelTransformation;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismFileLog;
 import prism.PrismSettings;
 import prism.StateModelChecker;
 import prism.StateValues;
+import prism.StateValuesDV;
 import prism.StateValuesMTBDD;
 
 public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymbolicBase
@@ -545,6 +548,11 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 
 		getLog().println("\nStarting iterations...");
 
+		ExportIterations iterationsExport = null;
+		if (settings.getBoolean(PrismSettings.PRISM_EXPORT_ITERATIONS)) {
+			iterationsExport = new ExportIterations("Quantile (MTBDD, TACAS'16)", PrismFileLog.create("quantile.html"));
+		}
+
 		int maxIters = qcc.getSettings().getInteger(PrismSettings.PRISM_MAX_ITERS);
 		while (iteration < maxIters && !todoAll.equals(JDD.ZERO)) {
 			getLog().println("\nQuantile iteration "+iteration+", there are "
@@ -558,6 +566,12 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			x.advanceWindow(iteration, qcc.getMaxReward());
 			if (qcc.debugLevel() >= 1) {
 				StateValuesMTBDD.print(getLog(), x_i, model, "x_"+iteration);
+			}
+
+			if (iterationsExport != null) {
+				StateValuesDV sv = new StateValuesDV(x_i, model);
+				iterationsExport.exportVector(sv.getDoubleVector());
+				sv.clear();
 			}
 
 			// reset todoAll
@@ -625,6 +639,10 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			JDD.Deref(todo);
 		}
 		
+		if (iterationsExport != null) {
+			iterationsExport.close();
+		}
+
 		if (iteration == maxIterations && !finished) {
 			throw new PrismException("Quantile calculations did not terminate in "+maxIterations+"!");
 		} else {
