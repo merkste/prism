@@ -1049,6 +1049,8 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 
 	if (todo) delete todo;
 
+	if (soln) delete[] soln;
+	if (soln2) delete[] soln2;
 	if (soln3) delete[] soln3;
 
 	env->ReleaseStringUTFChars(_thresholdOp, thresholdOp);
