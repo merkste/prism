@@ -553,7 +553,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	int* vTaRews = NULL;
 	DdNode** vTsaRews = NULL;
 	// timing stuff
-	long start1, start2, start3, stop;
+	long start1, start2, start3, start4, stop;
 	double time_taken, time_for_setup, time_for_iters;
 	// misc
 	int i, j, iters;
@@ -571,39 +571,47 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	
 	// build hdds for matrix (positive reward fragment)
 	PH_PrintToMainLog(env, "\nBuilding hybrid MTBDD matrices for positive reward fragment... ");
+	start4 = util_cpu_time();
 	hddmsPositive = build_hdd_matrices_mdp(transPositive, NULL, rvars, cvars, num_rvars, ndvars, num_ndvars, odd);
 	nm = hddmsPositive->nm;
 	kb = hddmsPositive->mem_nodes;
 	kbt = kb;
 	PH_PrintToMainLog(env, "[nm=%d, levels=%d, nodes=%d] ", hddmsPositive->nm, hddmsPositive->num_levels, hddmsPositive->num_nodes);
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 
 	if (transStateActRews == Cudd_ReadZero(ddman)) {
 		// add sparse bits
 		PH_PrintToMainLog(env, "Adding sparse bits... ");
+		start4 = util_cpu_time();
 		add_sparse_matrices_mdp(hddmsPositive, compact);
 		kb = hddmsPositive->mem_sm;
 		kbt += kb;
 		PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddmsPositive->l_sm_min, hddmsPositive->l_sm_max, hddmsPositive->num_sm, hddmsPositive->compact_sm, hddmsPositive->nm);
+		PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 	}
 
 	if (transZero != Cudd_ReadZero(ddman)) {
 		// build hdds for matrix (zero reward fragment)
 		PH_PrintToMainLog(env, "\nBuilding hybrid MTBDD matrices for zero reward fragment... ");
+		start4 = util_cpu_time();
 		hddmsZero = build_hdd_matrices_mdp(transZero, NULL, rvars, cvars, num_rvars, ndvars, num_ndvars, odd);
 		nmZero = hddmsZero->nm;
 		kb = hddmsZero->mem_nodes;
 		kbt += kb;
 		PH_PrintToMainLog(env, "[nm=%d, levels=%d, nodes=%d] ", hddmsZero->nm, hddmsZero->num_levels, hddmsZero->num_nodes);
+		PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 
 		// add sparse bits
 		PH_PrintToMainLog(env, "Adding sparse bits... ");
+		start4 = util_cpu_time();
 		add_sparse_matrices_mdp(hddmsZero, compact);
 		kb = hddmsZero->mem_sm;
 		kbt += kb;
 		PH_PrintToMainLog(env, "[levels=%d-%d, num=%d, compact=%d/%d] ", hddmsZero->l_sm_min, hddmsZero->l_sm_max, hddmsZero->num_sm, hddmsZero->compact_sm, hddmsZero->nm);
+		PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 		PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 	}
 
@@ -611,27 +619,35 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	vStateRews = get_vector(env, stateRews, rvars, num_rvars, odd, &kbt, "state rewards");
 
 	PH_PrintToMainLog(env, "Allocating bitsets for one and zero states... ");
+	start4 = util_cpu_time();
 	vZeroStates = mtbdd01_to_bool_vector(ddman, zeroStates, rvars, num_rvars, odd);
 	if (debug) print_vector(env, *vZeroStates, "zero states");
 	vOneStates = mtbdd01_to_bool_vector(ddman, oneStates, rvars, num_rvars, odd);
 	if (debug) print_vector(env, *vOneStates, "one states");
+	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
+
 
 	PH_PrintToMainLog(env, "Allocating list of states of interest... ");
+	start4 = util_cpu_time();
 	todo = mtbdd01_to_list(ddman, statesOfInterest, rvars, num_rvars, odd);
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 	PH_PrintToMainLog(env, "%ld entries\n", todo->size());
 
 	vInf = get_vector(env, infValues, rvars, num_rvars, odd, &kbt, "infinity state values");
 
 	// create solution/iteration vectors
 	PH_PrintToMainLog(env, "Allocating iteration vectors... ");
+	start4 = util_cpu_time();
 	soln = new double[n];
 	soln2 = new double[n];
 	soln3 = new double[n];
 	kb = n*8.0/1024.0;
 	kbt += 3*kb;
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 	PH_PrintMemoryToMainLog(env, "[3 x ", kb, "]\n");
 
 	PH_PrintToMainLog(env, "Allocating solution vectors... ");
+	start4 = util_cpu_time();
 	for (i = 0; i < thresholds.size(); i++) {
 		double *v = new double[n];
 		for (j = 0; j < n; j++)
@@ -641,16 +657,20 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	}
 	kb = thresholds.size() * n*8.0/1024.0;
 	kbt += kb;
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 	PH_PrintMemoryToMainLog(env, "[", kb, "]\n");
 
 	int window = (int)DD_FindMax(ddman, maxRewForState);
 
 	PH_PrintToMainLog(env, "Allocating probability vector storage (for %d levels)... ", window +1);
+	start4 = util_cpu_time();
 	CalculatedProbabilities store(window, n);
 	kbt += store.getKb();
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start4) / 1000.0);
 	PH_PrintMemoryToMainLog(env, "[", store.getKb(), "]\n");
 
-	PH_PrintToMainLog(env, "Allocating/populating storage for action rewards (for %d actions)... \n", nm);
+	PH_PrintToMainLog(env, "Allocating/populating storage for action rewards (for %d actions)... ", nm);
+	start4 = util_cpu_time();
 	vTaRews = new int[nm];
 	for (i = 0; i < nm; i++) {
 		DdNode* cube = hddmsPositive->cubes[i];
@@ -677,8 +697,10 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 			return ptr_to_jlong(NULL);
 		}
 	}
+	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 
-	PH_PrintToMainLog(env, "Allocating/populating storage for state-action rewards (for %d actions)... \n", nm);
+	PH_PrintToMainLog(env, "Allocating/populating storage for state-action rewards (for %d actions)... ", nm);
+	start4 = util_cpu_time();
 	vTsaRews = new DdNode*[nm];
 	for (i = 0; i < nm; i++) {
 		DdNode* cube = hddmsPositive->cubes[i];
@@ -688,6 +710,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 		tsa = DD_MaxAbstract(ddman, tsa, ndvars, num_ndvars);
 		vTsaRews[i] = tsa;
 	}
+	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 
 	// print total memory usage
 	PH_PrintMemoryToMainLog(env, "TOTAL: [", kbt, "]\n");
@@ -696,6 +719,8 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	MeasureSupNorm measure(term_crit == TERM_CRIT_RELATIVE);
 
 	// process thresholds against infinity values
+	PH_PrintToMainLog(env, "Checking for infinity quantiles... ");
+	start4 = util_cpu_time();
 	for (auto it = todo->begin(); it != todo->end(); ) {
 		int s = *it;
 		bool sDone = true;
@@ -719,6 +744,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 			++it;
 		}
 	}
+	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 
 	store.storeForLevel(0, *vBase);
 
@@ -734,10 +760,14 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	start2 = stop;
 	start3 = stop;
 
+	PH_PrintToMainLog(env, "Time for setup: %.1fs\n", time_for_setup);
+
 	PH_PrintToMainLog(env, "\nStarting iterations...\n");
 
 	iters = 0;
 	// check against thresholds (for i = 0)
+	PH_PrintToMainLog(env, "Checking thresholds for i=0... ");
+	start4 = util_cpu_time();
 	for (auto it = todo->begin(); it != todo->end(); ) {
 		int s = *it;
 		bool sDone = true;
@@ -760,6 +790,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 			++it;
 		}
 	}
+	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 
 	done = todo->empty();
 
@@ -1061,9 +1092,11 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 static PlainOrDistVector* get_vector(JNIEnv *env, DdNode *dd, DdNode **vars, int num_vars, ODDNode *odd, double *kbt, const char* name)
 {
 	PH_PrintToMainLog(env, "Creating vector for %s... ", name);
+	long start = util_cpu_time();
 	PlainOrDistVector *vec = mtbdd_to_plain_or_dist_vector(ddman, dd, vars, num_vars, odd, compact);
 	*kbt += vec->getKb();
 	if (vec->compact()) PH_PrintToMainLog(env, "[dist=%d, compact] ", vec->dist->num_dist);
+	PH_PrintToMainLog(env, "%.1fs ", (util_cpu_time() - start) / 1000.0);
 	PH_PrintMemoryToMainLog(env, "[", vec->getKb(), "]\n");
 
 	if (debug)
