@@ -77,9 +77,13 @@ public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolicTACAS16
 		// split transRews into taRews (only depend on alpha) and tsaRews (depends on s and alpha)
 		JDDNode tmp = JDD.ITE(ndModel.getNondetMask().copy(), JDD.PLUS_INFINITY.copy(), transRews.copy());
 		tmp = JDD.MinAbstract(tmp, ndModel.getAllDDColVars());
-		SanityJDD.checkIsDDOverVars(tmp, ndModel.getAllDDNondetVars(), ndModel.getAllDDRowVars());
+		if (SanityJDD.enabled) {
+			SanityJDD.checkIsDDOverVars(tmp, ndModel.getAllDDNondetVars(), ndModel.getAllDDRowVars());
+		}
 		JDDNode tmp2 = JDD.MinAbstract(tmp.copy(), ndModel.getAllDDRowVars());
-		SanityJDD.checkIsDDOverVars(tmp2, ndModel.getAllDDNondetVars());
+		if (SanityJDD.enabled) {
+			SanityJDD.checkIsDDOverVars(tmp2, ndModel.getAllDDNondetVars());
+		}
 		JDD.Deref(tmp);
 		
 		JDDNode taRews = JDD.ITE(ndModel.getNondetMask().copy(), JDD.Constant(0), tmp2);
