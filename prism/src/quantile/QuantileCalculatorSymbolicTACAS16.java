@@ -546,7 +546,6 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 		CalculatedProbabilities x = new CalculatedProbabilities();
 		
 		int iteration = 0;
-		int maxIterations = 1000;
 
 		getLog().println("\nStarting iterations...");
 
@@ -555,8 +554,7 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			iterationsExport = new ExportIterations("Quantile (MTBDD, TACAS'16)", PrismFileLog.create("quantile.html"));
 		}
 
-		int maxIters = qcc.getSettings().getInteger(PrismSettings.PRISM_MAX_ITERS);
-		while (iteration < maxIters && !todoAll.equals(JDD.ZERO)) {
+		while (!todoAll.equals(JDD.ZERO)) {
 			getLog().println("\nQuantile iteration "+iteration+", there are "
 					+ JDD.GetNumMintermsString(todoAll, model.getNumDDRowVars())
 					+ " states that remain undetermined.");
@@ -644,8 +642,8 @@ public class QuantileCalculatorSymbolicTACAS16 extends QuantileCalculatorSymboli
 			iterationsExport.close();
 		}
 
-		if (iteration == maxIterations && !finished) {
-			throw new PrismException("Quantile calculations did not terminate in "+maxIterations+"!");
+		if (!finished) {
+			throw new PrismException("Quantile calculations did not terminate!");
 		} else {
 			getLog().println("Quantile calculations finished for all states of interest in "+iteration+" iterations.");
 			
