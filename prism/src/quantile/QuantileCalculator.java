@@ -190,7 +190,7 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
 
 			if (model.getModelType() == ModelType.CTMC) {
-				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, stateRewards, transRewards, goalStates, remainStates);
+				qc = new QuantileCalculatorCTMCSearch(parent, mc, (StochModel)model, stateRewards, transRewards, goalStates, remainStates, expr.chooseIntervalUpperBound());
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_BIGSTEP)) {
 				qc = new QuantileCalculatorSymbolicBigStep(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 			} else if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16)) {

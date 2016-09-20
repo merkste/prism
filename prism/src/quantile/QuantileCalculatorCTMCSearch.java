@@ -25,10 +25,13 @@ import prism.StochModelChecker;
 public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 {
 
-	public QuantileCalculatorCTMCSearch(PrismComponent parent, StateModelChecker mc, StochModel model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
+	private boolean chooseIntervalUpperBound;
+
+	public QuantileCalculatorCTMCSearch(PrismComponent parent, StateModelChecker mc, StochModel model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates, boolean chooseIntervalUpperBound)
 			throws PrismException
 	{
 		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
+		this.chooseIntervalUpperBound = chooseIntervalUpperBound;
 	}
 
 	public StateValues iteration(JDDNode statesOfInterest, RelOp relOp, List<Double> thresholdsP, int result_adjustment) throws PrismException {
@@ -185,7 +188,17 @@ public class QuantileCalculatorCTMCSearch extends QuantileCalculatorSymbolic
 
 		timer.stop("(" + iterations + " calls to CTMC model checker during search)");
 
-		JDDNode result = JDD.ITE(stateOfInterest.copy(), JDD.Constant(upper), JDD.Constant(0));
+		double quantileResult = 0;
+		if (upper == 0.0) {
+			if (!chooseIntervalUpperBound)
+				quantileResult = Double.NaN;
+			else
+				quantileResult = 0;
+		} else {
+			quantileResult = chooseIntervalUpperBound ? upper : lower;
+		}
+
+		JDDNode result = JDD.ITE(stateOfInterest.copy(), JDD.Constant(quantileResult), JDD.Constant(0));
 		return new StateValuesMTBDD(result, model);
 	}
 
