@@ -145,6 +145,14 @@ JNIEXPORT jlong JNICALL Java_sparse_PrismSparse_PS_1NondetReachReward
 
 /*
  * Class:     sparse_PrismSparse
+ * Method:    PS_NondetProbQuantile
+ * Signature: (JJJJIJIJIJJJJJJJJLjava/lang/String;[DZZZ)J
+ */
+JNIEXPORT jlong JNICALL Java_sparse_PrismSparse_PS_1NondetProbQuantile
+  (JNIEnv *, jclass, jlong, jlong, jlong, jlong, jint, jlong, jint, jlong, jint, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jlong, jstring, jdoubleArray, jboolean, jboolean, jboolean);
+
+/*
+ * Class:     sparse_PrismSparse
  * Method:    PS_NondetMultiObj
  * Signature: (JJIJIJIZJJJLjava/util/List;[J[I[J[D[I)[D
  */

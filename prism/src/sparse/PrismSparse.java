@@ -248,7 +248,19 @@ public class PrismSparse
 		if (ptr == 0) throw new PrismException(getErrorMessage());
 		return new DoubleVector(ptr, (int)(odd.getEOff() + odd.getTOff()));
 	}
-	
+
+	// prob quantile (nondeterministic/mdp)
+	private static native long PS_NondetProbQuantile(long transPositive, long transZero, long odd, long rows, int nrv, long cols, int ncv, long nondet, int nndv,
+	                                                 long srew, long trew, long base, long one, long zero, long inf, long maxRewForState, long statesOfInterest, String thresholdOp, double[] thresholdValues, boolean min, boolean lower, boolean printResultsAsTheyHappen);
+	public static DoubleVector NondetProbQuantile(JDDNode transPositive, JDDNode transZero, ODDNode odd, JDDVars rows, JDDVars cols, JDDVars nondet,
+	                                              JDDNode srew, JDDNode trew, JDDNode base, JDDNode one, JDDNode zero, JDDNode inf, JDDNode maxRewForState, JDDNode statesOfInterest, String thresholdOp, double[] thresholdValues, boolean min, boolean lower, boolean printResultsAsTheyHappen) throws PrismException
+	{
+		long ptr = PS_NondetProbQuantile(transPositive.ptr(), transZero.ptr(), odd.ptr(), rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(),
+		                                 srew.ptr(), trew.ptr(), base.ptr(), one.ptr(), zero.ptr(), inf.ptr(), maxRewForState.ptr(), statesOfInterest.ptr(), thresholdOp, thresholdValues, min, lower, printResultsAsTheyHappen);
+		if (ptr == 0) throw new PrismException(getErrorMessage());
+		return new DoubleVector(ptr, (int)(odd.getEOff() + odd.getTOff()));
+	}
+
 	private static native double[] PS_NondetMultiObj(long odd, long rv, int nrv, long cv, int ncv, long ndv, int nndv, boolean minmax, long start, long ptr_adversary, long ptr_TransSparseMatrix, List<String> synchs, long[] ptr_yes_vec, int[] probStepBounds, long[] ptr_RewSparseMatrix, double[] rewardWeights, int[] rewardStepBounds);
 	public static double[] NondetMultiObj(ODDNode odd, JDDVars rows, JDDVars cols, JDDVars nondet, boolean minmax, JDDNode start, NativeIntArray adversary, NDSparseMatrix transSparseMatrix, List<String> synchs, DoubleVector[] yes_vec, int[] probStepBounds, NDSparseMatrix[] rewSparseMatrix, double[] rewardWeights, int[] rewardStepBounds) throws PrismException
 	{
