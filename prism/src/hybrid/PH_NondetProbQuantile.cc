@@ -39,6 +39,7 @@
 #include "jnipointer.h"
 #include "prism.h"
 #include "ExportIterations.h"
+#include "Measures.h"
 #include <memory>
 #include <vector>
 #include <map>
@@ -556,7 +557,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	double time_taken, time_for_setup, time_for_iters;
 	// misc
 	int i, j, iters;
-	double x, sup_norm, kb, kbt;
+	double kb, kbt;
 	bool done;
 
 	// exception handling around whole function
@@ -690,6 +691,9 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 
 	// print total memory usage
 	PH_PrintMemoryToMainLog(env, "TOTAL: [", kbt, "]\n");
+
+	// measure for convergence termination check
+	MeasureSupNorm measure(term_crit == TERM_CRIT_RELATIVE);
 
 	// process thresholds against infinity values
 	for (auto it = todo->begin(); it != todo->end(); ) {
@@ -920,21 +924,15 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 			}
 
 			// check convergence
-			sup_norm = 0.0;
-			for (i = 0; i < n; i++) {
-				x = fabs(soln2[i] - soln[i]);
-				if (term_crit == TERM_CRIT_RELATIVE) {
-					x /= soln2[i];
-				}
-				if (x > sup_norm) sup_norm = x;
-			}
-			if (sup_norm < term_crit_param) {
+			measure.reset();
+			measure.measure(soln, soln2, n);
+			if (measure.value() < term_crit_param) {
 				zDone = true;
 			}
 
 			// print occasional status update
 			if ((util_cpu_time() - start3) > UPDATE_DELAY) {
-				PH_PrintToMainLog(env, "Quantile iteration %d, zero reward iteration %d: max %sdiff=%f", iters, zIters, (term_crit == TERM_CRIT_RELATIVE)?"relative ":"", sup_norm);
+				PH_PrintToMainLog(env, "Quantile iteration %d, zero reward iteration %d: max %sdiff=%f", iters, zIters, measure.isRelative()?"relative ":"", measure.value());
 				PH_PrintToMainLog(env, ", %.2f sec so far\n", ((double)(util_cpu_time() - start3)/1000));
 				start3 = util_cpu_time();
 			}
