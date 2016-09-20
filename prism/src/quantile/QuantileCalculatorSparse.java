@@ -20,7 +20,7 @@ import prism.StateValuesDV;
 import prism.StateValuesMTBDD;
 import sparse.PrismSparse;
 
-public class QuantileCalculatorSparse extends QuantileCalculatorSymbolic
+public class QuantileCalculatorSparse extends QuantileCalculatorSymbolicTACAS16
 {
 	public QuantileCalculatorSparse(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException

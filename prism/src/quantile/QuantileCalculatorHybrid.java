@@ -21,7 +21,7 @@ import prism.StateValues;
 import prism.StateValuesDV;
 import prism.StateValuesMTBDD;
 
-public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolic
+public class QuantileCalculatorHybrid extends QuantileCalculatorSymbolicTACAS16
 {
 	public QuantileCalculatorHybrid(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
 			throws PrismException
