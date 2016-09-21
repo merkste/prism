@@ -118,8 +118,7 @@ public class ECComputerDefault extends ECComputer
 			}
 
 			// Filter bad transitions
-			JDD.Ref(stableSet);
-			JDDNode stableSetTrans = maxStableSetTrans(stableSet);
+			JDDNode stableSetTrans = getStableTransReln(stableSet.copy());
 
 			// Find the maximal SCCs in (stableSet, stableSetTrans)
 			sccComputer = SCCComputer.createSCCComputer(this, stableSet, stableSetTrans, allDDRowVars, allDDColVars);
@@ -191,6 +190,7 @@ public class ECComputerDefault extends ECComputer
 	 * 
 	 * Old version of the code (uses probability sum, which shouldn't be needed).
 	 */
+	@Deprecated
 	private JDDNode findMaximalStableSetOld(JDDNode candidateStates)
 	{
 		JDDNode old = JDD.Constant(0);
@@ -222,10 +222,14 @@ public class ECComputerDefault extends ECComputer
 
 	/**
 	 * Returns the transition relation of a stable set
-	 * 
+	 *
+	 * Old version of the code (uses probability sum, which shouldn't be needed),
+	 * use getStableTransReln instead.
+	 *
 	 * @param b BDD of a stable set (dereferenced after calling this function)
 	 * @return referenced BDD of the transition relation restricted to the stable set
 	 */
+	@Deprecated
 	private JDDNode maxStableSetTrans(JDDNode b)
 	{
 
