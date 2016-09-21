@@ -429,21 +429,35 @@ public class LTLModelChecker extends PrismComponent
 		return modelProd;
 	}
 
-	
+	/**
+	 * Construct the product of a DTMC with a deterministic automaton for the given LTL expression.
+	 * <br>[ REFS: <i>returned LTLProduct</i>, DEREFS: statesOfInterest]
+	 */
 	public LTLProduct<ProbModel> constructProductMC(ProbModelChecker mc, ProbModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException
 	{
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
 		DA<BitSet, ? extends AcceptanceOmega> da;
-		ProbModel modelProduct;
-		JDDVars daDDRowVars, daDDColVars;
-
+	
 		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+		
+		return constructProductMC(model, da, labelDDs, statesOfInterest);
+	}
+
+	/**
+	 * Construct the product of a DTMC with the given deterministic automaton (with AP set L0,L1,...),
+	 * returning an LTLProduct.
+	 * <br>
+	 * The state sets corresponding to each AP label are given via the labelDDs vector,
+	 * which will be dereferenced after this method call.
+	 * <br>[ REFS: <i>returned LTLProduct</i>, DEREFS: statesOfInterest, labelDDs]
+	 */
+	public LTLProduct<ProbModel> constructProductMC(ProbModel model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs, JDDNode statesOfInterest) throws PrismException
+	{
 		// Build product of Markov chain and automaton
-		// (note: might be a CTMC - StochModelChecker extends this class)
 		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
-		daDDRowVars = new JDDVars();
-		daDDColVars = new JDDVars();
-		modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
+		JDDVars daDDRowVars = new JDDVars();
+		JDDVars daDDColVars = new JDDVars();
+		ProbModel modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		mainLog.println();
 		modelProduct.printTransInfo(mainLog, false);
 
@@ -642,21 +656,33 @@ public class LTLModelChecker extends PrismComponent
 		return modelProd;
 	}
 
+	/**
+	 * Construct the product of an MDP with a deterministic automaton for the given LTL expression.
+	 */
 	public LTLProduct<NondetModel> constructProductMDP(NondetModelChecker mc, NondetModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException {
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
 		DA<BitSet, ? extends AcceptanceOmega> da;
-		NondetModel modelProduct;
-		JDDVars daDDRowVars, daDDColVars;
-		long l;
 
 		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
 
+		return constructProductMDP(model, da, labelDDs, statesOfInterest);
+	}
+
+	/**
+	 * Construct the product of an MDP with the given deterministic automaton (with AP set L0,L1,...),
+	 * returning an LTLProduct.
+	 * <br>
+	 * The state sets corresponding to each AP label are given via the labelDDs vector,
+	 * which will be dereferenced after this method call.
+	 */
+	public LTLProduct<NondetModel> constructProductMDP(NondetModel model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs, JDDNode statesOfInterest) throws PrismException
+	{
 		// Build product of MDP and automaton
-		l = System.currentTimeMillis();
+		long l = System.currentTimeMillis();
 		mainLog.println("\nConstructing MDP-"+da.getAutomataType()+" product...");
-		daDDRowVars = new JDDVars();
-		daDDColVars = new JDDVars();
-		modelProduct = constructProductMDP(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
+		JDDVars daDDRowVars = new JDDVars();
+		JDDVars daDDColVars = new JDDVars();
+		NondetModel modelProduct = constructProductMDP(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		l = System.currentTimeMillis() - l;
 		mainLog.println("Time for product construction: " + l / 1000.0 + " seconds.");
 		mainLog.println();
