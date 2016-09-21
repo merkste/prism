@@ -61,6 +61,11 @@ public class ExpandStepBoundsSyntactically extends ASTTraverseModify
 		// no bounds, do default visiting
 		if (!e.hasBounds()) return super.visit(e);
 
+		if (e.getOperator() == ExpressionTemporal.P_R) {
+			// recurse on the negated until form...
+			return e.convertToUntilForm().accept(this);
+		}
+
 		try {
 			// obtain bounds
 			bounds = IntegerBound.fromExpressionTemporal(e, constantValues, true);
