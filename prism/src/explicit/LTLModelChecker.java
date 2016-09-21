@@ -672,9 +672,10 @@ public class LTLModelChecker extends PrismComponent
 		}
 
 		// Compute accepting maximum end components (MECs)
-		ECComputer ecComputer = ECComputer.createECComputer(this, model);
+		ECConsumerStore ecStore = new ECConsumerStore(this, model);
+		ECComputer ecComputer = ECComputer.createECComputer(this, model, ecStore);
 		ecComputer.computeMECStates();
-		List<BitSet> mecs = ecComputer.getMECStates();
+		List<BitSet> mecs = ecStore.getMECStates();
 		// Union of accepting MEC states
 		for (BitSet mec : mecs) {
 			if (mec.intersects(acceptance.getAcceptingStates())) {
@@ -709,12 +710,13 @@ public class LTLModelChecker extends PrismComponent
 			if (statesLi_not.cardinality() == 0)
 				continue;
 			// Compute accepting maximum end components (MECs) in !L_i
-			ECComputer ecComputer = ECComputer.createECComputer(this, model);
+			ECConsumerStore ecStore = new ECConsumerStore(this, model);
+			ECComputer ecComputer = ECComputer.createECComputer(this, model, ecStore);
 			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 			}
 			ecComputer.computeMECStates(statesLi_not, acceptance.get(i).getK());
-			List<BitSet> mecs = ecComputer.getMECStates();
+			List<BitSet> mecs = ecStore.getMECStates();
 			// Union MEC states
 			for (BitSet mec : mecs) {
 				allAcceptingStates.or(mec);
@@ -741,12 +743,13 @@ public class LTLModelChecker extends PrismComponent
 		allPairs.set(0, acceptance.size());
 
 		Stack<ECandPairs> todo = new Stack<ECandPairs>();
-		ECComputer ecComputer = ECComputer.createECComputer(this, model);
+		ECConsumerStore ecStore = new ECConsumerStore(this, model);
+		ECComputer ecComputer = ECComputer.createECComputer(this, model, ecStore);
 		if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 			ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 		}
 		ecComputer.computeMECStates();
-		for (BitSet mecs : ecComputer.getMECStates()) {
+		for (BitSet mecs : ecStore.getMECStates()) {
 			ECandPairs ecp = new ECandPairs();
 			ecp.MEC = mecs;
 			ecp.activePairs = allPairs;
@@ -780,12 +783,13 @@ public class LTLModelChecker extends PrismComponent
 			} else if (restrict.isEmpty()) {
 				// nothing to do
 			} else {
-				ecComputer = ECComputer.createECComputer(this, model);
+				ecStore = new ECConsumerStore(this, model);
+				ecComputer = ECComputer.createECComputer(this, model, ecStore);
 				if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 					ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 				}
 				ecComputer.computeMECStates(restrict);
-				for (BitSet mecs : ecComputer.getMECStates()) {
+				for (BitSet mecs : ecStore.getMECStates()) {
 					ECandPairs newEcp = new ECandPairs();
 					newEcp.MEC = mecs;
 					newEcp.activePairs = newActivePairs;
@@ -822,12 +826,13 @@ public class LTLModelChecker extends PrismComponent
 			if (statesLi_not.cardinality() == 0)
 				continue;
 			// Compute maximum end components (MECs) in !L_i
-			ECComputer ecComputer = ECComputer.createECComputer(this, model);
+			ECConsumerStore mecStore = new ECConsumerStore(this, model);
+			ECComputer ecComputer = ECComputer.createECComputer(this, model, mecStore);
 			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 			}
 			ecComputer.computeMECStates(statesLi_not);
-			List<BitSet> mecs = ecComputer.getMECStates();
+			List<BitSet> mecs = mecStore.getMECStates();
 			// Check which MECs contain a state from each K_i_j
 			int n = acceptance.get(i).getNumK();
 			for (BitSet mec : mecs) {

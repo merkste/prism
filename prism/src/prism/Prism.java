@@ -39,6 +39,7 @@ import explicit.CTMCModelChecker;
 import explicit.ConstructModel;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.ECConsumerStore;
 import explicit.ExplicitFiles2Model;
 import explicit.FastAdaptiveUniformisation;
 import explicit.FastAdaptiveUniformisationModelChecker;
@@ -1160,9 +1161,9 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Get an ECComputer object for the explicit engine.
 	 */
-	public explicit.ECComputer getExplicitECComputer(explicit.NondetModel model) throws PrismException
+	public explicit.ECComputer getExplicitECComputer(explicit.NondetModel model, explicit.ECConsumer consumer) throws PrismException
 	{
-		return explicit.ECComputer.createECComputer(this, model);
+		return explicit.ECComputer.createECComputer(this, model, consumer);
 	}
 
 	//------------------------------------------------------------------------------
@@ -2704,7 +2705,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		long l; // timer
 		PrismLog tmpLog;
 		ECComputer ecComputer = null;
-		explicit.ECComputer ecComputerExpl = null;
+		explicit.ECConsumerStore ecConsumerStore = null;
 
 		// no specific states format for MRMC
 		if (exportType == EXPORT_MRMC)
@@ -2723,7 +2724,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			ecComputer = getECComputer((NondetModel) currentModel);
 			ecComputer.computeMECStates();
 		} else {
-			ecComputerExpl = getExplicitECComputer((explicit.NondetModel) currentModelExpl);
+			ecConsumerStore = new explicit.ECConsumerStore(this, (explicit.NondetModel)currentModelExpl);
+			explicit.ECComputer ecComputerExpl = getExplicitECComputer((explicit.NondetModel) currentModelExpl, ecConsumerStore);
 			ecComputerExpl.computeMECStates();
 		}
 		l = System.currentTimeMillis() - l;
@@ -2752,7 +2754,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (!getExplicit()) {
 			n = ecComputer.getMECStates().size();
 		} else {
-			n = ecComputerExpl.getMECStates().size();
+			n = ecConsumerStore.getMECStates().size();
 		}
 		for (i = 0; i < n; i++) {
 			tmpLog.println();
@@ -2768,7 +2770,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(ecComputer.getMECStates().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(ecComputer.getMECStates().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(ecComputerExpl.getMECStates().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB,
+				explicit.StateValues.createFromBitSet(ecConsumerStore.getMECStates().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB,
 						true, true);
 			}
 			if (exportType == EXPORT_MATLAB)

@@ -1400,8 +1400,9 @@ public class MDPModelChecker extends ProbModelChecker
 
 			timerPre = System.currentTimeMillis();
 
-			ECComputer ecs = ECComputer.createECComputer(this, mdp);
-			ecs.computeMECStates();
+			ECConsumerStore ecs = new ECConsumerStore(this, mdp);
+			ECComputer ecComputer = ECComputer.createECComputer(this, mdp, ecs);
+			ecComputer.computeMECStates();
 			BitSet positiveECs = new BitSet();
 			for (BitSet ec : ecs.getMECStates()) {
 				// check if this MEC is positive
