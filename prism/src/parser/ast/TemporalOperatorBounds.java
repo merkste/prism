@@ -256,6 +256,15 @@ public class TemporalOperatorBounds extends ASTElement {
 	}
 
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof TemporalOperatorBounds))
+			return false;
+
+		return true;
+	}
+
+	@Override
 	public TemporalOperatorBounds deepCopy() {
 		TemporalOperatorBounds result = new TemporalOperatorBounds();
 		for (TemporalOperatorBound bound : bounds) {
