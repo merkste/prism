@@ -43,14 +43,15 @@ import prism.PrismException;
 /**
  * Provides functionality for generating a Product via a
  * DTMCProductOperator / MDPProductOperator.
+ * <br>
+ * The initial states in the product correspond to the lifted
+ * states of interest in the original model.
  *
  * @param <M> the model type
  */
 public class ProductWithProductStates<M extends Model> extends Product<M> {
 	/** Mapping index to ProductState */
 	protected Vector<ProductState> prod_states = new Vector<ProductState>();
-	/** States of interest in the product */
-	protected BitSet statesOfInterestInProduct = new BitSet();
 
 	/** Constructor */
 	protected ProductWithProductStates(M originalModel)
@@ -74,12 +75,6 @@ public class ProductWithProductStates<M extends Model> extends Product<M> {
 	public int getAutomatonState(int productState)
 	{
 		return getState(productState).getSecondState();
-	}
-
-	@Override
-	public BitSet getTransformedStatesOfInterest()
-	{
-		return statesOfInterestInProduct;
 	}
 
 	/**
@@ -128,7 +123,6 @@ public class ProductWithProductStates<M extends Model> extends Product<M> {
 			Integer s = mapping.findOrAdd(prod_initial);
 			todo.add(prod_initial);
 			dtmcProduct.addInitialState(s);
-			product.statesOfInterestInProduct.set(s);
 		}
 
 		while (!todo.isEmpty()) {
@@ -215,7 +209,6 @@ public class ProductWithProductStates<M extends Model> extends Product<M> {
 			Integer s = mapping.findOrAdd(prod_initial);
 			todo.add(prod_initial);
 			mdpProduct.addInitialState(s);
-			product.statesOfInterestInProduct.set(s);
 		}
 
 		while (!todo.isEmpty()) {
