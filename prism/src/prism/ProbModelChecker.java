@@ -37,10 +37,12 @@ import java.util.Vector;
 
 import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceOmegaDD;
+import acceptance.AcceptanceReach;
 import acceptance.AcceptanceReachDD;
 import acceptance.AcceptanceType;
 import automata.DA;
 import automata.LTL2DA;
+import automata.LTL2WDBA;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
@@ -927,7 +929,6 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues rewardsProduct = null, rewards = null;
 		Expression ltl;
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
-		DA<BitSet, ? extends AcceptanceOmega> da;
 		ProbModel modelProduct;
 		ProbModelChecker mcProduct;
 		JDDNode startMask;
@@ -958,24 +959,25 @@ public class ProbModelChecker extends NonProbModelChecker
 
 		// For LTL model checking routines
 		mcLtl = new LTLModelChecker(prism);
+
+		// we disallow simplifications based on the model in the
+		// checkMaximalStateFormulas procedure, as we have to
+		// stop with the accumulation of rewards purely based on the
+		// omega-regular language
 		mcLtl.disallowSimplificationsBasedOnModel();
 
 		// Model check maximal state formulas
 		labelDDs = new Vector<JDDNode>();
 		ltl = mcLtl.checkMaximalStateFormulas(this, model, expr.deepCopy(), labelDDs);
 
-		// Convert LTL formula to deterministic automaton (DA)
-		mainLog.println("\nBuilding deterministic automaton (for " + ltl + ")...");
-		l = System.currentTimeMillis();
-		LTL2DA ltl2da = new LTL2DA(prism);
-		AcceptanceType[] allowedAcceptance = {
-				AcceptanceType.RABIN,
-				AcceptanceType.REACH
-		};
-		da = ltl2da.convertLTLFormulaToDA(ltl, constantValues, allowedAcceptance);
-		mainLog.println(da.getAutomataType()+" has " + da.size() + " states, " + da.getAcceptance().getSizeStatistics()+".");
-		l = System.currentTimeMillis() - l;
-		mainLog.println("Time for deterministic automaton translation: " + l / 1000.0 + " seconds.");
+		// Convert LTL formula to deterministic automaton, with Reach acceptance
+		LTL2WDBA ltl2wdba = new LTL2WDBA(this);
+		mainLog.println("\nBuilding weak deterministic automaton (for " + ltl + ")...");
+		long time = System.currentTimeMillis();
+		DA<BitSet, AcceptanceReach> da = ltl2wdba.cosafeltl2wdba(ltl.convertForJltl2ba());
+		time = System.currentTimeMillis() - time;
+		mainLog.println("Time for constructing weak DBA: " + (time / 1000.0) +"s");
+
 		// If required, export DA 
 		if (prism.getSettings().getExportPropAut()) {
 			mainLog.println("Exporting DA to file \"" + prism.getSettings().getExportPropAutFilename() + "\"...");
@@ -1021,18 +1023,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDDNode transRewardsProduct = JDD.Apply(JDD.TIMES, transRewards, modelProduct.getTrans01());
 		
 		// Find accepting states + compute reachability rewards
-		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
-		JDDNode acc = null;
-		if (acceptance instanceof AcceptanceReachDD) {
-			mainLog.println("\nSkipping BSCC computation since acceptance is defined via goal states...");
-			acc = ((AcceptanceReachDD) acceptance).getGoalStates();
-			JDD.Ref(modelProduct.getReach());
-			acc = JDD.And(acc, modelProduct.getReach());
-		} else {
-			mainLog.println("\nFinding accepting BSCCs...");
-			acc = mcLtl.findAcceptingBSCCs(acceptance, modelProduct);
-		}
+		AcceptanceReachDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
+		JDDNode acc = acceptance.getGoalStates();
+		acc = JDD.And(acc, modelProduct.getReach().copy());
 		acceptance.clear();
+
 		mainLog.println("\nComputing reachability rewards...");
 		mcProduct = createNewModelChecker(prism, modelProduct, null);
 		rewardsProduct = mcProduct.computeReachRewards(modelProduct.getTrans(), modelProduct.getTrans01(), stateRewardsProduct, transRewardsProduct, acc);
