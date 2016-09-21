@@ -62,7 +62,7 @@ public class LTL2WDBA extends PrismComponent
 		return (DA<BitSet, AcceptanceReach>) da;
 	}
 
-	public DA<BitSet, AcceptanceBuchi> ltl2wdba(SimpleLTL ltl) throws PrismException
+	private DA<BitSet, AcceptanceBuchi> ltl2wdba(SimpleLTL ltl) throws PrismException
 	{
 		ltl = ltl.simplify();
 
@@ -71,6 +71,11 @@ public class LTL2WDBA extends PrismComponent
 		determineF(P);
 
 		return P.da;
+	}
+
+	public DA<BitSet, AcceptanceBuchi> obligation2wdba(SimpleLTL ltl) throws PrismException
+	{
+		return ltl2wdba(ltl);
 	}
 
 	private static class PowersetDA
