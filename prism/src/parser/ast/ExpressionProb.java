@@ -97,7 +97,7 @@ public class ExpressionProb extends ExpressionQuant
 				throw new PrismLangException("Invalid probability bound " + boundVal + " in P operator");
 			return new OpRelOpBound("P", minMax, getRelOp(), boundVal);
 		} else {
-			return new OpRelOpBound("P", minMax, getRelOp(), null);
+			return new OpRelOpBound("P", minMax);
 		}
 	}
 	
