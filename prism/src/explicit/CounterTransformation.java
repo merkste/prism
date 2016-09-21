@@ -27,17 +27,17 @@
 
 package explicit;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import explicit.rewards.ConstructRewards;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 import explicit.rewards.StateRewardsConstant;
 import parser.ast.Expression;
 import parser.ast.ExpressionReward;
-import parser.ast.RewardStruct;
 import parser.ast.TemporalOperatorBound;
+import parser.ast.TemporalOperatorBounds;
 import parser.visitor.ReplaceBound;
 import prism.IntegerBound;
 import prism.PrismException;
@@ -79,6 +79,27 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 		transformedExpression = originalExpression;
 		doTransformation(originalModel, bound, statesOfInterest);
 	}
+	
+	/**
+	 * The originalExpression will be modified!
+	 * @param mc
+	 * @param originalModel
+	 * @param originalExpression
+	 * @param bound
+	 * @param statesOfInterest
+	 * @throws PrismException
+	 */
+	public CounterTransformation(ProbModelChecker mc,
+			M originalModel, Expression originalExpression,
+			List<TemporalOperatorBound> bounds, BitSet statesOfInterest) throws PrismException {
+		this.originalModel = originalModel;
+		this.originalExpression = originalExpression.deepCopy();
+		this.mc = mc;
+		
+		transformedExpression = originalExpression;
+		doTransformation(originalModel, bounds, statesOfInterest);
+	}
+
 
 	@Override
 	public Expression getTransformedExpression() {
@@ -112,30 +133,47 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 	}
 
 	private void doTransformation(M originalModel, TemporalOperatorBound bound, BitSet statesOfInterest) throws PrismException {
+		List<TemporalOperatorBound> bounds = new ArrayList<TemporalOperatorBound>();
+		bounds.add(bound);
+		doTransformation(originalModel, bounds, statesOfInterest);
+	}
+	
+	private void doTransformation(M originalModel, List<TemporalOperatorBound> bounds, BitSet statesOfInterest) throws PrismException {	
 		if (originalModel instanceof DTMC) {
-			doTransformation((DTMC)originalModel, bound, statesOfInterest);
+			doTransformation((DTMC)originalModel, bounds, statesOfInterest);
 		} else if (originalModel instanceof MDP) {
-				doTransformation((MDP)originalModel, bound, statesOfInterest);
+				doTransformation((MDP)originalModel, bounds, statesOfInterest);
 		} else {
 			throw new PrismException("Counter-Transformation is not supported for "+originalModel.getClass());
 		}
 	}
 	
-	private void doTransformation(DTMC originalModel, TemporalOperatorBound bound, BitSet statesOfInterest) throws PrismException
+	
+	private void doTransformation(DTMC originalModel, List<TemporalOperatorBound> bounds, BitSet statesOfInterest) throws PrismException
 	{
-		IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
-		int saturation_limit = intBound.getMaximalInterestingValue();
+		List<IntegerBound> intBounds = new ArrayList<IntegerBound>();
+
+		if (bounds.isEmpty()) {
+			throw new IllegalArgumentException("Can not do counter transformation without any bounds.");
+		}
+
+		for (TemporalOperatorBound bound : bounds) {
+			IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
+			intBounds.add(intBound);
+
+			if (!bound.hasSameDomainDiscreteTime(bounds.get(0))) {
+				throw new IllegalArgumentException("Can only do counter transformation for bounds with same domain.");
+			}
+		}
 
 		MCRewards rewards = null;
-
-		switch (bound.getBoundType()) {
+		
+		switch (bounds.get(0).getBoundType()) {
 		case REWARD_BOUND: {
 			// Get reward info
-			Object rs = bound.getRewardStructureIndex();
-			RewardStruct rewStruct = ExpressionReward.getRewardStructByIndexObject(rs, mc.modulesFile, mc.constantValues);
+			Integer rewStruct = bounds.get(0).getResolvedRewardStructIndex();
 
-			ConstructRewards construct_rewards = new ConstructRewards();
-			rewards = construct_rewards.buildMCRewardStructure(originalModel, rewStruct, originalModel.getConstantValues());
+			rewards = (MCRewards) mc.constructRewards(originalModel, rewStruct);
 			break;
 		}
 		case DEFAULT_BOUND:
@@ -145,41 +183,56 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 			rewards = new StateRewardsConstant(1);
 			break;
 		}
-
+		
 		if (rewards == null) {
 			throw new PrismException("Couldn't generate reward information.");
 		}
 
+		int saturation_limit = IntegerBound.getMaximalInterestingValueForConjunction(intBounds);
+		
 		product = (CounterProduct<M>) CounterProduct.generate(originalModel, rewards, saturation_limit, statesOfInterest);
 
 		// add 'in_bound-x' label
-		BitSet statesInBound = product.getStatesWithAccumulatedRewardInBound(intBound);
+		BitSet statesInBound = product.getStatesWithAccumulatedRewardInBoundConjunction(intBounds);
 		String labelInBound = ((DTMCExplicit)product.getTransformedModel()).addUniqueLabel("in_bound", statesInBound, mc.getDefinedLabelNames());
 
 		// transform expression
-		ReplaceBound replace = new ReplaceBound(bound, labelInBound);
-		transformedExpression = (Expression) transformedExpression.accept(replace);
+		for (TemporalOperatorBound bound : bounds) {
+			ReplaceBound replace = new ReplaceBound(bound, labelInBound);
+			transformedExpression = (Expression) transformedExpression.accept(replace);
 
-		if (!replace.wasSuccessfull()) {
-			throw new PrismException("Replacing bound was not successfull.");
+			if (!replace.wasSuccessfull()) {
+				throw new PrismException("Replacing bound was not successfull.");
+			}
 		}
 	}
 
-	private void doTransformation(MDP originalModel, TemporalOperatorBound bound, BitSet statesOfInterest) throws PrismException
+	
+	
+	private void doTransformation(MDP originalModel, List<TemporalOperatorBound> bounds, BitSet statesOfInterest) throws PrismException
 	{
-		IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
-		int saturation_limit = intBound.getMaximalInterestingValue();
+		List<IntegerBound> intBounds = new ArrayList<IntegerBound>();
 
+		if (bounds.isEmpty()) {
+			throw new IllegalArgumentException("Can not do counter transformation without any bounds.");
+		}
+
+		for (TemporalOperatorBound bound : bounds) {
+			IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
+			intBounds.add(intBound);
+
+			if (!bound.hasSameDomainDiscreteTime(bounds.get(0))) {
+				throw new IllegalArgumentException("Can only do counter transformation for bounds with same domain.");
+			}
+		}
 		MDPRewards rewards = null;
 
-		switch (bound.getBoundType()) {
+		switch (bounds.get(0).getBoundType()) {
 		case REWARD_BOUND: {
 			// Get reward info
-			Object rs = bound.getRewardStructureIndex();
-			RewardStruct rewStruct = ExpressionReward.getRewardStructByIndexObject(rs, mc.modulesFile, mc.constantValues);
+			Integer rewStruct = bounds.get(0).getResolvedRewardStructIndex();
 
-			ConstructRewards construct_rewards = new ConstructRewards();
-			rewards = construct_rewards.buildMDPRewardStructure(originalModel, rewStruct, originalModel.getConstantValues());
+			rewards = (MDPRewards) mc.constructRewards(originalModel, rewStruct);
 			break;
 		}
 		case DEFAULT_BOUND:
@@ -194,18 +247,22 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 			throw new PrismException("Couldn't generate reward information.");
 		}
 
+		int saturation_limit = IntegerBound.getMaximalInterestingValueForConjunction(intBounds);
+
 		product = (CounterProduct<M>) CounterProduct.generate(originalModel, rewards, saturation_limit, statesOfInterest);
 
 		// add 'in_bound-x' label
-		BitSet statesInBound = product.getStatesWithAccumulatedRewardInBound(intBound);
+		BitSet statesInBound = product.getStatesWithAccumulatedRewardInBoundConjunction(intBounds);
 		String labelInBound = ((MDPExplicit)product.getTransformedModel()).addUniqueLabel("in_bound", statesInBound, mc.getDefinedLabelNames());
 
 		// transform expression
-		ReplaceBound replace = new ReplaceBound(bound, labelInBound);
-		transformedExpression = (Expression) transformedExpression.accept(replace);
+		for (TemporalOperatorBound bound : bounds) {
+			ReplaceBound replace = new ReplaceBound(bound, labelInBound);
+			transformedExpression = (Expression) transformedExpression.accept(replace);
 
-		if (!replace.wasSuccessfull()) {
-			throw new PrismException("Replacing bound was not successfull.");
+			if (!replace.wasSuccessfull()) {
+				throw new PrismException("Replacing bound was not successfull.");
+			}
 		}
 	}
 
@@ -227,15 +284,30 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 
 		ModelExpressionTransformation<M, M> nested = null;
 		for (TemporalOperatorBound bound : bounds) {
-			parent.getLog().println("Transform DTMC to incorporate counter for bound '"+bound+"'");
-			
+			// resolve RewardStruct for reward bounds
+			if (bound.isRewardBound()) {
+				int r = ExpressionReward.getRewardStructIndexByIndexObject(bound.getRewardStructureIndex(), parent.modulesFile, parent.constantValues);
+				bound.setResolvedRewardStructIndex(r);
+			}
+		}
+
+		List<List<TemporalOperatorBound>> groupedBoundList = TemporalOperatorBounds.groupBoundsDiscreteTime(bounds);
+
+		for (List<TemporalOperatorBound> groupedBounds : groupedBoundList) {
+			if (groupedBounds.get(0).isRewardBound()) {
+				String rewStructName = parent.modelInfo.getRewardStructNames().get(groupedBounds.get(0).getResolvedRewardStructIndex());
+				parent.getLog().println("Transform to incorporate counter for reward '" + rewStructName + "' and " + groupedBounds);
+			} else {
+				parent.getLog().println("Transform to incorporate counter for steps "+groupedBounds);
+			}
+
 			ModelExpressionTransformation<M, M> current;
 			
 			if (nested == null) {
-				current = new CounterTransformation<M>(parent, originalModel, originalExpression, bound, statesOfInterest);
+				current = new CounterTransformation<M>(parent, originalModel, originalExpression, groupedBounds, statesOfInterest);
 				nested = current;
 			} else {
-				current = new CounterTransformation<M>(parent, nested.getTransformedModel(), nested.getTransformedExpression(), bound, nested.getTransformedStatesOfInterest());
+			    current = new CounterTransformation<M>(parent, nested.getTransformedModel(), nested.getTransformedExpression(), groupedBounds, nested.getTransformedStatesOfInterest());
 				nested = new ModelExpressionTransformationNested<M, M, M>(nested, current);
 			}
 			
