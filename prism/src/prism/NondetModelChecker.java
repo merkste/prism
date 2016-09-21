@@ -1803,11 +1803,21 @@ public class NondetModelChecker extends NonProbModelChecker
 		return probs;
 	}
 
-	// compute probabilities for until (general case)
-
-	// note: this function doesn't need to know anything about fairness
-	// it is just told whether to compute min or max probabilities
-
+	/**
+	 * Compute probabilities for until (general case),
+	 * i.e. Pmin/Pmax for 'b1 U b2'.
+	 *
+	 * <br>
+	 * Note: this function doesn't need to know anything about fairness,
+	 * it is just told whether to compute min or max probabilities
+	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
+	 * @param tr the transition matrix (trans) of the model
+	 * @param tra the transActions of the model
+	 * @param tr01 the 0/1-transition matrix of the model (trans01)
+	 * @param b1 the set of b1 states (needs to be contained in reachable states of the model)
+	 * @param b2 the set of b2 states (needs to be contained in reachable states of the model)
+	 * @param min compute Pmin?
+	 */
 	protected StateValues computeUntilProbs(JDDNode tr, JDDNode tra, JDDNode tr01, JDDNode b1, JDDNode b2, boolean min) throws PrismException
 	{
 		JDDNode yes, no, maybe;
@@ -1830,15 +1840,11 @@ public class NondetModelChecker extends NonProbModelChecker
 		// compute yes/no/maybe states
 		if (b2.equals(JDD.ZERO)) {
 			yes = JDD.Constant(0);
-			JDD.Ref(reach);
-			no = reach;
+			no = reach.copy();
 			maybe = JDD.Constant(0);
 		} else if (b1.equals(JDD.ZERO)) {
-			JDD.Ref(b2);
-			yes = b2;
-			JDD.Ref(reach);
-			JDD.Ref(b2);
-			no = JDD.And(reach, JDD.Not(b2));
+			yes = b2.copy();
+			no = JDD.And(reach.copy(), JDD.Not(b2.copy()));
 			maybe = JDD.Constant(0);
 		} else {
 			// no
@@ -1859,10 +1865,7 @@ public class NondetModelChecker extends NonProbModelChecker
 			// if precomputation not enabled
 			else {
 				// no
-				JDD.Ref(reach);
-				JDD.Ref(b1);
-				JDD.Ref(b2);
-				no = JDD.And(reach, JDD.Not(JDD.Or(b1, b2)));
+				no = JDD.And(reach.copy(), JDD.Not(JDD.Or(b1.copy(), b2.copy())));
 			}
 			// yes
 			// if precomputation enabled
@@ -1881,14 +1884,10 @@ public class NondetModelChecker extends NonProbModelChecker
 			// if precomputation not enabled
 			else {
 				// yes
-				JDD.Ref(b2);
-				yes = b2;
+				yes = b2.copy();
 			}
 			// maybe
-			JDD.Ref(reach);
-			JDD.Ref(yes);
-			JDD.Ref(no);
-			maybe = JDD.And(reach, JDD.Not(JDD.Or(yes, no)));
+			maybe = JDD.And(reach.copy(), JDD.Not(JDD.Or(yes.copy(), no.copy())));
 		}
 
 		// print out yes/no/maybe
@@ -1898,8 +1897,7 @@ public class NondetModelChecker extends NonProbModelChecker
 
 		// if maybe is empty, we have the answer already...
 		if (maybe.equals(JDD.ZERO)) {
-			JDD.Ref(yes);
-			probs = new StateValuesMTBDD(yes, model);
+			probs = new StateValuesMTBDD(yes.copy(), model);
 		}
 		// otherwise we compute the actual probabilities
 		else {
