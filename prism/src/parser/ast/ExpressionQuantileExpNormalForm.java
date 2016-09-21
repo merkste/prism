@@ -4,6 +4,7 @@ import java.util.List;
 
 import explicit.Model;
 import explicit.rewards.Rewards;
+import param.BigRational;
 import parser.EvaluateContext;
 import parser.Values;
 import parser.visitor.ASTVisitor;
@@ -105,6 +106,12 @@ public class ExpressionQuantileExpNormalForm extends Expression
 
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Cannot evaluate a Quantile operator without a model");
+	}
+
+	@Override
+	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate a Quantile operator without a model");
 	}

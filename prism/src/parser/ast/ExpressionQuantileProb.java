@@ -1,6 +1,7 @@
 package parser.ast;
 
 import explicit.MinMax;
+import param.BigRational;
 import parser.EvaluateContext;
 import parser.visitor.ASTVisitor;
 import prism.ModelType;
@@ -90,6 +91,12 @@ public class ExpressionQuantileProb extends Expression
 
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Cannot evaluate a Quantile operator without a model");
+	}
+
+	@Override
+	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate a Quantile operator without a model");
 	}
