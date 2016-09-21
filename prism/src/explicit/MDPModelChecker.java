@@ -31,6 +31,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import common.IterableStateSet;
 import parser.VarList;
@@ -51,6 +52,8 @@ import prism.PrismUtils;
 import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
+import automata.DA;
+import automata.LTL2WDBA;
 import common.BitSetAndQueue;
 import common.BitSetTools;
 import common.IterableBitSet;
@@ -210,17 +213,30 @@ public class MDPModelChecker extends ProbModelChecker
 		MDPRewards productRewards;
 		StateValues rewardsProduct, rewards;
 		MDPModelChecker mcProduct;
-		LTLModelChecker.LTLProduct<MDP> product;
+		LTLModelChecker.LTLProduct<Model> product;
 
 		// For LTL model checking routines
 		mcLtl = new LTLModelChecker(this);
 
-		// Build product of MDP and automaton
-		AcceptanceType[] allowedAcceptance = {
-				AcceptanceType.RABIN,
-				AcceptanceType.REACH
-		};
-		product = mcLtl.constructProductMDP(this, (MDP)model, expr, statesOfInterest, allowedAcceptance);
+		// we disallow simplifications based on the model in the
+		// checkMaximalStateFormulas procedure, as we have to
+		// stop with the accumulation of rewards purely based on the
+		// omega-regular language
+		mcLtl.disallowSimplificationsBasedOnModel();
+
+		// Model check maximal state formulas
+		Vector<BitSet> labelBS = new Vector<BitSet>();
+		Expression ltl = mcLtl.checkMaximalStateFormulas(this, model, expr.deepCopy(), labelBS);
+
+		// Convert LTL formula to deterministic automaton, with Reach acceptance
+		LTL2WDBA ltl2wdba = new LTL2WDBA(this);
+		mainLog.println("\nBuilding weak deterministic automaton (for " + ltl + ")...");
+		long time = System.currentTimeMillis();
+		DA<BitSet, AcceptanceReach> da = ltl2wdba.cosafeltl2wdba(ltl.convertForJltl2ba());
+		time = System.currentTimeMillis() - time;
+		mainLog.println("Time for constructing weak DBA: " + (time / 1000.0) +"s");
+
+		product = mcLtl.constructProductModel(da, model, labelBS, statesOfInterest);
 		
 		// Adapt reward info to product model
 		productRewards = ((MDPRewards) modelRewards).liftFromModel(product);
@@ -244,20 +260,12 @@ public class MDPModelChecker extends ProbModelChecker
 		}
 		
 		// Find accepting states + compute reachability rewards
-		BitSet acc;
-		if (product.getAcceptance() instanceof AcceptanceReach) {
-			// For a DFA, just collect the accept states
-			mainLog.println("\nSkipping end component detection since DRA is a DFA...");
-			acc = ((AcceptanceReach)product.getAcceptance()).getGoalStates();
-		} else {
-			// Usually, we have to detect end components in the product
-			mainLog.println("\nFinding accepting end components...");
-			acc = mcLtl.findAcceptingECStates(product.getProductModel(), product.getAcceptance());
-		}
+		BitSet acc = ((AcceptanceReach)product.getAcceptance()).getGoalStates();
+
 		mainLog.println("\nComputing reachability rewards...");
 		mcProduct = new MDPModelChecker(this);
 		mcProduct.inheritSettings(this);
-		ModelCheckerResult res = mcProduct.computeReachRewards(product.getProductModel(), productRewards, acc, minMax.isMin());
+		ModelCheckerResult res = mcProduct.computeReachRewards((MDP)product.getProductModel(), productRewards, acc, minMax.isMin());
 		rewardsProduct = StateValues.createFromDoubleArray(res.soln, product.getProductModel());
 		
 		// Output vector over product, if required

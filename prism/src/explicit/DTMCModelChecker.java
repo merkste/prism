@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import parser.VarList;
 import parser.ast.Declaration;
@@ -47,8 +48,11 @@ import prism.PrismNotSupportedException;
 import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
+import automata.DA;
+import automata.LTL2WDBA;
 import common.IterableBitSet;
 import common.IterableStateSet;
+import explicit.LTLModelChecker.LTLProduct;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -178,22 +182,34 @@ public class DTMCModelChecker extends ProbModelChecker
 		MCRewards productRewards;
 		StateValues rewardsProduct, rewards;
 		DTMCModelChecker mcProduct;
-		LTLModelChecker.LTLProduct<DTMC> product;
+		LTLProduct<Model> product;
 
 		// For LTL model checking routines
 		mcLtl = new LTLModelChecker(this);
+
+		// we disallow simplifications based on the model in the
+		// checkMaximalStateFormulas procedure, as we have to
+		// stop with the accumulation of rewards purely based on the
+		// omega-regular language
 		mcLtl.disallowSimplificationsBasedOnModel();
 
-		// Build product of Markov chain and automaton
-		AcceptanceType[] allowedAcceptance = {
-				AcceptanceType.RABIN,
-				AcceptanceType.REACH
-		};
-		product = mcLtl.constructProductMC(this, (DTMC)model, expr, statesOfInterest, allowedAcceptance);
-		
+		// Model check maximal state formulas
+		Vector<BitSet> labelBS = new Vector<BitSet>();
+		Expression ltl = mcLtl.checkMaximalStateFormulas(this, model, expr.deepCopy(), labelBS);
+
+		// Convert LTL formula to deterministic automaton, with Reach acceptance
+		LTL2WDBA ltl2wdba = new LTL2WDBA(this);
+		mainLog.println("\nBuilding weak deterministic automaton (for " + ltl + ")...");
+		long time = System.currentTimeMillis();
+		DA<BitSet, AcceptanceReach> da = ltl2wdba.cosafeltl2wdba(ltl.convertForJltl2ba());
+		time = System.currentTimeMillis() - time;
+		mainLog.println("Time for constructing weak DBA: " + (time / 1000.0) +"s");
+
+		product = mcLtl.constructProductModel(da, model, labelBS, statesOfInterest);
+
 		// Adapt reward info to product model
 		productRewards = ((MCRewards) modelRewards).liftFromModel(product);
-		
+
 		// Output product, if required
 		if (getExportProductTrans()) {
 				mainLog.println("\nExporting product transition matrix to file \"" + getExportProductTransFilename() + "\"...");
@@ -213,18 +229,12 @@ public class DTMCModelChecker extends ProbModelChecker
 		}
 		
 		// Find accepting states + compute reachability rewards
-		BitSet acc;
-		if (product.getAcceptance() instanceof AcceptanceReach) {
-			mainLog.println("\nSkipping BSCC computation since acceptance is defined via goal states...");
-			acc = ((AcceptanceReach)product.getAcceptance()).getGoalStates();
-		} else {
-			mainLog.println("\nFinding accepting BSCCs...");
-			acc = mcLtl.findAcceptingBSCCs(product.getProductModel(), product.getAcceptance());
-		}
-		mainLog.println("\nComputing reachability probabilities...");
+		BitSet acc = ((AcceptanceReach)product.getAcceptance()).getGoalStates();
+
+		mainLog.println("\nComputing reachability rewards...");
 		mcProduct = new DTMCModelChecker(this);
 		mcProduct.inheritSettings(this);
-		ModelCheckerResult res = mcProduct.computeReachRewards(product.getProductModel(), productRewards, acc);
+		ModelCheckerResult res = mcProduct.computeReachRewards((DTMC)product.getProductModel(), productRewards, acc);
 		rewardsProduct = StateValues.createFromDoubleArray(res.soln, product.getProductModel());
 		
 		// Output vector over product, if required
@@ -238,7 +248,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		// Mapping rewards in the original model
 		rewards = product.projectToOriginalModel(rewardsProduct);
 		rewardsProduct.clear();
-		
+
 		return rewards;
 	}
 	
