@@ -73,6 +73,9 @@ public class StateValuesMTBDD implements StateValues
 	
 	/**
 	 * Constructor from a JDDNode (which is stored, not copied).
+	 * <br>
+	 * Note: The JDDNode values must only be non-zero for reachable states
+	 * (otherwise bad things happen).
 	 * <br>[ STORES: values, derefed on later call to clear() ]
 	 * @param values the JddNode for the values
 	 * @param model the underlying model
@@ -99,6 +102,11 @@ public class StateValuesMTBDD implements StateValues
 			varSizes[i] = varList.getRangeLogTwo(i);
 		}
 		varValues = new int[varList.getNumVars()];
+		
+		if (jdd.SanityJDD.enabled) {
+			jdd.SanityJDD.checkIsContainedIn(values, reach);
+			jdd.SanityJDD.checkIsDDOverVars(values, vars);
+		}
 	}
 
 	// CONVERSION METHODS
