@@ -93,6 +93,7 @@ public class ProbModel implements Model
 	protected Map<String, JDDNode> labelsDD = new TreeMap<String, JDDNode>();
 
 	protected ODDNode odd; // odd
+	protected JDDVarsTree varOrderConstraints;
 
 	// accessor methods
 
@@ -638,6 +639,22 @@ public class ProbModel implements Model
 		this.transPerAction = transPerAction;
 	}
 
+	@Override
+	public void setVarOrderConstraints(JDDVarsTree tree)
+	{
+		if (varOrderConstraints != null && varOrderConstraints != tree) {
+			varOrderConstraints.clear();
+		}
+		varOrderConstraints = tree;
+	}
+
+	@Override
+	public JDDVarsTree getVarOrderConstraints()
+	{
+		return varOrderConstraints;
+	}
+
+
 	// remove non-reachable states from various dds
 	// (and calculate num transitions)
 
@@ -1024,6 +1041,9 @@ public class ProbModel implements Model
 
 		if (modelVariables != null)
 			modelVariables.clear();
+
+		if (varOrderConstraints != null)
+			varOrderConstraints.clear();
 	}
 
 }

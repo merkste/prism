@@ -143,6 +143,17 @@ public interface Model
 	/** Get the information about the model variables */
 	ModelVariablesDD getModelVariables();
 
+	/**
+	 * Set variable ordering constraints for the variables used by this model
+	 * (for reordering).
+	 *
+	 * <br> [ STORE: tree, is cleared when clear() is called ]
+	 */
+	void setVarOrderConstraints(JDDVarsTree tree);
+
+	/** Get the current variable ordering constraints */
+	JDDVarsTree getVarOrderConstraints();
+
 	ODDNode getODD();
 
 	void setSynchs(List<String> synchs);
