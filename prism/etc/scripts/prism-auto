@@ -598,7 +598,7 @@ def benchmarkAutoFile(autoFile):
 #
 # * propertiesFile: name of the properties file (as a string)
 
-def benchmarkPropertiesFile(propertiesFile):
+def benchmarkPropertiesFile(propertiesFile, extraArgs):
     logging.debug("Benchmarking properties file " + propertiesFile)
     dir = os.path.dirname(propertiesFile)
     if dir == "": dir = "."
@@ -615,7 +615,7 @@ def benchmarkPropertiesFile(propertiesFile):
         for modelFile in modelFiles:
             # Expand model based on any .args file, too
             for modelArgs in getMatchingArgListsForFile(modelFile[0]):
-                benchmark(modelFile[0], modelFile[1] + modelArgs + [propertiesFile] + args, dir)
+                benchmark(modelFile[0], modelFile[1] + modelArgs + [propertiesFile] + args + extraArgs, dir)
 
 # Execute benchmarking based on a property list.
 # A property list is a file containing pairs of the form <dir>, <prop> where:
@@ -632,11 +632,20 @@ def benchmarkPropListFile(propListFile):
     for line in open(propListFile, 'r').readlines():
         line = line.strip()
         if len(line) == 0 or lineIsCommentedOut(line): continue
-        items = line.split(',')
-        dir = os.path.join(listDir, items[0].strip())
+        m = re.match('(.+?),(.+?)(,(.+))?$', line);
+        if m is None:
+            print("Malformed line in property list file " + propListFile + ": "+line)
+            return
+        modelSpec = m.group(1)
+        dir = os.path.join(listDir, modelSpec.strip())
         dir = os.path.realpath(dir)
-        propFile = items[1].strip()
-        benchmarkPropertiesFile(os.path.join(dir, propFile))
+        propFile = m.group(2).strip()
+        extraArgSpec = m.group(4)
+        if extraArgSpec is None:
+            benchmarkPropertiesFile(os.path.join(dir, propFile), [])
+        else:
+            extraArgs = extraArgSpec.split()
+            benchmarkPropertiesFile(os.path.join(dir, propFile), extraArgs)
 
 #==================================================================================================
 # Main program
