@@ -47,6 +47,7 @@ public class Values //implements Comparable
 {
 	protected ArrayList<String> names;
 	protected ArrayList<Object> values;
+	protected ModelInfo modelInfo;
 	
 	// Constructors
 	
@@ -67,6 +68,7 @@ public class Values //implements Comparable
 	{
 		names = (ArrayList<String>)v.names.clone();
 		values = (ArrayList<Object>)v.values.clone();
+		modelInfo = v.modelInfo;
 	}
 	
 	/**
@@ -93,6 +95,7 @@ public class Values //implements Comparable
 		for (i = 0; i < n; i++) {
 			addValue(modelInfo.getVarName(i), s.varValues[i]);
 		}
+		this.modelInfo = modelInfo;
 	}
 	
 	/**
@@ -414,6 +417,7 @@ public class Values //implements Comparable
 		Object o;
 		
 		res = new Values();
+		res.modelInfo = modelInfo;
 		n = getNumValues();
 		for (i = 0; i < n; i++) {
 			s = getName(i);

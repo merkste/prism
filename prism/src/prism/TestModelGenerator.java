@@ -94,7 +94,7 @@ public class TestModelGenerator extends DefaultModelGenerator
 	@Override
 	public State getInitialState() throws PrismException
 	{
-		State s = new State(1);
+		State s = new State(1, this);
 		s.varValues[0] = n/2;
 		return s;
 	}
@@ -145,7 +145,7 @@ public class TestModelGenerator extends DefaultModelGenerator
 	@Override
 	public State computeTransitionTarget(int i, int offset) throws PrismException
 	{
-		State s = new State(1);
+		State s = new State(1, this);
 		if (x == 0 || x == n) {
 			s.varValues[i] = x;
 		} else {

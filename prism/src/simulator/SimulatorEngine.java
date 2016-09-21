@@ -722,7 +722,7 @@ public class SimulatorEngine extends PrismComponent
 		modulesFile = (ModulesFile) modulesFile.deepCopy().replaceConstants(mfConstants).simplify();
 
 		// Create state/transition/rewards storage
-		currentState = new State(numVars);
+		currentState = new State(numVars, modulesFile);
 		tmpStateRewards = new double[modulesFile.getNumRewardStructs()];
 		tmpTransitionRewards = new double[modulesFile.getNumRewardStructs()];
 		transitionList = new TransitionList();

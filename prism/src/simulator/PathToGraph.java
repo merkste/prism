@@ -108,7 +108,7 @@ public class PathToGraph extends PathDisplayer
 		}
 
 		// Display initial state
-		lastState = new State(initialState.varValues.length);
+		lastState = new State(initialState.varValues.length, modulesFile);
 		if (showRewards)
 			lastStateRewards = explicit.Utils.cloneDoubleArray(initialStateRewards);
 		displayState(0.0, initialState, initialStateRewards, true);

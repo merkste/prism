@@ -145,7 +145,7 @@ public class ExplicitFiles2Model extends PrismComponent
 			// in the model, with value corresponding to the state index
 			List<State> states = new ArrayList<State>(model.getNumStates());
 			for (int i = 0; i < model.getNumStates(); i++) {
-				State s = new State(1);
+				State s = new State(1, modulesFile);
 				s.setValue(0, i); // set x = state index
 				states.add(s);
 			}
@@ -210,7 +210,7 @@ public class ExplicitFiles2Model extends PrismComponent
 					// now split up middle bit and extract var info
 					ss = ss[1].substring(ss[1].indexOf('(') + 1, ss[1].indexOf(')')).split(",");
 
-					State state = new State(numVars);
+					State state = new State(numVars, mf);
 					if (ss.length != numVars)
 						throw new PrismException("(wrong number of variable values) ");
 					for (j = 0; j < numVars; j++) {

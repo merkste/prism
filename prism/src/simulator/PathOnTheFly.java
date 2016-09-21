@@ -68,8 +68,8 @@ public class PathOnTheFly extends Path
 		continuousTime = modulesFile.getModelType().continuousTime();
 		numRewardStructs = modulesFile.getNumRewardStructs();
 		// Create State objects for current/previous state
-		previousState = new State(modulesFile.getNumVars());
-		currentState = new State(modulesFile.getNumVars());
+		previousState = new State(modulesFile.getNumVars(), modulesFile);
+		currentState = new State(modulesFile.getNumVars(), modulesFile);
 		// Create arrays to store totals
 		totalRewards = new double[numRewardStructs];
 		previousStateRewards = new double[numRewardStructs];
