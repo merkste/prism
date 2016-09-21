@@ -1190,12 +1190,15 @@ public class StateModelChecker extends PrismComponent
 	 * to freshly generated labels attached to the model.
 	 * <br>
 	 * Returns the modified Expression.
+	 *
+	 * @param model the model
+	 * @param expr the expression (a path formula)
+	 * @param ltlMC an LTLModelChecker instance (to allow setting custom parameters)
 	 */
-	public Expression handleMaximalStateFormulas(ModelExplicit model, Expression expr) throws PrismException
+	public Expression handleMaximalStateFormulas(ModelExplicit model, Expression expr, LTLModelChecker ltlMC) throws PrismException
 	{
 		Vector<BitSet> labelBS = new Vector<BitSet>();
 
-		LTLModelChecker ltlMC = new LTLModelChecker(this);
 		// check the maximal state subformulas and gather
 		// the satisfaction sets in labelBS, with index i
 		// in the vector corresponding to label Li in the

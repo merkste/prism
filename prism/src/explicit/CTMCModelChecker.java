@@ -68,7 +68,7 @@ public class CTMCModelChecker extends ProbModelChecker
 		// we first handle the sub-formulas by computing their satisfaction sets,
 		// attaching them as labels to the model and modifying the formula
 		// appropriately
-		expr = handleMaximalStateFormulas((ModelExplicit) model, expr);
+		expr = handleMaximalStateFormulas((ModelExplicit) model, expr, new LTLModelChecker(this));
 
 		// Now, we construct embedded DTMC and do the plain LTL computation on that
 		mainLog.println("Building embedded DTMC...");
@@ -93,7 +93,11 @@ public class CTMCModelChecker extends ProbModelChecker
 		// we first handle the sub-formulas by computing their satisfaction sets,
 		// attaching them as labels to the model and modifying the formula
 		// appropriately
-		expr = handleMaximalStateFormulas((ModelExplicit) model, expr);
+		// We need to disallow simplifications based on the model, as the accumulation
+		// of rewards has to depend only on the omega-regular language
+		LTLModelChecker ltlMC = new LTLModelChecker(this);
+		ltlMC.disallowSimplificationsBasedOnModel();
+		expr = handleMaximalStateFormulas((ModelExplicit) model, expr, ltlMC);
 
 		// Construct embedded DTMC (and convert rewards for it) and do remaining computation
 		// on that with the "pure" cosafety LTL formula
@@ -124,7 +128,7 @@ public class CTMCModelChecker extends ProbModelChecker
 		// we first handle the sub-formulas by computing their satisfaction sets,
 		// attaching them as labels to the model and modifying the formula
 		// appropriately
-		expr = handleMaximalStateFormulas((ModelExplicit) model, expr);
+		expr = handleMaximalStateFormulas((ModelExplicit) model, expr, new LTLModelChecker(this));
 
 		// Now, we construct embedded DTMC and do the plain E[ LTL ] computation on that
 		mainLog.println("Building embedded DTMC...");
