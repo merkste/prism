@@ -31,11 +31,15 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import parser.ast.Declaration;
+import parser.ast.DeclarationIntView;
+import parser.ast.ModulesFile;
 import parser.type.Type;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
 import prism.ModelInfo;
+import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismUtils;
 
@@ -144,6 +148,40 @@ public class Values //implements Comparable
 		}
 	}
 	
+	public void setViewValue(String name, Object value) throws PrismLangException
+	{
+		if (!(modelInfo instanceof ModulesFile)) {
+			throw new PrismLangException("Views are only supported for ModulesFile");
+		}
+
+		ModulesFile modulesFile = (ModulesFile) modelInfo;
+		int viewIndex = modulesFile.getViewIndex(name);
+		if (viewIndex == -1) {
+			throw new PrismLangException("No view named "+name);
+		}
+		Declaration decl = modulesFile.getViewDeclaration(viewIndex);
+
+		DeclarationIntView declInt = (DeclarationIntView) decl.getDeclType();
+
+		if (!(value instanceof Integer)) {
+			throw new PrismLangException("Can not assign "+value+" to view "+name);
+		}
+
+		int v = (int) value;
+		if (v < declInt.getLow().evaluateInt() || v > declInt.getHigh().evaluateInt()) {
+			throw new PrismLangException("Can not assign "+value+" to view "+name+", out of range.");
+		}
+		v = v - declInt.getLow().evaluateInt();
+		for (int i = declInt.getBits().size()-1; i>=0; i--) {
+			if (v % 2 == 1) {
+				setValue(declInt.getBits().get(i).getName(), 1);
+			} else {
+				setValue(declInt.getBits().get(i).getName(), 0);
+			}
+			v = v >> 1;
+		}
+	}
+
 	/**
 	 * Set multiple values (overwrite if already present)
 	 * Returns number of values overwritten.

@@ -151,7 +151,12 @@ public class Update extends ASTElement
 		res = new Values(oldValues);
 		n = exprs.size();
 		for (i = 0; i < n; i++) {
-			res.setValue(getVar(i), getExpression(i).evaluate(constantValues, oldValues));
+			Object newValue = getExpression(i).evaluate(constantValues, oldValues);
+			if (getVarIndex(i) == -2) {
+				res.setViewValue(getVar(i), newValue);
+			} else {
+				res.setValue(getVar(i), newValue);
+			}
 		}
 		return res;
 	}
@@ -169,7 +174,12 @@ public class Update extends ASTElement
 		int i, n;
 		n = exprs.size();
 		for (i = 0; i < n; i++) {
-			newValues.setValue(getVar(i), getExpression(i).evaluate(constantValues, oldValues));
+			Object newValue = getExpression(i).evaluate(constantValues, oldValues);
+			if (getVarIndex(i) == -2) {
+				newValues.setViewValue(getVar(i), newValue);
+			} else {
+				newValues.setValue(getVar(i), newValue);
+			}
 		}
 	}
 
@@ -186,7 +196,12 @@ public class Update extends ASTElement
 		res = new State(oldState);
 		n = exprs.size();
 		for (i = 0; i < n; i++) {
-			res.setValue(getVarIndex(i), getExpression(i).evaluate(oldState));
+			Object newValue = getExpression(i).evaluate(oldState);
+			if (getVarIndex(i) == -2) {
+				res.setViewValue(getVar(i), newValue);
+			} else {
+				res.setValue(getVarIndex(i), newValue);
+			}
 		}
 		return res;
 	}
@@ -204,7 +219,12 @@ public class Update extends ASTElement
 		int i, n;
 		n = exprs.size();
 		for (i = 0; i < n; i++) {
-			newState.setValue(getVarIndex(i), getExpression(i).evaluate(oldState));
+			Object newValue = getExpression(i).evaluate(oldState);
+			if (getVarIndex(i) == -2) {
+				newState.setViewValue(getVar(i), newValue);
+			} else {
+				newState.setValue(getVarIndex(i), newValue);
+			}
 		}
 	}
 
@@ -226,6 +246,8 @@ public class Update extends ASTElement
 		int i, j, n;
 		n = exprs.size();
 		for (i = 0; i < n; i++) {
+			if (getVarIndex(i) == -2)
+				throw new PrismLangException("Partial updates are currently not supported for views.");
 			j = varMap[getVarIndex(i)];
 			if (j != -1) {
 				newState.setValue(j, getExpression(i).evaluate(new EvaluateContextSubstate(oldState, varMap)));

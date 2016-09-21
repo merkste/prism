@@ -42,6 +42,8 @@ import java.util.Vector;
 
 import parser.State;
 import parser.Values;
+import parser.ast.DeclarationIntView;
+import parser.ast.DeclarationType;
 import parser.ast.Expression;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConstant;
@@ -56,6 +58,7 @@ import parser.ast.ExpressionLiteral;
 import parser.ast.ExpressionProp;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.ExpressionVar;
+import parser.ast.ExpressionViewVar;
 import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
@@ -550,6 +553,9 @@ public class StateModelChecker extends PrismComponent
 		else if (expr instanceof ExpressionVar) {
 			res = checkExpressionVar(model, (ExpressionVar) expr, statesOfInterest);
 		}
+		else if (expr instanceof ExpressionViewVar) {
+			res = checkExpressionViewVar(model, (ExpressionViewVar) expr, statesOfInterest);
+		}
 		// Labels
 		else if (expr instanceof ExpressionLabel) {
 			res = checkExpressionLabel(model, (ExpressionLabel) expr, statesOfInterest);
@@ -804,6 +810,27 @@ public class StateModelChecker extends PrismComponent
 		return res;
 	}
 
+	/**
+	 * Model check a view reference.
+	 * @param statesOfInterest the states of interest, see checkExpression()
+	 */
+	protected StateValues checkExpressionViewVar(Model model, ExpressionViewVar expr, BitSet statesOfInterest) throws PrismException
+	{
+		// TODO (JK): optimize evaluation using statesOfInterest
+
+		int numStates = model.getNumStates();
+		StateValues res = new StateValues(expr.getType(), model);
+		List<State> statesList = model.getStatesList();
+
+		for (int i = 0; i < numStates; i++) {
+			Integer value = expr.evaluateInt(statesList.get(i));
+			res.setIntValue(i, value);
+		}
+
+		return res;
+	}
+
+	
 	/**
 	 * Model check a label.
 	 * @param statesOfInterest the states of interest, see checkExpression()
