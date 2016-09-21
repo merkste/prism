@@ -1094,6 +1094,11 @@ public class NondetModelChecker extends NonProbModelChecker
 		StateValues probs = null;
 		long l;
 
+		if (jdd.SanityJDD.enabled) {
+			jdd.SanityJDD.checkIsContainedIn(b1, reach);
+			jdd.SanityJDD.checkIsContainedIn(b2, reach);
+		}
+
 		// compute probabilities
 
 		// if doing min with fairness, we solve a different problem
