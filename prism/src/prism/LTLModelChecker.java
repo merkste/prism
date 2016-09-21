@@ -63,6 +63,29 @@ public class LTLModelChecker extends PrismComponent
 {
 	private boolean allowSimplificationsBasedOnModel = true;
 
+	public class LTLProduct<M extends Model> extends Product<M> {
+		private AcceptanceOmegaDD acceptance;
+
+		public LTLProduct(M productModel, M originalModel, AcceptanceOmegaDD acceptance, JDDNode startMask, JDDVars daRowVars)
+		{
+			super(productModel, originalModel, startMask, daRowVars);
+			this.acceptance = acceptance;
+		}
+
+		public AcceptanceOmegaDD getAcceptance() {
+			return acceptance;
+		}
+
+		public void setAcceptance(AcceptanceOmegaDD acceptance) {
+			this.acceptance = acceptance;
+		}
+
+		public void clear() {
+			super.clear();
+			acceptance.clear();
+		}
+	}
+
 	/**
 	 * Create a new DTMCModelChecker, inherit basic state from parent (unless null).
 	 */
@@ -424,6 +447,39 @@ public class LTLModelChecker extends PrismComponent
 		daDDColVars.derefAll();
 
 		return modelProd;
+	}
+
+	public LTLProduct<ProbModel> constructProductMC(ProbModelChecker mc, ProbModel model, Expression expr, AcceptanceType... allowedAcceptance) throws PrismException
+	{
+		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
+		DA<BitSet, ? extends AcceptanceOmega> da;
+		ProbModel modelProduct;
+		JDDNode startMask;
+		JDDVars daDDRowVars, daDDColVars;
+
+		da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
+
+		// Build product of Markov chain and automaton
+		// (note: might be a CTMC - StochModelChecker extends this class)
+		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
+		daDDRowVars = new JDDVars();
+		daDDColVars = new JDDVars();
+		modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars);
+		mainLog.println();
+		modelProduct.printTransInfo(mainLog, false);
+
+		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
+
+		startMask = buildStartMask(da, labelDDs, daDDRowVars);
+		JDD.Ref(model.getReach());
+		startMask = JDD.And(model.getReach(), startMask);
+
+		daDDColVars.derefAll();
+		for (int i = 0; i < labelDDs.size(); i++) {
+			JDD.Deref(labelDDs.get(i));
+		}
+
+		return new LTLProduct<ProbModel>(modelProduct, model, acceptance, startMask, daDDRowVars);
 	}
 
 	/**
