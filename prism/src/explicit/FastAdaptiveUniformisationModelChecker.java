@@ -143,13 +143,13 @@ public class FastAdaptiveUniformisationModelChecker extends PrismComponent
 		}
 
 		double timeLower = 0.0;
-		if (exprTemp.getLowerBound() != null) {
-			timeLower = exprTemp.getLowerBound().evaluateDouble(constantValues);
+		if (exprTemp.bound != null && exprTemp.bound.getLowerBound() != null) {
+			timeLower = exprTemp.bound.getLowerBound().evaluateDouble(constantValues);
 		}
-		if (exprTemp.getUpperBound() == null) {
+		if (exprTemp.bound == null || exprTemp.bound.getUpperBound() == null) {
 			throw new PrismNotSupportedException("Fast adaptive uniformisation window model checking currently requires an upper time bound");
 		}
-		double timeUpper = exprTemp.getUpperBound().evaluateDouble(constantValues);
+		double timeUpper = exprTemp.bound.getUpperBound().evaluateDouble(constantValues);
 
 		if (!exprTemp.hasBounds()) {
 			throw new PrismNotSupportedException("Fast adaptive uniformisation window model checking currently only supports timed properties");
@@ -237,7 +237,7 @@ public class FastAdaptiveUniformisationModelChecker extends PrismComponent
 		default:
 			throw new PrismNotSupportedException("Currently only instantaneous or cumulative rewards are allowed.");
 		}
-		double time = temporal.getUpperBound().evaluateDouble(constantValues);
+		double time = temporal.bound.getUpperBound().evaluateDouble(constantValues);
 		RewardStruct rewStruct = expr.getRewardStructByIndexObject(modulesFile, constantValues);
 		fau.setRewardStruct(rewStruct);
 		fau.setConstantValues(constantValues);

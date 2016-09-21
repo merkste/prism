@@ -38,6 +38,7 @@ import parser.ast.FormulaList;
 import parser.ast.LabelList;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
+import parser.ast.TemporalOperatorBound;
 import prism.ModelInfo;
 import prism.PrismLangException;
 
@@ -116,8 +117,8 @@ public class PropertiesSemanticCheck extends SemanticCheck
 		int op = e.getOperator();
 		Expression operand1 = e.getOperand1();
 		Expression operand2 = e.getOperand2();
-		Expression lBound = e.getLowerBound();
-		Expression uBound = e.getUpperBound();
+		Expression lBound = e.bound.getLowerBound();
+		Expression uBound = e.bound.getUpperBound();
 		if (lBound != null && !lBound.isConstant()) {
 			throw new PrismLangException("Lower bound in " + e.getOperatorSymbol() + " operator is not constant", lBound);
 		}
@@ -137,6 +138,18 @@ public class PropertiesSemanticCheck extends SemanticCheck
 		}
 		if (op == ExpressionTemporal.R_S && (operand1 != null || operand2 != null || lBound != null || uBound != null)) {
 			throw new PrismLangException("Badly formed " + e.getOperatorSymbol() + " operator", e);
+		}
+	}
+
+	public void visitPost(TemporalOperatorBound e) throws PrismLangException
+	{
+		Expression lBound = e.getLowerBound();
+		Expression uBound = e.getUpperBound();
+		if (lBound != null && !lBound.isConstant()) {
+			throw new PrismLangException("Lower bound " + e + " is not constant", lBound);
+		}
+		if (uBound != null && !uBound.isConstant()) {
+			throw new PrismLangException("Upper bound " + e + " not constant", uBound);
 		}
 	}
 

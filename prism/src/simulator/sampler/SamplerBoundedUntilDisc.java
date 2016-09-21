@@ -53,9 +53,9 @@ public class SamplerBoundedUntilDisc extends SamplerBoolean
 		left = expr.getOperand1();
 		right = expr.getOperand2();
 		// Lower bound
-		if (expr.getLowerBound() != null) {
-			lb = expr.getLowerBound().evaluateInt();
-			if (expr.lowerBoundIsStrict()) {
+		if (expr.getBound().hasLowerBound()) {
+			lb = expr.getBound().getLowerBound().evaluateInt();
+			if (expr.getBound().lowerBoundIsStrict()) {
 				// Convert to non-strict bound:  >lb  <=>  >=lb+1
 				lb = lb + 1;
 			}
@@ -67,9 +67,9 @@ public class SamplerBoundedUntilDisc extends SamplerBoolean
 			throw new PrismException("Invalid lower bound in "+expr);
 		}
 		// Upper bound
-		if (expr.getUpperBound() != null) {
-			ub = expr.getUpperBound().evaluateInt();
-			if (expr.upperBoundIsStrict()) {
+		if (expr.getBound().hasUpperBound()) {
+			ub = expr.getBound().getUpperBound().evaluateInt();
+			if (expr.getBound().upperBoundIsStrict()) {
 				// Convert to non-strict bound:  <ub  <=>  <=ub-1
 				ub = ub - 1;
 			}

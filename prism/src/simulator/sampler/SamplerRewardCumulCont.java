@@ -48,7 +48,7 @@ public class SamplerRewardCumulCont extends SamplerDouble
 		if (expr.getOperator() != ExpressionTemporal.R_C)
 			throw new PrismException("Error creating Sampler");
 		
-		timeBound = expr.getUpperBound().evaluateDouble();
+		timeBound = expr.bound.getUpperBound().evaluateDouble();
 		this.rewardStructIndex = rewardStructIndex;
 		// Initialise sampler info
 		reset();

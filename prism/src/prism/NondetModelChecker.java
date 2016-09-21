@@ -770,11 +770,11 @@ public class NondetModelChecker extends NonProbModelChecker
 			Expression expr = exprProb.getExpression();
 			if (expr.isSimplePathFormula() && Expression.isReach(expr)) {
 				ExpressionTemporal exprTemp = ((ExpressionTemporal) expr);
-				if (exprTemp.getLowerBound() != null) {
+				if (exprTemp.bound != null && exprTemp.bound.getLowerBound() != null) {
 					throw new PrismException("Lower time bounds are not supported in multi-objective queries");
 				}
-				if (exprTemp.getUpperBound() != null) {
-					stepBound = exprTemp.getUpperBound().evaluateInt(constantValues);
+				if (exprTemp.bound != null && exprTemp.bound.getUpperBound() != null) {
+					stepBound = exprTemp.bound.getUpperBound().evaluateInt(constantValues);
 				} else {
 					stepBound = -1;
 				}
@@ -794,8 +794,8 @@ public class NondetModelChecker extends NonProbModelChecker
 						+ exprTemp.getOperatorSymbol() + ")");
 			}
 			// R [ C<=k ]
-			if (exprTemp.getUpperBound() != null) {
-				stepBound = exprTemp.getUpperBound().evaluateInt(constantValues);
+			if (exprTemp.bound != null && exprTemp.bound.getUpperBound() != null) {
+				stepBound = exprTemp.bound.getUpperBound().evaluateInt(constantValues);
 			}
 			// R [ C ]
 			else {
@@ -1314,12 +1314,12 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// check that there is an upper time bound
-		if (expr.getUpperBound() == null) {
+		if (expr.bound == null || expr.bound.getUpperBound() == null) {
 			throw new PrismException("Cumulative reward operator without time bound (C) is only allowed for multi-objective queries");
 		}
 
 		// get info from inst reward
-		time = expr.getUpperBound().evaluateInt(constantValues);
+		time = expr.bound.getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid time bound " + time + " in cumulative reward formula");
 		}
@@ -1360,7 +1360,7 @@ public class NondetModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// get info from bounded until
-		time = expr.getUpperBound().evaluateInt(constantValues);
+		time = expr.bound.getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid bound " + time + " in instantaneous reward property");
 		}

@@ -1210,15 +1210,19 @@ Expression ExpressionTemporalUnary(boolean prop, boolean pathprop) :
 void TimeBound(ExpressionTemporal exprTemp) :
 {
 	Expression lBound, uBound;
+	TemporalOperatorBound bound = new TemporalOperatorBound();
 }
 {
-	( ( <LE> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) uBound = IdentifierExpression() | uBound = Expression(false, false) ) { exprTemp.setUpperBound(uBound, false); } )
-	| ( <LT> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) uBound = IdentifierExpression() | uBound = Expression(false, false) ) { exprTemp.setUpperBound(uBound, true); } )
-	| ( <GE> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) lBound = IdentifierExpression() | lBound = Expression(false, false) ) { exprTemp.setLowerBound(lBound, false); } )
-	| ( <GT> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) lBound = IdentifierExpression() | lBound = Expression(false, false) ) { exprTemp.setLowerBound(lBound, true); } )
-	| ( <LBRACKET> lBound = Expression(false, false) <COMMA> uBound = Expression(false, false) <RBRACKET> { exprTemp.setLowerBound(lBound, false); exprTemp.setUpperBound(uBound, false); } )
-	| ( <EQ> lBound = Expression(false, false) { exprTemp.setEqualBounds(lBound); } )
+	( ( <LE> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) uBound = IdentifierExpression() | uBound = Expression(false, false) ) { bound.setUpperBound(uBound, false); } )
+	| ( <LT> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) uBound = IdentifierExpression() | uBound = Expression(false, false) ) { bound.setUpperBound(uBound, true); } )
+	| ( <GE> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) lBound = IdentifierExpression() | lBound = Expression(false, false) ) { bound.setLowerBound(lBound, false); } )
+	| ( <GT> ( LOOKAHEAD(IdentifierExpression() <LPARENTH>) lBound = IdentifierExpression() | lBound = Expression(false, false) ) { bound.setLowerBound(lBound, true); } )
+	| ( <LBRACKET> lBound = Expression(false, false) <COMMA> uBound = Expression(false, false) <RBRACKET> { bound.setLowerBound(lBound, false); bound.setUpperBound(uBound, false); } )
+	| ( <EQ> lBound = Expression(false, false) { bound.setEqualBounds(lBound); } )
 	)
+	{
+		exprTemp.setBound(bound);
+	}
 }
 
 // Expression: if-then-else, i.e. "cond ? then : else"
@@ -1795,6 +1799,7 @@ Expression ExpressionRewardContents(boolean prop, boolean pathprop) :
 	ExpressionTemporal exprTemp = null;
 	Expression ret = null;
 	Token begin;
+	TemporalOperatorBound b = new TemporalOperatorBound();
 }
 {
 	{ begin = getToken(1); }
@@ -1804,9 +1809,9 @@ Expression ExpressionRewardContents(boolean prop, boolean pathprop) :
 	| <S> { ret = new ExpressionTemporal(ExpressionTemporal.R_S, null, null); }
 	
 	// Normal reward operators (excluding S; see above)
-	| LOOKAHEAD(<C> <LE>) begin = <C> <LE> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); exprTemp.setUpperBound(expr); ret = exprTemp; }
+	| LOOKAHEAD(<C> <LE>) begin = <C> <LE> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); b.setUpperBound(expr); exprTemp.setBound(b); ret = exprTemp; }
 	| <C> { ret = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); }
-	| <I> <EQ> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_I, null, null); exprTemp.setUpperBound(expr); ret = exprTemp; }
+	| <I> <EQ> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_I, null, null); b.setUpperBound(expr); exprTemp.setBound(b); ret = exprTemp; }
 	
 	// Path formula (including F "target")
 	| expr = Expression(prop, true) { ret = expr; }
