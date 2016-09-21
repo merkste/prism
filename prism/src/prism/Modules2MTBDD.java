@@ -51,7 +51,10 @@ public class Modules2MTBDD
 	private ModulesFile modulesFile;
 	
 	// model info
-	
+
+	// constraints on the variable ordering
+	private JDDVarsTree varorderConstraints = null;
+
 	// type
 	private ModelType modelType;				// model type (dtmc/mdp/ctmc)
 	// modules
@@ -328,25 +331,31 @@ public class Modules2MTBDD
 		}
 		
 		expr2mtbdd.clearDummyModel();
-		
+
+		model.setVarOrderConstraints(varorderConstraints);
+
 		return model;
 	}
 	
 	// allocate DD vars for system
 	// i.e. decide on variable ordering and request variables from CUDD
 			
-	private void allocateDDVars()
+	private void allocateDDVars() throws PrismException
 	{
 		int i, j, m, n, last;
 		
 		modelVariables = new ModelVariablesDD();
-		
+
+		// the top-level constraint, children are fixed
+		JDDVarsTree vtGlobal = JDDVarsTree.inner("Root");
+		vtGlobal.setFixed(true);
 		switch (prism.getOrdering()) {
 		
-		case 1:
+		case 1: {
 		// ordering: (a ... a) (s ... s) (l ... l) (r c ... r c)
 		
 			modelVariables.preallocateExtraActionVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_ACTION_VARS));
+			JDDVars vActionVars = modelVariables.getExtraActionVariables().copy();
 
 			// create arrays/etc. first
 			
@@ -372,7 +381,7 @@ public class Modules2MTBDD
 				varDDRowVars[i] = new JDDVars();
 				varDDColVars[i] = new JDDVars();
 			}
-			
+
 			// now allocate variables
 
 			// allocate synchronizing action variables
@@ -380,31 +389,53 @@ public class Modules2MTBDD
 				// allocate vars
 				for (i = 0; i < numSynchs; i++) {
 					ddSynchVars[i] = modelVariables.allocateVariable(synchs.elementAt(i)+".a");
+					vActionVars.addVar(ddSynchVars[i].copy());
 				}
 			}
-		
+
 			// allocate scheduling nondet dd variables
 			if (modelType == ModelType.MDP) {
 				// allocate vars
 				for (i = 0; i < numModules; i++) {
 					ddSchedVars[i] = modelVariables.allocateVariable(moduleNames[i] + ".s");
+					vActionVars.addVar(ddSchedVars[i].copy());
 				}
 			}
-			
+
 			// allocate internal nondet choice dd variables
 			if (modelType == ModelType.MDP) {
 				m = ddChoiceVars.length;
 				for (i = 0; i < m; i++) {
 					ddChoiceVars[i] = modelVariables.allocateVariable("l" + i);
+					vActionVars.addVar(ddChoiceVars[i].copy());
 				}
 			}
-			
+			// first global group:
+			//  the action variables, fixed
+			JDDVarsTree vtActions = JDDVarsTree.leaf(vActionVars, "actionVars");
+			vtActions.setFixed(true);
+			vtGlobal.addChild(vtActions);
+
 			// create a gap in the dd variables
 			// this allows to prepend additional row/col vars, e.g. for constructing
 			// a product model when doing LTL model checking
 			modelVariables.preallocateExtraStateVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_STATE_VARS));
+			JDDVarsTree vtExtraStateVars = JDDVarsTree.leaf(modelVariables.getExtraStateVariables().copy(), "extraStateVars");
+			vtExtraStateVars.setFixed(true);
+			// second global group: the extra state vars
+			vtGlobal.addChild(vtExtraStateVars);
 
-			
+			// third global group: container for the global variables
+			JDDVarsTree vtGlobalVars = JDDVarsTree.inner("globalVars");
+			vtGlobal.addChild(vtGlobalVars);
+
+			// fourth global group: container for the modules
+			JDDVarsTree vtModules = JDDVarsTree.inner("modules");
+			vtGlobal.addChild(vtModules);
+
+			// the JDDVarsTree for the current module, null means no module -> global variable
+			JDDVarsTree vtCurrentModule = null;
+
 			// allocate dd variables for module variables (i.e. rows/cols)
 			// go through all vars in order (incl. global variables)
 			// so overall ordering can be specified by ordering in the input file
@@ -412,21 +443,48 @@ public class Modules2MTBDD
 				// get number of dd variables needed
 				// (ceiling of log2 of range of variable)
 				n = varList.getRangeLogTwo(i);
+
+				if (vtCurrentModule == null && varList.getModule(i)==-1) {
+					vtCurrentModule = vtGlobalVars;
+				} else if (vtCurrentModule==null || varList.getModule(i) != varList.getModule(i-1)) {
+					// switch to new module
+					vtCurrentModule = JDDVarsTree.inner("module("+modulesFile.getModuleName(varList.getModule(i))+")");
+					vtModules.addChild(vtCurrentModule);
+				}
+
+				// the var tree for this variable declaration
+				JDDVarsTree vtVariable = JDDVarsTree.inner("variable("+varList.getName(i)+")");
+				vtVariable.setFixed(true);
+				vtCurrentModule.addChild(vtVariable);
+
 				// add pairs of variables (row/col)
 				for (j = 0; j < n; j++) {
 					// new dd row variable
-					varDDRowVars[i].addVar(modelVariables.allocateVariable(varList.getName(i) + "." + j));
+					JDDNode row = modelVariables.allocateVariable(varList.getName(i) + "." + j);
 					// new dd col variable
-					varDDColVars[i].addVar(modelVariables.allocateVariable(varList.getName(i) + "'." + j));
+					JDDNode col=modelVariables.allocateVariable(varList.getName(i) + "'." + j);
+
+					varDDRowVars[i].addVar(row);
+					varDDColVars[i].addVar(col);
+
+					JDDVars varPair = new JDDVars();
+					varPair.addVar(row.copy());
+					varPair.addVar(col.copy());
+					// keep row/col pair together
+					JDDVarsTree vtPair = JDDVarsTree.leaf(varPair, "pair("+j+")");
+					vtPair.setFixed(true);
+
+					vtVariable.addChild(vtPair);
 				}
 			}
 
 			break;
-			
-		case 2:
+		}
+		case 2: {
 		// ordering: (a ... a) (l ... l) (s r c ... r c) (s r c ... r c) ...
 	
 			modelVariables.preallocateExtraActionVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_ACTION_VARS));
+			JDDVars vActionAndChoiceVars = modelVariables.getExtraActionVariables().copy();
 
 			// create arrays/etc. first
 			
@@ -457,6 +515,7 @@ public class Modules2MTBDD
 			if (modelType == ModelType.MDP) {
 				for (i = 0; i < numSynchs; i++) {
 					ddSynchVars[i] = modelVariables.allocateVariable(synchs.elementAt(i)+".a");
+					vActionAndChoiceVars.addVar(ddSynchVars[i].copy());
 				}
 			}
 
@@ -465,50 +524,118 @@ public class Modules2MTBDD
 				m = ddChoiceVars.length;
 				for (i = 0; i < m; i++) {
 					ddChoiceVars[i] = modelVariables.allocateVariable("l" + i);
+					vActionAndChoiceVars.addVar(ddChoiceVars[i].copy());
 				}
 			}
+
+			// first global group:
+			//  the synch action and local nondet choice variables, fixed
+			JDDVarsTree vtActionsAndChoices = JDDVarsTree.leaf(vActionAndChoiceVars, "actionAndChoiceVars");
+			vtActionsAndChoices.setFixed(true);
+			vtGlobal.addChild(vtActionsAndChoices);
 
 			// create a gap in the dd variables
 			// this allows to prepend additional row/col vars, e.g. for constructing
 			// a product model when doing LTL model checking
 			modelVariables.preallocateExtraStateVariables(prism.getSettings().getInteger(PrismSettings.PRISM_DD_EXTRA_STATE_VARS));
+			JDDVarsTree vtExtraStateVars = JDDVarsTree.leaf(modelVariables.getExtraStateVariables().copy(), "extraStateVars");
+			vtExtraStateVars.setFixed(true);
+			// second global group: the extra state vars
+			vtGlobal.addChild(vtExtraStateVars);
+
+			// third global group: container for the global variables
+			JDDVarsTree vtGlobalVars = JDDVarsTree.inner("globalVars");
+			vtGlobal.addChild(vtGlobalVars);
+
+			// fourth global group: container for the modules
+			JDDVarsTree vtModules = JDDVarsTree.inner("modules");
+			vtGlobal.addChild(vtModules);
+
+			// the JDDVarsTree for the current module
+			JDDVarsTree vtCurrentModule = null;
 
 			// go through all vars in order (incl. global variables)
 			// so overall ordering can be specified by ordering in the input file
 			// use 'last' to detect when starting a new module
 			last = -1; // globals are -1
+			JDDVarsTree vtVariables = vtGlobalVars;
 			for (i = 0; i < numVars; i++) {
 				// if at the start of a module's variables
-				// and model is an mdp...
-				if ((modelType == ModelType.MDP) && (last != varList.getModule(i))) {
-					// add scheduling dd var(s) (may do multiple ones here if modules have no vars)
+				if (last != varList.getModule(i)) {
 					for (j = last+1; j <= varList.getModule(i); j++) {
-						ddSchedVars[j] = modelVariables.allocateVariable(moduleNames[j] + ".s");
+						// might be done multiple times, if there are modules
+						// without variables...
+						vtCurrentModule = JDDVarsTree.inner("module("+moduleNames[j]+")");
+						vtCurrentModule.setFixed(true);
+						if ((modelType == ModelType.MDP)) {
+							// add scheduling dd var(s)
+							ddSchedVars[j] = modelVariables.allocateVariable(moduleNames[j] + ".s");
+							JDDVars schedVars = new JDDVars();
+							schedVars.addVar(ddSchedVars[j].copy());
+							vtCurrentModule.addChild(JDDVarsTree.leaf(schedVars, "sched("+moduleNames[j]+")"));
+						}
+						vtModules.addChild(vtCurrentModule);
 					}
 					// change 'last'
 					last = varList.getModule(i);
+					// create variables container for this module
+					vtVariables = JDDVarsTree.inner("variables("+moduleNames[last]+")");
+					vtCurrentModule.addChild(vtVariables);
 				}
 				// now add row/col dd vars for the variable
 				// get number of dd variables needed
 				// (ceiling of log2 of range of variable)
 				n = varList.getRangeLogTwo(i);
+
+				// the var tree for this variable declaration
+				JDDVarsTree vtVariable = JDDVarsTree.inner("variable("+varList.getName(i)+")");
+				vtVariable.setFixed(true);
+				vtVariables.addChild(vtVariable);
+
 				// add pairs of variables (row/col)
 				for (j = 0; j < n; j++) {
-					varDDRowVars[i].addVar(modelVariables.allocateVariable(varList.getName(i) + "." + j));
-					varDDColVars[i].addVar(modelVariables.allocateVariable(varList.getName(i) + "'." + j));
+					// new dd row variable
+					JDDNode row = modelVariables.allocateVariable(varList.getName(i) + "." + j);
+					// new dd col variable
+					JDDNode col=modelVariables.allocateVariable(varList.getName(i) + "'." + j);
+
+					varDDRowVars[i].addVar(row);
+					varDDColVars[i].addVar(col);
+
+					JDDVars varPair = new JDDVars();
+					varPair.addVar(row.copy());
+					varPair.addVar(col.copy());
+					// keep row/col pair together
+					JDDVarsTree vtPair = JDDVarsTree.leaf(varPair, "pair("+j+")");
+					vtPair.setFixed(true);
+
+					vtVariable.addChild(vtPair);
 				}
 			}
 			// add any remaining scheduling dd var(s) (happens if some modules have no vars)
-			if (modelType == ModelType.MDP) for (j = last+1; j <numModules; j++) {
-				ddSchedVars[j] = modelVariables.allocateVariable(moduleNames[j] + ".s");
+			if (modelType == ModelType.MDP) {
+				for (j = last+1; j <numModules; j++) {
+					ddSchedVars[j] = modelVariables.allocateVariable(moduleNames[j] + ".s");
+					JDDVars schedVars = new JDDVars();
+					schedVars.addVar(ddSchedVars[j].copy());
+					vtCurrentModule = JDDVarsTree.leaf(schedVars, "sched("+moduleNames[j]+")");
+					vtCurrentModule.setFixed(true);
+					vtModules.addChild(vtCurrentModule);
+				}
 			}
 			break;
-			
+		}
 		default:
 			mainLog.printWarning("Invalid MTBDD ordering selected - it's all going to go wrong.");
 			break;
 		}
-		
+
+		varorderConstraints = vtGlobal;
+		if (prism.getExtraDDInfo()) {
+			mainLog.println("Variable ordering constraints for the model:");
+			vtGlobal.print(mainLog, modelVariables.getDDVarNames());
+		}
+
 		// print out all mtbdd variables allocated
 //		mainLog.print("\nMTBDD variables:");
 //		for (i = 0; i < ddVarNames.size(); i++) {
