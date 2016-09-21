@@ -41,7 +41,6 @@ import acceptance.AcceptanceReach;
 import acceptance.AcceptanceReachDD;
 import acceptance.AcceptanceType;
 import automata.DA;
-import automata.LTL2DA;
 import automata.LTL2WDBA;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -60,6 +59,7 @@ import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
+import prism.LTLModelChecker.LTLProduct;
 import sparse.PrismSparse;
 import dv.DoubleVector;
 
@@ -929,11 +929,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues rewardsProduct = null, rewards = null;
 		Expression ltl;
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
-		ProbModel modelProduct;
+		LTLProduct<ProbModel> modelProduct;
 		ProbModelChecker mcProduct;
-		JDDNode startMask;
-		JDDVars daDDRowVars, daDDColVars;
-		int i;
 		long l;
 
 		JDD.Deref(statesOfInterest);
@@ -988,21 +985,18 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		// Build product of Markov chain and automaton
-		// (note: might be a CTMC - StochModelChecker extends this class)
 		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
-		daDDRowVars = new JDDVars();
-		daDDColVars = new JDDVars();
 		l = System.currentTimeMillis();
-		modelProduct = mcLtl.constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
+		modelProduct = mcLtl.constructProductMC(model, da, labelDDs, statesOfInterest);
 		l = System.currentTimeMillis() - l;
 		mainLog.println("Time for product construction: " + l / 1000.0 + " seconds.");
 		mainLog.println();
-		modelProduct.printTransInfo(mainLog, prism.getExtraDDInfo());
+		modelProduct.getProductModel().printTransInfo(mainLog, prism.getExtraDDInfo());
 		// Output product, if required
 		if (prism.getExportProductTrans()) {
 			try {
 				mainLog.println("\nExporting product transition matrix to file \"" + prism.getExportProductTransFilename() + "\"...");
-				modelProduct.exportToFile(Prism.EXPORT_PLAIN, true, new File(prism.getExportProductTransFilename()));
+				modelProduct.getProductModel().exportToFile(Prism.EXPORT_PLAIN, true, new File(prism.getExportProductTransFilename()));
 			} catch (FileNotFoundException e) {
 				mainLog.printWarning("Could not export product transition matrix to file \"" + prism.getExportProductTransFilename() + "\"");
 			}
@@ -1010,51 +1004,36 @@ public class ProbModelChecker extends NonProbModelChecker
 		if (prism.getExportProductStates()) {
 			mainLog.println("\nExporting product state space to file \"" + prism.getExportProductStatesFilename() + "\"...");
 			PrismFileLog out = new PrismFileLog(prism.getExportProductStatesFilename());
-			modelProduct.exportStates(Prism.EXPORT_PLAIN, out);
+			modelProduct.getProductModel().exportStates(Prism.EXPORT_PLAIN, out);
 			out.close();
 		}
 
 		// Adapt reward info to product model
-		JDD.Ref(stateRewards);
-		JDD.Ref(modelProduct.getReach());
-		JDDNode stateRewardsProduct = JDD.Apply(JDD.TIMES, stateRewards, modelProduct.getReach());
-		JDD.Ref(transRewards);
-		JDD.Ref(modelProduct.getTrans01());
-		JDDNode transRewardsProduct = JDD.Apply(JDD.TIMES, transRewards, modelProduct.getTrans01());
+		JDDNode stateRewardsProduct = JDD.Apply(JDD.TIMES, stateRewards.copy(), modelProduct.getProductModel().getReach().copy());
+		JDDNode transRewardsProduct = JDD.Apply(JDD.TIMES, transRewards.copy(), modelProduct.getProductModel().getTrans01().copy());
 		
 		// Find accepting states + compute reachability rewards
-		AcceptanceReachDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
+		AcceptanceReachDD acceptance = (AcceptanceReachDD) modelProduct.getAcceptance();
 		JDDNode acc = acceptance.getGoalStates();
-		acc = JDD.And(acc, modelProduct.getReach().copy());
+		acc = JDD.And(acc, modelProduct.getProductModel().getReach().copy());
 		acceptance.clear();
 
 		mainLog.println("\nComputing reachability rewards...");
-		mcProduct = createNewModelChecker(prism, modelProduct, null);
-		rewardsProduct = mcProduct.computeReachRewards(modelProduct.getTrans(), modelProduct.getTrans01(), stateRewardsProduct, transRewardsProduct, acc);
+		mcProduct = createNewModelChecker(prism, modelProduct.getProductModel(), null);
+		rewardsProduct = mcProduct.computeReachRewards(modelProduct.getProductModel().getTrans(),
+		                                               modelProduct.getProductModel().getTrans01(),
+		                                               stateRewardsProduct,
+		                                               transRewardsProduct,
+		                                               acc);
 
-		// TODO(JK): FIX via LTLProduct!
-		
 		// Convert reward vector to original model
-		// First, filter over DRA start states
-		startMask = mcLtl.buildStartMask(da, labelDDs, daDDRowVars);
-		JDD.Ref(model.getReach());
-		startMask = JDD.And(model.getReach(), startMask);
-		rewardsProduct.filter(startMask);
-		// Then sum over DD vars for the DRA state
-		rewards = rewardsProduct.sumOverDDVars(daDDRowVars, model);
+		rewards = modelProduct.projectToOriginalModel(rewardsProduct);
 
 		// Deref, clean up
 		JDD.Deref(stateRewardsProduct);
 		JDD.Deref(transRewardsProduct);
-		rewardsProduct.clear();
 		modelProduct.clear();
-		for (i = 0; i < labelDDs.size(); i++) {
-			JDD.Deref(labelDDs.get(i));
-		}
 		JDD.Deref(acc);
-		JDD.Deref(startMask);
-		daDDRowVars.derefAll();
-		daDDColVars.derefAll();
 
 		return rewards;
 	}
