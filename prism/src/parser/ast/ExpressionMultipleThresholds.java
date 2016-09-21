@@ -3,6 +3,7 @@ package parser.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+import param.BigRational;
 import parser.EvaluateContext;
 import parser.Values;
 import parser.visitor.ASTVisitor;
@@ -35,6 +36,16 @@ public class ExpressionMultipleThresholds extends Expression
 			throw new PrismLangException("Multiple thresholds can not be evaluated to a single value...");
 		} else {
 			return thresholds.get(0).evaluate(ec);
+		}
+	}
+
+	@Override
+	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
+	{
+		if (countThresholds() != 1) {
+			throw new PrismLangException("Multiple thresholds can not be evaluated to a single value...");
+		} else {
+			return thresholds.get(0).evaluateExact(ec);
 		}
 	}
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import common.Helpers;
-
+import param.BigRational;
 import parser.EvaluateContext;
 import parser.Values;
 import parser.visitor.ASTVisitor;
@@ -92,6 +92,12 @@ public class ExpressionThresholdRange extends Expression
 
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Threshold range can not be evaluated to a single value...");
+	}
+
+	@Override
+	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Threshold range can not be evaluated to a single value...");
 	}
