@@ -820,7 +820,7 @@ public class LTLModelChecker extends PrismComponent
 		case BUCHI:
 			return findAcceptingECStatesForBuchi((AcceptanceBuchiDD) acceptance, model, fairness);
 		case RABIN:
-			return findAcceptingECStatesForRabin((AcceptanceRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness);
+			return findAcceptingECStatesForRabin((AcceptanceRabinDD) acceptance, model, null, null, fairness);
 		case GENERALIZED_RABIN:
 			return findAcceptingECStatesForGeneralizedRabin((AcceptanceGenRabinDD) acceptance, model, daDDRowVars, daDDColVars, fairness);
 		case STREETT:
