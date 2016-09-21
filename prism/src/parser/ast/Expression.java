@@ -26,10 +26,13 @@
 
 package parser.ast;
 
+import java.util.List;
+
 import jltl2ba.SimpleLTL;
 import param.BigRational;
 import parser.*;
 import parser.visitor.*;
+import parser.visitor.ASTToList.ElementWithParent;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -828,7 +831,47 @@ public abstract class Expression extends ASTElement
 	}
 
 	/**
-	 * Test if an expression contains time/step bounds on temporal operators
+	 * Are expr1 and expr2 syntactically equal?
+	 */
+	public static boolean areSyntacticallyEqual(Expression expr1, Expression expr2) throws PrismLangException
+	{
+		// Linearize both syntax trees
+		List<ASTToList.ElementWithParent> list1 = expr1.toList();
+		List<ASTToList.ElementWithParent> list2 = expr2.toList();
+	
+		if (list1 == null || list2 == null) {
+			throw new PrismLangException("Could not linearize syntax tree.");
+		}
+	
+		// do the sizes match?
+		if (list1.size() != list2.size())
+			return false;
+	
+		for (int i = 0; i < list1.size(); i++) {
+			// compare each element
+			ASTToList.ElementWithParent e1 = list1.get(i);
+			ASTToList.ElementWithParent e2 = list2.get(i);
+	
+			// different parents?
+			if (e1.getParentIndex() != e2.getParentIndex())
+				return false;
+	
+			// are the elements matching?
+			if (e1.getElement() instanceof ASTElement &&
+			    e2.getElement() instanceof ASTElement) {
+
+				boolean match = e1.getElement().isMatchingElement(e2.getElement());
+				if (!match) return false;
+			} else {
+				throw new PrismLangException("Implementation error: All children of Expression elements should be Expression elements.");
+			}
+		}
+	
+		return true;
+	}
+
+	/**
+	 * Test if an expression contains time/step bounds on temporal operators 
 	 */
 	public static boolean containsTemporalTimeBounds(Expression expr)
 	{
