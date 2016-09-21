@@ -667,6 +667,9 @@ public class NondetModelChecker extends NonProbModelChecker
 					JDD.Deref(t);
 		}
 
+		for (JDDNode t : transRewardsList)
+			JDD.Deref(t);
+
 		if (value instanceof TileList) {
 			if (opsAndBounds.numberOfNumerical() == 2) {			
 				synchronized(TileList.getStoredTileLists()) {
@@ -694,8 +697,9 @@ public class NondetModelChecker extends NonProbModelChecker
 
 	/**
 	 * Extract the information from the operator defining one objective of a multi-objective query,
-	 * store the info in the passed in arrays and so some checks.
-	 *  
+	 * store the info in the passed in arrays and do some checks.
+	 *
+	 * <br> [REFS: <i>DDs stored in transRewardsList</i>, DEREFS: <i>non</i> ]
 	 * @param exprQuant The operator for the objective
 	 * @param opsAndBounds Where to add info about ops/bounds
 	 * @param transRewardsList Where to add the transition rewards (R operators only)
@@ -720,15 +724,34 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 
 		// For a reward objective, store the transition rewards
+		//
+		// If there are any, convert state rewards to transition rewards
+		// NOTE: This conversion is problematic if we would support
+		//   I (instantaneous reward) operators, as they can distinguish
+		//   between state and transition rewards
+		boolean haveConvertedStateRewards = false;
 		if (exprReward != null) {
 			Object rs = exprReward.getRewardStructIndex();
-			// Check there are no state rewards (which are not currently supported), and throw an exception if there are
+			JDDNode transRewards = getTransitionRewardsByIndexObject(rs, model, constantValues);
+			if (transRewards == null) {
+				transRewards = JDD.Constant(0);
+			} else {
+				JDD.Ref(transRewards);
+			}
+			// If there are state rewards ...
 			JDDNode stateRewards = getStateRewardsByIndexObject(rs, model, constantValues);
 			if (stateRewards != null && !stateRewards.equals(JDD.ZERO)) {
-				throw new PrismException("Multi-objective model checking does not support state rewards; please convert to transition rewards");
+				// ... transform to transition reward and add to the already existing
+				// transition rewards
+				transRewards = JDD.Apply(JDD.PLUS, transRewards, stateRewards.copy());
+				// if this is the first time, note conversion in log
+				if (!haveConvertedStateRewards) {
+					mainLog.println("Converting state rewards to transition rewards for multi-objective model checking.");
+					haveConvertedStateRewards = true;
+				}
 			}
 			// Add transition rewards to list
-			transRewardsList.add(getTransitionRewardsByIndexObject(rs, model, constantValues));
+			transRewardsList.add(transRewards);
 		}
 		
 		// Check that the temporal/reward operator is supported, and store step bounds if present
