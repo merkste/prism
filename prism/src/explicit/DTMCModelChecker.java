@@ -45,6 +45,7 @@ import prism.PrismUtils;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.IterableBitSet;
+import common.IterableStateSet;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -324,10 +325,9 @@ public class DTMCModelChecker extends ProbModelChecker
 
 		// Find BSCCs with non-zero reward
 		BitSet bsccsNonZero = new BitSet();
-		for (int b = 0; b < numBSCCs; b++) {
-			BitSet bscc = bsccs.get(b);
-			for (int i = bscc.nextSetBit(0); i >= 0; i = bscc.nextSetBit(i + 1)) {
-				if (mcRewards.getStateReward(i) > 0) {
+		for (BitSet bscc : bsccs) {
+			for (int state : new IterableStateSet(bscc, n)) {
+				if (mcRewards.getStateReward(state) > 0) {
 					bsccsNonZero.or(bscc);
 					break;
 				}
