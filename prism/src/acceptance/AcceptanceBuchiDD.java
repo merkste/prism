@@ -91,6 +91,13 @@ public class AcceptanceBuchiDD implements AcceptanceOmegaDD
 	{
 		return JDD.AreIntersecting(acceptingStates, bscc_states);
 	}
+	
+	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		JDDNode accepting = JDD.And(singleton_bsccs, getAcceptingStates());
+		return accepting;
+	}
 
 	@Override
 	public String getSizeStatistics()

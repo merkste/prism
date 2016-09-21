@@ -40,6 +40,13 @@ public interface AcceptanceOmegaDD
 	public boolean isBSCCAccepting(JDDNode bscc_states);
 
 	/**
+	 * Given a set of states, with each state representing a singleton BSCC,
+	 * compute the set of states/singleton BSCCs that are accepting.
+	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
+	 */
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs);
+
+	/**
 	 * Get a string describing the acceptance condition's size,
 	 * i.e. "x Rabin pairs", etc.
 	 */

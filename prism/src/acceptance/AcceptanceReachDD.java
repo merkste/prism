@@ -91,6 +91,13 @@ public class AcceptanceReachDD implements AcceptanceOmegaDD
 	{
 		return JDD.AreIntersecting(goalStates, bscc_states);
 	}
+	
+	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		JDDNode accepting = JDD.And(singleton_bsccs, getGoalStates());
+		return accepting;
+	}
 
 	@Override
 	public String getSizeStatistics()

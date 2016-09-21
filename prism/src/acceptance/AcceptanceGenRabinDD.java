@@ -181,6 +181,21 @@ public class AcceptanceGenRabinDD
 	}
 
 	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		JDDNode result = JDD.Constant(0);
+		for (GenRabinPairDD pair : this) {
+			JDDNode accepting = JDD.And(singleton_bsccs.copy(), JDD.Not(pair.getL()));
+			for (int i = 0; i < pair.getNumK(); i++) {
+				accepting = JDD.And(accepting, pair.getK(i));
+			}
+			result = JDD.Or(result, accepting);
+		}
+
+		return result;
+	}
+
+	@Override
 	public void clear()
 	{
 		for (GenRabinPairDD pair : this) {

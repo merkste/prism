@@ -172,6 +172,18 @@ public class AcceptanceStreettDD
 	}
 
 	@Override
+	public JDDNode getAcceptingSingletonBSCCs(JDDNode singleton_bsccs)
+	{
+		JDDNode accepting = singleton_bsccs.copy();
+		for (StreettPairDD pair : this) {
+			accepting = JDD.Or(JDD.And(accepting.copy(), JDD.Not(pair.getR())),
+			                   JDD.And(accepting, pair.getG()));
+		}
+
+		return accepting;
+	}
+
+	@Override
 	public void clear()
 	{
 		for (StreettPairDD pair : this) {
