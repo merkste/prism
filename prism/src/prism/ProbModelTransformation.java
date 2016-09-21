@@ -93,19 +93,19 @@ public abstract class ProbModelTransformation
 	 * Get the transformed transition function.
 	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
 	 */
-	public abstract	JDDNode getTransformedTrans();
+	public abstract	JDDNode getTransformedTrans() throws PrismException;
 
 	/**
 	 * Get the transformed start function.
 	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
 	 */
-	public abstract JDDNode getTransformedStart();
+	public abstract JDDNode getTransformedStart() throws PrismException;
 
 	/**
-	 * Get the transformed state reward relation, given the old reward relation.
+	 * Get the transformed state reward relation, given the old reward relation. 
 	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
 	 */
-	public JDDNode getTransformedStateReward(JDDNode oldReward)
+	public JDDNode getTransformedStateReward(JDDNode oldReward) throws PrismException
 	{
 		JDD.Ref(oldReward);
 		return oldReward;
@@ -115,7 +115,7 @@ public abstract class ProbModelTransformation
 	 * Get the transformed transition reward relation, given the old reward relation.
 	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
 	 */
-	public JDDNode getTransformedTransReward(JDDNode oldReward)
+	public JDDNode getTransformedTransReward(JDDNode oldReward) throws PrismException
 	{
 		JDD.Ref(oldReward);
 		return oldReward;
