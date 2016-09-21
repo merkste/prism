@@ -84,6 +84,12 @@ public class StateValuesDV implements StateValues
 	 */
 	public StateValuesDV(DoubleVector values, Model model)
 	{
+		init(values, model);
+	}
+
+	/** Initialise */
+	private void init(DoubleVector values, Model model)
+	{
 		int i;
 
 		// store values vector
@@ -115,8 +121,10 @@ public class StateValuesDV implements StateValues
 	 */
 	public StateValuesDV(JDDNode dd, Model model)
 	{
-		// TODO: Enforce/check that dd is zero for all non-reachable states
-		this(new DoubleVector(dd, model.getAllDDRowVars(), model.getODD()), model);
+		if (jdd.SanityJDD.enabled) {
+			jdd.SanityJDD.checkIsContainedIn(dd, model.getReach());
+		}
+		init(new DoubleVector(dd, model.getAllDDRowVars(), model.getODD()), model);
 	}
 
 	// CONVERSION METHODS
