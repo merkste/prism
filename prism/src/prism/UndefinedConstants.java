@@ -822,4 +822,11 @@ public class UndefinedConstants
 				vals.addValue(pfConsts.get(i).getName(), pfConsts.get(i).getValue());
 		return vals;
 	}
+
+	public static Values getNonRangingConstantsFromConstSwitch(ModulesFile mf, String constSwitch) throws PrismException
+	{
+		UndefinedConstants uc = new UndefinedConstants(mf, null);
+		uc.defineUsingConstSwitch(constSwitch);
+		return uc.getNonRangingConstantValues();
+	}
 }
