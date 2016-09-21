@@ -89,6 +89,9 @@ public class ECComputerOnTheFly extends ECComputerDefault
 		}
 
 		final SubNondetModel submodel = restrict(model, restrict);
+		if (verbosity > 0) { 
+			getLog().println("Sub-MDP: " + submodel.infoString());
+		}
 		if (submodel.getNumStates() == 0) {
 			return;
 		}
@@ -100,9 +103,15 @@ public class ECComputerOnTheFly extends ECComputerDefault
 			public void notifyNextSCC(BitSet scc_submodel) throws PrismException {
 				if (isMEC(submodel, scc_submodel)) {
 					// we have identified an MEC
+					if (verbosity > 1) { 
+						getLog().println("Found MEC: " + scc_submodel);
+					}
 					consumer.notifyNextMEC(translateStates(submodel, scc_submodel));
 				} else {
 					// refine this SCC by finding the MECs inside
+					if (verbosity > 1) {
+						getLog().println("Recurse into: " + scc_submodel);
+					}
 					findEndComponents(translateStates(submodel, scc_submodel), accept);
 				}
 			}
