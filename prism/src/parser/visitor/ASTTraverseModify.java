@@ -173,6 +173,20 @@ public class ASTTraverseModify implements ASTVisitor
 	}
 	public void visitPost(DeclarationInt e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(DeclarationIntView e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(DeclarationIntView e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getLow() != null) e.setLow((Expression)e.getLow().accept(this));
+		if (e.getHigh() != null) e.setHigh((Expression)e.getHigh().accept(this));
+		for (int i = 0; i < e.getBits().size(); i++) {
+			e.getBits().set(i, (ExpressionVar) e.getBits().get(i).accept(this));
+		}
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(DeclarationIntView e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(DeclarationBool e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(DeclarationBool e) throws PrismLangException
 	{
@@ -220,6 +234,10 @@ public class ASTTraverseModify implements ASTVisitor
 		n = e.getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			if (e.getDeclaration(i) != null) e.setDeclaration(i, (Declaration)(e.getDeclaration(i).accept(this)));
+		}
+		n = e.getNumViewDeclarations();
+		for (i = 0; i < n; i++) {
+			if (e.getViewDeclaration(i) != null) e.setViewDeclaration(i, (Declaration)(e.getViewDeclaration(i).accept(this)));
 		}
 		if (e.getInvariant() != null)
 			e.setInvariant((Expression)(e.getInvariant().accept(this)));
@@ -495,6 +513,19 @@ public class ASTTraverseModify implements ASTVisitor
 		return e;
 	}
 	public void visitPost(ExpressionVar e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionViewVar e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionViewVar e) throws PrismLangException
+	{
+		visitPre(e);
+		int n = e.getNumBits();
+		for (int i = 0; i < n; i++) {
+			if (e.getBit(i) != null) e.setBit(i, (ExpressionVar)(e.getBit(i).accept(this)));
+		}
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(ExpressionViewVar e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionProb e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionProb e) throws PrismLangException

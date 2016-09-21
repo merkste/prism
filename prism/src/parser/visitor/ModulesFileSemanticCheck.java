@@ -72,6 +72,11 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 					if (m.getDeclaration(j).isStartSpecified())
 						throw new PrismLangException("Cannot use both \"init...endinit\" and initial values for variables", m.getDeclaration(j).getStart());
 				}
+				n2 = m.getNumViewDeclarations();
+				for (j = 0; j < n2; j++) {
+					if (m.getViewDeclaration(j).isStartSpecified())
+						throw new PrismLangException("Cannot use both \"init...endinit\" and initial values for views", m.getDeclaration(j).getStart());
+				}
 			}
 		}
 
@@ -152,7 +157,17 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 			throw new PrismLangException("Integer range lower bound \"" + e.getLow() + "\" is not constant", e.getLow());
 		}
 		if (e.getHigh() != null && !e.getHigh().isConstant()) {
-			throw new PrismLangException("Integer range upper bound \"" + e.getLow() + "\" is not constant", e.getLow());
+			throw new PrismLangException("Integer range upper bound \"" + e.getHigh() + "\" is not constant", e.getHigh());
+		}
+	}
+
+	public void visitPost(DeclarationIntView e) throws PrismLangException
+	{
+		if (e.getLow() != null && !e.getLow().isConstant()) {
+			throw new PrismLangException("Integer range lower bound \"" + e.getLow() + "\" is not constant", e.getLow());
+		}
+		if (e.getHigh() != null && !e.getHigh().isConstant()) {
+			throw new PrismLangException("Integer range upper bound \"" + e.getHigh() + "\" is not constant", e.getHigh());
 		}
 	}
 
@@ -188,6 +203,10 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		n = e.getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			if (e.getDeclaration(i) != null) e.getDeclaration(i).accept(this);
+		}
+		n = e.getNumViewDeclarations();
+		for (i = 0; i < n; i++) {
+			if (e.getViewDeclaration(i) != null) e.getViewDeclaration(i).accept(this);
 		}
 		inInvariant = e.getInvariant();
 		if (e.getInvariant() != null)
@@ -231,7 +250,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		String s, var;
 		Command c;
 		Module m;
-		boolean isLocal, isGlobal;
+		boolean isLocal, isLocalView, isGlobal;
 
 		// Register the fact we are leaving an update
 		//inUpdate = null;
@@ -245,8 +264,9 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 			// Check that the update is allowed to modify this variable
 			var = e.getVar(i);
 			isLocal = m.isLocalVariable(var);
+			isLocalView = m.isLocalView(var);
 			isGlobal = isLocal ? false : modulesFile.isGlobalVariable(var);
-			if (!isLocal && !isGlobal) {
+			if (!isLocal && !isLocalView && !isGlobal) {
 				s = "Module \"" + m.getName() + "\" is not allowed to modify variable \"" + var + "\"";
 				throw new PrismLangException(s, e.getVarIdent(i));
 			}

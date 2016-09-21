@@ -81,6 +81,11 @@ public class Declaration extends ASTElement
 	{
 		return declType;
 	}	
+	
+	public boolean isView()
+	{
+		return declType != null && declType instanceof DeclarationIntView;
+	}
 
 	/**
 	 * Get the specified initial value of this variable (null if it was not specified).

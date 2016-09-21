@@ -316,6 +316,13 @@ public abstract class ASTElement
 		FindAllVars visitor = new FindAllVars(varIdents, varTypes);
 		return (ASTElement) accept(visitor);
 	}
+	
+	public ASTElement findAllViews(Vector<String> viewIdents, Vector<Declaration> viewDeclarations) throws PrismLangException
+	{
+		FindAllViews visitor = new FindAllViews(viewIdents, viewDeclarations);
+		return (ASTElement) accept(visitor);
+	}
+
 
 	/**
 	 * Get all variables (i.e. ExpressionVar objects), store names in set.

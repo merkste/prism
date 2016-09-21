@@ -158,6 +158,20 @@ public class ASTTraverse implements ASTVisitor
 	}
 	public void visitPost(DeclarationInt e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(DeclarationIntView e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(DeclarationIntView e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getLow() != null) e.getLow().accept(this);
+		if (e.getHigh() != null) e.getHigh().accept(this);
+		for (ExpressionVar bit : e.getBits()) {
+			bit.accept(this);
+		}
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(DeclarationIntView e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(DeclarationBool e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(DeclarationBool e) throws PrismLangException
 	{
@@ -207,6 +221,10 @@ public class ASTTraverse implements ASTVisitor
 		n = e.getNumDeclarations();
 		for (i = 0; i < n; i++) {
 			if (e.getDeclaration(i) != null) e.getDeclaration(i).accept(this);
+		}
+		n = e.getNumViewDeclarations();
+		for (i = 0; i < n; i++) {
+			if (e.getViewDeclaration(i) != null) e.getViewDeclaration(i).accept(this);
 		}
 		if (e.getInvariant() != null)
 			e.getInvariant().accept(this);
@@ -484,6 +502,18 @@ public class ASTTraverse implements ASTVisitor
 		return null;
 	}
 	public void visitPost(ExpressionVar e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionViewVar e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionViewVar e) throws PrismLangException
+	{
+		visitPre(e);
+		for (ExpressionVar bit : e.getBits()) {
+			bit.accept(this);
+		}
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionViewVar e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionProb e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionProb e) throws PrismLangException

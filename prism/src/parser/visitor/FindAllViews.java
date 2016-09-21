@@ -3,6 +3,7 @@
 //	Copyright (c) 2002-
 //	Authors:
 //	* Dave Parker <david.parker@comlab.ox.ac.uk> (University of Oxford, formerly University of Birmingham)
+//	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
 //	
 //------------------------------------------------------------------------------
 //	
@@ -26,82 +27,88 @@
 
 package parser.visitor;
 
-import java.util.List;
+import java.util.Vector;
 
-import parser.ast.ExpressionIdent;
-import parser.ast.ExpressionVar;
-import parser.ast.Update;
-import parser.type.Type;
+import parser.ast.*;
 import prism.PrismLangException;
 
 /**
  * Find all references to variables, replace any identifier objects with variable objects,
  * check variables exist and store their index (as defined by the containing ModuleFile).
  */
-public class FindAllVars extends ASTTraverseModify
+public class FindAllViews extends ASTTraverseModify
 {
-	private List<String> varIdents;
-	private List<Type> varTypes;
-	
-	public FindAllVars(List<String> varIdents, List<Type> varTypes)
+	private Vector<String> viewIdents;
+	private Vector<Declaration> viewDeclarations;
+
+	public FindAllViews(Vector<String> varIdents, Vector<Declaration> varDeclarations)
 	{
-		this.varIdents = varIdents;
-		this.varTypes = varTypes;
+		this.viewIdents = varIdents;
+		this.viewDeclarations = varDeclarations;
 	}
-	
+
+
 	// Note that this is done with VisitPost, i.e. after recursively visiting children.
 	// This is ok because we can modify rather than create a new object so don't need to return it.
 	public void visitPost(Update e) throws PrismLangException
 	{
 		int i, j, n;
-		String s;
 		// For each element of update
 		n = e.getNumElements();
 		for (i = 0; i < n; i++) {
 			// Check variable exists
-			j = varIdents.indexOf(e.getVar(i));
+			j = viewIdents.indexOf(e.getVar(i));
 			if (j == -1) {
-				if (e.getVarIndex(i) == -2) continue;
-				s = "Unknown variable \"" + e.getVar(i) + "\" in update";
-				throw new PrismLangException(s, e.getVarIdent(i));
+				// might be a variable, so just ignore, will be handled by FindAllVars
+				continue;
 			}
 			// Store the type
-			e.setType(i, varTypes.get(j));
-			// And store the variable index
-			e.setVarIndex(i, j);
+			e.setType(i, viewDeclarations.elementAt(j).getType());
+
+			// set var index to -2 to indicate view
+			e.setVarIndex(i, -2);
 		}
 	}
 	
-	public Object visit(ExpressionIdent e) throws PrismLangException
+	public Object visit(ExpressionVar e) throws PrismLangException
 	{
-		int i;
-		// See if identifier corresponds to a variable
-		i = varIdents.indexOf(e.getName());
-		if (i != -1) {
-			// If so, replace it with an ExpressionVar object
-			ExpressionVar expr = new ExpressionVar(e.getName(), varTypes.get(i));
-			expr.setPosition(e);
-			// Store variable index
-			expr.setIndex(i);
-			return expr;
+		ExpressionViewVar result = getView(e.getName());
+		if (result != null) {
+			result.setPosition(e);
+			return result;
 		}
-		// Otherwise, leave it unchanged
+		// leave unchanged
 		return e;
 	}
 
-	// Also re-compute info for ExpressionVar objects in case variable indices have changed
-	public Object visit(ExpressionVar e) throws PrismLangException
+	public Object visit(ExpressionIdent e) throws PrismLangException
+	{
+		ExpressionViewVar result = getView(e.getName());
+		if (result != null) {
+			result.setPosition(e);
+			return result;
+		}
+		// leave unchanged
+		return e;
+	}
+	
+	private ExpressionViewVar getView(String name) throws PrismLangException
 	{
 		int i;
 		// See if identifier corresponds to a variable
-		i = varIdents.indexOf(e.getName());
+		i = viewIdents.indexOf(name);
 		if (i != -1) {
-			// If so, set the index
-			e.setIndex(i);
-			return e;
+			// If so, replace it with an ExpressionViewVar object
+			ExpressionViewVar expr = new ExpressionViewVar(name, viewDeclarations.elementAt(i).getType());
+			DeclarationIntView decl = (DeclarationIntView) viewDeclarations.elementAt(i).getDeclType();
+			expr.setLow(decl.getLow());
+			for (ExpressionVar bit : decl.getBits()) {
+				expr.addBit((ExpressionVar) bit.deepCopy());
+			}
+			return expr;
+		} else {
+			return null;
 		}
-		// Otherwise, there is a problem
-		throw new PrismLangException("Unknown variable " + e.getName() + " in ExpressionVar object", e);
 	}
 }
 
