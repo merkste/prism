@@ -46,6 +46,7 @@
 #define jlong_to_DdManager(x)		(DdManager *)jlong_to_ptr(x)
 #define jlong_to_DdNode(x)		(DdNode *)jlong_to_ptr(x)
 #define jlong_to_DdNode_array(x)	(DdNode **)jlong_to_ptr(x)
+#define jlong_to_MtrNode(x)		(MtrNode *)jlong_to_ptr(x)
 
 // for odd
 #define jlong_to_ODDNode(x)		(ODDNode *)jlong_to_ptr(x)
