@@ -91,12 +91,16 @@ public class StateValuesMTBDD implements StateValues
 	 */
 	public StateValuesMTBDD(JDDNode values, Model model)
 	{
-		int i;
-		
 		// store values vector mtbdd
 		this.values = values;
-		
+
 		// get info from model
+		setModel(model);
+	}
+
+	/** Helper method: Store information about the underlying model */
+	private void setModel(Model model)
+	{
 		this.model = model;
 		vars = model.getAllDDRowVars();
 		reach = model.getReach();
@@ -107,7 +111,7 @@ public class StateValuesMTBDD implements StateValues
 		
 		// initialise arrays
 		varSizes = new int[varList.getNumVars()];
-		for (i = 0; i < varList.getNumVars(); i++) {
+		for (int i = 0; i < varList.getNumVars(); i++) {
 			varSizes[i] = varList.getRangeLogTwo(i);
 		}
 		varValues = new int[varList.getNumVars()];
@@ -116,6 +120,12 @@ public class StateValuesMTBDD implements StateValues
 			jdd.SanityJDD.checkIsContainedIn(values, reach);
 			jdd.SanityJDD.checkIsDDOverVars(values, vars);
 		}
+	}
+
+	@Override
+	public void switchModel(Model newModel)
+	{
+		setModel(newModel);
 	}
 
 	// CONVERSION METHODS
