@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import parser.Values;
+import parser.ast.DeclarationIntView;
 import parser.ast.Expression;
 import parser.ast.ExpressionReward;
 import parser.ast.ModulesFile;
@@ -589,6 +590,27 @@ public class PrismCL implements PrismModelListener
 		} catch (PrismException e) {
 			errorAndExit(e.getMessage());
 		}
+
+		// explode bits if necessary
+		try {
+			if (prism.getSettings().getBoolean(PrismSettings.PRISM_EXPLODE_BITS)) {
+				Values constSwitchValues = UndefinedConstants.getNonRangingConstantsFromConstSwitch(modulesFile, constSwitch);
+				modulesFile.replaceConstants(constSwitchValues);
+				modulesFile.setSomeUndefinedConstants(constSwitchValues);
+				// System.out.println(modulesFile);
+
+				mainLog.println("Exploding bits...");
+				ModulesFile mf = prism.explodeBits(modulesFile);
+				mf = prism.parseModelString(mf.toString(), typeOverride);
+				mf.setSomeUndefinedConstants(constSwitchValues);
+				// System.out.println(mf);
+
+				modulesFile = mf;
+			}
+		} catch (PrismException e) {
+			errorAndExit(e.getMessage());
+		}
+
 
 		// parse properties
 

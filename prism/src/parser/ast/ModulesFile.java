@@ -1495,6 +1495,16 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return viewDecls.get(viewIndex);
 	}
 
+	/**
+	 * "Explode" the bits of this modules file, i.e., split multi-bit variables
+	 * into multiple single-bit variables and add views.
+	 */
+	public void explodeBits() throws PrismLangException
+	{
+		ExplodeBits explodeBits = new ExplodeBits(constantValues);
+		this.accept(explodeBits);
+	}
+
 	public Vector<String> getViewNames()
 	{
 		return viewNames;
