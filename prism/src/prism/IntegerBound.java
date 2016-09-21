@@ -270,6 +270,17 @@ public class IntegerBound
 		return saturation;
 	}
 
+	/**
+	 * Returns {@code true} iff {@code value} is in bound for all {@code bounds}
+	 */
+	public static boolean isInBoundForConjunction(List<IntegerBound> bounds, int value) {
+		boolean in_bound = true;
+		for (IntegerBound bound : bounds) {
+			in_bound &= bound.isInBounds(value);
+		}
+		return in_bound;
+	}
+
 	public static void main(String args[])
 	{
 		System.out.println(new IntegerBound(1, true, 3, false));
