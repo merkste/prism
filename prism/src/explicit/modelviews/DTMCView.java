@@ -6,6 +6,7 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -18,6 +19,7 @@ import common.methods.CallEntry;
 import explicit.DTMC;
 import explicit.Distribution;
 import explicit.DTMCExplicit.AttachAction;
+import explicit.graphviz.Decorator;
 import explicit.rewards.MCRewards;
 import prism.ModelType;
 import prism.Pair;
@@ -326,12 +328,22 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	 * @see explicit.DTMCExplicit#exportTransitionsToDotFile(int, PrismLog) DTMCExplicit
 	 **/
 	@Override
-	protected void exportTransitionsToDotFile(final int state, final PrismLog out)
+	public void exportTransitionsToDotFile(int i, PrismLog out, Iterable<explicit.graphviz.Decorator> decorators)
 	{
-		for (Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state); transitions.hasNext();) {
-			final Entry<Integer, Double> transition = transitions.next();
-			out.print(state + " -> " + transition.getKey() + " [ label=\"");
-			out.print(transition.getValue() + "\" ];\n");
+		Iterator<Map.Entry<Integer, Double>> iter = getTransitionsIterator(i);
+		while (iter.hasNext()) {
+			Map.Entry<Integer, Double> e = iter.next();
+			out.print(i + " -> " + e.getKey());
+
+			explicit.graphviz.Decoration d = new explicit.graphviz.Decoration();
+			d.setLabel(e.getValue().toString());
+			if (decorators != null) {
+				for (Decorator decorator : decorators) {
+					d = decorator.decorateProbability(i, e.getKey(), e.getValue(), d);
+				}
+			}
+
+			out.println(d.toString());
 		}
 	}
 }

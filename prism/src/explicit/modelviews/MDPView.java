@@ -7,6 +7,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -25,6 +26,7 @@ import explicit.DTMCFromMDPAndMDStrategy;
 import explicit.Distribution;
 import explicit.MDP;
 import explicit.Model;
+import explicit.graphviz.Decorator;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 
@@ -750,19 +752,47 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	 * @see explicit.MDPExplicit#exportTransitionsToDotFile(int, PrismLog) MDPExplicit
 	 **/
 	@Override
-	protected void exportTransitionsToDotFile(int state, PrismLog out)
+	public void exportTransitionsToDotFile(int i, PrismLog out, Iterable<explicit.graphviz.Decorator> decorators)
 	{
-		for (int choice = 0, numChoices = getNumChoices(state); choice < numChoices; choice++) {
-			final Object action = getAction(state, choice);
-			final String nij = "n" + state + "_" + choice;
-			out.print(state + " -> " + nij + " [ arrowhead=none,label=\"" + choice);
-			if (action != null)
-				out.print(":" + action);
-			out.print("\" ];\n");
+		int j, numChoices;
+		String nij;
+		Object action;
+		numChoices = getNumChoices(i);
+		for (j = 0; j < numChoices; j++) {
+			action = getAction(i, j);
+			nij = "n" + i + "_" + j;
+			out.print(i + " -> " + nij + " ");
+
+			explicit.graphviz.Decoration d = new explicit.graphviz.Decoration();
+			d.attributes().put("arrowhead", "none");
+			d.setLabel(j + (action != null ? ":" + action : ""));
+
+			if (decorators != null) {
+				for (Decorator decorator : decorators) {
+					d = decorator.decorateTransition(i, j, d);
+				}
+			}
+			out.print(d);
+			out.println(";");
+
 			out.print(nij + " [ shape=point,width=0.1,height=0.1,label=\"\" ];\n");
-			for (Iterator<Entry<Integer, Double>> transitions = getTransitionsIterator(state, choice); transitions.hasNext();) {
-				Entry<Integer, Double> trans = transitions.next();
-				out.print(nij + " -> " + trans.getKey() + " [ label=\"" + trans.getValue() + "\" ];\n");
+
+			Iterator<Map.Entry<Integer, Double>> iter = getTransitionsIterator(i, j);
+			while (iter.hasNext()) {
+				Map.Entry<Integer, Double> e = iter.next();
+				out.print(nij + " -> " + e.getKey() + " ");
+
+				d = new explicit.graphviz.Decoration();
+				d.setLabel(e.getValue().toString());
+
+				if (decorators != null) {
+					for (Decorator decorator : decorators) {
+						d = decorator.decorateProbability(i, e.getKey(), j, e.getValue(), d);
+					}
+				}
+
+				out.print(d);
+				out.println(";");
 			}
 		}
 	}

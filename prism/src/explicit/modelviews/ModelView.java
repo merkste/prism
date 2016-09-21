@@ -156,61 +156,6 @@ public abstract class ModelView implements Model
 	}
 
 	@Override
-	public void exportToDotFile(final String filename) throws PrismException
-	{
-		exportToDotFile(filename, null);
-	}
-
-	@Override
-	public void exportToDotFile(final String filename, final BitSet mark) throws PrismException
-	{
-		try (PrismFileLog log = PrismFileLog.create(filename)) {
-			exportToDotFile(log, mark);
-		}
-	}
-
-	@Override
-	public void exportToDotFile(final PrismLog out)
-	{
-		exportToDotFile(out, null, false);
-	}
-
-	@Override
-	public void exportToDotFile(final PrismLog out, final BitSet mark)
-	{
-		exportToDotFile(out, mark, false);
-	}
-
-	@Override
-	public void exportToDotFile(final PrismLog out, final BitSet mark, final boolean showStates)
-	{
-		// Header
-		out.print("digraph " + getModelType() + " {\nsize=\"8,5\"\nnode [shape=box];\n");
-		for (int state = 0, numStates = getNumStates(); state < numStates; state++) {
-			out.print(state);
-			// Style for each state
-			if (mark != null && mark.get(state)) {
-				out.print(" [style=filled  fillcolor=\"#cccccc\"]");
-			} else {
-				out.println(" []");
-			}
-			// Transitions for state
-			exportTransitionsToDotFile(state, out);
-		}
-		// Append state info (if required)
-		if (showStates) {
-			final List<State> states = getStatesList();
-			if (states != null) {
-				for (int state = 0, max = getNumStates(); state < max; state++) {
-					out.print(state + " [label=\"" + state + "\\n" + states.get(state) + "\"]\n");
-				}
-			}
-		}
-		// Footer
-		out.print("}\n");
-	}
-
-	@Override
 	public void exportStates(final int exportType, final VarList varList, final PrismLog log) throws PrismException
 	{
 		final List<State> statesList = getStatesList();
@@ -275,8 +220,6 @@ public abstract class ModelView implements Model
 
 
 	//--- instance methods ---
-
-	protected abstract void exportTransitionsToDotFile(final int state, final PrismLog out);
 
 	protected abstract ModelView fixDeadlocks();
 
