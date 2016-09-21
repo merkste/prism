@@ -583,9 +583,10 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 
 	done = todo->empty();
 
-	iters = 1;
 	while (!done)
 	{
+		++iters;
+
 		double* solnPos = store.advance();
 
 		// reset solnPos to -1.0 everywhere
@@ -738,8 +739,6 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 			}
 		}
 		done = todo->empty();
-
-		++iters;
 	}
 
 	// stop clocks
