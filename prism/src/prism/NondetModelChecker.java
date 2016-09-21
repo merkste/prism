@@ -826,16 +826,21 @@ public class NondetModelChecker extends NonProbModelChecker
 		if (relOp.isStrict()) {
 			throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
 		}
-		Operator op;
-		if (relOp == RelOp.MAX) {
-			op = (exprProb != null) ? Operator.P_MAX : Operator.R_MAX;
+		Operator op = null;
+		if (relOp == RelOp.EQ) {
+			if (exprQuant.getMinMax() != null) {
+				if (exprQuant.getMinMax().isMax()) {
+					op = (exprProb != null) ? Operator.P_MAX : Operator.R_MAX;
+				} else {
+					op = (exprProb != null) ? Operator.P_MIN : Operator.R_MIN;
+				}
+			}
 		} else if (relOp == RelOp.GEQ) {
 			op = (exprProb != null) ? Operator.P_GE : Operator.R_GE;
-		} else if (relOp == RelOp.MIN) {
-			op = (exprProb != null) ? Operator.P_MIN : Operator.R_MIN;
 		} else if (relOp == RelOp.LEQ) {
 			op = (exprProb != null) ? Operator.P_LE : Operator.R_LE;
-		} else {
+		}
+		if (op == null) {
 			throw new PrismException("Multi-objective properties can only contain P/R operators with max/min=? or lower/upper probability bounds");
 		}
 		// Find bound
@@ -864,7 +869,7 @@ public class NondetModelChecker extends NonProbModelChecker
 		for (JDDNode set : tmpecs)
 			acceptingStates = JDD.Or(acceptingStates, set);
 		targetDDs.add(acceptingStates);
-		OpRelOpBound opInfo = new OpRelOpBound("P", RelOp.GEQ, 0.0);
+		OpRelOpBound opInfo = new OpRelOpBound("P", null, RelOp.GEQ, 0.0);
 		opsAndBounds.add(opInfo, Operator.P_GE, 0.0, -1, -1);
 	}
 

@@ -91,9 +91,9 @@ public class ExpressionSS extends ExpressionQuant
 			double boundValue = getBound().evaluateDouble(constantValues);
 			if (boundValue < 0 || boundValue > 1)
 				throw new PrismException("Invalid probability bound " + boundValue + " in P operator");
-			return new OpRelOpBound("S", getRelOp(), boundValue);
+			return new OpRelOpBound("S", minMax, getRelOp(), boundValue);
 		} else {
-			return new OpRelOpBound("S", getRelOp(), null);
+			return new OpRelOpBound("S", minMax, getRelOp(), null);
 		}
 	}
 	

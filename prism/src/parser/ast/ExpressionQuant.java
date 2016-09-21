@@ -26,6 +26,7 @@
 
 package parser.ast;
 
+import explicit.MinMax;
 import parser.Values;
 import prism.OpRelOpBound;
 import prism.PrismException;
@@ -38,6 +39,8 @@ public abstract class ExpressionQuant extends Expression
 {
 	/** Optional "modifier" to specify variants of the P/R/S operator */
 	protected String modifier = null;
+	/** The attached min/max operator, if it exists */
+	protected MinMax minMax = null;
 	/** The attached relational operator (e.g. "&lt;" in "P&lt;0.1"). */
 	protected RelOp relOp = null;
 	/** The attached (probability/reward) bound, as an expression (e.g. "p" in "P&lt;p"). Null if absent (e.g. "P=?"). */
@@ -56,6 +59,23 @@ public abstract class ExpressionQuant extends Expression
 	public void setModifier(String modifier)
 	{
 		this.modifier = modifier;
+	}
+
+	public void setMinMax(MinMax minMax)
+	{
+		this.minMax = minMax;
+	}
+	
+	/** Set the attached min/max operator */
+	public void setMinMax(String minMaxString) throws PrismException
+	{
+		if (minMaxString.equals("min")) {
+			minMax = MinMax.min();
+		} else if (minMaxString.equals("max")) {
+			minMax = MinMax.max();
+		} else {
+			throw new PrismException("Min/Max has to be either min or max");
+		}
 	}
 
 	/**
@@ -117,6 +137,12 @@ public abstract class ExpressionQuant extends Expression
 	public String getModifierString()
 	{
 		return modifier == null ? "" : "(" + modifier + ")";
+	}
+
+	/** Get the optional MinMax operator */
+	public MinMax getMinMax()
+	{
+		return minMax;
 	}
 
 	/**

@@ -10,12 +10,14 @@ public class OpRelOpBound
 {
 	protected String op;
 	protected RelOp relOp;
+	protected MinMax minMax;
 	protected boolean numeric;
 	protected double bound;
 
-	public OpRelOpBound(String op, RelOp relOp, Double boundObject)
+	public OpRelOpBound(String op, MinMax minMax, RelOp relOp, Double boundObject)
 	{
 		this.op = op;
+		this.minMax = minMax;
 		this.relOp = relOp;
 		numeric = (boundObject == null);
 		if (boundObject != null)
@@ -45,6 +47,11 @@ public class OpRelOpBound
 	public double getBound()
 	{
 		return bound;
+	}
+
+	public boolean hasExplicitMinMax()
+	{
+		return minMax != null;
 	}
 
 	public boolean isQualitative()
@@ -85,7 +92,12 @@ public class OpRelOpBound
 
 	public MinMax getMinMax(ModelType modelType, boolean forAll) throws PrismLangException
 	{
+		if (this.minMax != null) {
+			return this.minMax;
+		}
+
 		MinMax minMax = MinMax.blank();
+
 		if (modelType.nondeterministic()) {
 			if (!(modelType == ModelType.MDP || modelType == ModelType.CTMDP)) {
 				throw new PrismLangException("Don't know how to model check " + getTypeOfOperator() + " properties for " + modelType + "s");
@@ -94,7 +106,6 @@ public class OpRelOpBound
 				if (relOp == RelOp.EQ) {
 					throw new PrismLangException("Can't use \"" + op + "=?\" for nondeterministic models; use e.g. \"" + op + "min=?\" or \"" + op + "max=?\"");
 				}
-				minMax = relOp.isMin() ? MinMax.min() : MinMax.max();
 			} else {
 				if (forAll) {
 					minMax = (relOp.isLowerBound() ) ? MinMax.min() : MinMax.max();

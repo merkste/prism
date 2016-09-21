@@ -39,19 +39,6 @@ public enum RelOp
 			return (keepStrictness ? LEQ : LT);
 		}
 	},
-	MIN("min=") {
-		@Override
-		public boolean isMin()
-		{
-			return true;
-		}
-
-		@Override
-		public RelOp negate(boolean keepStrictness) throws PrismLangException
-		{
-			return MAX;
-		}
-	},
 	LT("<") {
 		@Override
 		public boolean isUpperBound()
@@ -84,19 +71,6 @@ public enum RelOp
 			return (keepStrictness ? GEQ : GT);
 		}
 	},
-	MAX("max=") {
-		@Override
-		public boolean isMax()
-		{
-			return false;
-		}
-
-		@Override
-		public RelOp negate(boolean keepStrictness) throws PrismLangException
-		{
-			return MIN;
-		}
-	},
 	EQ("=") {
 		@Override
 		public RelOp negate(boolean keepStrictness) throws PrismLangException
@@ -120,7 +94,6 @@ public enum RelOp
 
 	/**
 	 * Returns true if this corresponds to a lower bound (i.e. &gt;, &gt;=).
-	 * NB: "min=?" does not return true for this.
 	 */
 	public boolean isLowerBound()
 	{
@@ -129,7 +102,6 @@ public enum RelOp
 
 	/**
 	 * Returns true if this corresponds to an upper bound (i.e. &lt;, &lt;=).
-	 * NB: "max=?" does not return true for this.
 	 */
 	public boolean isUpperBound()
 	{
@@ -140,22 +112,6 @@ public enum RelOp
 	 * Returns true if this is a strict bound (i.e. &lt; or &gt;).
 	 */
 	public boolean isStrict()
-	{
-		return false;
-	}
-
-	/**
-	 * Returns true if this corresponds to minimum (min=?).
-	 */
-	public boolean isMin()
-	{
-		return false;
-	}
-
-	/**
-	 * Returns true if this corresponds to maximum (max=?).
-	 */
-	public boolean isMax()
 	{
 		return false;
 	}

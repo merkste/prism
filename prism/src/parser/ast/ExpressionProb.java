@@ -86,9 +86,9 @@ public class ExpressionProb extends ExpressionQuant
 			double boundVal = getBound().evaluateDouble(constantValues);
 			if (boundVal < 0 || boundVal > 1)
 				throw new PrismLangException("Invalid probability bound " + boundVal + " in P operator");
-			return new OpRelOpBound("P", getRelOp(), boundVal);
+			return new OpRelOpBound("P", minMax, getRelOp(), boundVal);
 		} else {
-			return new OpRelOpBound("P", getRelOp(), null);
+			return new OpRelOpBound("P", minMax, getRelOp(), null);
 		}
 	}
 	
@@ -134,12 +134,16 @@ public class ExpressionProb extends ExpressionQuant
 	{
 		if (getBound() != null)
 			return "Result";
-		else if (getRelOp() == RelOp.MIN)
-			return "Minimum probability";
-		else if (getRelOp() == RelOp.MAX)
-			return "Maximum probability";
-		else
-			return "Probability";
+		else if (getRelOp() == RelOp.EQ) {
+			if (minMax != null) {
+				if (minMax.isMin()) {
+					return "Minimum probability";
+				} else {
+					return "Maximum probability";
+				}
+			}
+		}
+		return "Probability";
 	}
 
 	@Override
@@ -161,6 +165,7 @@ public class ExpressionProb extends ExpressionQuant
 	{
 		ExpressionProb expr = new ExpressionProb();
 		expr.setExpression(getExpression() == null ? null : getExpression().deepCopy());
+		expr.setMinMax(minMax != null ? minMax.clone() : null);
 		expr.setRelOp(getRelOp());
 		expr.setBound(getBound() == null ? null : getBound().deepCopy());
 		expr.setFilter(getFilter() == null ? null : (Filter)getFilter().deepCopy());
@@ -176,7 +181,9 @@ public class ExpressionProb extends ExpressionQuant
 	{
 		String s = "";
 
-		s += "P" + getModifierString() + getRelOp();
+		s += "P" + getModifierString();
+		s += (minMax != null ? minMax : "");
+		s+= getRelOp();
 		s += (getBound() == null) ? "?" : getBound().toString();
 		s += " [ " + getExpression();
 		if (getFilter() != null)
