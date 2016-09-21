@@ -32,6 +32,7 @@ import java.util.BitSet;
 import common.SafeCast;
 
 import explicit.rewards.MCRewards;
+import explicit.rewards.MDPRewards;
 import prism.IntegerBound;
 import prism.PrismException;
 
@@ -87,6 +88,74 @@ public class CounterProduct<M extends Model> extends ProductWithProductStates<M>
 		}
 		return result;
 	}
+
+	/**
+	 * Generate the product of a MDP with an accumulated reward counter.
+	 * The counter has the range [0,limit], with saturation semantics for accumulated
+	 * rewards >=limit.
+	 * @param graph the MDP
+	 * @param rewards integer MCRewards
+	 * @param limit the saturation value for the counter
+	 * @param statesOfInterest the set of state of interest, the starting point for the counters
+	 * @return
+	 * @throws PrismException
+	 */
+	static public CounterProduct<MDP> generate(final MDP graph, final MDPRewards rewards, final int limit, BitSet statesOfInterest) throws PrismException {
+		final CounterProduct<MDP> result = new CounterProduct<MDP>(graph, limit);
+
+		class RewardProductOperator implements MDPProductOperator {
+			@Override
+			public ProductState getInitialState(Integer dtmc_state)
+			{
+				return new ProductState(dtmc_state, 0);
+			}
+
+			@Override
+			public ProductState getSuccessor(ProductState from_state, int choice_i, Integer dtmc_to_state) throws PrismException
+			{
+				// the accumulated reward
+				int acc_reward = from_state.getSecondState();
+
+				// reward(s) is accumulated on transition *from* s
+				int state_reward = SafeCast.toInt(rewards.getStateReward(from_state.getFirstState()));
+				// transition reward depends on choice_i
+				int transition_reward = SafeCast.toInt(rewards.getTransitionReward(from_state.getFirstState(), choice_i));
+
+				int next_reward = acc_reward + state_reward + transition_reward;
+				if (next_reward >= limit) {
+					// saturated
+					next_reward = limit;
+				}
+				return new ProductState(dtmc_to_state, next_reward);
+			}
+
+			@Override
+			public void notify(ProductState state, Integer index) throws PrismException
+			{
+				// store product state in the corresponding bitset of accRewardToStates
+				int reward = state.getSecondState().intValue();
+				result.accRewardToStates.get(reward).set(index.intValue());
+			}
+
+			@Override
+			public MDP getGraph()
+			{
+				return graph;
+			}
+
+			@Override
+			public void finish() throws PrismException {
+				// nothing to do
+			}
+		};
+
+		RewardProductOperator product_op = new RewardProductOperator();
+
+		ProductWithProductStates.generate(product_op, result, statesOfInterest);
+
+		return result;
+	}
+
 
 	/**
 	 * Generate the product of a DTMC with an accumulated reward counter.

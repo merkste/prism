@@ -114,6 +114,8 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 	private void doTransformation(M originalModel, TemporalOperatorBound bound, BitSet statesOfInterest) throws PrismException {
 		if (originalModel instanceof DTMC) {
 			doTransformation((DTMC)originalModel, bound, statesOfInterest);
+		} else if (originalModel instanceof MDP) {
+				doTransformation((MDP)originalModel, bound, statesOfInterest);
 		} else {
 			throw new PrismException("Counter-Transformation is not supported for "+originalModel.getClass());
 		}
@@ -162,6 +164,51 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 			throw new PrismException("Replacing bound was not successfull.");
 		}
 	}
+
+	private void doTransformation(MDP originalModel, TemporalOperatorBound bound, BitSet statesOfInterest) throws PrismException
+	{
+		IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
+		int saturation_limit = intBound.getMaximalInterestingValue();
+
+		MDPRewards rewards = null;
+
+		switch (bound.getBoundType()) {
+		case REWARD_BOUND: {
+			// Get reward info
+			Object rs = bound.getRewardStructureIndex();
+			RewardStruct rewStruct = ExpressionReward.getRewardStructByIndexObject(rs, mc.modulesFile, mc.constantValues);
+
+			ConstructRewards construct_rewards = new ConstructRewards();
+			rewards = construct_rewards.buildMDPRewardStructure(originalModel, rewStruct, originalModel.getConstantValues());
+			break;
+		}
+		case DEFAULT_BOUND:
+		case STEP_BOUND:
+		case TIME_BOUND:
+			// a time/step bound, use constant reward structure assigning 1 to each state
+			rewards = new StateRewardsConstant(1);
+			break;
+		}
+
+		if (rewards == null) {
+			throw new PrismException("Couldn't generate reward information.");
+		}
+
+		product = (CounterProduct<M>) CounterProduct.generate(originalModel, rewards, saturation_limit, statesOfInterest);
+
+		// add 'in_bound-x' label
+		BitSet statesInBound = product.getStatesWithAccumulatedRewardInBound(intBound);
+		String labelInBound = ((MDPExplicit)product.getTransformedModel()).addUniqueLabel("in_bound", statesInBound, mc.getDefinedLabelNames());
+
+		// transform expression
+		ReplaceBound replace = new ReplaceBound(bound, labelInBound);
+		transformedExpression = (Expression) transformedExpression.accept(replace);
+
+		if (!replace.wasSuccessfull()) {
+			throw new PrismException("Replacing bound was not successfull.");
+		}
+	}
+
 
 	public static <M extends Model> ModelExpressionTransformation<M, M> replaceBoundsWithCounters(ProbModelChecker parent,
 			M originalModel, Expression originalExpression,
