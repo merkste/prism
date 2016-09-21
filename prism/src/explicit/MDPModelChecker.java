@@ -51,6 +51,8 @@ import prism.PrismUtils;
 import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
+import common.BitSetAndQueue;
+import common.BitSetTools;
 import common.IterableBitSet;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MCRewardsFromMDPRewards;
@@ -384,6 +386,7 @@ public class MDPModelChecker extends ProbModelChecker
 		int n, numYes, numNo;
 		long timer, timerProb0, timerProb1;
 		int strat[] = null;
+		PredecessorRelation pre = null;
 		// Local copy of setting
 		MDPSolnMethod mdpSolnMethod = this.mdpSolnMethod;
 
@@ -449,17 +452,29 @@ public class MDPModelChecker extends ProbModelChecker
 			}
 		}
 
+		if (precomp && (prob0 || prob1) && preRel) {
+			pre = mdp.getPredecessorRelation(this, true);
+		}
+
 		// Precomputation
 		timerProb0 = System.currentTimeMillis();
 		if (precomp && prob0) {
-			no = prob0(mdp, remain, target, min, strat);
+			if (pre != null) {
+				no = prob0(mdp, remain, target, min, null, pre);
+			} else {
+				no = prob0(mdp, remain, target, min, strat);
+			}
 		} else {
 			no = new BitSet();
 		}
 		timerProb0 = System.currentTimeMillis() - timerProb0;
 		timerProb1 = System.currentTimeMillis();
 		if (precomp && prob1) {
-			yes = prob1(mdp, remain, target, min, strat);
+			if (pre != null) {
+				yes = prob1(mdp, remain, target, min, null, pre);
+			} else {
+				yes = prob1(mdp, remain, target, min, strat);
+			}
 		} else {
 			yes = (BitSet) target.clone();
 		}
@@ -535,7 +550,7 @@ public class MDPModelChecker extends ProbModelChecker
 	}
 
 	/**
-	 * Prob0 precomputation algorithm.
+	 * Prob0 precomputation algorithm (using fixpoint computation).
 	 * i.e. determine the states of an MDP which, with min/max probability 0,
 	 * reach a state in {@code target}, while remaining in those in {@code remain}.
 	 * {@code min}=true gives Prob0E, {@code min}=false gives Prob0A. 
@@ -621,11 +636,110 @@ public class MDPModelChecker extends ProbModelChecker
 	}
 
 	/**
-	 * Prob1 precomputation algorithm.
+	 * Prob0 precomputation algorithm (using predecessor relation).
+	 * i.e. determine the states of an MDP which, with min/max probability 0,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * {@code min}=true gives Prob0E, {@code min}=false gives Prob0A.
+	 * Optionally, for min only, store optimal (memoryless) strategy info for 0 states.
+	 * @param mdp The MDP
+	 * @param remain Remain in these states (optional: null means "all")
+	 * @param target Target states
+	 * @param min Min or max probabilities (true=min, false=max)
+	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
+	 * @param pre the predecessor relation
+	 */
+	public BitSet prob0(MDP mdp, BitSet remain, BitSet target, boolean min, int strat[], PredecessorRelation pre)
+	{
+		int n;
+		BitSet result, unknown;
+		long timer;
+
+		// Start precomputation
+		timer = System.currentTimeMillis();
+		mainLog.println("Starting Prob0 (" + (min ? "min" : "max") + ")...");
+
+		// Special case: no target states -> probability = 0 everywhere
+		if (target.isEmpty()) {
+			result = new BitSet(mdp.getNumStates());
+			result.set(0, mdp.getNumStates());
+			return result;
+		}
+
+		// Initialise vectors
+		n = mdp.getNumStates();
+
+		// Determine set of states actually need to perform computation for
+		unknown = BitSetTools.complement(n, target);
+		if (remain != null)
+			unknown.and(remain);
+
+		if (min) {
+			BitSet T = (BitSet) target.clone();
+			BitSet R = (BitSet) target.clone();
+
+			while (!R.isEmpty()) {
+				int t = R.nextSetBit(0);
+				R.clear(t);
+
+				for (int s : pre.getPre(t)) {
+					if (!unknown.get(s) || T.get(s)) continue;
+
+					boolean forAllSomeInT = true;
+					for (int choice = 0, choices = mdp.getNumChoices(s); choice < choices; choice++) {
+						boolean someInT = mdp.someSuccessorsInSet(s, choice, T);
+						if (!someInT) {
+							forAllSomeInT = false;
+							break;
+						}
+					}
+
+					if (forAllSomeInT) {
+						T.set(s);
+						R.set(s);
+					}
+				}
+			}
+
+			result = T;
+			// result = S \ T
+			result.flip(0, n);
+		} else {
+			// E [ remain U target ]
+			result = pre.calculatePreStar(remain, target, target);
+			// Pmax=0 <=> ! E [ remain U target ]  -> complement
+			result.flip(0, n);
+		}
+
+
+		// Finished precomputation
+		timer = System.currentTimeMillis() - timer;
+		mainLog.print("Prob0 (" + (min ? "min" : "max") + ")");
+		mainLog.println(" took " + timer / 1000.0 + " seconds.");
+
+		// If required, generate strategy. This is for min probs,
+		// so it can be done *after* the main prob0 algorithm (unlike for prob1).
+		// We simply pick, for all "no" states, the first choice for which all transitions stay in "no"
+		if (strat != null) {
+			for (int i = result.nextSetBit(0); i >= 0; i = result.nextSetBit(i + 1)) {
+				int numChoices = mdp.getNumChoices(i);
+				for (int k = 0; k < numChoices; k++) {
+					if (mdp.allSuccessorsInSet(i, k, result)) {
+						strat[i] = k;
+						continue;
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Prob1 precomputation algorithm (using fixpoint computation).
 	 * i.e. determine the states of an MDP which, with min/max probability 1,
 	 * reach a state in {@code target}, while remaining in those in {@code remain}.
-	 * {@code min}=true gives Prob1A, {@code min}=false gives Prob1E. 
-	 * Optionally, for max only, store optimal (memoryless) strategy info for 1 states. 
+	 * {@code min}=true gives Prob1A, {@code min}=false gives Prob1E.
+	 * Optionally, for max only, store optimal (memoryless) strategy info for 1 states.
 	 * @param mdp The MDP
 	 * @param remain Remain in these states (optional: null means "all")
 	 * @param target Target states
@@ -724,6 +838,286 @@ public class MDPModelChecker extends ProbModelChecker
 
 		return u;
 	}
+
+	/**
+	 * Prob1 precomputation algorithm (using predecessor relation).
+	 * i.e. determine the states of an MDP which, with min/max probability 1,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * {@code min}=true gives Prob1A, {@code min}=false gives Prob1E.
+	 * Optionally, for max only, store optimal (memoryless) strategy info for 1 states.
+	 * @param mdp The MDP
+	 * @param remain Remain in these states (optional: null means "all")
+	 * @param target Target states
+	 * @param min Min or max probabilities (true=min, false=max)
+	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
+	 * @param pre the predecessor relation
+	 */
+	public BitSet prob1(MDP mdp, BitSet remain, BitSet target, boolean min, int strat[], PredecessorRelation pre)
+	{
+		BitSet result;
+		long timer;
+
+		// Start precomputation
+		timer = System.currentTimeMillis();
+		mainLog.println("Starting Prob1 (" + (min ? "min" : "max") + ")...");
+
+		// Special case: no target states -> probability = 0 everywhere
+		if (target.isEmpty()) {
+			return new BitSet();
+		}
+
+		if (min) {
+			result = prob1a(mdp, remain, target, pre);
+		} else {
+			result = prob1e(mdp, remain, target, strat, pre);
+		}
+
+		// Finished precomputation
+		timer = System.currentTimeMillis() - timer;
+		mainLog.print("Prob1 (" + (min ? "min" : "max") + ")");
+		mainLog.println(" took " + timer / 1000.0 + " seconds.");
+
+		return result;
+	}
+
+	/**
+	 * Prob1A (Pmin=1) precomputation algorithm (using predecessor relation).
+	 * Determines the states of an MDP which, with min probability 1,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param mdp The MDP
+	 * @param remain Remain in these states (optional: null means "all")
+	 * @param target Target states
+	 * @param pre predecessor relation
+	 * @return the set of states with Pmin=1[ remain U target ]
+	 */
+	private BitSet prob1a(MDP mdp, BitSet remain, BitSet target, PredecessorRelation pre)
+	{
+		// this is an adaption of the Smin=1 algorithm in the Principles of Model Checking book
+		// with added support for constrained reachability (remain U target)
+
+		int n = mdp.getNumStates();
+
+		// construct explicit set of remaining state in case that remain
+		// is given implicitely (null = all states)
+		if (remain == null) {
+			remain = new BitSet();
+			remain.set(0,n);
+		}
+
+		// Z
+		// = (S \ remain) \ target
+		// = the states that satisfy neither
+		// remain nor target, i.e., where we know
+		// a priori that they have probability 0,
+		// as E[ remain U target ] is definitely false
+		BitSet Z = new BitSet();
+		Z.set(0,n);
+		Z.andNot(remain);
+		Z.andNot(target);
+
+		// mainLog.println("Z = " + Z);
+
+		// The set of states that are not target states
+		BitSet notTarget = BitSetTools.complement(n, target);
+		// mainLog.println("notTarget = " + notTarget);
+
+		// The set of states that can reach Z without visiting
+		// any target states.
+		// We know that for those states Pmin<1, as we can
+		// reach a Z state with positive probability
+		BitSet canReachZ = pre.calculatePreStar(notTarget, Z, Z);
+		// mainLog.println("canReachZ = " + canReachZ);
+
+		// We now iteratively compute the set T of states
+		// in !canReachZ that have a strategy of avoiding
+		// to reach the target states ("safe states")
+
+		// B = unsafe states, have Pmin>0 for reaching target
+		// initialised with the target states
+		BitSet B = (BitSet) target.clone();
+
+		// T = potentially safe states, initializes with
+		// ( S \ B ) \ canReachZ
+		BitSet T = BitSetTools.complement(n, B);
+		T.andNot(canReachZ);
+
+		// E = unsafe states that have to be removed from T yet
+		BitSetAndQueue E = new BitSetAndQueue(B);
+		while (!E.isEmpty()) {
+			int t = E.dequeue();
+
+			// for removal, look at the predecessors
+			// and remove choices that will lead to B with probability > 0
+			for (int s : pre.getPre(t)) {
+				// predecessor already in B, continue
+				if (B.get(s)) {
+					continue;
+				}
+
+				// is there a choice that allows to avoid B?
+				boolean existsChoiceAvoidingB = false;
+
+				for (int choice = 0, choices = mdp.getNumChoices(s); choice < choices; choice++) {
+					if (!mdp.someSuccessorsInSet(s, choice, B)) {
+						existsChoiceAvoidingB = true;
+						break;
+					}
+				}
+
+				// if there is no such choice, we have to remove s
+				if (!existsChoiceAvoidingB) {
+					// add to queue
+					E.enqueue(s);
+					// add to unsafe states B
+					B.set(s);
+					// remove from safe states T
+					T.clear(s);
+				}
+			}
+		}
+
+		// The states in remain that are not target states
+		BitSet remainAndNotTarget = BitSetTools.minus(remain, target);
+
+		// spoilerStates = all states in T and all states that can reach Z without visiting B
+		BitSet spoilerStates = BitSetTools.union(T, canReachZ);
+
+		// canReachSpoilerStates = there exists strategy to reach a spoiler state with positive
+		// probability => Pmin<1 ( remain U target )
+		BitSet canReachSpoilerState = pre.calculatePreStar(remainAndNotTarget, spoilerStates, spoilerStates);
+		// mainLog.println("canReachSpoilerState = " + canReachSpoilerState);
+		
+		// We are interested in Pmin=1 ( remain U target ),
+		// which we obtain by complementing, yielding the set of states
+		// where there is no way to avoid remain U target
+		BitSet result = BitSetTools.complement(n, canReachSpoilerState);
+		// mainLog.println("result = " + result);
+
+		return result;
+	}
+
+	/**
+	 * Prob1E (Pmax=1) precomputation algorithm (using predecessor relation).
+	 * Determines the states of an MDP which, with max probability 1,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param mdp The MDP
+	 * @param remain Remain in these states (optional: null means "all")
+	 * @param target Target states
+	 * @param pre predecessor relation
+	 * @return the set of states with Pmax=1[ remain U target ]
+	 */
+	private BitSet prob1e(MDP mdp, BitSet remain, BitSet target, int strat[], PredecessorRelation pre)
+	{
+		// TODO no strategy generation yet
+
+		// This algorithm is an adaption of the Smax=1 algorithm
+		// in the Principles of Model Checking book
+
+		int n = mdp.getNumStates();
+
+		// Which choices remain enabled?
+		ChoicesMask enabledChoices = new ChoicesMask(mdp);
+
+		// We count the remaining, enabled choices in each
+		// state so we can easily determine when
+		// there are no more enabled choices for a state
+		int[] remainingChoices = new int[n];
+		for (int s = 0; s < n; s++) {
+			remainingChoices[s] = mdp.getNumChoices(s);
+		}
+
+		// the set of state that can reach the target, i.e. E[ remain U target ]
+		BitSet canReachTarget = pre.calculatePreStar(remain, target, target);
+		// the set of state that can't reach the target, i.e. !E[ remain U target ]
+		BitSet cantReachTarget = BitSetTools.complement(n, canReachTarget);
+
+		// in addition to the PredecessorRelation, we need more detailed
+		// information about the incoming choices for each state
+		IncomingChoiceRelation incoming = IncomingChoiceRelation.forModel(this, mdp);
+
+		// in each iteration step, U is the set of states that need to be
+		// removed in this iteration because they can't reach the target
+		BitSet U = cantReachTarget;
+		
+		// unknown is the set of states that can still reach the target,
+		// but might need to be removed later on
+		BitSet unknown = (BitSet) canReachTarget.clone();
+		unknown.andNot(target);
+
+		// unsafe are the states that have been determined to have Pmax<1[ remain U target ]
+		BitSet unsafe = (BitSet) cantReachTarget.clone();
+
+		int iterations = 0 ;
+		while (!U.isEmpty()) {
+			iterations++;
+			// mainLog.println("Iteration " + iterations +": " +U);
+
+			// states to remove in this iteration step:
+			// all states in U (can not reach target anymore)
+			// and other states where we have determined that they
+			// don't have any choices anymore to remain in unknown
+			BitSetAndQueue toRemove = new BitSetAndQueue(U);
+
+			while (!toRemove.isEmpty()) {
+				int t = toRemove.dequeue();
+
+				// for each state t, we consider the incoming choices
+				for (IncomingChoiceRelation.Choice choice : incoming.getIncomingChoices(t)) {
+					// s is the predecessor of t, i.e., P(s,c,t) > 0
+					int s = choice.getState();
+					int c = choice.getChoice();
+
+					if (!enabledChoices.isEnabled(s,c)) {
+						// already disabled
+						continue;
+					}
+
+					if (!unknown.get(s)) {
+						// state already processed
+						continue;
+					}
+
+					// We disable the choice and decrement the corresponding counter for s
+					enabledChoices.disableChoice(s, choice.getChoice());
+					remainingChoices[s]--;
+
+					// there are no more remaining choices, remove s
+					if (remainingChoices[s] == 0) {
+						// s is not in unknown anymore
+						unknown.clear(s);
+						// s has become unsafe
+						unsafe.set(s);
+						// and we have to process the removal of s
+						toRemove.enqueue(s);
+					}
+				}
+			}
+
+			// after removal, it may be the case that states in unknown and
+			// that could previously reach target can not reach target anymore
+			// so, we recompute canReachTarget, but now allowing only the
+			// enabledChoices that remain enabled
+			canReachTarget = incoming.calculatePreStar(unknown, target, target, enabledChoices);
+
+			// we compute the set of states that have become unsafe because they
+			// can't reach target anymore:
+			// U = unknown states that can not reach target
+			U = BitSetTools.minus(unknown, canReachTarget);
+
+			// remove U from unknown
+			unknown.andNot(U);
+			// mark all U states as unsafe
+			unsafe.or(U);
+
+			// do loop once more, now with updated U
+		}
+
+		// the result set of states are the states in target
+		// and those in unknown, as they have not been removed
+		// during the iterations
+		return BitSetTools.union(unknown, target);
+	}
+
 
 	/**
 	 * Compute reachability probabilities using value iteration.
