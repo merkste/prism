@@ -2207,29 +2207,76 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			if (getExtraDDInfo()) {
 				JDD.statisticsForDD("reorder.trans.pre.csv", currentModel.getTrans(), currentModel.getDDVarNames());
 			}
+
+			int reorderCount = 0;
+			boolean reorderConverge = settings.getReorderOptions().contains("converge");
+			int last = nodeCountBefore;
+
 			mainLog.print("\nReordering");
 			if (settings.getReorderOptions().contains("noconstraints")) {
 				mainLog.print(" (without any variable order constraints)");
 			}
 			mainLog.print("... ");
 			mainLog.flush();
+
+			if (reorderConverge) {
+				mainLog.println();
+			}
+
 			long reorderStart = System.currentTimeMillis();
-			JDD.reorder();
-			mainLog.println("done (took "+ ((System.currentTimeMillis()-reorderStart)/1000.0) +" seconds)");
+			while (true) {
+				reorderCount++;
 
-			int transSizeAfter = JDD.GetNumNodes(currentModel.getTrans());
-			int nodeCountAfter = JDD.GetNumNodes();
-			mainLog.println("MTBDD nodes of transition matrix: "
-			               +transSizeAfter
-			               +" ("+transSizeBefore+" before reordering, "
-			               +PrismUtils.formatPercent1dp((transSizeBefore - transSizeAfter)*1.0 / transSizeBefore)
-			               +" reduction)");
-			mainLog.println("Number of overall MTBDD nodes: "
-			               +nodeCountAfter
-			               +" ("+nodeCountBefore+" before reordering, "
-			               +PrismUtils.formatPercent1dp((nodeCountBefore - nodeCountAfter)*1.0 / nodeCountBefore)
-			               +" reduction)");
+				if (reorderConverge) {
+					mainLog.print("Reordering until convergence, iteration "+reorderCount+"...");
+					mainLog.flush();
+				}
 
+				long currentReorderStart = System.currentTimeMillis();
+				JDD.reorder();
+				long currentReorderStop = System.currentTimeMillis();
+
+				if (reorderConverge) {
+					mainLog.println("done (took "+ ((currentReorderStop-currentReorderStart)/1000.0) +" seconds)");
+				} else {
+					mainLog.println("done (took "+ ((currentReorderStop-reorderStart)/1000.0) +" seconds)");
+				}
+
+				int transSizeAfter = JDD.GetNumNodes(currentModel.getTrans());
+				int nodeCountAfter = JDD.GetNumNodes();
+				double transReduction = (transSizeBefore - transSizeAfter)*1.0 / transSizeBefore;
+				double nodeReduction = (nodeCountBefore - nodeCountAfter)*1.0 / nodeCountBefore;
+
+				int current = JDD.GetNumNodes();
+				if (reorderConverge && current < last) {
+					last = current;
+					
+					// print short stats
+					mainLog.println("  Iteration "+reorderCount+": transition matrix "
+					               + PrismUtils.formatPercent1dp(transReduction)
+					               + ", overall "
+					               + PrismUtils.formatPercent1dp(nodeReduction));
+					continue;
+				}
+
+				// finished, print detailed stats
+				if (reorderConverge) {
+					mainLog.print("\nReordering... ");
+					mainLog.println("done (took "+ ((currentReorderStop-reorderStart)/1000.0) +" seconds)");
+				}
+				mainLog.println("MTBDD nodes of transition matrix: "
+				                +transSizeAfter
+				                +" ("+transSizeBefore+" before reordering, "
+				                +PrismUtils.formatPercent1dp(transReduction)
+				                +" reduction)");
+				mainLog.println("Number of overall MTBDD nodes: "
+				                +nodeCountAfter
+				                +" ("+nodeCountBefore+" before reordering, "
+				                +PrismUtils.formatPercent1dp(nodeReduction)
+				                +" reduction)");
+				break;
+			}
+			
 			if (getExtraDDInfo()) {
 				JDD.statisticsForDD("reorder.trans.post.csv", currentModel.getTrans(), currentModel.getDDVarNames());
 				mainLog.println("\nVariable order:");
