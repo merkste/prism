@@ -144,6 +144,50 @@ public class TemporalOperatorBound extends ASTElement {
 	}
 
 	/**
+	 * Returns true if this TemporalOperatorBound has the same domain
+	 * as {@other}, in the discrete time setting (step = time bound).
+	 * <br>
+	 * Requires that the reward structure index (for reward bounds)
+	 * has already been resolved, i.e., that {@code setRewardStruct()}
+	 * has been called.
+	 */
+	public boolean hasSameDomainDiscreteTime(TemporalOperatorBound other) {
+		if (boundType == BoundType.REWARD_BOUND) {
+			if (getResolvedRewardStructIndex() == null || other.getResolvedRewardStructIndex() == null) {
+				throw new IllegalStateException("Invalid operation: TemporalOperatorBound.hasSameDomainDiscreteTime() requires that reward structures have already been resolved");
+			}
+			return other.getBoundType() == boundType && getResolvedRewardStructIndex() == other.getResolvedRewardStructIndex();
+		} else {
+			// STEP = TIME = DEFAULT
+			return other.getBoundType() == BoundType.DEFAULT_BOUND ||
+			       other.getBoundType() == BoundType.STEP_BOUND ||
+			       other.getBoundType() == BoundType.TIME_BOUND;
+		}
+	}
+
+	/**
+	 * Returns true if this TemporalOperatorBound has the same domain
+	 * as {@other}, in the continuous time setting (step != time bound).
+ 	 * <br>
+	 * Requires that the reward structure index (for reward bounds)
+	 * has already been resolved, i.e., that {@code setRewardStruct()}
+	 * has been called.
+	 */
+	public boolean hasSameDomainContinuousTime(TemporalOperatorBound other) {
+		if (boundType == BoundType.REWARD_BOUND) {
+			if (getResolvedRewardStructIndex() == null || other.getResolvedRewardStructIndex() == null) {
+				throw new IllegalStateException("Invalid operation: TemporalOperatorBound.hasSameDomainContinuousTime() requires that reward structures have already been resolved");
+			}
+			return other.getBoundType() == boundType && getResolvedRewardStructIndex() == other.getResolvedRewardStructIndex();
+		} else if (boundType == BoundType.TIME_BOUND) {
+			return other.getBoundType() == BoundType.TIME_BOUND ||
+			       other.getBoundType() == BoundType.DEFAULT_BOUND;
+		} else {
+			return other.getBoundType() ==  BoundType.STEP_BOUND;
+		}
+	}
+
+	/**
 	 * Returns true if lower/upper bound are equal and should be displayed as =T
 	 */
 	public boolean getEquals()
