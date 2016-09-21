@@ -420,6 +420,26 @@ public class ProbModel implements Model
 
 	// constructor
 
+	/**
+	 * Constructor.
+	 * @param tr the transitions
+	 * @param s the start state
+	 * @param sr array with state rewards
+	 * @param trr array with transition rewards (same length as sr)
+	 * @param rsn array of reward structure names (same length as sr and trr)
+	 * @param arv JDDVars, the state (row) DD variables
+	 * @param acv JDDVars, the state (column) DD variables
+	 * @param mvdd the model variables
+	 * @param nm the number of modules
+	 * @param mn array of module names
+	 * @param mrv array of JDDVars, the state (row) DD variables per module
+	 * @param mcv array of JDDVars, the state (column) DD variables per module
+	 * @param nv the number of variables
+	 * @param vl the variable list
+	 * @param vrv array of JDDVars, the state (row) DD variables per variable
+	 * @param vcv array of JDDVars, the state (column) DD variables per variable
+	 * @param cv constant values for this model
+	 */
 	public ProbModel(JDDNode tr, JDDNode s, JDDNode sr[], JDDNode trr[], String rsn[], JDDVars arv, JDDVars acv, ModelVariablesDD mvdd, int nm, String[] mn,
 			JDDVars[] mrv, JDDVars[] mcv, int nv, VarList vl, JDDVars[] vrv, JDDVars[] vcv, Values cv)
 	{
