@@ -47,6 +47,11 @@ public class SamplerRewardInstDisc extends SamplerDouble
 		// Then extract other required info
 		if (expr.getOperator() != ExpressionTemporal.R_I)
 			throw new PrismException("Error creating Sampler");
+		
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Instantaneous reward operator does not support reward bounds");
+		}
+
 		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt();
 		this.rewardStructIndex = rewardStructIndex;
 		// Initialise sampler info

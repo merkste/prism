@@ -661,6 +661,10 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	protected StateValues checkProbNext(Model model, ExpressionTemporal expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
+		if (expr.getBounds().hasRewardBounds()) {
+			throw new PrismException("Reachability reward operator with reward bounds is not supported.");
+		}
+
 		// Model check the operand for all states
 		BitSet target = checkExpression(model, expr.getOperand2(), null).getBitSet();
 
