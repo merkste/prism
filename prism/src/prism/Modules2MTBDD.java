@@ -398,7 +398,7 @@ public class Modules2MTBDD
 			}
 			
 			// create a gap in the dd variables
-			// this allows to prepend additionl row/col vars, e.g. for constructing
+			// this allows to prepend additional row/col vars, e.g. for constructing
 			// a product model when doing LTL model checking
 			modelVariables.preallocateExtraStateVariables(20);
 
@@ -463,7 +463,12 @@ public class Modules2MTBDD
 					ddChoiceVars[i] = modelVariables.allocateVariable("l" + i);
 				}
 			}
-			
+
+			// create a gap in the dd variables
+			// this allows to prepend additional row/col vars, e.g. for constructing
+			// a product model when doing LTL model checking
+			modelVariables.preallocateExtraStateVariables(20);
+
 			// go through all vars in order (incl. global variables)
 			// so overall ordering can be specified by ordering in the input file
 			// use 'last' to detect when starting a new module
