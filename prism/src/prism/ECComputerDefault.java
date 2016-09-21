@@ -148,13 +148,8 @@ public class ECComputerDefault extends ECComputer
 		return mecs;
 	}
 
-	/**
-	 * Returns the maximal stable set of states contained in {@code candidateStates},
-	 * i.e. the maximal subset of states which have a choice whose transitions remain in the subset. 
-	 * @param candidateStates BDD for a set of states (over allDDRowVars) (dereferenced after calling this function)
-	 * @return A referenced BDD with the maximal stable set in c
-	 */
-	private JDDNode findMaximalStableSet(JDDNode candidateStates)
+	@Override
+	public JDDNode findMaximalStableSet(JDDNode candidateStates)
 	{
 		// Store two copies to allow check for fixed point 
 		JDDNode current = candidateStates;
@@ -252,4 +247,43 @@ public class ECComputerDefault extends ECComputer
 		// Abstract over actions
 		return JDD.ThereExists(stableTrans01, allDDNondetVars);
 	}
+
+	/**
+	 * Returns the transition relation of a state set,
+	 * i.e., a 0-1 MTBDD over row and col variables containing
+	 * those pairs (s,t) for which there exists an alpha
+	 * with P(s,alpha,t) > 0 and all alpha-successors of
+	 * s are again in the state set.
+	 *
+	 * <br>[REFS: <i>result</i>, DEREFS: stateSet ]
+	 */
+	public JDDNode getStableTransReln(JDDNode stateSet)
+	{
+		return JDD.ThereExists(getStableTransitions(stateSet), allDDNondetVars);
+	}
+
+	@Override
+	public JDDNode getStableTransitions(JDDNode stateSet)
+	{
+		// trans01 from the state set
+		JDDNode transFromSet = JDD.And(stateSet.copy(), trans01.copy());
+		// ... and back to the state set
+		JDDNode transToSet = JDD.And(transFromSet.copy(), JDD.PermuteVariables(stateSet.copy(), allDDRowVars, allDDColVars));
+		// (s,alpha) pairs that have at least one successor back in the set
+		JDDNode stateActionsToSet = JDD.ThereExists(transToSet, allDDColVars);
+
+		// those transitions where at least one successor remains in set
+		JDDNode candidateTrans = JDD.And(transFromSet, stateActionsToSet);
+		// filter: those transitions where at least one successor goes outside the set
+		JDDNode transSomewhereElse = JDD.And(candidateTrans.copy(), JDD.Not(JDD.PermuteVariables(stateSet.copy(), allDDRowVars, allDDColVars)));
+		// the corresponding (s,alpha) pairs, where a successor is outside the set
+		JDDNode stateActionsBad = JDD.ThereExists(transSomewhereElse, allDDColVars);
+		// restrict to only those transitions where all successors are in the set
+		JDDNode result = JDD.And(candidateTrans, JDD.Not(stateActionsBad));
+
+		JDD.Deref(stateSet);
+
+		return result;
+	}
+
 }

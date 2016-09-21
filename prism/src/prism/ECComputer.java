@@ -132,4 +132,26 @@ public abstract class ECComputer extends PrismComponent
 	{
 		return mecs;
 	}
+
+	/**
+	 * Returns the maximal stable set of states contained in {@code candidateStates},
+	 * i.e. the maximal subset of states which have a choice whose transitions remain in the subset.
+	 *
+	 * <br>[ REFS: <i>result</i>, DEREFS: candidateStates ]
+	 * @param candidateStates BDD for a set of states (over allDDRowVars)
+	 * @return A referenced BDD with the maximal stable set in candidateStates
+	 */
+	public abstract JDDNode findMaximalStableSet(JDDNode candidateStates);
+
+	/**
+	 * Get the set of transitions (s,alpha,t) that remain in the state set,
+	 * i.e., with a choice alpha that ensures that the successor states
+	 * are all in the state set again.
+	 *
+	 * Returns a 0/1-MTBDD over row, col and nondet vars.
+	 *
+	 * <br>[ REFS: <i>result</i>, DEREFS: <i>stateSet</i> ]
+	 * @param stateSet state set DD over the row variables
+	 */
+	public abstract JDDNode getStableTransitions(JDDNode stateSet);
 }
