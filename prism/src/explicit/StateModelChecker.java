@@ -1489,4 +1489,17 @@ public class StateModelChecker extends PrismComponent
 			}
 		}
 	}
+
+	/** Get the optionally stored ModulesFile (may be {@code null}) */
+	public ModulesFile getModulesFile()
+	{
+		return modulesFile;
+	}
+
+	/** Get the optionally stored ModulesFile (may be {@code null}) */
+	public PropertiesFile getPropertiesFile()
+	{
+		return propertiesFile;
+	}
+
 }
