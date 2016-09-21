@@ -555,6 +555,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		int i;
 
 		AcceptanceType[] allowedAcceptance = {
+				AcceptanceType.BUCHI,
 				AcceptanceType.RABIN,
 				AcceptanceType.REACH,
 				AcceptanceType.GENERIC
