@@ -512,6 +512,7 @@ TOKEN :
 |	< PRIME:		"'" >
 |	< RENAME:		"<-" >
 |	< QMARK:		"?" >
+|	< CARET:		"^" >
 	// Regular expressions
 |	< REG_INT:			(["1"-"9"](["0"-"9"])*)|("0") >
 |	< REG_DOUBLE:		(["0"-"9"])*(".")?(["0"-"9"])+(["e","E"](["-","+"])?(["0"-"9"])+)? >
@@ -1151,7 +1152,7 @@ Expression Expression(boolean prop, boolean pathprop) :
 // that does not really help since this is done post-parsing.
 // To prevent (very common) cases such as "F<=t (b)", "F<=t (b)&(c)", etc.
 // being mis-parsed ("t(b)" would always be taken over "t"), we catch this case
-// separately (see TimeBound() production below for details).
+// separately (see BoundExpression() production below for details).
 // This means that more complex time-bounds, especially those that
 // start/end with an identifier should be parenthesised, e.g. "F<=(t1+t2)".
 
@@ -1163,6 +1164,8 @@ Expression ExpressionTemporalBinary(boolean prop, boolean pathprop) :
 {
 	Expression ret, expr;
 	ExpressionTemporal exprTemp;
+	TemporalOperatorBound defaultBound = null;
+	TemporalOperatorBounds bounds = null;
 	Token begin = null;
 }
 {
@@ -1174,7 +1177,9 @@ Expression ExpressionTemporalBinary(boolean prop, boolean pathprop) :
 		( <U> { exprTemp.setOperator(ExpressionTemporal.P_U); }
 		| <W> { exprTemp.setOperator(ExpressionTemporal.P_W); }
 		| <R> { exprTemp.setOperator(ExpressionTemporal.P_R); } )
-		( TimeBound(exprTemp) )?
+		(   (defaultBound = BoundExpression() { exprTemp.getBounds().setDefaultBound(defaultBound); })
+		  | (bounds = TemporalOpBounds() { exprTemp.setBounds(bounds); })
+		)?
 		expr = ExpressionTemporalUnary(prop, pathprop)
 		{ exprTemp.setOperand2(expr); exprTemp.setPosition(begin, getToken(0)); ret = exprTemp; }
 	]
@@ -1185,6 +1190,8 @@ Expression ExpressionTemporalUnary(boolean prop, boolean pathprop) :
 {
 	Expression ret, expr;
 	ExpressionTemporal exprTemp;
+	TemporalOperatorBound defaultBound = null;
+	TemporalOperatorBounds bounds = null;
 	Token begin = null;
 }
 {
@@ -1195,7 +1202,9 @@ Expression ExpressionTemporalUnary(boolean prop, boolean pathprop) :
 		( <X> { exprTemp.setOperator(ExpressionTemporal.P_X); }
 		| <F> { exprTemp.setOperator(ExpressionTemporal.P_F); }
 		| <G> { exprTemp.setOperator(ExpressionTemporal.P_G); } )
-		( TimeBound(exprTemp) )?
+		(   (defaultBound = BoundExpression() { exprTemp.getBounds().setDefaultBound(defaultBound); })
+		  | (bounds = TemporalOpBounds() { exprTemp.setBounds(bounds); })
+		)?
 		expr = ExpressionTemporalUnary(prop, pathprop)
 		{ exprTemp.setOperand2(expr); exprTemp.setPosition(begin, getToken(0)); ret = exprTemp; }
 	|
@@ -1204,10 +1213,10 @@ Expression ExpressionTemporalUnary(boolean prop, boolean pathprop) :
 	{ return ret; }
 }
 
-// Time bound for temporal operators
+// Bound expression for temporal operators
 // (see ExpressionTemporal production for lookahead explanation)
 
-void TimeBound(ExpressionTemporal exprTemp) :
+TemporalOperatorBound BoundExpression() :
 {
 	Expression lBound, uBound;
 	TemporalOperatorBound bound = new TemporalOperatorBound();
@@ -1221,8 +1230,41 @@ void TimeBound(ExpressionTemporal exprTemp) :
 	| ( <EQ> lBound = Expression(false, false) { bound.setEqualBounds(lBound); } )
 	)
 	{
-		exprTemp.setBound(bound);
+		return bound;
 	}
+}
+
+TemporalOperatorBounds TemporalOpBounds() :
+{
+	TemporalOperatorBounds bounds = new TemporalOperatorBounds();
+	TemporalOperatorBound bound;
+}
+{
+	(<CARET>)?
+	<LBRACE>
+	bound = TemporalOpBound() {bounds.addBound(bound);}
+	( <COMMA> bound = TemporalOpBound() {bounds.addBound(bound);})*
+	<RBRACE>
+	{return bounds;}
+}
+
+TemporalOperatorBound TemporalOpBound() :
+{
+	TemporalOperatorBound bound = null;
+	Object rewardIndex = null;
+}
+{
+	(  (LOOKAHEAD({ getToken(1).kind==REG_IDENT && getToken(1).image.equals("time") }) Identifier() bound = BoundExpression() {bound.setBoundType(TemporalOperatorBound.BoundType.TIME_BOUND);})
+	 | (LOOKAHEAD({ getToken(1).kind==REG_IDENT && getToken(1).image.equals("steps") }) Identifier() bound = BoundExpression() {bound.setBoundType(TemporalOperatorBound.BoundType.STEP_BOUND);})
+ 	 | (LOOKAHEAD({ getToken(1).kind==REG_IDENT && getToken(1).image.equals("reward") }) Identifier()
+ 		 (rewardIndex = RewardIndex())?
+ 		 bound = BoundExpression()
+ 		 {
+ 		   bound.setBoundType(TemporalOperatorBound.BoundType.REWARD_BOUND);
+ 		   bound.setRewardStructureIndex(rewardIndex);
+ 		 })
+	)
+	{return bound;}
 }
 
 // Expression: if-then-else, i.e. "cond ? then : else"
@@ -1738,7 +1780,7 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	// Various options for "R" keyword and attached symbols
 	(( begin = <R>
 		( <LPARENTH> modifier = IdentifierExpression() <RPARENTH> )?
-		(RewardIndex(ret))?
+		(RewardSpecification(ret))?
 		(( r = LtGt() rew = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; isBool = true; } )
 	   |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
 	   |( <MIN> <EQ> <QMARK> { relOp = "min="; isBool = false; } )
@@ -1767,18 +1809,17 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	}
 }
 
-// Reward struct index for R operator
+// Reward specification for R operator
 
-void RewardIndex(ExpressionReward exprRew) :
+void RewardSpecification(ExpressionReward exprRew) :
 {
 	Object index = null;
 	Object indexDiv = null;
 }
 {
-	// Lookahead here is to ensure that "id" is not misdetected as an ExpressionLabel
-	( <LBRACE> ( LOOKAHEAD(QuotedIdentifier()) ( index = QuotedIdentifier()) | index = Expression(false, false) ) <RBRACE> )
+	index = RewardIndex()
 	// Optional second reward structure index (for ratio objectives)
-	( <DIVIDE> ( <LBRACE> ( LOOKAHEAD(QuotedIdentifier()) ( indexDiv = QuotedIdentifier() ) | indexDiv = Expression(false, false) ) <RBRACE> ))?
+	( <DIVIDE> indexDiv = RewardIndex() )?
 	{
 		exprRew.setRewardStructIndex(index);
 		if (indexDiv != null) {
@@ -1786,6 +1827,19 @@ void RewardIndex(ExpressionReward exprRew) :
 		}
 	}
 }
+
+Object RewardIndex() :
+{
+	Object index = null;
+}
+{
+	// Lookahead here is to ensure that "id" is not misdetected as an ExpressionLabel
+	( <LBRACE> ( LOOKAHEAD(QuotedIdentifier()) ( index = QuotedIdentifier()) | index = Expression(false, false) ) <RBRACE> )
+	{
+		return index;
+	}
+}
+
 
 // Contents of an R operator
 
@@ -1809,9 +1863,9 @@ Expression ExpressionRewardContents(boolean prop, boolean pathprop) :
 	| <S> { ret = new ExpressionTemporal(ExpressionTemporal.R_S, null, null); }
 	
 	// Normal reward operators (excluding S; see above)
-	| LOOKAHEAD(<C> <LE>) begin = <C> <LE> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); b.setUpperBound(expr); exprTemp.setBound(b); ret = exprTemp; }
+	| LOOKAHEAD(<C> <LE>) begin = <C> <LE> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); b.setUpperBound(expr); exprTemp.getBounds().setDefaultBound(b); ret = exprTemp; }
 	| <C> { ret = new ExpressionTemporal(ExpressionTemporal.R_C, null, null); }
-	| <I> <EQ> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_I, null, null); b.setUpperBound(expr); exprTemp.setBound(b); ret = exprTemp; }
+	| <I> <EQ> expr = Expression(false, false) { exprTemp = new ExpressionTemporal(ExpressionTemporal.R_I, null, null); b.setUpperBound(expr); exprTemp.getBounds().setDefaultBound(b); ret = exprTemp; }
 	
 	// Path formula (including F "target")
 	| expr = Expression(prop, true) { ret = expr; }

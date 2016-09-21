@@ -772,12 +772,12 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 		
 		// check that there is an upper time bound
-		if (expr.bound == null || expr.bound.getUpperBound() == null) {
+		if (!expr.hasBounds() || !expr.getBounds().getStepBoundForDiscreteTime().hasUpperBound()) {
 			throw new PrismException("Cumulative reward operator without time bound (C) is only allowed for multi-objective queries");
 		}
 
 		// get info from inst reward
-		time = expr.bound.getUpperBound().evaluateInt(constantValues);
+		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid time bound " + time + " in cumulative reward formula");
 		}
@@ -818,7 +818,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		JDD.Deref(statesOfInterest);
 
 		// get info from inst reward
-		time = expr.bound.getUpperBound().evaluateInt(constantValues);
+		time = expr.getBounds().getStepBoundForDiscreteTime().getUpperBound().evaluateInt(constantValues);
 		if (time < 0) {
 			throw new PrismException("Invalid bound " + time + " in instantaneous reward property");
 		}

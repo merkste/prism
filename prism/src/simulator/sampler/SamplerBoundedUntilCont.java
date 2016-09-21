@@ -55,8 +55,11 @@ public class SamplerBoundedUntilCont extends SamplerBoolean
 			throw new PrismException("Error creating Sampler");
 		left = expr.getOperand1();
 		right = expr.getOperand2();
-		lb = (expr.bound == null || expr.bound.getLowerBound() == null) ? 0.0 : expr.bound.getLowerBound().evaluateDouble();
-		ub = (expr.bound == null || expr.bound.getUpperBound() == null) ? Double.POSITIVE_INFINITY : expr.bound.getUpperBound().evaluateDouble();
+
+		TemporalOperatorBound bound = expr.getBounds().getTimeBoundForContinuousTime();
+
+		lb = (bound == null || !bound.hasLowerBound()) ? 0.0 : bound.getLowerBound().evaluateDouble();
+		ub = (bound == null || !bound.hasUpperBound()) ? Double.POSITIVE_INFINITY : bound.getUpperBound().evaluateDouble();
 		// Initialise sampler info
 		reset();
 		resetStats();

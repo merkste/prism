@@ -168,12 +168,6 @@ public class TypeCheck extends ASTTraverse
 	public void visitPost(ExpressionTemporal e) throws PrismLangException
 	{
 		Type type;
-		if (e.bound != null && e.bound.getLowerBound() != null && !TypeDouble.getInstance().canAssign(e.bound.getLowerBound().getType())) {
-			throw new PrismLangException("Type error: Lower bound in " + e.getOperatorSymbol() + " operator must be an int or double", e.bound.getLowerBound());
-		}
-		if (e.bound != null && e.bound.getUpperBound() != null && !TypeDouble.getInstance().canAssign(e.bound.getUpperBound().getType())) {
-			throw new PrismLangException("Type error: Upper bound in " + e.getOperatorSymbol() + " operator must be an int or double", e.bound.getUpperBound());
-		}
 		switch (e.getOperator()) {
 		case ExpressionTemporal.P_X:
 		case ExpressionTemporal.P_U:
@@ -668,6 +662,15 @@ public class TypeCheck extends ASTTraverse
 		case EXISTS:
 			e.setType(TypeBool.getInstance());
 			break;
+		}
+	}
+
+	public void visitPost(TemporalOperatorBound e) throws PrismLangException {
+		if (e.hasLowerBound() && !TypeDouble.getInstance().canAssign(e.getLowerBound().getType())) {
+			throw new PrismLangException("Type error: Lower bound in " + e + " must be an int or double", e.getLowerBound());
+		}
+		if (e.hasUpperBound() && !TypeDouble.getInstance().canAssign(e.getUpperBound().getType())) {
+			throw new PrismLangException("Type error: Upper bound in " + e + " operator must be an int or double", e.getUpperBound());
 		}
 	}
 }

@@ -178,6 +178,10 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public DA<BitSet,? extends AcceptanceOmega> constructDAForLTLFormula(StateModelChecker mc, Model model, Expression expr, Vector<JDDNode> labelDDs, AcceptanceType... allowedAcceptance) throws PrismException
 	{
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("Can not handle reward bounds via deterministic automata.");
+		}
+
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");

@@ -340,7 +340,7 @@ public class DigitalClocks
 			{
 				public void visitPost(ExpressionTemporal e) throws PrismLangException
 				{
-					if (e.bound != null)
+					if (e.hasBounds())
 						throw new PrismLangException("The digital clocks method does not yet support bounded properties");
 				}
 			});

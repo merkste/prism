@@ -1414,11 +1414,16 @@ public class SimulatorEngine extends PrismComponent
 			if (expr_ instanceof ExpressionTemporal) {
 				ExpressionTemporal exprTemp = (ExpressionTemporal)expr_;
 				if (exprTemp.getOperator() == ExpressionTemporal.R_C &&
-				    (exprTemp.bound==null || exprTemp.bound.getUpperBound() == null)) {
+				    (!exprTemp.getBounds().hasDefaultBound() || !exprTemp.getBounds().getDefaultBound().hasUpperBound())) {
 					return "Simulator cannot handle cumulative reward properties without time bounds";
 				}
 			}
 		}
+
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			return "Simulator cannot handle reward bounded properties";
+		}
+
 		// No errors
 		return null;
 	}

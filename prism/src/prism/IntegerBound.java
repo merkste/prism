@@ -94,7 +94,7 @@ public class IntegerBound
 	 */
 	public static IntegerBound fromExpressionTemporal(ExpressionTemporal expression, Values constantValues, boolean check) throws PrismException
 	{
-		TemporalOperatorBound eBound = expression.bound;
+		TemporalOperatorBound eBound = expression.getBounds().getStepBoundForDiscreteTime();
 		IntegerBound bounds;
 		if (eBound == null) {
 			bounds = new IntegerBound(null, false, null, false);
