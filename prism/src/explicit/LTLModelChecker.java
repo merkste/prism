@@ -107,12 +107,19 @@ public class LTLModelChecker extends PrismComponent
 		}
 	}
 
+	private boolean allowSimplificationsBasedOnModel = true;
+
 	/**
 	 * Create a new LTLModelChecker, inherit basic state from parent (unless null).
 	 */
 	public LTLModelChecker(PrismComponent parent)
 	{
 		super(parent);
+	}
+
+	public void disallowSimplificationsBasedOnModel()
+	{
+		allowSimplificationsBasedOnModel = false;
 	}
 
 	/**
@@ -157,29 +164,31 @@ public class LTLModelChecker extends PrismComponent
 			// Model check state formula for all states
 			StateValues sv = mc.checkExpression(model, expr, null);
 			BitSet bs = sv.getBitSet();
-			// Detect special cases (true, false) for optimisation
-			if (bs.isEmpty()) {
-				return Expression.False();
-			}
-			if (bs.cardinality() == model.getNumStates()) {
-				return Expression.True();
-			}
-			// See if we already have an identical result
-			// (in which case, reuse it)
-			int i = labelBS.indexOf(bs);
-			if (i != -1) {
-				sv.clear();
-				return new ExpressionLabel("L" + i);
-			}
-			// Also, see if we already have the negation of this result
-			// (in which case, reuse it)
-			BitSet bsNeg = new BitSet(model.getNumStates());
-			bsNeg.set(0, model.getNumStates());
-			bsNeg.andNot(bs);
-			i = labelBS.indexOf(bsNeg);
-			if (i != -1) {
-				sv.clear();
-				return Expression.Not(new ExpressionLabel("L" + i));
+			if (allowSimplificationsBasedOnModel) {
+				// Detect special cases (true, false) for optimisation
+				if (bs.isEmpty()) {
+					return Expression.False();
+				}
+				if (bs.cardinality() == model.getNumStates()) {
+					return Expression.True();
+				}
+				// See if we already have an identical result
+				// (in which case, reuse it)
+				int i = labelBS.indexOf(bs);
+				if (i != -1) {
+					sv.clear();
+					return new ExpressionLabel("L" + i);
+				}
+				// Also, see if we already have the negation of this result
+				// (in which case, reuse it)
+				BitSet bsNeg = new BitSet(model.getNumStates());
+				bsNeg.set(0, model.getNumStates());
+				bsNeg.andNot(bs);
+				i = labelBS.indexOf(bsNeg);
+				if (i != -1) {
+					sv.clear();
+					return Expression.Not(new ExpressionLabel("L" + i));
+				}
 			}
 			// Otherwise, add result to list, return new label
 			labelBS.add(bs);
