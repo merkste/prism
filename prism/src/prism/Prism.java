@@ -3051,7 +3051,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			// Create new model checker object and do model checking
 			if (!getExplicit()) {
 				ModelChecker mc = createModelChecker(propertiesFile);
-				res = mc.check(prop.getExpression());
+				res = mc.check(prop.getExpression(), currentModel.getReach().copy());
 			} else {
 				explicit.StateModelChecker mc = createModelCheckerExplicit(propertiesFile);
 				res = mc.check(currentModelExpl, prop.getExpression());
