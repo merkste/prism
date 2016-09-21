@@ -32,6 +32,7 @@ import java.util.Vector;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import jdd.JDDVarsTree;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -86,6 +87,9 @@ public class ModelGenerator2MTBDD
 	private JDDNode[] ddChoiceVars; // individual dd vars for local non-det.
 
 	private ModelVariablesDD modelVariables;
+
+	// constraints on the variable ordering
+	private JDDVarsTree varorderConstraints = null;
 
 	// action info
 	private Vector<String> synchs; // list of action names
@@ -197,6 +201,8 @@ public class ModelGenerator2MTBDD
 			model.setTransActions(transActions);
 		}
 
+		model.setVarOrderConstraints(varorderConstraints);
+
 		// no need to do reachability
 		model.setReach(reach);
 		model.filterReachableStates();
@@ -257,10 +263,20 @@ public class ModelGenerator2MTBDD
 
 		// now allocate variables
 
+
+		// the top-level variable order constraint, children are fixed
+		// currently, we don't support reordering for models that where generated
+		// via a generator, so we add all variables to the top-level constraint,
+		// so they can't be moved by reordering
+		JDDVars allDDVars = new JDDVars();
+		varorderConstraints = JDDVarsTree.leaf(allDDVars, "Root");
+		varorderConstraints.setFixed(true);
+
 		// allocate nondeterministic variables
 		if (modelType == ModelType.MDP) {
 			for (i = 0; i < maxNumChoices; i++) {
 				ddChoiceVars[i] = modelVariables.allocateVariable("l" + i);
+				allDDVars.addVar(ddChoiceVars[i].copy());
 			}
 		}
 
@@ -279,6 +295,8 @@ public class ModelGenerator2MTBDD
 				vc = modelVariables.allocateVariable(varList.getName(i) + "'." + j);
 				varDDRowVars[i].addVar(vr);
 				varDDColVars[i].addVar(vc);
+				allDDVars.addVar(vr.copy());
+				allDDVars.addVar(vc.copy());
 			}
 		}
 	}
