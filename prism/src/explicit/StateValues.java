@@ -32,6 +32,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import parser.State;
 import parser.ast.ExpressionBinaryOp;
@@ -1673,6 +1675,48 @@ public class StateValues implements StateVector
 		} else {
 			return false;
 		}
+	}
+
+	/** Partition the state values by (boolean) value, returns a Map: Value -&gt; States-with-that-value */
+	public Map<Boolean, BitSet> partitionBool() {
+		if (!type.equals(TypeBool.getInstance()))
+			throw new UnsupportedOperationException("Can not invoke paritionBool() for StateValues with "+type+" elements.");
+		return this.<Boolean>partition();
+	}
+
+	/** Partition the state values by (double) value, returns a Map: Value -&gt; States-with-that-value */
+	public Map<Double, BitSet> partitionDouble() {
+		if (!type.equals(TypeDouble.getInstance()))
+			throw new UnsupportedOperationException("Can not invoke paritionDouble() for StateValues with "+type+" elements.");
+		return this.<Double>partition();
+	}
+
+	/** Partition the state values by (integer) value, returns a Map: Value -&gt; States-with-that-value */
+	public Map<Integer, BitSet> partitionInt() {
+		if (!type.equals(TypeInt.getInstance()))
+			throw new UnsupportedOperationException("Can not invoke paritionInt() for StateValues with "+type+" elements.");
+		return this.<Integer>partition();
+	}
+
+	@SuppressWarnings("unchecked")
+	/**
+	 * Helper: Partition the state values by value.
+	 * Returns a Map: Value -&gt; States-with-that-value
+	 * @param <T> the type of the values
+	 */
+	private <T extends Comparable<T>> Map<T, BitSet> partition() {
+		Map<T, BitSet> result = new TreeMap<T, BitSet>();
+
+		for (int i = 0; i < getSize(); i++) {
+			BitSet set = result.get(getValue(i));
+			if (set == null) {
+				set = new BitSet();
+				result.put((T) getValue(i), set);
+			}
+			set.set(i);
+		}
+
+		return result;
 	}
 
 	/**
