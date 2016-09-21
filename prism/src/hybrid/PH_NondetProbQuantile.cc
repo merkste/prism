@@ -1023,6 +1023,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	
 	// print iterations/timing info
 	PH_PrintToMainLog(env, "Quantile iterations: %d iterations in %.2f seconds (average %.6f, setup %.2f)\n", iters, time_taken, time_for_iters/iters, time_for_setup);
+	PH_PrintToMainLog(env, "Quantile calculations finished for all states of interest in %d iterations.\n", iters);
 
 	// if the iterative method didn't terminate, this is an error
 	if (!done) { delete soln; soln = NULL; PH_SetErrorMessage("Iterative method did not converge within %d iterations.\nConsider using a different numerical method or increasing the maximum number of iterations", iters); }
