@@ -38,6 +38,7 @@ import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionTemporal;
 import parser.ast.TemporalOperatorBound;
+import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -65,6 +66,41 @@ public class DTMCModelChecker extends ProbModelChecker
 	}
 
 	// Model checking functions
+
+	@Override
+	protected StateValues checkProbPathFormulaSimple(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
+	{
+		expr = Expression.convertSimplePathFormulaToCanonicalForm(expr);
+		ExpressionTemporal exprTemp = Expression.getTemporalOperatorForSimplePathFormula(expr);
+
+		if (model.getModelType() == ModelType.DTMC &&
+		    (exprTemp.getBounds().hasRewardBounds() ||
+		     exprTemp.getBounds().countTimeBoundsDiscrete() > 1)) {
+			// We have a DTMC and reward bounds or multiple time / step bounds
+			// transform model and expression and recurse
+			
+			List<TemporalOperatorBound> boundsToReplace = exprTemp.getBounds().getStepBoundsForDiscreteTime();
+			if (!boundsToReplace.isEmpty()) {
+				// exempt first time bound, is handled by standard simple path formula procedure
+				boundsToReplace.remove(0);
+			}
+			boundsToReplace.addAll(exprTemp.getBounds().getRewardBounds());
+
+			ModelExpressionTransformation<DTMC, DTMC> transformed =
+			    CounterTransformation.replaceBoundsWithCounters(this, (DTMC) model, expr, boundsToReplace, statesOfInterest);
+			mainLog.println("\nPerforming actual calculations for\n");
+			mainLog.println("DTMC  "+transformed.getTransformedModel().infoString());
+			mainLog.println("Formula: "+transformed.getTransformedExpression() +"\n");
+
+			// We can now delegate to ProbModelChecker.checkProbPathFormulaSimple as there is
+			// at most one time / step bound remaining
+			StateValues svTransformed = super.checkProbPathFormulaSimple(transformed.getTransformedModel(), transformed.getTransformedExpression(), minMax, transformed.getTransformedStatesOfInterest());
+			return transformed.projectToOriginalModel(svTransformed);
+		} else {
+			// We are fine, delegate to ProbModelChecker.checkProbPathFormulaSimple
+			return super.checkProbPathFormulaSimple(model, expr, minMax, statesOfInterest);
+		}
+	}
 
 	@Override
 	protected StateValues checkProbPathFormulaLTL(Model model, Expression expr, boolean qual, MinMax minMax, BitSet statesOfInterest) throws PrismException
