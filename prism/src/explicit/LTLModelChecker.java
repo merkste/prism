@@ -614,23 +614,26 @@ public class LTLModelChecker extends PrismComponent
 	 * @param model The model
 	 * @param acceptance The acceptance condition
 	 */
-	public BitSet findAcceptingBSCCs(Model model, AcceptanceOmega acceptance) throws PrismException
+	public BitSet findAcceptingBSCCs(Model model, final AcceptanceOmega acceptance) throws PrismException
 	{
+		final BitSet result = new BitSet();
+
 		// Compute bottom strongly connected components (BSCCs)
-		SCCConsumerStore sccStore = new SCCConsumerStore(this, model);
-		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, model, sccStore);
-		sccComputer.computeSCCs();
-		List<BitSet> bsccs = sccStore.getBSCCs();
+		// and check using the following SCCConsumerBSCCs:
+		SCCConsumerBSCCs sccConsumer = new SCCConsumerBSCCs(this, model) {
 
-		BitSet result = new BitSet();
-
-		for (BitSet bscc : bsccs) {
-			if (acceptance.isBSCCAccepting(bscc)) {
-				// this BSCC is accepting
-				result.or(bscc);
+			@Override
+			public void notifyNextBSCC(BitSet bscc) {
+				if (acceptance.isBSCCAccepting(bscc)) {
+					result.or(bscc);
+				}
 			}
-		}
+		};
 
+		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, model, sccConsumer);
+		sccComputer.computeSCCs();
+
+		// now, the result is ready
 		return result;
 	}
 
