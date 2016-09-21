@@ -45,6 +45,7 @@ import jhoafparser.parser.generated.ParseException;
 import jhoafparser.transformations.ToStateAcceptance;
 import jltl2ba.APSet;
 import jltl2ba.SimpleLTL;
+import jltl2ba.TLProperties;
 import jltl2dstar.LTL2Rabin;
 import parser.Values;
 import parser.ast.Expression;
@@ -60,6 +61,7 @@ import prism.PrismPaths;
 import prism.PrismSettings;
 import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceRabin;
+import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 
 /**
@@ -129,8 +131,30 @@ public class LTL2DA extends PrismComponent
 			if (useExternal) {
 				result = convertLTLFormulaToDAWithExternalTool(ltl, constants, allowedAcceptance);
 			} else {
-				// use jltl2dstar LTL2DA
-				result = LTL2Rabin.ltl2da(ltl.convertForJltl2ba(), allowedAcceptance);
+				
+				SimpleLTL simpleLTL = ltl.convertForJltl2ba();
+
+				boolean allowLTL2WDBA = getSettings().getBoolean(PrismSettings.PRISM_ALLOW_LTL2WDBA);
+				if (allowLTL2WDBA) {
+					TLProperties props = TLProperties.analyse(simpleLTL);
+					mainLog.println(props);
+
+					if (props.isSyntacticGuarantee() && AcceptanceType.contains(allowedAcceptance, AcceptanceType.REACH)) {
+						// a co-safety property
+						mainLog.println("Generating DFA for co-safety property...");
+						LTL2WDBA ltl2wdba = new LTL2WDBA(this);
+						result = ltl2wdba.cosafeltl2wdba(simpleLTL);
+					} else if (allowLTL2WDBA && props.isSyntacticObligation() && AcceptanceType.contains(allowedAcceptance, AcceptanceType.BUCHI)) {
+						// an obligation property
+						mainLog.println("Generating DBA for obligation property...");
+						LTL2WDBA ltl2wdba = new LTL2WDBA(this);
+						result = ltl2wdba.obligation2wdba(simpleLTL);
+					}
+				}
+				if (result == null) {
+					// use jltl2dstar LTL2DA
+					result = LTL2Rabin.ltl2da(simpleLTL, allowedAcceptance);
+				}
 			}
 		}
 

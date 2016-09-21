@@ -125,6 +125,7 @@ public class PrismSettings implements Observer
 	
 	public static final String PRISM_LTL2DA_TOOL					= "prism.ltl2daTool";
 	public static final String PRISM_LTL2DA_SYNTAX					= "prism.ltl2daSyntax";
+	public static final String PRISM_ALLOW_LTL2WDBA					= "prism.allowLTL2WDBA";
 
 	public static final	String PRISM_JDD_SANITY_CHECKS					= "prism.ddsanity";
 
@@ -353,6 +354,8 @@ public class PrismSettings implements Observer
 
 			{ CHOICE_TYPE,		PRISM_LTL2DA_SYNTAX,					"LTL syntax for external LTL->DA tool",		"4.2.1",			"LBT",		"LBT,Spin,Spot,Rabinizer",
 																			"The syntax for LTL formulas passed to the external LTL->DA tool."},
+			{ BOOLEAN_TYPE,		PRISM_ALLOW_LTL2WDBA,					"Allow use of LTL2WDBA conversion for obligation and co-safety formulas",		"4.3.1",			false, 		"",
+																			"Allow use of LTL2WDBA conversion for obligation and co-safety formulas."},
 
 			// DEBUG / SANITY CHECK OPTIONS:
 			{ BOOLEAN_TYPE,		PRISM_JDD_SANITY_CHECKS,					"Do BDD sanity checks",			"4.3.1",			new Boolean(false),		"",
@@ -1460,6 +1463,10 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("The -" + sw + " switch requires one argument (options are: lbt, spin, spot, rabinizer)");
 			}
+		}
+
+		else if (sw.equals("allowltl2wdba")) {
+			set(PRISM_ALLOW_LTL2WDBA, true);
 		}
 
 		// DEBUGGING / SANITY CHECKS
