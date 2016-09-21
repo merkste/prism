@@ -1695,4 +1695,9 @@ public class StateValues implements StateVector
 		sv.statesList = statesList;
 		return sv;
 	}
+
+	/** Returns the type of this StateValues object. */
+	public Type getType() {
+		return type;
+	}
 }
