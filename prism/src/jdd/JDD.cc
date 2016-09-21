@@ -101,6 +101,12 @@ JNIEXPORT void JNICALL Java_jdd_JDD_DD_1SetCUDDEpsilon(JNIEnv *env, jclass cls, 
 
 //------------------------------------------------------------------------------
 
+JNIEXPORT void JNICALL Java_jdd_JDD_DD_1SetCUDDReorderMaxGrowth(JNIEnv *env, jclass cls, jdouble factor) {
+	 Cudd_SetMaxGrowth(ddman, factor);
+}
+
+//------------------------------------------------------------------------------
+
 JNIEXPORT void JNICALL Java_jdd_JDD_DD_1CloseDownCUDD(JNIEnv *env, jclass cls, jboolean check)
 {
 	DD_CloseDownCUDD(ddman, check);

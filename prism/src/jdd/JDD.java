@@ -46,6 +46,7 @@ public class JDD
 	private static native void DD_InitialiseCUDD(long max_mem, double epsilon);
 	private static native void DD_SetCUDDMaxMem(long max_mem);
 	private static native void DD_SetCUDDEpsilon(double epsilon);
+	private static native void DD_SetCUDDReorderMaxGrowth(double factor);
 	private static native void DD_CloseDownCUDD(boolean check);
 	static native void DD_Ref(long dd);
 	static native void DD_Deref(long dd);
@@ -254,7 +255,17 @@ public class JDD
 	{
 		DD_SetCUDDEpsilon(epsilon);
 	}
-		
+
+	/**
+	 * Set the max growth factor for reordering (percentage increase
+	 * in MTBDD node size before reordering is abandoned as unsuccessful).
+	 * E.g., 1.2 = 120%.
+	 */
+	public static void SetCUDDReorderMaxGrowth(double factor)
+	{
+		DD_SetCUDDReorderMaxGrowth(factor);
+	}
+
 	/**
 	 * close down cudd
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
