@@ -80,8 +80,11 @@ public class TemporalOperatorBound extends ASTElement {
 	/** Display as =T rather than [T,T] ? */
 	protected boolean equals = false;
 
-	/** For reward bounds the reward structure index */
+	/** For reward bounds the reward structure index (String or Expression) */
 	protected Object rewardStructureIndex = null;
+
+	/** (Optional) The resolved reward structure (0-based index, as in ModelInfo) */
+	protected Integer resolvedRewardStructIndex = null;
 
 	/** The bound type */
 	protected BoundType boundType = BoundType.DEFAULT_BOUND;
@@ -208,14 +211,24 @@ public class TemporalOperatorBound extends ASTElement {
 		this.boundType = boundType;
 	}
 
-	/** Set the reward structure index */
+	/** Set the reward structure index (String or Expression) */
 	public void setRewardStructureIndex(Object index) {
 		rewardStructureIndex = index;
 	}
 
-	/** Get the reward structure index */
+	/** Get the reward structure index (String or Expression) */
 	public Object getRewardStructureIndex() {
 		return rewardStructureIndex;
+	}
+
+	/** Set the resolved RewardStruct */
+	public void setResolvedRewardStructIndex(Integer r) {
+		resolvedRewardStructIndex = r;
+	}
+
+	/** Get the resolved RewardStruct (if available, otherwise {@code null} */
+	public Integer getResolvedRewardStructIndex() {
+		return resolvedRewardStructIndex;
 	}
 
 	@Override
