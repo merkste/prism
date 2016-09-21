@@ -54,6 +54,9 @@ public class CTMCModelChecker extends ProbModelChecker
 	@Override
 	protected StateValues checkProbPathFormulaLTL(Model model, Expression expr, boolean qual, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("LTL formulas with reward bounds not supported for CTMCs");
+		}
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			throw new PrismNotSupportedException("LTL formulas with time bounds not supported for CTMCs");
 		}
@@ -76,6 +79,9 @@ public class CTMCModelChecker extends ProbModelChecker
 	@Override
 	protected StateValues checkRewardCoSafeLTL(Model model, Rewards modelRewards, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("LTL formulas with reward bounds not supported for CTMCs");
+		}
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			throw new PrismNotSupportedException("LTL formulas with time bounds not supported for CTMCs");
 		}
@@ -104,6 +110,9 @@ public class CTMCModelChecker extends ProbModelChecker
 	@Override
 	protected StateValues checkExistsLTL(Model model, Expression expr, BitSet statesOfInterest) throws PrismException
 	{
+		if (Expression.containsTemporalRewardBounds(expr)) {
+			throw new PrismNotSupportedException("LTL formulas with reward bounds not supported for CTMCs");
+		}
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			throw new PrismNotSupportedException("LTL formulas with time bounds not supported for CTMCs");
 		}
