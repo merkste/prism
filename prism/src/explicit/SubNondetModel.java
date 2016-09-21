@@ -323,7 +323,10 @@ public class SubNondetModel implements NondetModel
 	@Override
 	public String infoString()
 	{
-		throw new UnsupportedOperationException();
+		String s = "";
+		s += getNumStates() + " states";
+		s += ", " + getNumTransitions() + " transitions";
+		return s;
 	}
 
 	@Override
