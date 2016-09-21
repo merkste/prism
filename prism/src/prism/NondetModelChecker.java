@@ -1550,23 +1550,27 @@ public class NondetModelChecker extends NonProbModelChecker
 	// probability computation methods
 	// -----------------------------------------------------------------------------------
 
-	// compute probabilities for next
-
+	/**
+	 * Compute probabilities for next step,
+	 * i.e. compute Pmin/Pmax for 'X b'.
+	 *
+	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
+ 	 * @param tr the transition matrix (trans) of the model
+	 * @param b the set of b states (needs to be contained in reachable states of the model)
+	 * @param min compute Pmin?
+	 */
 	protected StateValues computeNextProbs(JDDNode tr, JDDNode b, boolean min)
 	{
 		JDDNode tmp;
 		StateValues probs = null;
 
 		// matrix multiply: trans * b
-		JDD.Ref(b);
-		tmp = JDD.PermuteVariables(b, allDDRowVars, allDDColVars);
-		JDD.Ref(tr);
-		tmp = JDD.MatrixMultiply(tr, tmp, allDDColVars, JDD.BOULDER);
+		tmp = JDD.PermuteVariables(b.copy(), allDDRowVars, allDDColVars);
+		tmp = JDD.MatrixMultiply(tr.copy(), tmp, allDDColVars, JDD.BOULDER);
 		// (then min or max)
 		if (min) {
 			// min
-			JDD.Ref(nondetMask);
-			tmp = JDD.Apply(JDD.MAX, tmp, nondetMask);
+			tmp = JDD.Apply(JDD.MAX, tmp, nondetMask.copy());
 			tmp = JDD.MinAbstract(tmp, allDDNondetVars);
 		} else {
 			// max
