@@ -26,6 +26,7 @@
 
 package prism;
 
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import jdd.*;
@@ -60,5 +61,52 @@ public class StochModel extends ProbModel
 			JDDVars[] vcv, Values cv)
 	{
 		super(tr, s, sr, trr, rsn, arv, acv, mvdd, nm, mn, mrv, mcv, nv, vl, vrv, vcv, cv);
+	}
+
+	public ProbModel getEmbeddedDTMC(PrismLog log)
+	{
+		// Compute embedded Markov chain
+		JDDNode diags = JDD.SumAbstract(trans.copy(), allDDColVars);
+		JDDNode embeddedTrans = JDD.Apply(JDD.DIVIDE, trans.copy(), diags.copy());
+		log.println("\nDiagonals vector: " + JDD.GetInfoString(diags, allDDRowVars.n()));
+		log.println("Embedded Markov chain: " + JDD.GetInfoString(embeddedTrans, allDDRowVars.n() * 2));
+
+		// Convert rewards
+		JDDNode[] embStateRewards = new JDDNode[stateRewards.length];
+		JDDNode[] embTransRewards = new JDDNode[stateRewards.length];
+		for (int i = 0; i < stateRewards.length; i++) {
+			// state rewards are scaled
+			embStateRewards[i] = JDD.Apply(JDD.DIVIDE, stateRewards[i].copy(), diags.copy());
+			// trans rewards are simply copied
+			embTransRewards[i] = transRewards[i].copy();
+		}
+
+		ProbModel result = new ProbModel(embeddedTrans,
+		                                 start.copy(),
+		                                 embStateRewards,
+		                                 embTransRewards,
+		                                 rewardStructNames, // pass by reference, will not be changed
+		                                 allDDRowVars.copy(),
+		                                 allDDColVars.copy(),
+		                                 modelVariables.copy(),
+		                                 numModules,
+		                                 moduleNames,  // pass by reference, will not be changed
+		                                 JDDVars.copyArray(moduleDDRowVars),
+		                                 JDDVars.copyArray(moduleDDColVars),
+		                                 numModules,
+		                                 varList, // pass by reference, will not be changed
+		                                 JDDVars.copyArray(moduleDDColVars),
+		                                 JDDVars.copyArray(moduleDDColVars),
+		                                 constantValues // pass by reference, will not be changed
+		                                );
+
+		result.setReach(getReach().copy());
+
+		// copy labels
+		for (Entry<String, JDDNode> label : labelsDD.entrySet()) {
+			result.addLabelDD(label.getKey(), label.getValue().copy());
+		}
+
+		return result;
 	}
 }
