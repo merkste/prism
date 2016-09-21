@@ -169,13 +169,19 @@ public class ECComputerDefault extends ECComputer
 		BitSet initialStates = new BitSet();
 		initialStates.set(states.nextSetBit(0));
 
+		int iterations = 0;
+		int checks = 0;
+		long start = System.currentTimeMillis();
+
 		boolean changed = true;
 		while (changed) {
+			iterations++;
 			changed = false;
 			actions.clear();
 			for (int i = 0; i < model.getNumStates(); i++) {
 				BitSet act = new BitSet();
 				if (states.get(i)) {
+					checks++;
 					for (int j = 0; j < model.getNumChoices(i); j++) {
 						if (model.allSuccessorsInSet(i, j, states)) {
 							act.set(j);
@@ -189,6 +195,7 @@ public class ECComputerDefault extends ECComputer
 				}
 			}
 		}
+		getLog().println("Restrict precomputations took "+iterations+" iterations, "+checks+" checks and "+(System.currentTimeMillis()-start)+"ms.");
 
 		return new SubNondetModel(model, states, actions, initialStates);
 	}
