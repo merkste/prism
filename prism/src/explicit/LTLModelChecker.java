@@ -52,6 +52,7 @@ import prism.ModelType;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismSettings;
 import prism.PrismNotSupportedException;
 import prism.PrismPaths;
 import prism.PrismUtils;
@@ -705,6 +706,9 @@ public class LTLModelChecker extends PrismComponent
 				continue;
 			// Compute accepting maximum end components (MECs) in !L_i
 			ECComputer ecComputer = ECComputer.createECComputer(this, model);
+			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
+				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
+			}
 			ecComputer.computeMECStates(statesLi_not, acceptance.get(i).getK());
 			List<BitSet> mecs = ecComputer.getMECStates();
 			// Union MEC states
@@ -734,6 +738,9 @@ public class LTLModelChecker extends PrismComponent
 
 		Stack<ECandPairs> todo = new Stack<ECandPairs>();
 		ECComputer ecComputer = ECComputer.createECComputer(this, model);
+		if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
+			ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
+		}
 		ecComputer.computeMECStates();
 		for (BitSet mecs : ecComputer.getMECStates()) {
 			ECandPairs ecp = new ECandPairs();
@@ -770,6 +777,9 @@ public class LTLModelChecker extends PrismComponent
 				// nothing to do
 			} else {
 				ecComputer = ECComputer.createECComputer(this, model);
+				if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
+					ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
+				}
 				ecComputer.computeMECStates(restrict);
 				for (BitSet mecs : ecComputer.getMECStates()) {
 					ECandPairs newEcp = new ECandPairs();
@@ -809,6 +819,9 @@ public class LTLModelChecker extends PrismComponent
 				continue;
 			// Compute maximum end components (MECs) in !L_i
 			ECComputer ecComputer = ECComputer.createECComputer(this, model);
+			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
+				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
+			}
 			ecComputer.computeMECStates(statesLi_not);
 			List<BitSet> mecs = ecComputer.getMECStates();
 			// Check which MECs contain a state from each K_i_j
