@@ -36,6 +36,8 @@ import parser.VarList;
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
+import parser.ast.ExpressionTemporal;
+import parser.ast.TemporalOperatorBound;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
