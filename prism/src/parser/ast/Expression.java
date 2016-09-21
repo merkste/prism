@@ -740,6 +740,18 @@ public abstract class Expression extends ASTElement
 		return expr instanceof ExpressionLiteral && expr.getType() instanceof TypeDouble;
 	}
 
+	public static boolean isMinus(Expression expr)
+	{
+		return expr instanceof ExpressionUnaryOp && ((ExpressionUnaryOp) expr).getOperator() == ExpressionUnaryOp.MINUS;
+	}
+
+	/** Deprecated, use ExpressionTemporal.isNext(expr) */
+	@Deprecated
+	public static boolean isNext(Expression expr)
+	{
+		return expr instanceof ExpressionTemporal && ((ExpressionTemporal) expr).getOperator() == ExpressionTemporal.P_X;
+	}
+
 	public static boolean isNot(Expression expr)
 	{
 		return expr instanceof ExpressionUnaryOp && ((ExpressionUnaryOp) expr).getOperator() == ExpressionUnaryOp.NOT;
