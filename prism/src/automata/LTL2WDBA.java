@@ -21,7 +21,7 @@ import acceptance.AcceptanceBuchi;
 import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceReach;
 
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 import common.Wrapper;
 
 import explicit.LTS;

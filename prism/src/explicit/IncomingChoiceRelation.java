@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Stack;
 
 import prism.PrismComponent;
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 
 /**
  * A class for storing and accessing the incoming choices of an explicit NondetModel.

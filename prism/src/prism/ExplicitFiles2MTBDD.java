@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-import common.IterableStateSet;
+import common.iterable.IterableStateSet;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;

@@ -22,7 +22,7 @@ package jltl2dstar;
 
 import java.util.*;
 
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
 

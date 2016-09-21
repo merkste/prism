@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import common.IterableStateSet;
+import common.iterable.IterableStateSet;
 import parser.VarList;
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
@@ -56,7 +56,7 @@ import automata.DA;
 import automata.LTL2WDBA;
 import common.BitSetAndQueue;
 import common.BitSetTools;
-import common.IterableBitSet;
+import common.iterable.IterableBitSet;
 import explicit.IncomingChoiceRelation.Choice;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MCRewardsFromMDPRewards;

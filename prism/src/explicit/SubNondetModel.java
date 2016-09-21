@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import common.IterableStateSet;
+import common.iterable.IterableStateSet;
 import parser.State;
 import parser.Values;
 import parser.VarList;

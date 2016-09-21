@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-import common.IterableStateSet;
+import common.iterable.IterableStateSet;
 import explicit.graphviz.Decorator;
 import explicit.rewards.MCRewards;
 import prism.ModelType;

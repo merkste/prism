@@ -30,8 +30,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
 
-import common.IterableStateSet;
-
+import common.iterable.IterableStateSet;
 import explicit.rewards.*;
 import prism.PrismException;
 

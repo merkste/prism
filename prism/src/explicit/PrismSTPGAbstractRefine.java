@@ -28,7 +28,7 @@ package explicit;
 
 import java.util.*;
 
-import common.IterableStateSet;
+import common.iterable.IterableStateSet;
 import prism.ModelType;
 import prism.PrismComponent;
 import prism.PrismException;
