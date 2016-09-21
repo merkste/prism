@@ -183,6 +183,10 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 		return mc;
 	}
 
+	public ModelChecker createModelChecker(Model newModel) throws PrismException {
+		return createModelChecker(newModel.getModelType(), prism, newModel, propertiesFile);
+	}
+	
 	/**
 	 * Clean up the dummy model created when using the abbreviated constructor
 	 */
