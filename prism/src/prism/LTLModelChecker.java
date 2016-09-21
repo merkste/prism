@@ -384,12 +384,24 @@ public class LTLModelChecker extends PrismComponent
 		newStart = buildStartMask(da, labelDDs, daDDRowVars);
 		newStart = JDD.And(JDD.And(model.getReach().copy(), statesOfInterest.copy()), newStart);
 
+		// Build lifted reward information
+		JDDNode[] newStateRewards = new JDDNode[model.stateRewards.length];
+		for (i=0; i < model.stateRewards.length; i++) {
+			newStateRewards[i] = model.stateRewards[i].copy();
+		}
+		JDDNode[] newTransRewards = new JDDNode[model.transRewards.length];
+		for (i=0; i < model.transRewards.length; i++) {
+			newTransRewards[i] = model.transRewards[i].copy();
+		}
+
 		// Create a new model model object to store the product model
 		ProbModel modelProd = new ProbModel(
 		// New transition matrix/start state
 				newTrans, newStart,
-				// Don't pass in any rewards info
-				new JDDNode[0], new JDDNode[0], new String[0],
+				// lifted rewards info
+				newStateRewards,
+				newTransRewards,
+				model.rewardStructNames.clone(),
 				// New list of all row/col vars
 				newAllDDRowVars, newAllDDColVars,
 				// New model variables
@@ -566,12 +578,24 @@ public class LTLModelChecker extends PrismComponent
 		newStart = buildStartMask(da, labelDDs, daDDRowVars);
 		newStart = JDD.And(JDD.And(model.getReach().copy(), statesOfInterest.copy()), newStart);
 
+		// Build lifted reward information
+		JDDNode[] newStateRewards = new JDDNode[model.stateRewards.length];
+		for (i=0; i < model.stateRewards.length; i++) {
+			newStateRewards[i] = model.stateRewards[i].copy();
+		}
+		JDDNode[] newTransRewards = new JDDNode[model.transRewards.length];
+		for (i=0; i < model.transRewards.length; i++) {
+			newTransRewards[i] = model.transRewards[i].copy();
+		}
+
 		// Create a new model model object to store the product model
 		NondetModel modelProd = new NondetModel(
 		// New transition matrix/start state
 				newTrans, newStart,
-				// Don't pass in any rewards info
-				new JDDNode[0], new JDDNode[0], new String[0],
+				// lifted rewards info
+				newStateRewards,
+				newTransRewards,
+				model.rewardStructNames.clone(),
 				// New list of all row/col vars
 				newAllDDRowVars, newAllDDColVars,
 				// Nondet variables (unchanged)
