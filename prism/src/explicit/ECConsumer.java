@@ -3,6 +3,7 @@ package explicit;
 import java.util.BitSet;
 
 import prism.PrismComponent;
+import prism.PrismException;
 
 public abstract class ECConsumer extends PrismComponent {
 	
@@ -14,7 +15,7 @@ public abstract class ECConsumer extends PrismComponent {
 		this.model = model;
 	}
 
-	public abstract void notifyNextMEC(BitSet mec);
+	public abstract void notifyNextMEC(BitSet mec) throws PrismException;
 	public void notifyDone() {}
 
 }
