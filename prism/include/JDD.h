@@ -577,6 +577,14 @@ JNIEXPORT void JNICALL Java_jdd_JDD_DD_1PrintTerminalsAndNumbers
 
 /*
  * Class:     jdd_JDD
+ * Method:    DD_ReadNodeCount
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_jdd_JDD_DD_1ReadNodeCount
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     jdd_JDD
  * Method:    DD_SetVectorElement
  * Signature: (JJIJD)J
  */

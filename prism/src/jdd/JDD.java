@@ -109,6 +109,7 @@ public class JDD
 	private static native long DD_GetSupport(long dd);
 	private static native void DD_PrintTerminals(long dd);
 	private static native void DD_PrintTerminalsAndNumbers(long dd, int num_vars);
+	private static native int DD_ReadNodeCount();
 	// dd_matrix
 	private static native long DD_SetVectorElement(long dd, long vars, int num_vars, long index, double value);
 	private static native long DD_SetMatrixElement(long dd, long rvars, int num_rvars, long cvars, int num_cvars, long rindex, long cindex, double value);
@@ -980,6 +981,16 @@ public class JDD
 	}
 
 	// wrapper methods for dd_info
+
+	/**
+	 * Returns the number of MTBDD nodes in the whole shared MTBDD,
+	 * i.e., all nodes in existence. However, dead nodes,
+	 * projection functions and the standard constants are ignored
+	 * in the count.
+	 */
+	public static int GetNumNodes() {
+		return DD_ReadNodeCount();
+	}
 
 	/**
 	 * returns number of nodes in dd
