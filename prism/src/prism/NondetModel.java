@@ -743,7 +743,13 @@ public class NondetModel extends ProbModel
 
 		return getTransformed(ndTransformation);
 	}
-
+	
+	
+	
+	public void dump(PrismLog log) throws PrismException {
+		super.dump(log);
+		log.println("allDDNondetVars = "+allDDNondetVars);
+	}
 }
 
 //------------------------------------------------------------------------------
