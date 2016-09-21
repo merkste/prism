@@ -48,6 +48,7 @@ import jltl2ba.SimpleLTL;
 import jltl2dstar.LTL2Rabin;
 import parser.Values;
 import parser.ast.Expression;
+import parser.visitor.ExpandStepBoundsSyntactically;
 import parser.ast.ExpressionHOA;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionUnaryOp;
@@ -100,9 +101,6 @@ public class LTL2DA extends PrismComponent
 
 		boolean useExternal = useExternal();
 		boolean containsTemporalBounds = Expression.containsTemporalTimeBounds(ltl);
-		if (containsTemporalBounds) {
-			useExternal = false;
-		}
 
 		if (!useExternal) {
 			try {
@@ -112,29 +110,27 @@ public class LTL2DA extends PrismComponent
 					getLog().println("Taking "+result.getAutomataType()+" from library...");
 				}
 			} catch (Exception e) {
-				if (containsTemporalBounds) {
-					// there is (currently) no other way to translate LTL with temporal bounds,
-					// so treat an exception as a "real" one
-					throw e;
-				} else {
-					// there is the possibility that we might be able to construct
-					// an automaton below, just issue a warning
-					getLog().println("Warning: Exception during attempt to construct DRA using the LTL2RabinLibrary:");
-					getLog().println(" " + e.getMessage());
-				}
+				// there is the possibility that we might be able to construct
+				// an automaton below, just issue a warning
+				getLog().println("Warning: Exception during attempt to construct DRA using the LTL2RabinLibrary:");
+				getLog().println(" " + e.getMessage());
 			}
 		}
 
 		if (result == null) {
-			if (!containsTemporalBounds) {
-				if (useExternal) {
-					result = convertLTLFormulaToDAWithExternalTool(ltl, constants, allowedAcceptance);
-				} else {
-					// use jltl2dstar LTL2DA
-					result = LTL2Rabin.ltl2da(ltl.convertForJltl2ba(), allowedAcceptance);
-				}
+			if (containsTemporalBounds) {
+				// remove time bounds syntactically
+				ExpandStepBoundsSyntactically visitor = new ExpandStepBoundsSyntactically(constants);
+				ltl = (Expression)ltl.deepCopy().accept(visitor);
+
+				mainLog.println("LTL formula with syntactically expanded bounds: "+ltl);
+			}
+
+			if (useExternal) {
+				result = convertLTLFormulaToDAWithExternalTool(ltl, constants, allowedAcceptance);
 			} else {
-				throw new PrismNotSupportedException("Could not convert LTL formula to deterministic automaton, formula had time-bounds");
+				// use jltl2dstar LTL2DA
+				result = LTL2Rabin.ltl2da(ltl.convertForJltl2ba(), allowedAcceptance);
 			}
 		}
 

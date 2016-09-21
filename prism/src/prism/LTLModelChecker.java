@@ -115,11 +115,6 @@ public class LTLModelChecker extends PrismComponent
 				// Only support temporal bounds for discrete time models
 				return false;
 			}
-			
-			if (!expr.isSimplePathFormula()) {
-				// Only support temporal bounds for simple path formulas
-				return false;
-			}
 		}
 
 		if (Expression.isHOA(expr)) {
@@ -219,10 +214,6 @@ public class LTLModelChecker extends PrismComponent
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");
-			}
-
-			if (!expr.isSimplePathFormula()) {
-				throw new PrismException("Time-bounded operators not supported in LTL: " + expr);
 			}
 		}
 		
