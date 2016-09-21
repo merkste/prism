@@ -107,6 +107,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_EXTRA_DD_INFO					= "prism.extraDDInfo";
 	public static final	String PRISM_EXTRA_REACH_INFO				= "prism.extraReachInfo";
 	public static final String PRISM_SCC_METHOD						= "prism.sccMethod";
+	public static final String PRISM_SCC_METHOD_EXPLICIT			= "prism.sccMethodExplicit";
 	public static final String PRISM_EC_METHOD						= "prism.ecMethod";
 	public static final String PRISM_SYMM_RED_PARAMS					= "prism.symmRedParams";
 	public static final	String PRISM_EXACT_ENABLED					= "prism.exact.enabled";
@@ -278,6 +279,8 @@ public class PrismSettings implements Observer
 																			"Use steady-state detection during CTMC transient probability computation." },
 			{ CHOICE_TYPE,		PRISM_SCC_METHOD,						"SCC decomposition method",				"3.2",			"Lockstep",																	"Xie-Beerel,Lockstep,SCC-Find",																
 																			"Which algorithm to use for (symbolic) decomposition of a graph into strongly connected components (SCCs)." },
+			{ CHOICE_TYPE,		PRISM_SCC_METHOD_EXPLICIT,				"SCC decomposition method (explicit)",				"4.2.1",			"Tarjan-Stack",		"Tarjan-Recursive,Tarjan-Stack",
+																			"Which algorithm to use for (explicit) decomposition of a graph into strongly connected components (SCCs)." },
 			{ CHOICE_TYPE,		PRISM_EC_METHOD,						"End-component computation method",				"4.2.1",			"Default",																	"Default,On-The-Fly",																
 																			"Which algorithm to use for end-component calculations." },
 			{ STRING_TYPE,		PRISM_SYMM_RED_PARAMS,					"Symmetry reduction parameters",		"3.2",			"",																	"",																
@@ -1119,7 +1122,7 @@ public class PrismSettings implements Observer
 		else if (sw.equals("nossdetect")) {
 			set(PRISM_DO_SS_DETECTION, false);
 		}
-		// SCC computation algorithm
+		// SCC computation algorithm (symbolic)
 		else if (sw.equals("sccmethod") || sw.equals("bsccmethod")) {
 			if (i < args.length - 1) {
 				s = args[++i];
@@ -1131,6 +1134,20 @@ public class PrismSettings implements Observer
 					set(PRISM_SCC_METHOD, "SCC-Find");
 				else
 					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: xiebeerel, lockstep, sccfind)");
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+		}
+		// SCC computation algorithm (explicit)
+		else if (sw.equals("sccmethodex") || sw.equals("bsccmethodex")) {
+			if (i < args.length - 1) {
+				s = args[++i];
+				if (s.equals("tarjanrec"))
+					set(PRISM_SCC_METHOD_EXPLICIT, "Tarjan-Recursive");
+				else if (s.equals("tarjanstack"))
+					set(PRISM_SCC_METHOD_EXPLICIT, "Tarjan-Stack");
+				else
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: tarjanrec, tarjanstack)");
 			} else {
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}

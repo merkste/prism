@@ -151,11 +151,15 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public static final int EXPORT_ADV_DTMC = 2;
 	public static final int EXPORT_ADV_MDP = 3;
 
-	// methods for SCC decomposition
+	// methods for SCC decomposition (symbolic)
 	public static final int XIEBEEREL = 1;
 	public static final int LOCKSTEP = 2;
 	public static final int SCCFIND = 3;
 	
+	// methods for SCC decomposition (explicit)
+	public static final int TARJAN_RECURSIVE = 1;
+	public static final int TARJAN_STACK = 2;
+
 	// methods for EC computation
 	public static final int EC_DEFAULT = 1;
 	public static final int EC_ON_THE_FLY = 2;
