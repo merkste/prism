@@ -89,6 +89,8 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_TERM_CRIT						= "prism.termCrit";//"prism.termination";
 	public static final	String PRISM_TERM_CRIT_PARAM				= "prism.termCritParam";//"prism.terminationEpsilon";
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
+	public static final String PRISM_DO_REORDER						= "prism.doReorder";
+	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
 	
 	public static final	String PRISM_CUDD_MAX_MEM					= "prism.cuddMaxMem";
 	public static final	String PRISM_CUDD_EPSILON					= "prism.cuddEpsilon";
@@ -313,6 +315,12 @@ public class PrismSettings implements Observer
 																			"Number of extra DD state variables preallocated for use in model transformation." },
 			{ INTEGER_TYPE,		PRISM_DD_EXTRA_ACTION_VARS,				"Extra DD action var allocation",		"4.3.1",			new Integer(20),														"",
 																			"Number of extra DD action variables preallocated for use in model transformation." },
+
+
+			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.3.1",	new Boolean(false),			"",
+																		"Perform reordering when building the model." },
+			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.3.1",	"",			"",
+																		"Comma-separated options for reordering (norebuild, beforereach, noconstraints)." },
 
 
 			// ADVERSARIES/COUNTEREXAMPLES:
@@ -874,6 +882,15 @@ public class PrismSettings implements Observer
 		return exportPropAutFilename;
 	}
 
+	public Set<String> getReorderOptions()
+	{
+		HashSet<String> opts = new HashSet<String>();
+		for (String option : getString(PRISM_REORDER_OPTIONS).split(",")) {
+			opts.add(option);
+		}
+		return opts;
+	}
+
 	/**
 	 * Set an option by parsing one or more command-line arguments.
 	 * Reads the ith argument (assumed to be in the form "-switch")
@@ -1301,6 +1318,26 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
+		} else if (sw.equals("reorder")) {
+			set(PRISM_DO_REORDER, true);
+		} else if (sw.equals("reorderoptions")) {
+			if (i < args.length - 1) {
+				String reorderArg = args[++i];
+				String[] reorderOptions = reorderArg.split(",");
+				for (String reorderOption : reorderOptions) {
+					switch (reorderOption) {
+					case "norebuild":
+					case "beforereach":
+					case "noconstraints":
+						break;
+					default:
+						throw new PrismException("Invalid option \""+reorderOption+"\" for -" + sw + " switch");
+					}
+				}
+				set(PRISM_REORDER_OPTIONS, reorderArg);
+			} else {
+				throw new PrismException("No options specified for -" + sw + " switch");
+			}
 		}
 		
 		// ADVERSARIES/COUNTEREXAMPLES:
@@ -1670,6 +1707,8 @@ public class PrismSettings implements Observer
 		mainLog.println("-exportadvmdp <file> ........... Export an adversary from MDP model checking (as an MDP)");
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
+		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
+		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: norebuild beforereach noconstraints");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");
@@ -1725,6 +1764,21 @@ public class PrismSettings implements Observer
 			mainLog.println("Switch: -aroptions <string>\n");
 			mainLog.println("<string> is a comma-separated list of options regarding abstraction-refinement:");
 			QuantAbstractRefine.printOptions(mainLog);
+			return true;
+		}
+		// -reorderoptions
+		else if (sw.equals("reorderoptions")) {
+			mainLog.println("Switch: -reorderoptions <string>\n");
+			mainLog.println("<string> is a comma-separated list of options for MTBDD reordering:");
+			mainLog.println(" norebuild:     Do not rebuild the symbolic model after reordering.\n" +
+			                "                This can be useful together with the -exportreordered switch\n" +
+			                "                if you are only interested in the reordered PRISM model");
+			mainLog.println(" beforereach:   Perform the reordering before the transition function is\n" +
+			                "                restricted to the reachable part of the state space. This may\n" +
+			                "                sometimes result in a better ordering.");
+			mainLog.println(" noconstraints: Perform the reordering without any constraint on the variables.\n" +
+			                "                This will not result in a variable order that can be actually used\n" +
+			                "                in PRISM but may be interesting for a size comparison.");
 			return true;
 		}
 		return false;
