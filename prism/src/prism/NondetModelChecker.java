@@ -1129,7 +1129,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * @param qual True if only qualititative (0/1) results are needed
 	 * @param min Min or max probabilities (true=min, false=max)
 	 */
-	protected StateValues checkProbUntil(JDDNode b1, JDDNode b2, boolean qual, boolean min) throws PrismException
+	public StateValues checkProbUntil(JDDNode b1, JDDNode b2, boolean qual, boolean min) throws PrismException
 	{
 		JDDNode splus, newb1, newb2;
 		StateValues probs = null;
