@@ -555,7 +555,13 @@ ModulesFile ModulesFile() throws PrismLangException :
 	// Formula/label/constant definition
 	FormulaDef(mf.getFormulaList()) | LabelDef(mf.getLabelList()) | ConstantDef(mf.getConstantList()) |
 	// Global variable
-	global = GlobalDecl() { mf.addGlobal(global); } |
+	global = GlobalDecl() {
+		if (global.isView()) {
+			mf.addGlobalView(global);
+		} else {
+			mf.addGlobal(global);
+		}
+	} |
 	// Renamed module (lookahead to distinguish from normal module)
 	LOOKAHEAD(<MODULE> Identifier() <EQ>) rm = RenamedModule() { mf.addRenamedModule(rm); } |
 	// Module
