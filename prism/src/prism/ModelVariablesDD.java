@@ -26,6 +26,8 @@
 
 package prism;
 
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import jdd.JDD;
@@ -87,6 +89,20 @@ public class ModelVariablesDD
 	public Vector<String> getDDVarNames()
 	{
 		return ddVarNames;
+	}
+
+	/** Print the current variable order for the variables in this container. */
+	public void printOrder(PrismLog log)
+	{
+		TreeMap<Integer, String> order = new TreeMap<Integer, String>();
+
+		for (int i=0;i<ddVariables.n();i++) {
+			order.put(ddVariables.getVar(i).getLevel(), ddVarNames.get(i)+" ("+i+")");
+		}
+
+		for (Map.Entry<Integer, String> e : order.entrySet()) {
+			log.println(e.getKey()+ " : "+e.getValue());
+		}
 	}
 
 	/**
