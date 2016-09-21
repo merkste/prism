@@ -617,9 +617,10 @@ public class LTLModelChecker extends PrismComponent
 	public BitSet findAcceptingBSCCs(Model model, AcceptanceOmega acceptance) throws PrismException
 	{
 		// Compute bottom strongly connected components (BSCCs)
-		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, model);
-		sccComputer.computeBSCCs();
-		List<BitSet> bsccs = sccComputer.getBSCCs();
+		SCCConsumerStore sccStore = new SCCConsumerStore(this, model);
+		SCCComputer sccComputer = SCCComputer.createSCCComputer(this, model, sccStore);
+		sccComputer.computeSCCs();
+		List<BitSet> bsccs = sccStore.getBSCCs();
 
 		BitSet result = new BitSet();
 

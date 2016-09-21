@@ -276,9 +276,10 @@ public class ECComputerDefault extends ECComputer
 
 	private List<BitSet> computeSCCs(NondetModel model) throws PrismException
 	{
-		SCCComputer sccc = SCCComputer.createSCCComputer(this, model);
+		SCCConsumerStore sccs = new SCCConsumerStore(this, model);
+		SCCComputer sccc = SCCComputer.createSCCComputer(this, model, sccs);
 		sccc.computeSCCs();
-		return sccc.getSCCs();
+		return sccs.getSCCs();
 	}
 
 	private List<BitSet> translateStates(SubNondetModel model, List<BitSet> sccs)
