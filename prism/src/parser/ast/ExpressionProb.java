@@ -134,7 +134,7 @@ public class ExpressionProb extends ExpressionQuant
 	{
 		if (getBound() != null)
 			return "Result";
-		else if (getRelOp() == RelOp.EQ) {
+		else if (getRelOp() == RelOp.COMPUTE_VALUES) {
 			if (minMax != null) {
 				if (minMax.isMin()) {
 					return "Minimum probability";

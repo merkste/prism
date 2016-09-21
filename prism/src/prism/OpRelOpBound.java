@@ -103,7 +103,7 @@ public class OpRelOpBound
 				throw new PrismLangException("Don't know how to model check " + getTypeOfOperator() + " properties for " + modelType + "s");
 			}
 			if (isNumeric()) {
-				if (relOp == RelOp.EQ) {
+				if (relOp == RelOp.COMPUTE_VALUES) {
 					throw new PrismLangException("Can't use \"" + op + "=?\" for nondeterministic models; use e.g. \"" + op + "min=?\" or \"" + op + "max=?\"");
 				}
 			} else {
