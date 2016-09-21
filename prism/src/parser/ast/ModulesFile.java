@@ -50,6 +50,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	private LabelList labelList;
 	private ConstantList constantList;
 	private Vector<Declaration> globals; // Global variables
+	private Vector<Declaration> globalViews; // Global views
 	private Vector<Object> modules; // Modules (includes renamed modules)
 	private ArrayList<SystemDefn> systemDefns; // System definitions (system...endsystem constructs)
 	private ArrayList<String> systemDefnNames; // System definition names (system...endsystem constructs)
@@ -92,6 +93,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		constantList = new ConstantList();
 		modelType = ModelType.MDP; // default type
 		globals = new Vector<Declaration>();
+		globalViews = new Vector<Declaration>();
 		modules = new Vector<Object>();
 		systemDefns = new ArrayList<SystemDefn>();
 		systemDefnNames = new ArrayList<String>();
@@ -141,6 +143,18 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	public void setGlobal(int i, Declaration d)
 	{
 		globals.set(i, d);
+	}
+
+	public void addGlobalView(Declaration d)
+	{
+		assert (d.isView());
+		globalViews.add(d);
+	}
+
+	public void setGlobalView(int i, Declaration d)
+	{
+		assert (d.isView());
+		globalViews.set(i, d);
 	}
 
 	public void addModule(Module m)
@@ -306,6 +320,37 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	public Declaration getGlobal(int i)
 	{
 		return globals.elementAt(i);
+	}
+
+	public List<Declaration> getGlobals()
+	{
+		return globals;
+	}
+
+	public Declaration getGlobalView(int i)
+	{
+		return globalViews.elementAt(i);
+	}
+
+	public Declaration getGlobalView(String name)
+	{
+		int n = getNumGlobalViews();
+		for (int i=0; i < n; i++) {
+			if (getGlobalView(i).getName().equals(name)) {
+				return getGlobalView(i);
+			}
+		}
+		return null;
+	}
+
+	public List<Declaration> getGlobalViews()
+	{
+		return globalViews;
+	}
+
+	public int getNumGlobalViews()
+	{
+		return globalViews.size();
 	}
 
 	public int getNumModules()
@@ -583,6 +628,18 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	public String getVarName(int i)
 	{
 		return varNames.get(i);
+	}
+
+	public boolean isGlobalView(String s)
+	{
+		int i, n;
+
+		n = getNumGlobalViews();
+		for (i = 0; i < n; i++) {
+			if (getGlobalView(i).getName().equals(s))
+				return true;
+		}
+		return false;
 	}
 
 	/**
@@ -902,6 +959,21 @@ public class ModulesFile extends ASTElement implements ModelInfo
 				varTypes.add(getGlobal(i).getType());
 			}
 		}
+
+		// global views
+		n = getNumGlobalViews();
+		for (i = 0; i < n; i++) {
+			s = getGlobalView(i).getName();
+			if (isIdentUsed(s)) {
+				throw new PrismLangException("Duplicated identifier \"" + s + "\"", getGlobalView(i));
+			} else {
+				varIdents.add(s);
+				viewDecls.add(getGlobalView(i));
+				viewNames.add(s);
+				viewTypes.add(getGlobalView(i).getType());
+			}
+		}
+
 
 		// locals
 		n = modules.size();
@@ -1313,6 +1385,14 @@ public class ModulesFile extends ASTElement implements ModelInfo
 			s += "\n";
 		}
 
+		n = getNumGlobalViews();
+		for (i = 0; i < n; i++) {
+			s += "global " + getGlobalView(i) + ";\n";
+		}
+		if (n > 0) {
+			s += "\n";
+		}
+
 		for (i = 0; i < modules.size() - 1; i++) {
 			s += modules.elementAt(i) + "\n\n";
 		}
@@ -1357,6 +1437,10 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		n = getNumGlobals();
 		for (i = 0; i < n; i++) {
 			ret.addGlobal((Declaration) getGlobal(i).deepCopy());
+		}
+		n = getNumGlobalViews();
+		for (i = 0; i < n; i++) {
+			ret.addGlobalView((Declaration) getGlobalView(i).deepCopy());
 		}
 		n = getNumModules();
 		for (i = 0; i < n; i++) {
@@ -1415,6 +1499,7 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	{
 		return viewNames;
 	}
+
 }
 
 // ------------------------------------------------------------------------------

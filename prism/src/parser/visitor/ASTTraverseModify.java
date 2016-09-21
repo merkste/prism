@@ -54,6 +54,10 @@ public class ASTTraverseModify implements ASTVisitor
 		for (i = 0; i < n; i++) {
 			if (e.getGlobal(i) != null) e.setGlobal(i, (Declaration)(e.getGlobal(i).accept(this)));
 		}
+		n = e.getNumGlobalViews();
+		for (i = 0; i < n; i++) {
+			if (e.getGlobalView(i) != null) e.setGlobalView(i, (Declaration)(e.getGlobalView(i).accept(this)));
+		}
 		n = e.getNumModules();
 		for (i = 0; i < n; i++) {
 			if (e.getModule(i) != null) e.setModule(i, (Module)(e.getModule(i).accept(this)));
