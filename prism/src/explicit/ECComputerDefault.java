@@ -138,7 +138,7 @@ public class ECComputerDefault extends ECComputer
 	private boolean canLBeChanged(List<BitSet> L, BitSet E)
 	{
 		processedSCCs.add(E);
-		for (int i = 0; i < L.size(); i++) {
+		for (int i = 0, size = L.size(); i < size; i++) {
 			if (!processedSCCs.contains(L.get(i))) {
 				return true;
 			}
@@ -150,7 +150,7 @@ public class ECComputerDefault extends ECComputer
 	{
 		if (sccs.size() > 0) {
 			List<BitSet> toAdd = new ArrayList<BitSet>();
-			for (int i = 0; i < sccs.size(); i++) {
+			for (int i = 0, size = sccs.size(); i < size; i++) {
 				if (!L.contains(sccs.get(i))) {
 					toAdd.add(sccs.get(i));
 				}
@@ -198,10 +198,10 @@ public class ECComputerDefault extends ECComputer
 			iterations++;
 			changed = false;
 			actions.clear();
-			for (Integer i : new IterableStateSet(states, model.getNumStates())) {
+			for (int i : new IterableStateSet(states, model.getNumStates())) {
 				BitSet act = new BitSet();
 				checks++;
-				for (int j = 0; j < model.getNumChoices(i); j++) {
+				for (int j = 0, numChoices = model.getNumChoices(i); j < numChoices; j++) {
 					if (model.allSuccessorsInSet(i, j, states)) {
 						act.set(j);
 					}
@@ -303,7 +303,7 @@ public class ECComputerDefault extends ECComputer
 		int state = b.nextSetBit(0);
 		while (state != -1) {
 			boolean atLeastOneAction = false;
-			for (int i = 0; i < model.getNumChoices(state); i++) {
+			for (int i = 0, numChoices = model.getNumChoices(state); i < numChoices; i++) {
 				if (model.allSuccessorsInSet(state, i, b)) {
 					atLeastOneAction = true;
 				}
