@@ -215,6 +215,20 @@ public class ExpressionStrategy extends Expression
 		return expr;
 	}
 
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionStrategy))
+			return false;
+
+		ExpressionStrategy otherStrat = (ExpressionStrategy) other;
+
+		if (this.thereExists != otherStrat.thereExists)
+			return false;
+
+		return this.getCoalition().equals(otherStrat.getCoalition());
+	}
+
 	// Standard methods
 
 	@Override

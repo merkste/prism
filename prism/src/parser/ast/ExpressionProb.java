@@ -107,6 +107,17 @@ public class ExpressionProb extends ExpressionQuant
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionProb))
+			return false;
+
+		ExpressionProb otherProb = (ExpressionProb) other;
+		// enum comparison
+		return this.getRelOp() == otherProb.getRelOp();
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate a P operator without a model");

@@ -143,6 +143,16 @@ public class ExpressionBinaryOp extends Expression
 	}
 
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionBinaryOp))
+			return false;
+
+		ExpressionBinaryOp otherBinOp = (ExpressionBinaryOp)other;
+		return this.getOperator() == otherBinOp.getOperator();
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		switch (op) {

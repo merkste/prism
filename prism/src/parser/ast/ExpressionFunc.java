@@ -170,6 +170,20 @@ public class ExpressionFunc extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionFunc))
+			return false;
+
+		ExpressionFunc otherFunc = (ExpressionFunc) other;
+
+		if (this.getName() == null)
+			return (otherFunc.getName() == null);
+
+		return this.getName().equals(otherFunc.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		switch (code) {

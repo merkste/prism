@@ -77,6 +77,19 @@ public class ExpressionConstant extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionConstant))
+			return false;
+
+		ExpressionConstant otherConstant = (ExpressionConstant)other;
+		if (this.getName() == null)
+			return (otherConstant.getName() == null);
+
+		return this.getName().equals(otherConstant.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		Object res = ec.getConstantValue(name);

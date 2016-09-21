@@ -96,6 +96,12 @@ public class ExpressionITE extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		return (other instanceof ExpressionITE);
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		return operand1.evaluateBoolean(ec) ? operand2.evaluate(ec) : operand3.evaluate(ec);

@@ -82,6 +82,20 @@ public class ExpressionFormula extends Expression
 	}
 
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionFormula))
+			return false;
+
+		ExpressionFormula otherFormula = (ExpressionFormula) other;
+
+		if (this.getName() == null)
+			return (otherFormula.getName() == null);
+
+		return this.getName().equals(otherFormula.getName());
+	}
+
+	@Override
 	public boolean isProposition()
 	{
 		// Unless defined, don't know so err on the side of caution

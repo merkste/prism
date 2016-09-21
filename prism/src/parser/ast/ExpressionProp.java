@@ -69,6 +69,19 @@ public class ExpressionProp extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionProp))
+			return false;
+
+		ExpressionProp otherProp = (ExpressionProp) other;
+		if (this.getName() == null)
+			return (otherProp.getName() == null);
+
+		return this.getName().equals(otherProp.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		throw new PrismLangException("Cannot evaluate property references", this);

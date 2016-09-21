@@ -61,6 +61,17 @@ public class ExpressionSS extends ExpressionQuant
 
 	// Get methods
 	
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionSS))
+			return false;
+
+		ExpressionSS otherSS = (ExpressionSS) other;
+		// enum comparison
+		return this.getRelOp() == otherSS.getRelOp();
+	}
+
 	/**
 	 * Get the probability bound. Equivalent to {@code getBound()}.
 	 */

@@ -87,6 +87,18 @@ public class ExpressionVar extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionVar))
+			return false;
+
+		ExpressionVar otherVar = (ExpressionVar) other;
+		if (this.getName() == null)
+			return (otherVar.getName() == null);
+		return this.getName().equals(otherVar.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		Object res = ec.getVarValue(name, index);

@@ -77,6 +77,20 @@ public class ExpressionIdent extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionIdent))
+			return false;
+
+		ExpressionIdent otherIdent = (ExpressionIdent) other;
+
+		if (this.getName() == null)
+			return (otherIdent.getName() == null);
+
+		return this.getName().equals(otherIdent.getName());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		// This should never be called.

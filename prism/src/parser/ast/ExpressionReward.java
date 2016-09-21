@@ -173,6 +173,24 @@ public class ExpressionReward extends ExpressionQuant
 	}
 
 	
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionReward))
+			return false;
+
+		ExpressionReward otherReward = (ExpressionReward) other;
+		if (this.getRelOp() != otherReward.getRelOp())
+			return false;
+
+		if (this.getRewardStructIndex() == null)
+			return (otherReward.getRewardStructIndex()==null);
+
+		// TODO: would catch more cases if the reward structure was already resolved,
+		// i.e., matching a reference by index and an equivalent reference by name
+		return this.getRewardStructIndex().equals(otherReward.getRewardStructIndex());
+	}
+
 	/**
 	 * Get info about the operator and bound.
 	 * @param constantValues Values for constants in order to evaluate any bound

@@ -90,6 +90,19 @@ public class ExpressionLiteral extends Expression
 	}
 	
 	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		if (!(other instanceof ExpressionLiteral))
+			return false;
+
+		ExpressionLiteral otherLiteral = (ExpressionLiteral) other;
+		if (this.getValue() == null)
+			return (otherLiteral.getValue() == null);
+
+		return this.getValue().equals(otherLiteral.getValue());
+	}
+
+	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
 		return value;
