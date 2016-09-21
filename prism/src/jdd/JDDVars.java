@@ -372,6 +372,20 @@ public class JDDVars implements Iterable<JDDNode>
 		return result;
 	}
 
+	/**
+	 * Constructs a DD where all the variables
+	 * are set to zero, i.e., negated.
+	 * <br>[ REFS: <i>result</i>, DEREFS: <i>none</i> ]
+	 */
+	public JDDNode allZero()
+	{
+		JDDNode result = JDD.Constant(1);
+		for (JDDNode var : vars) {
+			result = JDD.And(result, JDD.Not(var.copy()));
+		}
+		return result;
+	}
+
 	/** Sort the variables in this container by their variable index. */
 	public void sortByIndex()
 	{
