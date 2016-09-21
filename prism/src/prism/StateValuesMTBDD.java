@@ -69,6 +69,15 @@ public class StateValuesMTBDD implements StateValues
 	/** log for output from print method */
 	PrismLog outputLog;
 
+	/** Flag: printSparse (only non-zero values) */
+	boolean printSparse = true;
+	/** Flag: printMatlab */
+	boolean printMatlab = false;
+	/** Flag: printStates (variable values on the model) */
+	boolean printStates = true;
+	/** Flag: printIndizes (indizes for the states) */
+	boolean printIndices = true;
+
 	// CONSTRUCTOR
 	
 	/**
@@ -540,25 +549,9 @@ public class StateValuesMTBDD implements StateValues
 	// PRINTING STUFF
 
 	@Override
-	public void print(PrismLog log)
+	public void print(PrismLog log) throws PrismException
 	{
-		int i;
-		
-		// check if all zero
-		if (values.equals(JDD.ZERO)) {
-			log.println("(all zero)");
-			return;
-		}
-		
-		// set up and call recursive print
-		outputLog = log;
-		for (i = 0; i < varList.getNumVars(); i++) {
-			varValues[i] = 0;
-		}
-		currentVar = 0;
-		currentVarLevel = 0;
-		printRec(values, 0, odd, 0);
-		//log.println();
+		print(log, true, false, true, true);
 	}
 
 	/**
@@ -569,7 +562,7 @@ public class StateValuesMTBDD implements StateValues
 	 * @param model the Model (for the variable information)
 	 * @param description an optional description for printing (may be {@code null})
 	 */
-	public static void print(PrismLog log, JDDNode values, Model model, String description)
+	public static void print(PrismLog log, JDDNode values, Model model, String description) throws PrismException
 	{
 		StateValuesMTBDD sv = null;
 		try {
@@ -591,13 +584,49 @@ public class StateValuesMTBDD implements StateValues
 	@Override
 	public void print(PrismLog log, boolean printSparse, boolean printMatlab, boolean printStates, boolean printIndices) throws PrismException
 	{
-		// Note we ignore printMatlab/printStates/printIndices due to laziness
-		if (printSparse) {
-			print(log);
-		} else {
-			printFiltered(log, model.getReach(), printSparse, printMatlab, printStates);
+		int i;
+		JDDNode tmp;
+
+		// store flags
+		this.printSparse = printSparse;
+		this.printMatlab = printMatlab;
+		this.printStates = printStates;
+		this.printIndices = printIndices;
+
+		// filter out non-reachable
+		JDD.Ref(values);
+		tmp = JDD.Apply(JDD.TIMES, values, model.getReach().copy());
+
+		// header for matlab format
+		if (printMatlab)
+			log.println(!printSparse ? "v = [" : "v = sparse(" + (long)JDD.GetNumMinterms(tmp, numVars) + ",1);");
+
+		// check if all zero
+		if (printSparse && !printMatlab && tmp.equals(JDD.ZERO)) {
+			log.println("(all zero)");
+			JDD.Deref(tmp);
+			return;
 		}
 
+		// set up and call recursive print
+		outputLog = log;
+		for (i = 0; i < varList.getNumVars(); i++) {
+			varValues[i] = 0;
+		}
+		currentVar = 0;
+		currentVarLevel = 0;
+		if (printSparse) {
+			printRec(tmp, 0, odd, 0);
+		} else {
+			printRecNonSparse(model.getReach(), tmp, 0, odd, 0);
+		}
+		//log.println();
+
+		// footer for matlab format
+		if (printMatlab && !printSparse)
+			log.println("];");
+
+		JDD.Deref(tmp);
 	}
 
 	/**
@@ -624,7 +653,6 @@ public class StateValuesMTBDD implements StateValues
 		 *  into the recursive method)
 		 */
 
-		int i, j;
 		JDDNode e, t;
 
 		// zero constant - bottom out of recursion
@@ -632,25 +660,11 @@ public class StateValuesMTBDD implements StateValues
 
 		// base case - at bottom (nonzero terminal)
 		if (level == numVars) {
-		
-			outputLog.print(n + ":(");
-			j = varList.getNumVars();
-			for (i = 0; i < j; i++) {
-				// integer variable
-				if (varList.getType(i) instanceof TypeInt) {
-					outputLog.print(varValues[i]+varList.getLow(i));
-				}
-				// boolean variable
-				else {
-					outputLog.print(varValues[i] == 1);
-				}
-				if (i < j-1) outputLog.print(",");
-			}
-			outputLog.print(")=" + dd.getValue());
-			outputLog.println();
+			double d = dd.getValue();
+			printLine(n, d);
 			return;
 		}
-		
+
 		// select 'else' and 'then' branches
 		else if (dd.getIndex() > vars.getVarIndex(level)) {
 			e = t = dd;
@@ -697,7 +711,6 @@ public class StateValuesMTBDD implements StateValues
 		 *  into the recursive method)
 		 */
 
-		int i, j;
 		JDDNode eFilter, tFilter, eValue, tValue;
 
 		// ddFilter is zero - bottom out of recursion
@@ -705,22 +718,8 @@ public class StateValuesMTBDD implements StateValues
 
 		// base case - at bottom (nonzero terminal)
 		if (level == numVars) {
-
-			outputLog.print(n + ":(");
-			j = varList.getNumVars();
-			for (i = 0; i < j; i++) {
-				// integer variable
-				if (varList.getType(i) instanceof TypeInt) {
-					outputLog.print(varValues[i]+varList.getLow(i));
-				}
-				// boolean variable
-				else {
-					outputLog.print(varValues[i] == 1);
-				}
-				if (i < j-1) outputLog.print(",");
-			}
-			outputLog.print(")=" + ddValue.getValue());
-			outputLog.println();
+			double d = ddValue.getValue();
+			printLine(n, d);
 			return;
 		}
 
@@ -766,21 +765,42 @@ public class StateValuesMTBDD implements StateValues
 	 */
 	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse) throws PrismException
 	{
+		printFiltered(log, filter, printSparse, false, true);
+	}
+
+	@Override
+	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse, boolean printMatlab, boolean printStates) throws PrismException
+	{
+		printFiltered(log, filter, printSparse, printMatlab, printStates, true);
+	}
+
+	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse, boolean printMatlab, boolean printStates, boolean printIndices) throws PrismException
+	{
 		int i;
 		JDDNode tmp;
+
+		// store flags
+		this.printSparse = printSparse;
+		this.printMatlab = printMatlab;
+		this.printStates = printStates;
+		this.printIndices = printIndices;
 
 		// filter out
 		JDD.Ref(values);
 		JDD.Ref(filter);
 		tmp = JDD.Apply(JDD.TIMES, values, filter);
 
+		// header for matlab format
+		if (printMatlab)
+			log.println(!printSparse ? "v = [" : "v = sparse(" + (long)JDD.GetNumMinterms(tmp, numVars) + ",1);");
+
 		// check if all zero
-		if (printSparse && tmp.equals(JDD.ZERO)) {
-			JDD.Deref(tmp);
+		if (printSparse && !printMatlab && tmp.equals(JDD.ZERO)) {
 			log.println("(all zero)");
+			JDD.Deref(tmp);
 			return;
 		}
-		
+
 		// set up and call recursive print
 		outputLog = log;
 		for (i = 0; i < varList.getNumVars(); i++) {
@@ -793,17 +813,59 @@ public class StateValuesMTBDD implements StateValues
 		} else {
 			printRecNonSparse(filter, tmp, 0, odd, 0);
 		}
+
+		// footer for matlab format
+		if (printMatlab && !printSparse)
+			log.println("];");
+
 		//log.println();
 		JDD.Deref(tmp);
 	}
 
-	@Override
-	public void printFiltered(PrismLog log, JDDNode filter, boolean printSparse, boolean printMatlab, boolean printStates) throws PrismException
+	private void printLine(long n, double d)
 	{
-		// Note we ignore printMatlab/printStates due to laziness
-		printFiltered(log, filter, printSparse);
+		int i, j;
+
+		// do printing
+		if (!printSparse || d != 0) {
+			if (printMatlab) {
+				if (printSparse) {
+					outputLog.println("v(" + (n + 1) + ")=" + d + ";");
+				} else {
+					outputLog.println(d);
+				}
+			} else {
+				if (printIndices) {
+					outputLog.print(n);
+				}
+				if (printStates) {
+					outputLog.print(":");
+					outputLog.print("(");
+					j = varList.getNumVars();
+					for (i = 0; i < j; i++) {
+						// integer variable
+						if (varList.getType(i) instanceof TypeInt) {
+							outputLog.print(varValues[i] + varList.getLow(i));
+						}
+						// boolean variable
+						else {
+							outputLog.print(varValues[i] == 1);
+						}
+						if (i < j - 1)
+							outputLog.print(",");
+					}
+					outputLog.print(")");
+				}
+				if (printIndices || printStates)
+					outputLog.print("=");
+				outputLog.println(d);
+			}
+			//return true;
+		} else {
+			//return false;
+		}
 	}
-	
+
 	/**
 	 * Make a (deep) copy of this vector
 	 */
