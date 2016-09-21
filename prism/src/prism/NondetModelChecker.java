@@ -773,33 +773,8 @@ public class NondetModelChecker extends NonProbModelChecker
 		int stepBound = 0;
 
 		if (exprProb != null) {
-			// F<=k is allowed
-			Expression expr = exprProb.getExpression();
-			if (expr.isSimplePathFormula() && Expression.isReach(expr)) {
-				ExpressionTemporal exprTemp = ((ExpressionTemporal) expr);
-				if (exprTemp.getBounds().hasRewardBounds()) {
-					throw new PrismNotSupportedException("Reward bounds are not supported in multi-objective queries");
-				}
-				// Get single bound, throws exception if there are multiple
-				TemporalOperatorBound bound = exprTemp.getBounds().getStepBoundForDiscreteTime();
-				if (bound != null && bound.getLowerBound() != null) {
-					throw new PrismNotSupportedException("Lower time bounds are not supported in multi-objective queries");
-				}
-				if (bound != null) {
-					stepBound = bound.getUpperBound().evaluateInt(constantValues);
-				} else {
-					stepBound = -1;
-				}
-			} else {
-				if (Expression.containsTemporalRewardBounds(expr)) {
-					throw new PrismNotSupportedException("Reward bounds in multi-objective queries are not supported");
-				}
-				if (Expression.containsTemporalTimeBounds(expr)) {
-						throw new PrismNotSupportedException("Time bounds in multi-objective queries can only be on F or C operators");
-				} else {
-					stepBound = -1;
-				}
-			}
+			// bounds in simple path formulas / LTL handled via automaton construction
+			stepBound = -1;
 		}
 		if (exprReward != null) {
 			ExpressionTemporal exprTemp = ((ExpressionTemporal) exprReward.getExpression());
