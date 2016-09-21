@@ -37,6 +37,7 @@ import explicit.CTMC;
 import explicit.CTMCModelChecker;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.LTLModelChecker;
 import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MinMax;
@@ -1181,7 +1182,7 @@ public class QuantileUtilities
 		long timer = System.currentTimeMillis();
 		//compute satisfaction sets of sub-formulas a and b (since a U b is considered ...)
 		final ExpressionProb innerFormula = expressionQuantileProbNormalForm.getInnerFormula();
-		innerFormula.setExpression(probModelChecker.handleMaximalStateFormulas((ModelExplicit) model, innerFormula.getExpression()));
+		innerFormula.setExpression(probModelChecker.handleMaximalStateFormulas((ModelExplicit) model, innerFormula.getExpression(), new LTLModelChecker(probModelChecker)));
 		getLog().println("Time for expanding sub-formulas: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.\n");
 		
 		timer = System.currentTimeMillis();
