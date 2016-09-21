@@ -332,7 +332,7 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 
 			// --- Calculator generation
 
-			activeRefs.release(transRewards, goalStates, remainStates);
+			activeRefs.release(stateRewards, transRewards, goalStates, remainStates);
 			QuantileCalculator qc;
 			String engine = parent.getSettings().getString(PrismSettings.PRISM_ENGINE);
 			if (parent.getSettings().getBoolean(PrismSettings.QUANTILE_USE_TACAS16) ||
@@ -345,8 +345,14 @@ public abstract class QuantileCalculator extends PrismComponent implements Clear
 			activeRefs.register(qc);
 
 			ReachabilityQuantile q;
-			boolean universal = min;
 			boolean rewardBoundLower = rewardBound.hasLowerBound();
+			boolean universal;
+			if ((!rewardBoundLower && !min) || (rewardBoundLower && min)){
+				universal = false;
+			} else {
+				universal = true;
+			}
+
 			if (universal) {
 				if (rewardBoundLower) {
 					q = new ReachabilityLowerRewardBoundUniversal(qc, qc.qcc);
