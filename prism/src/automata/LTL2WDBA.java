@@ -11,6 +11,7 @@ import java.util.Stack;
 import jltl2ba.APElement;
 import jltl2ba.MyBitSet;
 import jltl2ba.SimpleLTL;
+import jltl2ba.TLProperties;
 import jltl2dstar.NBA;
 import parser.ast.Expression;
 import prism.PrismComponent;
@@ -447,7 +448,16 @@ public class LTL2WDBA extends PrismComponent
 			PrismComponent parent = new PrismComponent();
 			parent.setLog(new PrismDevNullLog());
 			LTL2WDBA ltl2wdba = new LTL2WDBA(parent);
-			DA<BitSet, AcceptanceReach> da = ltl2wdba.cosafeltl2wdba(sltl);
+			TLProperties tl = TLProperties.analyse(sltl);
+			
+			DA<BitSet, ? extends AcceptanceOmega> da;
+			if (tl.isSyntacticGuarantee()) {
+				da = ltl2wdba.cosafeltl2wdba(sltl);
+			} else if (tl.isSyntacticObligation()) {
+				da = ltl2wdba.obligation2wdba(sltl);
+			} else {
+				throw new Exception("Can not construct an automaton for " + sltl +", not co-safe or obligation");
+			}
 			PrintStream out = (args.length < 2 || "-".equals(args[1])) ? System.out : new PrintStream(args[1]);
 			String format = (args.length < 3) ? "hoa" : args[2];
 			da.print(out, format);
