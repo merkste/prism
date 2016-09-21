@@ -440,7 +440,11 @@ typeCount++; if (typeCount == 2) typeDupe = getToken(0);
       case GLOBAL:{
         // Global variable
                 global = GlobalDecl();
-mf.addGlobal(global);
+if (global.isView()) {
+                        mf.addGlobalView(global);
+                } else {
+                        mf.addGlobal(global);
+                }
         break;
         }
       default:
@@ -3918,18 +3922,6 @@ fl.setLHS(s);
     finally { jj_save(20, xla); }
   }
 
-  static private boolean jj_3R_164()
- {
-    if (jj_scan_token(FALSE)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_163()
- {
-    if (jj_scan_token(TRUE)) return true;
-    return false;
-  }
-
   static private boolean jj_3R_229()
  {
     Token xsp;
@@ -5857,6 +5849,18 @@ fl.setLHS(s);
   static private boolean jj_3R_170()
  {
     if (jj_scan_token(MAX)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_164()
+ {
+    if (jj_scan_token(FALSE)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_163()
+ {
+    if (jj_scan_token(TRUE)) return true;
     return false;
   }
 
