@@ -29,8 +29,10 @@ package explicit;
 import java.util.BitSet;
 import java.util.List;
 
+import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
+import prism.PrismSettings;
 
 /**
  * Abstract class for (explicit) classes that compute (M)ECs, i.e. (maximal) end components,
@@ -45,8 +47,13 @@ public abstract class ECComputer extends PrismComponent
 	 */
 	public static ECComputer createECComputer(PrismComponent parent, NondetModel model, ECConsumer consumer) throws PrismException
 	{
-		// Only one algorithm implemented currently
-		return new ECComputerDefault(parent, model, consumer);
+		switch (parent.getSettings().getChoice(PrismSettings.PRISM_EC_METHOD)) {
+		case Prism.EC_DEFAULT:
+			return new ECComputerDefault(parent, model, consumer);
+		case Prism.EC_ON_THE_FLY:
+			return new ECComputerOnTheFly(parent, model, consumer);
+		}
+		throw new PrismException("Unsupported EC computation method");
 	}
 
 	protected ECConsumer consumer;

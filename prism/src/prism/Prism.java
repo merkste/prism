@@ -155,6 +155,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public static final int XIEBEEREL = 1;
 	public static final int LOCKSTEP = 2;
 	public static final int SCCFIND = 3;
+	
+	// methods for EC computation
+	public static final int EC_DEFAULT = 1;
+	public static final int EC_ON_THE_FLY = 2;
 
 	// Options for type of strategy export
 	public enum StrategyExportType {
