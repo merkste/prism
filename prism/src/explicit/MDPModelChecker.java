@@ -54,6 +54,7 @@ import acceptance.AcceptanceType;
 import common.BitSetAndQueue;
 import common.BitSetTools;
 import common.IterableBitSet;
+import explicit.IncomingChoiceRelation.Choice;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MCRewardsFromMDPRewards;
 import explicit.rewards.MDPRewards;
@@ -460,7 +461,7 @@ public class MDPModelChecker extends ProbModelChecker
 		timerProb0 = System.currentTimeMillis();
 		if (precomp && prob0) {
 			if (pre != null) {
-				no = prob0(mdp, remain, target, min, null, pre);
+				no = prob0(mdp, remain, target, min, strat, pre);
 			} else {
 				no = prob0(mdp, remain, target, min, strat);
 			}
@@ -471,7 +472,7 @@ public class MDPModelChecker extends ProbModelChecker
 		timerProb1 = System.currentTimeMillis();
 		if (precomp && prob1) {
 			if (pre != null) {
-				yes = prob1(mdp, remain, target, min, null, pre);
+				yes = prob1(mdp, remain, target, min, strat, pre);
 			} else {
 				yes = prob1(mdp, remain, target, min, strat);
 			}
@@ -1008,8 +1009,6 @@ public class MDPModelChecker extends ProbModelChecker
 	 */
 	private BitSet prob1e(MDP mdp, BitSet remain, BitSet target, int strat[], PredecessorRelation pre)
 	{
-		// TODO no strategy generation yet
-
 		// This algorithm is an adaption of the Smax=1 algorithm
 		// in the Principles of Model Checking book
 
@@ -1115,7 +1114,55 @@ public class MDPModelChecker extends ProbModelChecker
 		// the result set of states are the states in target
 		// and those in unknown, as they have not been removed
 		// during the iterations
-		return BitSetTools.union(unknown, target);
+		BitSet result = BitSetTools.union(unknown, target);
+		
+		if (strat != null) {
+			// we have to generate a strategy for all remaining states
+
+			BitSet done = new BitSet();
+			BitSetAndQueue todo = new BitSetAndQueue(target);
+			while (!todo.isEmpty()) {
+				int t = todo.dequeue();
+
+				if (done.get(t))
+					continue;
+
+				for (Choice choice: incoming.getIncomingChoices(t)) {
+					int s = choice.getState();
+					if (done.get(s)) {
+						continue;
+					}
+					if (target.get(s)) {
+						// target states don't need treatment
+						continue;
+					}
+
+					int ch = choice.getChoice();
+					if (!enabledChoices.isEnabled(s, ch)) {
+						// choice is not a prob1e choice
+						continue;
+					}
+
+					// s should be a prob1e \ target state at this point
+					assert(unknown.get(s));
+
+					if (strat[s] == -1) {
+						// does not have a fixed choice yet
+						// fix the choice, as this is the
+						// "earliest" moment where s has been discovered,
+						// guaranteeing that taking ch will almost surely
+						// make progress towards the target
+						strat[s] = ch;
+						todo.enqueue(s);
+					} else {
+						// as strategy is fixed, was already
+						// enqueued, nothing to do
+					}
+				}
+			}
+		}
+
+		return result;
 	}
 
 
