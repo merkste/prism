@@ -1165,6 +1165,52 @@ public class ProbModel implements Model
 	}
 
 	/**
+	 * Clear most of the MTBDDs for this model, except the transition function.
+	 * Reordering after this simplification then optimises solely the representation
+	 * of the transition function. Without the simplification, the overall
+	 * model representation (including rewards, etc) is optimised by reordering.
+	 * <br>
+	 * After this simplification, the model is useless for other purposes than
+	 * reordering.
+	 */
+	public void simplifyForReordering()
+	{
+		for (Entry<String, JDDNode> labelDD : labelsDD.entrySet()) {
+			JDD.Deref(labelDD.getValue());
+		}
+		labelsDD.clear();
+
+		JDD.Deref(trans01);
+		trans01 = JDD.Constant(0);
+		JDD.Deref(start);
+		start = JDD.Constant(0);
+		if (reach != null) {
+			JDD.Deref(reach);
+			reach = JDD.Constant(0);
+		}
+		if (deadlocks != null) {
+			JDD.Deref(deadlocks);
+			deadlocks = JDD.Constant(0);
+		}
+		for (int i = 0; i < numRewardStructs; i++) {
+			JDD.Deref(stateRewards[i]);
+			stateRewards[i] = JDD.Constant(0);
+			JDD.Deref(transRewards[i]);
+			transRewards[i] = JDD.Constant(0);
+		}
+		if (transActions != null) {
+			JDD.Deref(transActions);
+			transActions = JDD.Constant(0);
+		}
+		if (transPerAction != null) {
+			for (int i = 0; i < numSynchs + 1; i++) {
+				JDD.Deref(transPerAction[i]);
+				transPerAction[i] = JDD.Constant(0);
+			}
+		}
+	}
+
+	/**
 	 * Clear the model (deref all DDs and DD variables)
 	 */
 	public void clear()

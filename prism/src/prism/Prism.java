@@ -2197,6 +2197,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				MtrNode.setCuddTree(root);
 			}
 
+			if (settings.getReorderOptions().contains("optimisetrans")) {
+				currentModel.simplifyForReordering();
+			}
+
 			int transSizeBefore = JDD.GetNumNodes(currentModel.getTrans());
 			int nodeCountBefore = JDD.GetNumNodes();
 			//currentModel.printTransInfo(mainLog, true);

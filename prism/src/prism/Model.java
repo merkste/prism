@@ -200,6 +200,7 @@ public interface Model
 	void exportStates(int exportType, PrismLog log);
 
 	void clear();
+	void simplifyForReordering();
 }
 
 //------------------------------------------------------------------------------

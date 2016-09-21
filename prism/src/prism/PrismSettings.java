@@ -320,7 +320,7 @@ public class PrismSettings implements Observer
 			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.3.1",	new Boolean(false),			"",
 																		"Perform reordering when building the model." },
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.3.1",	"",			"",
-																		"Comma-separated options for reordering (norebuild, beforereach, noconstraints)." },
+																		"Comma-separated options for reordering (norebuild, beforereach, noconstraints, optimisetrans)." },
 
 
 			// ADVERSARIES/COUNTEREXAMPLES:
@@ -1329,6 +1329,7 @@ public class PrismSettings implements Observer
 					case "norebuild":
 					case "beforereach":
 					case "noconstraints":
+					case "optimisetrans":
 						break;
 					default:
 						throw new PrismException("Invalid option \""+reorderOption+"\" for -" + sw + " switch");
@@ -1708,7 +1709,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
-		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: norebuild beforereach noconstraints");
+		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: norebuild beforereach noconstraints optimisetrans");
 		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");
@@ -1779,6 +1780,10 @@ public class PrismSettings implements Observer
 			mainLog.println(" noconstraints: Perform the reordering without any constraint on the variables.\n" +
 			                "                This will not result in a variable order that can be actually used\n" +
 			                "                in PRISM but may be interesting for a size comparison.");
+			mainLog.println(" optimisetrans: Remove most of the symbolic representations other than the transition\n" +
+			                "                function, so that the variable order for that function is optimised.\n " +
+			                "                This sometimes results in a better ordering.");
+
 			return true;
 		}
 		return false;
