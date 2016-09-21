@@ -936,6 +936,10 @@ public abstract class Expression extends ASTElement
 	 */
 	public static boolean isCoSafeLTLSyntactic(Expression expr, boolean convert)
 	{
+		if (Expression.isHOA(expr)) {
+			return false;
+		}
+
 		// Convert to or check for positive normal form
 		if (convert) {
 			expr = BooleanUtils.convertLTLToPositiveNormalForm(expr.deepCopy());
