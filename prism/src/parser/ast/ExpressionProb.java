@@ -26,6 +26,7 @@
 
 package parser.ast;
 
+import explicit.MinMax;
 import param.BigRational;
 import parser.EvaluateContext;
 import parser.Values;
@@ -44,6 +45,14 @@ public class ExpressionProb extends ExpressionQuant
 	public ExpressionProb(Expression expression, String relOpString, Expression p)
 	{
 		setExpression(expression);
+		setRelOp(relOpString);
+		setBound(p);
+	}
+
+	public ExpressionProb(Expression expression, MinMax minMax, String relOpString, Expression p) throws PrismLangException
+	{
+		setExpression(expression);
+		setMinMax(minMax);
 		setRelOp(relOpString);
 		setBound(p);
 	}

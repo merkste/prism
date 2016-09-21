@@ -26,6 +26,7 @@
 
 package parser.ast;
 
+import explicit.MinMax;
 import param.BigRational;
 import parser.EvaluateContext;
 import parser.Values;
@@ -49,6 +50,14 @@ public class ExpressionReward extends ExpressionQuant
 	public ExpressionReward(Expression expression, String relOpString, Expression r)
 	{
 		setExpression(expression);
+		setRelOp(relOpString);
+		setBound(r);
+	}
+
+	public ExpressionReward(Expression expression, MinMax minMax, String relOpString, Expression r) throws PrismLangException
+	{
+		setExpression(expression);
+		setMinMax(minMax);
 		setRelOp(relOpString);
 		setBound(r);
 	}
