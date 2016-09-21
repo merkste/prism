@@ -191,6 +191,14 @@ public abstract class ASTElement
 	// Various methods based on AST traversals (implemented using the visitor
 	// pattern):
 
+	public Map<String,String> findModulesForGlobalVarUpdates() throws PrismLangException
+	{
+		FindAllSynchedGlobalVarUpdates visitor = new FindAllSynchedGlobalVarUpdates();
+		accept(visitor);
+
+		return visitor.getGlobalVarToModule();
+	}
+	
 	/**
 	 * Find all idents which are formulas, replace with ExpressionFormula,
 	 * return result.
