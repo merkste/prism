@@ -44,6 +44,7 @@ import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismLog;
 import prism.PrismNotSupportedException;
+import prism.PrismSettings;
 import prism.PrismUtils;
 import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
@@ -65,6 +66,11 @@ public class MDPModelChecker extends ProbModelChecker
 	public MDPModelChecker(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+
+		// PRISM_FAIRNESS
+		if (settings != null && settings.getBoolean(PrismSettings.PRISM_FAIRNESS)) {
+			throw new PrismNotSupportedException("The explicit engine does not support model checking MDPs under fairness");
+		}
 	}
 	
 	// Model checking functions

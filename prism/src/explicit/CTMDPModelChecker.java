@@ -34,6 +34,7 @@ import parser.ast.ExpressionTemporal;
 import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
+import prism.PrismSettings;
 
 /**
  * Explicit-state model checker for continuous-time Markov decision processes (CTMDPs).
@@ -46,6 +47,11 @@ public class CTMDPModelChecker extends ProbModelChecker
 	public CTMDPModelChecker(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+
+		// PRISM_FAIRNESS
+		if (settings != null && settings.getBoolean(PrismSettings.PRISM_FAIRNESS)) {
+			throw new PrismNotSupportedException("The explicit engine does not support model checking CTMDPs under fairness");
+		}
 	}
 	
 	// Model checking functions

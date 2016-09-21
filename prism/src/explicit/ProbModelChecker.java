@@ -219,10 +219,6 @@ public class ProbModelChecker extends NonProbModelChecker
 			setProb1(settings.getBoolean(PrismSettings.PRISM_PROB1));
 			// PRISM_USE_PRE
 			setPreRel(settings.getBoolean(PrismSettings.PRISM_PRE_REL));
-			// PRISM_FAIRNESS
-			if (settings.getBoolean(PrismSettings.PRISM_FAIRNESS)) {
-				throw new PrismNotSupportedException("The explicit engine does not support model checking MDPs under fairness");
-			}
 
 			// PRISM_EXPORT_ADV
 			s = settings.getString(PrismSettings.PRISM_EXPORT_ADV);
