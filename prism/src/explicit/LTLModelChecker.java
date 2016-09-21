@@ -58,6 +58,7 @@ import prism.PrismPaths;
 import prism.PrismUtils;
 import acceptance.AcceptanceBuchi;
 import acceptance.AcceptanceGenRabin;
+import acceptance.AcceptanceGenRabin.GenRabinPair;
 import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceRabin;
 import acceptance.AcceptanceStreett;
@@ -663,25 +664,26 @@ public class LTLModelChecker extends PrismComponent
 	 * @param model The model
 	 * @param acceptance The acceptance condition
 	 */
-	public BitSet findAcceptingECStatesForBuchi(NondetModel model, AcceptanceBuchi acceptance) throws PrismException
+	public BitSet findAcceptingECStatesForBuchi(NondetModel model, final AcceptanceBuchi acceptance) throws PrismException
 	{
-		BitSet allAcceptingStates = new BitSet();
+		final BitSet allAcceptingStates = new BitSet();
 
 		if (acceptance.getAcceptingStates().isEmpty()) {
 			return allAcceptingStates;
 		}
 
 		// Compute accepting maximum end components (MECs)
-		ECConsumerStore ecStore = new ECConsumerStore(this, model);
-		ECComputer ecComputer = ECComputer.createECComputer(this, model, ecStore);
-		ecComputer.computeMECStates();
-		List<BitSet> mecs = ecStore.getMECStates();
-		// Union of accepting MEC states
-		for (BitSet mec : mecs) {
-			if (mec.intersects(acceptance.getAcceptingStates())) {
-				allAcceptingStates.or(mec);
+		ECComputer ecComputer = ECComputer.createECComputer(this, model, new ECConsumer(this, model) {
+
+			@Override
+			public void notifyNextMEC(BitSet mec)
+			{
+				if (mec.intersects(acceptance.getAcceptingStates())) {
+					allAcceptingStates.or(mec);
+				}
 			}
-		}
+		});
+		ecComputer.computeMECStates();
 
 		return allAcceptingStates;
 	}
@@ -693,7 +695,7 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStatesForRabin(NondetModel model, AcceptanceRabin acceptance) throws PrismException
 	{
-		BitSet allAcceptingStates = new BitSet();
+		final BitSet allAcceptingStates = new BitSet();
 		int numStates = model.getNumStates();
 		
 		// Go through the DRA acceptance pairs (L_i, K_i) 
@@ -710,17 +712,20 @@ public class LTLModelChecker extends PrismComponent
 			if (statesLi_not.cardinality() == 0)
 				continue;
 			// Compute accepting maximum end components (MECs) in !L_i
-			ECConsumerStore ecStore = new ECConsumerStore(this, model);
-			ECComputer ecComputer = ECComputer.createECComputer(this, model, ecStore);
+			ECComputer ecComputer = ECComputer.createECComputer(this, model,
+			                                                    new ECConsumer(this, model) {
+				@Override
+				public void notifyNextMEC(BitSet mec)
+				{
+					allAcceptingStates.or(mec);
+				}
+			});
 			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 			}
+			// we only ask for accepting MECs, where K is hit => we can store all
+			// found MECs in allAcceptingStates
 			ecComputer.computeMECStates(statesLi_not, acceptance.get(i).getK());
-			List<BitSet> mecs = ecStore.getMECStates();
-			// Union MEC states
-			for (BitSet mec : mecs) {
-				allAcceptingStates.or(mec);
-			}
 		}
 
 		return allAcceptingStates;
@@ -808,7 +813,7 @@ public class LTLModelChecker extends PrismComponent
 	 */
 	public BitSet findAcceptingECStatesForGeneralizedRabin(NondetModel model, AcceptanceGenRabin acceptance) throws PrismException
 	{
-		BitSet allAcceptingStates = new BitSet();
+		final BitSet allAcceptingStates = new BitSet();
 		int numStates = model.getNumStates();
 		
 		// Go through the GR acceptance pairs (L_i, K_i_1, ..., K_i_n) 
@@ -825,28 +830,31 @@ public class LTLModelChecker extends PrismComponent
 			// Skip pairs with empty !L_i
 			if (statesLi_not.cardinality() == 0)
 				continue;
-			// Compute maximum end components (MECs) in !L_i
-			ECConsumerStore mecStore = new ECConsumerStore(this, model);
-			ECComputer ecComputer = ECComputer.createECComputer(this, model, mecStore);
+
+			final GenRabinPair grabinPair = acceptance.get(i);
+
+			ECConsumer accepting_mec_check = new ECConsumer(this, model) {
+				@Override
+				public void notifyNextMEC(BitSet mec) {
+					int n = grabinPair.getNumK();
+					boolean allj = true;
+					for (int j = 0; j < n; j++) {
+						if (!mec.intersects(grabinPair.getK(j))) {
+							allj = false;
+							break;
+						}
+					}
+					if (allj) {
+						allAcceptingStates.or(mec);
+					}
+				}
+			};
+
+			ECComputer ecComputer = ECComputer.createECComputer(this, model, accepting_mec_check);
 			if (getSettings().getBoolean(PrismSettings.PRISM_PRE_REL)) {
 				ecComputer.setPredecessorRelation(model.getPredecessorRelation(this,  true));
 			}
 			ecComputer.computeMECStates(statesLi_not);
-			List<BitSet> mecs = mecStore.getMECStates();
-			// Check which MECs contain a state from each K_i_j
-			int n = acceptance.get(i).getNumK();
-			for (BitSet mec : mecs) {
-				boolean allj = true;
-				for (int j = 0; j < n; j++) {
-					if (!mec.intersects(acceptance.get(i).getK(j))) {
-						allj = false;
-						break;
-					}
-				}
-				if (allj) {
-					allAcceptingStates.or(mec);
-				}
-			}
 		}
 
 		return allAcceptingStates;
