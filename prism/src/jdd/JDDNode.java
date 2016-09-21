@@ -36,6 +36,7 @@ public class JDDNode
 	protected static native boolean DDN_IsConstant(long dd);
 	protected static native int DDN_GetIndex(long dd);
 	protected static native double DDN_GetValue(long dd);
+	protected static native int DDN_GetLevel(long dd);
 	protected static native long DDN_GetThen(long dd);
 	protected static native long DDN_GetElse(long dd);
 
@@ -73,6 +74,15 @@ public class JDDNode
 	public int getIndex()
 	{	
 		return DDN_GetIndex(ptr);
+	}
+
+	/**
+	 * Get the current level in the variable ordering
+	 * for this DD node.
+	 */
+	public int getLevel()
+	{
+		return DDN_GetLevel(ptr);
 	}
 
 	public double getValue()
