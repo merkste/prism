@@ -26,6 +26,9 @@
 
 package prism;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -64,6 +67,8 @@ public class Modules2MTBDD
 	private int numVars;			// total number of module variables
 	private VarList varList;		// list of module variables
 	private Values constantValues;	// values of constants
+	private ArrayList<Declaration> viewList = new ArrayList<Declaration>();
+	private TreeSet<String> variablesInView = new TreeSet<String>();
 	// synch info
 	private int numSynchs;			// number of synchronisations
 	private Vector<String> synchs;			// synchronisations
@@ -103,6 +108,8 @@ public class Modules2MTBDD
 	private JDDNode[] varRangeDDs;		// dd giving range for each module variable
 	private JDDNode[] varColRangeDDs;	// dd giving range for each module variable (in col vars)
 	private JDDNode[] varIdentities;	// identity matrix for each module variable
+	private List<JDDNode> viewRangeDDs = new ArrayList<JDDNode>();
+	private List<JDDNode> viewColRangeDDs = new ArrayList<JDDNode>();
 	// dds/dd vars - nondeterminism
 	private JDDNode[] ddSynchVars;		// individual dd vars for synchronising actions
 	private JDDNode[] ddSchedVars;		// individual dd vars for scheduling non-det.
@@ -193,6 +200,8 @@ public class Modules2MTBDD
 		numModules = modulesFile.getNumModules();
 		synchs = modulesFile.getSynchs();
 		numSynchs = synchs.size();
+		
+		initializeViews();
 		
 		// allocate dd variables
 		allocateDDVars();
@@ -319,6 +328,13 @@ public class Modules2MTBDD
 		JDD.DerefArray(varIdentities, numVars);
 		JDD.DerefArray(varRangeDDs, numVars);
 		JDD.DerefArray(varColRangeDDs, numVars);
+		for (JDDNode dd : viewRangeDDs) {
+			JDD.Deref(dd);
+		}
+		for (JDDNode dd : viewColRangeDDs) {
+			JDD.Deref(dd);
+		}
+
 		JDD.Deref(range);
 		if (modelType == ModelType.MDP) {
 			JDD.DerefArray(ddSynchVars, ddSynchVars.length);
@@ -335,6 +351,25 @@ public class Modules2MTBDD
 		model.setVarOrderConstraints(varorderConstraints);
 
 		return model;
+	}
+	
+	private void initializeViews() throws PrismException
+	{
+		for (int i = 0; i < numModules; i++) {
+			Module module = modulesFile.getModule(i);
+			for (int j = 0; j < module.getNumViewDeclarations(); j++) {
+				Declaration decl = module.getViewDeclaration(j);
+				DeclarationIntView declType = (DeclarationIntView) decl.getDeclType();
+				viewList.add(decl);
+				
+				for (ExpressionVar bit : declType.getBits()) {
+					String var = bit.getName();
+					if (variablesInView.add(var) == false) {
+						throw new PrismException("Variable "+var+" contained in multiple views");
+					}
+				}
+			}
+		}
 	}
 	
 	// allocate DD vars for system
@@ -748,7 +783,7 @@ public class Modules2MTBDD
 
 	// Sort DDs for ranges
 	
-	private void sortRanges()
+	private void sortRanges() throws PrismException
 	{
 		int i;
 		
@@ -771,9 +806,30 @@ public class Modules2MTBDD
 		for (i = 0; i < numModules; i++) {
 			// obtain range dd by abstracting from identity matrix
 			moduleRangeDDs[i] = JDD.SumAbstract(moduleIdentities[i].copy(), moduleDDColVars[i]);
+			
+			Module module = modulesFile.getModule(i);
+			for (int j = 0; j < module.getNumViewDeclarations(); j++) {
+				// handle view ranges
+				Declaration decl = module.getViewDeclaration(j);
+				DeclarationIntView declType = (DeclarationIntView) decl.getDeclType();
+
+				JDDNode valueRow = translateView(declType, true);
+				JDDNode viewRangeDD = JDD.LessThanEquals(valueRow.copy(), declType.getHigh().evaluateInt(constantValues));
+				viewRangeDD = JDD.And(viewRangeDD, JDD.GreaterThanEquals(valueRow.copy(), declType.getLow().evaluateInt(constantValues)));
+				JDD.Deref(valueRow);
+				viewRangeDDs.add(viewRangeDD);
+
+				JDDNode valueCol = translateView(declType, false);
+				JDDNode viewRangeColDD = JDD.LessThanEquals(valueCol.copy(), declType.getHigh().evaluateInt(constantValues));
+				viewRangeColDD = JDD.And(viewRangeColDD, JDD.GreaterThanEquals(valueCol.copy(), declType.getLow().evaluateInt(constantValues)));
+				JDD.Deref(valueCol);
+				viewColRangeDDs.add(viewRangeColDD);
+
+				range = JDD.Apply(JDD.TIMES, range, viewRangeDD.copy());
+				moduleRangeDDs[i] = JDD.Apply(JDD.TIMES, moduleRangeDDs[i], viewRangeDD.copy());
+			}
 		}
 	}
-
 	// translate modules decription to dds
 	
 	private void translateModules() throws PrismException
@@ -1496,6 +1552,7 @@ public class Modules2MTBDD
 	{
 		ComponentDDs compDDs;
 		JDDNode guardDDs[], upDDs[], tmp;
+		JDDNode modelViewRangesDD;
 		Command command;
 		int l, numCommands;
 		double dmin = 0, dmax = 0;
@@ -1506,7 +1563,7 @@ public class Modules2MTBDD
 		guardDDs = new JDDNode[numCommands];
 		upDDs = new JDDNode[numCommands];
 		//rewDDs = new JDDNode[numCommands];
-		
+
 		// translate guard/updates for each command of the module
 		for (l = 0; l < numCommands; l++) {
 			command = module.getCommand(l);
@@ -1541,6 +1598,7 @@ public class Modules2MTBDD
 					upDDs[l] = translateUpdates(m, l, command.getUpdates(), (command.getSynch()=="")?false:true, guardDDs[l]);
 					JDD.Ref(guardDDs[l]);
 					upDDs[l] = JDD.Apply(JDD.TIMES, upDDs[l], guardDDs[l]);
+					
 					// are all probs/rates non-negative?
 					dmin = JDD.FindMin(upDDs[l]);
 					if (dmin < 0) {
@@ -1975,6 +2033,27 @@ public class Modules2MTBDD
 		return dd;
 	}
 
+	public int findView(String name) {
+		for (int i = 0; i < viewList.size(); i++) {
+			if (viewList.get(i).getName().equals(name)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	JDDNode translateView(DeclarationIntView decl, boolean row) throws PrismException {
+		JDDNode tmp1 = JDD.Constant(0);
+		for (ExpressionVar bit : decl.getBits()) {
+			tmp1 = JDD.Apply(JDD.TIMES, tmp1, JDD.Constant(2));
+			int bitVarIndex = bit.getIndex();
+			JDDNode bitDD = (row ? varDDRowVars[bitVarIndex] : varDDColVars[bitVarIndex]).getVar(0).copy();
+			tmp1 = JDD.Apply(JDD.PLUS, tmp1, bitDD);
+		}
+		tmp1 = JDD.Apply(JDD.PLUS, tmp1, JDD.Constant(decl.getLow().evaluateInt(constantValues)));
+		return tmp1;
+	}
+
 	// translate an update
 	
 	private JDDNode translateUpdate(int m, Update c, boolean synch, JDDNode guard) throws PrismException
@@ -2019,6 +2098,18 @@ public class Modules2MTBDD
 
 				colRangeDD = varColRangeDDs[v];
 				JDD.Ref(colRangeDD);
+			} else if ((v = findView(s)) >= 0) {
+				DeclarationIntView viewDecl = (DeclarationIntView)viewList.get(v).getDeclType();
+				tmp1 = translateView(viewDecl, false);
+				for (ExpressionVar bit : viewDecl.getBits()) {
+					int bitVarIndex = bit.getIndex();
+					if (varsUsed[bitVarIndex]) {
+						throw new PrismLangException("Update to view and underlying variable for view '" + s + "' in update", c.getVarIdent(i));
+					}
+					varsUsed[bitVarIndex] = true;
+				}
+				colRangeDD = JDD.GreaterThanEquals(tmp1.copy(), viewDecl.getLow().evaluateInt(constantValues));
+				colRangeDD = JDD.And(colRangeDD, JDD.LessThanEquals(tmp1.copy(), viewDecl.getHigh().evaluateInt(constantValues)));
 			} else {
 				throw new PrismLangException("Unknown variable \"" + s + "\" in update", c.getVarIdent(i));
 			}
@@ -2163,7 +2254,24 @@ public class Modules2MTBDD
 		else {
 			start = JDD.Constant(1);
 			for (i = 0; i < numVars; i++) {
+				if (variablesInView.contains(varList.getName(i))) {
+					// check whether there is an explicit initialization
+					//mainLog.println(varList.getDeclaration(i));
+					if (varList.getDeclaration(i).getStart() != null) {
+						throw new PrismException("Variables in a view can not have a direct init specification");
+					}
+					// skip this variable, will be set by the corresponding view
+					continue;
+				}
 				tmp = JDD.SetVectorElement(JDD.Constant(0), varDDRowVars[i], varList.getStart(i)-varList.getLow(i), 1);
+				start = JDD.And(start, tmp);
+			}
+
+			for (Declaration view : viewList) {
+				int iv = view.getStartOrDefault().evaluateInt(constantValues);
+				DeclarationIntView declType = (DeclarationIntView) view.getDeclType();
+				tmp = translateView(declType, true);
+				tmp = JDD.Equals(tmp, iv);
 				start = JDD.And(start, tmp);
 			}
 		}
