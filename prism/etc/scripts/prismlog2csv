@@ -1,0 +1,234 @@
+#! /usr/bin/perl -w
+
+use strict;
+use Getopt::Long;
+
+my @property_term_files;
+my @model_term_files;
+my @both_term_files;
+my $outfile = '/dev/stdout';
+my $verbose = 0;
+my $mark_start = 0;
+
+if (!GetOptions("prop-regexp|p=s"   => \@property_term_files,
+		"model-regexp|m=s"  => \@model_term_files,
+		"both-regexp|b=s"   => \@both_term_files,
+		"mark-start|s"      => \$mark_start,
+		"output|o=s"        => \$outfile,
+		"verbose"           => \$verbose,
+	       )) {
+  usage();
+}
+
+sub usage {
+  print "prismlog2csv [arguments] [log-file]\n\n";
+  print "  --prop-regexp file       read additional regular expressions matching per property from file\n";
+  print "  --model-regexp file      read additional regular expressions matching per model build from file\n";
+  print "  --both-regexp file       read additional regular expressions matching either per model or per property from file\n";
+  exit(1);
+}
+
+# regular expressions for synching from the log file
+my $re_prism_start = qr/PRISM$/;
+my $re_property = qr/^Model checking: (.+)$/;
+my $re_model_file = qr/^Parsing model file "(.+)"...$/;
+my $re_properties_file = qr/^Parsing properties file "(.+)".../;
+my $re_command_line = qr/^Command line: (.+)$/;
+my $re_property_constants = qr/^Property constants: (.+)$/;
+my $re_model_constants = qr/^Model constants: (.+)$/;
+my $re_error = qr/^Error: (.+)$/;
+
+
+my @model_terms_standard =
+  (
+   [model_build_time     => qr/^Time for model construction: (.+) seconds/],
+   [model_states         => qr/^States:      (\d+) \(\d+ initial\)/],
+   [model_states_initial => qr/^States:      \d+ \((\d+) initial\)/],
+   [model_transitions    => qr/^Transitions: (\d+)/],
+   [model_matrix_dd      => qr/^(?:Rate|Transition) matrix: (\d+) nodes/],
+  );
+
+
+my @property_terms_standard =
+  (
+   [property_mc_time    => qr/^Time for model checking: (.+) seconds/],
+   [property_result     => qr/^Result: ([^(]+)/],
+  );
+
+my @model_terms = @model_terms_standard;
+my @property_terms = @property_terms_standard;
+my @both_terms = ();
+
+
+for my $model_term_file (@model_term_files) {
+  load_regexps_from_file($model_term_file, \@model_terms);
+}
+
+for my $property_term_file (@property_term_files) {
+  load_regexps_from_file($property_term_file, \@property_terms);
+}
+
+for my $both_term_file (@both_term_files) {
+  load_regexps_from_file($both_term_file, \@both_terms);
+}
+
+if ($verbose) {
+  print STDERR "Model regular expressions:\n";
+  print STDERR "--------------------------\n";
+  foreach (@model_terms) {
+    print STDERR " ", $_->[0], ":\n  ", $_->[1], "\n\n";
+  }
+
+  print STDERR "\nProperty regular expressions:\n";
+  print STDERR   "-----------------------------\n";
+  foreach (@property_terms) {
+    print STDERR " ", $_->[0], ":\n  ", $_->[1], "\n\n";
+  }
+
+  print STDERR "\nBoth regular expressions:\n";
+  print STDERR   "-------------------------\n";
+  foreach (@both_terms) {
+    print STDERR " ", $_->[0], ":\n  ", $_->[1], "\n\n";
+  }
+}
+
+
+open(OUT, ">", $outfile) or die "Can not open $outfile: $!\n";
+
+my %current;
+
+while (my $line=<>) {
+  chomp($line);
+  if ($line =~ $re_prism_start) {
+    %current = ();
+  }
+  if ($line =~ $re_model_file) {
+    $current{model_file} = $1;
+    print OUT "# Model file: $1\n";
+    if ($mark_start) {
+      print OUT get_model_key(), ";;start-model", "\n";
+    }
+  } 
+  if ($line =~ $re_properties_file) {
+    $current{properties_file} = $1;
+    print OUT "# Properties file: $1\n";
+  }
+  if ($line =~ $re_command_line) {
+    $current{command_line} = $1;
+    print OUT "# Command line: $1\n";
+  }
+  if ($line =~ $re_property) {
+    $current{property} = $1;
+    if ($mark_start) {
+      print OUT get_property_key(), ";start-check", "\n";
+    }
+    $current{seen} = {};
+  } 
+  if ($line =~ $re_model_constants) {
+    $current{model_constants} = $1;
+    $current{model_constants} =~ s/\s//g; #remove whitespace
+  } 
+  if ($line =~ $re_property_constants) {
+    $current{property_constants} = $1;
+    $current{property_constants} =~ s/\s//g; #remove whitespace
+  }
+  if ($line =~ $re_error) {
+    if (defined $current{property}) {
+      # we are in a property...
+      print OUT get_property_key(), ";error;", quote_semicolon($1), "\n";
+    } else {
+      print OUT get_model_key(), ";;error;", quote_semicolon($1), "\n";
+    }
+  }
+
+  # custom regexps
+  foreach my $term (@model_terms) {
+    match_term($line, $term, 0);
+  }
+  
+  foreach my $term (@property_terms) {
+    match_term($line, $term, 1);
+  }
+
+  foreach my $term (@both_terms) {
+    match_term($line, $term, defined $current{property});
+  }
+}
+
+sub match_term {
+  my $line = shift;
+  my $term = shift;
+  my $is_property = shift;
+
+  my $id = $term->[0];
+  if ($line =~ $term->[1]) {
+    my $xid;
+    if ($is_property) {
+      $xid = get_property_key() . ";" . $id;
+    } else {
+      $xid = get_model_key() . ";;" . $id;
+    }
+
+    while (defined $current{seen}->{$xid}) {
+      if ($xid =~ /^(.+)-(\d+)$/) {
+	$xid = "$1-".($2+1);
+      } else {
+	$xid.="-2";
+      }
+    }
+    $current{seen}->{$xid}=1;
+    
+    print OUT $xid, ";", quote_semicolon($1), "\n";
+  }
+}
+
+
+sub quote_semicolon {
+  my $s = shift;
+
+  $s=~ s/;/_/g;
+  return $s;
+}
+
+sub get_model_key {
+  my $model_file = $current{model_file} || "";
+  $model_file .= (defined $current{model_constants} ? "@".$current{model_constants} : "");
+
+  return quote_semicolon($model_file);
+}
+
+sub get_property_key {
+  my $model_file = get_model_key();
+
+  my $property = $current{property} || "";
+  $property .= (defined $current{property_constants} ? "@".$current{property_constants} : "");
+
+  return quote_semicolon($model_file) . ";" . quote_semicolon($property);
+}
+
+sub load_regexps_from_file {
+  my $term_file = shift;
+  my $terms = shift;
+
+  open(IN, "<", $term_file) or die "Can not open $term_file: $!\n";
+  my $cur_key = undef;
+  while (<IN>) {
+    chomp;
+    s/^\s*//;  #remove whitespace
+    s/\s*$//;
+    next if /^#$/ || /^$/;
+
+    if (defined $cur_key) {
+      my $regexp = $_;
+      push @{ $terms }, [ $cur_key, qr/$regexp/ ];
+      $cur_key = undef;
+    } else {
+      $cur_key = $_;
+    }
+  }
+
+  if (defined $cur_key) {
+    die "Lonely key $cur_key at end of $term_file\n";
+  }
+  return 1;
+}
