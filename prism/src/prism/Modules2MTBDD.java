@@ -1992,31 +1992,37 @@ public class Modules2MTBDD
 		n = c.getNumElements();
 		for (i = 0; i < n; i++) {
 		
+			JDDNode colRangeDD = null;
 			// get variable
 			s = c.getVar(i);
 			v = varList.getIndex(s);
-			if (v == -1) {
+			if (v >= 0) {
+				varsUsed[v] = true;
+				// check if the variable to be modified is valid
+				// (i.e. belongs to this module or is global)
+				if (varList.getModule(v) != -1 && varList.getModule(v) != m) {
+					throw new PrismLangException("Cannot modify variable \""+s+"\" from module \""+moduleNames[m]+"\"", c.getVarIdent(i));
+				}
+				// print out a warning if this update is in a command with a synchronising
+				// action AND it modifies a global variable
+				if (varList.getModule(v) == -1 && synch) {
+					throw new PrismLangException("Synchronous command cannot modify global variable", c.getVarIdent(i));
+				}
+				// get some info on the variable
+				l = varList.getLow(v);
+				h = varList.getHigh(v);
+				// create dd
+				tmp1 = JDD.Constant(0);
+				for (j = l; j <= h; j++) {
+					tmp1 = JDD.SetVectorElement(tmp1, varDDColVars[v], j-l, j);
+				}
+
+				colRangeDD = varColRangeDDs[v];
+				JDD.Ref(colRangeDD);
+			} else {
 				throw new PrismLangException("Unknown variable \"" + s + "\" in update", c.getVarIdent(i));
 			}
-			varsUsed[v] = true;
-			// check if the variable to be modified is valid
-			// (i.e. belongs to this module or is global)
-			if (varList.getModule(v) != -1 && varList.getModule(v) != m) {
-				throw new PrismLangException("Cannot modify variable \""+s+"\" from module \""+moduleNames[m]+"\"", c.getVarIdent(i));
-			}
-			// print out a warning if this update is in a command with a synchronising
-			// action AND it modifies a global variable
-			if (varList.getModule(v) == -1 && synch) {
-				throw new PrismLangException("Synchronous command cannot modify global variable", c.getVarIdent(i));
-			}
-			// get some info on the variable
-			l = varList.getLow(v);
-			h = varList.getHigh(v);
-			// create dd
-			tmp1 = JDD.Constant(0);
-			for (j = l; j <= h; j++) {
-				tmp1 = JDD.SetVectorElement(tmp1, varDDColVars[v], j-l, j);
-			}
+
 			tmp2 = translateExpression(c.getExpression(i));
 			JDD.Ref(guard);
 			tmp2 = JDD.Apply(JDD.TIMES, tmp2, guard);
@@ -2024,8 +2030,7 @@ public class Modules2MTBDD
 			JDD.Ref(guard);
 			cl = JDD.Apply(JDD.TIMES, cl, guard);
 			// filter out bits not in range
-			JDD.Ref(varColRangeDDs[v]);
-			cl = JDD.Apply(JDD.TIMES, cl, varColRangeDDs[v]);
+			cl = JDD.Apply(JDD.TIMES, cl, colRangeDD);
 			JDD.Ref(range);
 			cl = JDD.Apply(JDD.TIMES, cl, range);
 			dd = JDD.Apply(JDD.TIMES, dd, cl);
