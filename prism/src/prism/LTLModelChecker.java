@@ -894,13 +894,18 @@ public class LTLModelChecker extends PrismComponent
 				acceptanceVector_K = JDD.Or(acceptanceVector_K, tmpK);
 			}
 
-			JDD.Ref(model.getTrans01());
-			JDD.Ref(acceptanceVector_L_not);
-			candidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), acceptanceVector_L_not);
-			acceptanceVector_L_not = JDD.PermuteVariables(acceptanceVector_L_not, draDDRowVars, draDDColVars);
-			candidateStates = JDD.Apply(JDD.TIMES, candidateStates, acceptanceVector_L_not);
-			candidateStates = JDD.ThereExists(candidateStates, model.getAllDDColVars());
-			candidateStates = JDD.ThereExists(candidateStates, model.getAllDDNondetVars());
+			if (draDDRowVars != null && draDDColVars != null) {
+				JDD.Ref(model.getTrans01());
+				JDD.Ref(acceptanceVector_L_not);
+				candidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), acceptanceVector_L_not);
+				acceptanceVector_L_not = JDD.PermuteVariables(acceptanceVector_L_not, draDDRowVars, draDDColVars);
+				candidateStates = JDD.Apply(JDD.TIMES, candidateStates, acceptanceVector_L_not);
+				candidateStates = JDD.ThereExists(candidateStates, model.getAllDDColVars());
+				candidateStates = JDD.ThereExists(candidateStates, model.getAllDDNondetVars());
+			} else {
+				JDD.Ref(model.getReach());
+				candidateStates = JDD.And(model.getReach(), acceptanceVector_L_not);
+			}
 			// find all maximal end components
 			List<JDDNode> allecs = findMECStates(model, candidateStates, acceptanceVector_K);
 			JDD.Deref(acceptanceVector_K);
@@ -953,13 +958,15 @@ public class LTLModelChecker extends PrismComponent
 						continue;
 					} else { // recompute maximal end components
 						//mainLog.println(" ------------- ec is recomputed ------------- ");
-						JDD.Ref(model.getTrans01());
-						JDD.Ref(candidateStates);
-						JDDNode newcandidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), candidateStates);
-						candidateStates = JDD.PermuteVariables(candidateStates, draDDRowVars, draDDColVars);
-						newcandidateStates = JDD.Apply(JDD.TIMES, candidateStates, newcandidateStates);
-						newcandidateStates = JDD.ThereExists(newcandidateStates, model.getAllDDColVars());
-						candidateStates = JDD.ThereExists(newcandidateStates, model.getAllDDNondetVars());
+						if (draDDRowVars != null && draDDColVars != null) {
+							JDD.Ref(model.getTrans01());
+							JDD.Ref(candidateStates);
+							JDDNode newcandidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), candidateStates);
+							candidateStates = JDD.PermuteVariables(candidateStates, draDDRowVars, draDDColVars);
+							newcandidateStates = JDD.Apply(JDD.TIMES, candidateStates, newcandidateStates);
+							newcandidateStates = JDD.ThereExists(newcandidateStates, model.getAllDDColVars());
+							candidateStates = JDD.ThereExists(newcandidateStates, model.getAllDDNondetVars());
+						}
 						ecs = findMECStates(model, candidateStates, acceptanceVector_K);
 					}
 					JDD.Deref(candidateStates);
@@ -987,18 +994,21 @@ public class LTLModelChecker extends PrismComponent
 				JDDNode statesK_i = acceptance.get(i).getK();
 				// Find states in the model for which there are no transitions leaving !L_i
 				// (this will allow us to reduce the problem to finding MECs, not ECs)
-				// TODO: I don't think this next step is needed,
-				// since the ECComputer restricts the model in this way anyway.
-				// However, for fairness, the restriction of the candidateStates
-				// to statesLi_not has to happen for correctness.
-				JDD.Ref(model.getTrans01());
-				JDD.Ref(statesLi_not);
-				candidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), statesLi_not);
-				statesLi_not = JDD.PermuteVariables(statesLi_not, draDDRowVars, draDDColVars);
-				candidateStates = JDD.Apply(JDD.TIMES, candidateStates, statesLi_not);
-				candidateStates = JDD.ThereExists(candidateStates, model.getAllDDColVars());
-				candidateStates = JDD.ThereExists(candidateStates, model.getAllDDNondetVars());
-				// Normal case (no fairness): find accepting MECs within !L_i 
+				if (draDDRowVars != null && draDDColVars != null) {
+					// TODO: I don't think this next step is needed,
+					// since the ECComputer restricts the model in this way anyway
+					JDD.Ref(model.getTrans01());
+					JDD.Ref(statesLi_not);
+					candidateStates = JDD.Apply(JDD.TIMES, model.getTrans01(), statesLi_not);
+					statesLi_not = JDD.PermuteVariables(statesLi_not, draDDRowVars, draDDColVars);
+					candidateStates = JDD.Apply(JDD.TIMES, candidateStates, statesLi_not);
+					candidateStates = JDD.ThereExists(candidateStates, model.getAllDDColVars());
+					candidateStates = JDD.ThereExists(candidateStates, model.getAllDDNondetVars());
+				} else {
+					JDD.Ref(model.getReach());
+					candidateStates = JDD.And(model.getReach(), statesLi_not);
+				}
+				// Normal case (no fairness): find accepting MECs within !L_i
 				if (!fairness) {
 					List<JDDNode> ecs = findMECStates(model, candidateStates);
 					JDD.Deref(candidateStates);
