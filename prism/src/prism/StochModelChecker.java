@@ -322,6 +322,31 @@ public class StochModelChecker extends ProbModelChecker
 		return rewards;
 	}
 
+	
+	@Override
+	protected StateValues checkRewardCoSafeLTL(Expression expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
+	{
+		LTLModelChecker ltlMC = new LTLModelChecker(prism);
+		ltlMC.disallowSimplificationsBasedOnModel();
+
+		expr = handleMaximalStateFormulas(expr, ltlMC);
+
+		// Compute embedded Markov chain
+		ProbModel embeddedDTMC = ((StochModel)model).getEmbeddedDTMC(mainLog);
+
+		// state rewards are scaled
+		JDDNode diags = JDD.SumAbstract(trans.copy(), allDDColVars);
+		stateRewards = JDD.Apply(JDD.DIVIDE, stateRewards, diags);
+
+		ProbModelChecker embeddedMC = (ProbModelChecker) createModelChecker(embeddedDTMC);
+		StateValues sv = embeddedMC.checkRewardCoSafeLTL(expr, stateRewards, transRewards, statesOfInterest);
+
+		// update the model in the StateValues object back to the CTMC
+		sv.switchModel(model);
+
+		return sv;
+	}
+
 	// -----------------------------------------------------------------------------------
 	// do transient computation
 	// -----------------------------------------------------------------------------------
