@@ -105,6 +105,9 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 	private void doTransformation(M originalModel, List<TemporalOperatorBound> bounds, JDDNode statesOfInterest) throws PrismException {	
 		if (originalModel instanceof NondetModel) {
 				doTransformation((NondetModel)originalModel, bounds, statesOfInterest);
+		} else if (originalModel instanceof ProbModel) {
+			doTransformation((ProbModel)originalModel, bounds, statesOfInterest);
+
 		} else {
 			throw new PrismException("Counter-Transformation is not supported for "+originalModel.getClass());
 		}
@@ -176,6 +179,69 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 	}
 
 
+	@SuppressWarnings("unchecked")
+	private void doTransformation(ProbModel originalModel, List<TemporalOperatorBound> bounds, JDDNode statesOfInterest) throws PrismException
+	{
+		List<IntegerBound> intBounds = new ArrayList<IntegerBound>();
+
+		if (bounds.isEmpty()) {
+			throw new IllegalArgumentException("Can not do counter transformation without any bounds.");
+		}
+
+		for (TemporalOperatorBound bound : bounds) {
+			IntegerBound intBound = IntegerBound.fromTemporalOperatorBound(bound, mc.constantValues, true);
+			intBounds.add(intBound);
+
+			if (!bound.hasSameDomainDiscreteTime(bounds.get(0))) {
+				throw new IllegalArgumentException("Can only do counter transformation for bounds with same domain.");
+			}
+		}
+		JDDNode trRewards = null;
+
+		switch (bounds.get(0).getBoundType()) {
+		case REWARD_BOUND: {
+			// Get reward info
+			Object rsi = bounds.get(0).getRewardStructureIndex();
+			JDDNode srew = mc.getStateRewardsByIndexObject(rsi, originalModel, mc.constantValues).copy();
+			JDDNode trew = mc.getTransitionRewardsByIndexObject(rsi, originalModel, mc.constantValues).copy();
+
+			trRewards = JDD.Apply(JDD.PLUS, srew, trew);
+			break;
+		}
+		case DEFAULT_BOUND:
+		case STEP_BOUND:
+		case TIME_BOUND:
+			// a time/step bound, use constant reward structure assigning 1 to each state
+			trRewards = JDD.Constant(1);
+			break;
+		}
+
+		if (trRewards == null) {
+			throw new PrismException("Couldn't generate reward information.");
+		}
+
+		int saturation_limit = IntegerBound.getMaximalInterestingValueForConjunction(intBounds);
+
+		product = (RewardCounterProduct<M>) RewardCounterProduct.generate(mc.prism, originalModel, trRewards, saturation_limit, statesOfInterest);
+
+		// add 'in_bound-x' label
+		JDDNode statesInBound = product.getStatesWithAccumulatedRewardInBoundConjunction(intBounds);
+		//JDD.PrintMinterms(mc.prism.getMainLog(), statesInBound.copy(), "statesInBound (1)");
+		statesInBound = JDD.And(statesInBound, product.getTransformedModel().getReach().copy());
+		//JDD.PrintMinterms(mc.prism.getMainLog(), statesInBound.copy(), "statesInBound (2)");
+		String labelInBound = ((ProbModel)product.getTransformedModel()).addUniqueLabelDD("in_bound", statesInBound, mc.getDefinedLabelNames());
+
+		// transform expression
+		for (TemporalOperatorBound bound : bounds) {
+			ReplaceBound replace = new ReplaceBound(bound, labelInBound);
+			transformedExpression = (Expression) transformedExpression.accept(replace);
+
+			if (!replace.wasSuccessfull()) {
+				throw new PrismException("Replacing bound was not successfull.");
+			}
+		}
+	}
+	
 	public static <M extends Model> ModelExpressionTransformation<M, M> replaceBoundsWithCounters(StateModelChecker mc,
 			M originalModel, Expression originalExpression,
 			List<TemporalOperatorBound> bounds,
