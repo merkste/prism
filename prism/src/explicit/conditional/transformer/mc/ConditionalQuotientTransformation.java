@@ -11,7 +11,7 @@ public class ConditionalQuotientTransformation extends BasicModelExpressionTrans
 {
 	private final double[] probabilities;
 
-	public ConditionalQuotientTransformation(final ModelExpressionTransformation<DTMC, DTMC> transformation, final double[] probabilities)
+	public ConditionalQuotientTransformation(final ModelExpressionTransformation<DTMC, ? extends DTMC> transformation, final double[] probabilities)
 	{
 		super(transformation);
 		this.probabilities = probabilities;
