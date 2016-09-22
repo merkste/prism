@@ -80,17 +80,16 @@ public class ModelTransformationNested<OriginalModel extends Model,
 	@Override
 	public StateValues projectToOriginalModel(final StateValues svTransformedModel) throws PrismException
 	{
-		// first, get the StateValues in the intermediate model
+		// First, project the StateValues to the intermediate model.
 		StateValues svIntermediate = outerTransformation.projectToOriginalModel(svTransformedModel);
-		// then, in the original model
-		StateValues svOriginal = innerTransformation.projectToOriginalModel(svIntermediate);
-		return svOriginal;
+		// Second, project them to the original model
+		return innerTransformation.projectToOriginalModel(svIntermediate);
 	}
 
 	@Override
 	public Integer mapToTransformedModel(final int state)
 	{
-		final Integer intermediate = innerTransformation.mapToTransformedModel(state);
+		Integer intermediate = innerTransformation.mapToTransformedModel(state);
 		return (intermediate == null) ? null : outerTransformation.mapToTransformedModel(intermediate);
 	}
 
@@ -99,5 +98,4 @@ public class ModelTransformationNested<OriginalModel extends Model,
 	{
 		return outerTransformation.mapToTransformedModel(innerTransformation.mapToTransformedModel(states));
 	}
-
 }
