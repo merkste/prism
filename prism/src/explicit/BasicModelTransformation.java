@@ -1,8 +1,8 @@
 package explicit;
 
 import java.util.BitSet;
+import java.util.function.IntFunction;
 
-import common.functions.ArrayMapping;
 import common.iterable.IterableBitSet;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
@@ -12,46 +12,55 @@ import prism.PrismException;
 //FIXME ALG: add comment
 public class BasicModelTransformation<OM extends Model, TM extends Model> implements ModelTransformation<OM, TM>
 {
+	public static final IntFunction<Integer> IDENTITY = Integer::valueOf;
+
 	public static final boolean DEFAULT_BOOLEAN = false;
-	public static final double DEFAULT_DOUBLE = Double.NaN;
-	public static final int DEFAULT_INTEGER = -1;
+	public static final double DEFAULT_DOUBLE   = Double.NaN;
+	public static final int DEFAULT_INTEGER     = -1;
 
 	protected final OM originalModel;
 	protected final TM transformedModel;
-	protected final BitSet transformedStatesOfInterest;
+	protected BitSet transformedStatesOfInterest;
+	protected final IntFunction<Integer> mapToTransformedModel;
 
 	protected final int numberOfStates;
-	protected final Integer[] mapping;
 
 	public BasicModelTransformation(final OM originalModel, final TM transformedModel)
 	{
-		this(originalModel, transformedModel, null, ArrayMapping.identity(originalModel.getNumStates()).getElements());
+		this(originalModel, transformedModel, null);
 	}
 
 	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest)
 	{
-		this(originalModel, transformedModel, transformedStatesOfInterest, ArrayMapping.identity(originalModel.getNumStates()).getElements());
+		this(originalModel, transformedModel, transformedStatesOfInterest, IDENTITY);
 	}
 
 	public BasicModelTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation)
 	{
-		this(transformation.getOriginalModel(), transformation.getTransformedModel(), transformation.getTransformedStatesOfInterest(), buildMappingToTransformedModel(transformation));
+		originalModel               = transformation.getOriginalModel();
+		transformedModel            = transformation.getTransformedModel();
+		transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
+		if (transformation instanceof BasicModelTransformation) {
+			mapToTransformedModel   = ((BasicModelTransformation<?,?>) transformation).mapToTransformedModel;
+		} else {
+			mapToTransformedModel   = transformation::mapToTransformedModel;
+		}
+		numberOfStates              = originalModel.getNumStates();
 	}
 
-	public BasicModelTransformation(final BasicModelTransformation<? extends OM, ? extends TM> transformation)
+	@Deprecated
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, Integer[] mapToTransformedModel)
 	{
-		this(transformation.originalModel, transformation.transformedModel, transformation.transformedStatesOfInterest, transformation.mapping);
+		this(originalModel, transformedModel, transformedStatesOfInterest, state -> mapToTransformedModel[state]);
 	}
 
-	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final Integer[] mappingToTransformedModel)
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final IntFunction<Integer> mapToTransformedModel)
 	{
-		this.originalModel = originalModel;
-		this.transformedModel = transformedModel;
-		this.transformedStatesOfInterest = transformedStatesOfInterest;
-		this.numberOfStates = originalModel.getNumStates();
-		this.mapping = mappingToTransformedModel;
-
-		assert(mappingToTransformedModel.length == numberOfStates) : "Mapping does not cover all states of original model.";
+		this.originalModel               = originalModel;
+		this.transformedModel            = transformedModel;
+		this.numberOfStates              = originalModel.getNumStates();
+		this.mapToTransformedModel       = mapToTransformedModel;
+		setTransformedStatesOfInterest(transformedStatesOfInterest);
 	}
 
 	@Override
@@ -72,9 +81,13 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		return transformedStatesOfInterest;
 	}
 
-	public Integer[] getMapping()
+	public BasicModelTransformation<OM, TM> setTransformedStatesOfInterest(BitSet transformedStatesOfInterest)
 	{
-		return mapping;
+		if (transformedStatesOfInterest != null && transformedStatesOfInterest.length() > transformedModel.getNumStates()) {
+			throw new IndexOutOfBoundsException("State set must be subset of transformed model's state space");
+		}
+		this.transformedStatesOfInterest = transformedStatesOfInterest;
+		return this;
 	}
 
 	@Override
@@ -140,7 +153,10 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 	@Override
 	public Integer mapToTransformedModel(final int state)
 	{
-		return mapping[state];
+		if (state >= numberOfStates) {
+			throw new IndexOutOfBoundsException("State index does not belong to original model.");
+		}
+		return mapToTransformedModel.apply(state);
 	}
 
 	@Override
@@ -159,21 +175,20 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 
 	public <M extends Model> BasicModelTransformation<M, TM> compose(final ModelTransformation<M, ? extends OM> inner)
 	{
-		return new BasicModelTransformation<>(this.nest(inner));
-	}
-
-	public <M extends Model> ModelTransformationNested<M, OM, TM> nest(final ModelTransformation<M, ? extends OM> inner)
-	{
-		return new ModelTransformationNested<>(inner, this);
-	}
-
-	// FIXME ALG: consider to map states of interest only
-	public static Integer[] buildMappingToTransformedModel(final ModelTransformation<?, ?> transformation)
-	{
-		final Integer[] mapping = new Integer[transformation.getOriginalModel().getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = transformation.mapToTransformedModel(state);
+		IntFunction<Integer> innerMapping;
+		if (inner instanceof BasicModelTransformation) {
+			innerMapping   = ((BasicModelTransformation<?,?>) inner).mapToTransformedModel;
+		} else {
+			innerMapping   = inner::mapToTransformedModel;
 		}
-		return mapping;
+		IntFunction<Integer> composed = new IntFunction<Integer>()
+		{
+			@Override
+			public Integer apply(int state) {
+				Integer intermediate = innerMapping.apply(state);
+				return (intermediate == null) ? null : mapToTransformedModel.apply(intermediate);
+			}
+		};
+		return new BasicModelTransformation<>(inner.getOriginalModel(), transformedModel, transformedStatesOfInterest, composed);
 	}
 }
