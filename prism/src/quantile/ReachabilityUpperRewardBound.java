@@ -10,9 +10,22 @@ import prism.ProbModelChecker;
 import prism.StateValuesMTBDD;
 
 public abstract class ReachabilityUpperRewardBound extends ReachabilityQuantile {
-
+	protected JDDNode zeroStates;
+	
 	public ReachabilityUpperRewardBound(QuantileCalculator qc, QuantileCalculatorContext qcc) {
 		super(qc, qcc);
+		
+		zeroStates = JDD.And(qcc.getModel().getReach().copy(),
+                             JDD.And(JDD.Not(qcc.getGoalStates()),
+                                     JDD.Not(qcc.getRemainStates())));
+
+	}
+
+	@Override
+	public void clear()
+	{
+		super.clear();
+		JDD.Deref(zeroStates);
 	}
 
 	@Override
@@ -23,9 +36,7 @@ public abstract class ReachabilityUpperRewardBound extends ReachabilityQuantile 
 	
 	@Override
 	public JDDNode getZeroStates(boolean forIterationZero) {
-		return JDD.And(qcc.getModel().getReach().copy(),
-	                   JDD.And(JDD.Not(qcc.getGoalStates()),
-	                           JDD.Not(qcc.getRemainStates())));
+		return zeroStates.copy();
 	}
 
 	@Override
