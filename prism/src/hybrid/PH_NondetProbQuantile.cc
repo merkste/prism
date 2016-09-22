@@ -764,33 +764,36 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 
 	PH_PrintToMainLog(env, "\nStarting iterations...\n");
 
-	iters = 0;
-	// check against thresholds (for i = 0)
-	PH_PrintToMainLog(env, "Checking thresholds for i=0... ");
-	start4 = util_cpu_time();
-	for (auto it = todo->begin(); it != todo->end(); ) {
-		int s = *it;
-		bool sDone = true;
-		for (double threshold : thresholds) {
-			if (solnQuantiles[threshold][s] != -1)
-				continue;
+	iters = -1;
+	if (!todo->empty()) {
+		iters = 0;
+		// check against thresholds (for i = 0)
+		PH_PrintToMainLog(env, "Checking thresholds for i=0... ");
+		start4 = util_cpu_time();
+		for (auto it = todo->begin(); it != todo->end(); ) {
+			int s = *it;
+			bool sDone = true;
+			for (double threshold : thresholds) {
+				if (solnQuantiles[threshold][s] != -1)
+					continue;
 
-			if (check_treshold(relOp, vBase->getValue(s), threshold)) {
-				solnQuantiles[threshold][s] = 0;
-				if (printResultsAsTheyHappen) {
-					PH_PrintToMainLog(env, "FYI: Results for threshold %g and state %d = 0\n", threshold, s);
+				if (check_treshold(relOp, vBase->getValue(s), threshold)) {
+					solnQuantiles[threshold][s] = 0;
+					if (printResultsAsTheyHappen) {
+						PH_PrintToMainLog(env, "FYI: Results for threshold %g and state %d = 0\n", threshold, s);
+					}
+				} else {
+					sDone = false;
 				}
+			}
+			if (sDone) {
+				it = todo->erase(it);
 			} else {
-				sDone = false;
+				++it;
 			}
 		}
-		if (sDone) {
-			it = todo->erase(it);
-		} else {
-			++it;
-		}
+		PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 	}
-	PH_PrintToMainLog(env, "%.1fs\n", (util_cpu_time() - start4) / 1000.0);
 
 	done = todo->empty();
 
@@ -1021,7 +1024,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	time_taken = (double)(stop - start1)/1000;
 	
 	// print iterations/timing info
-	iters++;  // we increase +1
+	iters++;  // we increase +1 because we are interested in the number of iterations
 	PH_PrintToMainLog(env, "Quantile iterations: %d iterations in %.2f seconds (average %.6f, setup %.2f)\n", iters, time_taken, time_for_iters/iters, time_for_setup);
 	PH_PrintToMainLog(env, "Quantile calculations finished for all states of interest in %d iterations.\n", iters);
 
