@@ -52,7 +52,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		if (support.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		final BasicModelExpressionTransformation<DTMC, DTMC> transformation = super.transform(model, expression, support);
+		final BasicModelExpressionTransformation<DTMC, ? extends DTMC> transformation = super.transform(model, expression, support);
 		return new ConditionalQuotientTransformation(transformation, probabilities);
 	}
 
