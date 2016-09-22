@@ -138,6 +138,9 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 	}
 
 	// FIXME ALG: similar code in ConditionalLTLTransformer, ConditionalNextTransformer
+	/**
+	 * Build Mapping terminal states in transformed model -> terminal states in original model
+	 */
 	public Map<Integer, Integer> buildTerminalLookup(final BitSet terminal, final ModelTransformation<?, ?> transformation)
 	{
 		final Map<Integer, Integer> terminalLookup = new HashMap<>();

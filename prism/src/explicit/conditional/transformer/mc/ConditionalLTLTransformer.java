@@ -60,6 +60,9 @@ public class ConditionalLTLTransformer extends PrismComponent
 	}
 
 	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalNextTransformer
+	/**
+	 * Build Mapping terminal states in transformed model -> terminal states in original model
+	 */
 	public Map<Integer, Integer> buildTerminalLookup(final LTLProduct<DTMC> product, final TerminalTransformation<DTMC, DTMC> transformation)
 	{
 		final Map<Integer, Integer> reachabilityTerminalLookup = transformation.getTerminalMapping();
