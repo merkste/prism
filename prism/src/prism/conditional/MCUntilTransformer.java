@@ -79,7 +79,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		ModelTransformation<ProbModel, ProbModel> pivotTransformation;
 		JDDNode liftedProbs;
 		if (deadlock) {
-			// pivots from remain and goal;
+			// pivots from remain and goal
 			JDDNode pivots = getPivots(model, conditionPath);
 			// deadlock in pivots
 			pivotTransformation = new MCDeadlockTransformation(model, pivots, statesOfInterest);
@@ -87,7 +87,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			// lift probs
 			liftedProbs = probs.copy();
 		} else {
-			// pivots from prob0 or prob1;
+			// pivots from prob1
 			JDDNode pivots = prob1;
 			// switch mode in pivots
 			pivotTransformation = new MCPivotTransformation(model, pivots, statesOfInterest, true);
@@ -135,6 +135,9 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}
 
+	/**
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
+	 */
 	public JDDNode getPivots(final ProbModel model, final Until until)
 	{
 		if (! until.isNegated()) {
@@ -162,7 +165,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			// can optimize non-negated unbounded simple until conditions only
 			return true;
 		}
-		final ExpressionTemporal conditionTmp = (ExpressionTemporal) condition;
+		final ExpressionTemporal conditionPath = (ExpressionTemporal) condition;
 
 		final Expression objective = expression.getObjective();
 		final Expression objectiveSubExpr;
@@ -178,7 +181,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		}
 		final ExpressionTemporal objectivePath = (ExpressionTemporal) objectiveSubExpr;
 
-		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionTmp.getOperand2());
+		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionPath.getOperand2());
 		Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(objectivePath.getOperand2());
 		if (conditionGoal != null && objectiveGoal != null) {
 			try {
