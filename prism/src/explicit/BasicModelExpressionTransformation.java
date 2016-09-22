@@ -13,14 +13,14 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 	public BasicModelExpressionTransformation(final ModelTransformation<? extends OM, ? extends TM> transformation, final Expression originalExpression, final Expression transformedExpression)
 	{
 		super(transformation);
-		this.originalExpression = originalExpression;
+		this.originalExpression    = originalExpression;
 		this.transformedExpression = transformedExpression;
 	}
 
 	public BasicModelExpressionTransformation(final ModelExpressionTransformation<? extends OM, ? extends TM> transformation)
 	{
 		super(transformation);
-		this.originalExpression = transformation.getOriginalExpression();
+		this.originalExpression    = transformation.getOriginalExpression();
 		this.transformedExpression = transformation.getTransformedExpression();
 	}
 
