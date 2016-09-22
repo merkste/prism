@@ -40,7 +40,7 @@ public interface ConditionalTransformer<M extends Model>
 		}
 	}
 
-	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+	ModelTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
 
 	PrismLog getLog();
