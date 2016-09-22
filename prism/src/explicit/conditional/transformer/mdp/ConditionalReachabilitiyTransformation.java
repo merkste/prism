@@ -1,6 +1,7 @@
 package explicit.conditional.transformer.mdp;
 
 import java.util.BitSet;
+import java.util.function.IntFunction;
 
 import explicit.BasicModelTransformation;
 import explicit.Model;
@@ -12,6 +13,13 @@ public class ConditionalReachabilitiyTransformation<OM extends Model, TM extends
 {
 	protected final BitSet goalStates;
 
+	public ConditionalReachabilitiyTransformation(final OM originalModel, final TM transformedModel, IntFunction<Integer> mapping, final BitSet goalStates, final BitSet transformedStatesOfInterest)
+	{
+		super(originalModel, transformedModel, transformedStatesOfInterest, mapping);
+		this.goalStates = goalStates;
+	}
+
+	@Deprecated
 	public ConditionalReachabilitiyTransformation(final OM originalModel, final TM transformedModel, final Integer[] mapping, final BitSet goalStates, final BitSet transformedStatesOfInterest)
 	{
 		super(originalModel, transformedModel, transformedStatesOfInterest, mapping);
