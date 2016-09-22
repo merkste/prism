@@ -29,7 +29,6 @@ import prism.StateValuesMTBDD;
 
 public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 {
-	private JDDNode statesWithZeroRewTrans;
 	private NondetModel modelZeroRewFragment;
 
 	public QuantileCalculatorSymbolic(PrismComponent parent, StateModelChecker mc, Model model, JDDNode stateRewards, JDDNode transRewards, JDDNode goalStates, JDDNode remainStates)
@@ -37,13 +36,11 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 	{
 		super(parent, mc, model, stateRewards, transRewards, goalStates, remainStates);
 
-		statesWithZeroRewTrans = qcc.getStatesWithZeroRewardTransitions();
-
 		JDDNode tr_0 = qcc.getTransitionsWithReward(0);
 		if (tr_0 != null && !tr_0.equals(JDD.ZERO)) {
 			if (model.getModelType() == ModelType.MDP) {
 				NondetModel mdp = (NondetModel)model;
-				NondetModelTransformation transform = 
+				NondetModelTransformation transform =
 					new NondetModelTransformation(mdp) {
 
 					@Override
@@ -499,8 +496,6 @@ public class QuantileCalculatorSymbolic extends QuantileCalculatorSymbolicBase
 	@Override
 	public void clear()
 	{
-		if (statesWithZeroRewTrans != null)
-			JDD.Deref(statesWithZeroRewTrans);
 		if (modelZeroRewFragment != null)
 			modelZeroRewFragment.clear();
 		super.clear();
