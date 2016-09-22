@@ -294,7 +294,7 @@ public class MDPDisjointUnion extends MDPView
 		return union;
 	}
 
-	// FIXME ALG: reconsider interface types
+	@Deprecated
 	public static MDP MDPUnion(final MDP model1, final MDP model2, final Map<Integer, Integer> identify)
 	{
 		MDPDisjointUnion union = new MDPDisjointUnion(model1, model2);

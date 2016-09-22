@@ -253,8 +253,8 @@ public class DTMCDisjointUnion extends DTMCView
 		return union;
 	}
 
-	// FIXME ALG: reconsider interface types
-	public static DTMCRestricted DTMCUnion(final DTMC model1, final DTMC model2, final Map<Integer, Integer> identify)
+	@Deprecated
+	public static DTMC DTMCUnion(final DTMC model1, final DTMC model2, final Map<Integer, Integer> identify)
 	{
 		final DTMCDisjointUnion union = new DTMCDisjointUnion(model1, model2);
 
