@@ -747,6 +747,7 @@ jboolean printResultsAsTheyHappen  // print results as they happen
 	time_taken = (double)(stop - start1)/1000;
 	
 	// print iterations/timing info
+	iters++;  // we increase +1 because we are interested in the number of iterations and we start with 0
 	PS_PrintToMainLog(env, "Quantile iterations: %d iterations in %.2f seconds (average %.6f, setup %.2f)\n", iters, time_taken, time_for_iters/iters, time_for_setup);
 	PS_PrintToMainLog(env, "Quantile calculations finished for all states of interest in %d iterations.\n", iters);
 
