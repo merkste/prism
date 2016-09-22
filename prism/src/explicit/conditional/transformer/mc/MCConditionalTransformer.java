@@ -37,14 +37,13 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer.Ba
 	// FIXME ALG: add test canHandle for objective independent transformations
 
 	@Override
-	public BasicModelExpressionTransformation<DTMC, DTMC> transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public BasicModelExpressionTransformation<DTMC, ? extends DTMC> transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		checkCanHandle(model, expression);
 
-		final ModelTransformation<DTMC, DTMC> transformation = transformModel(model, expression, statesOfInterest);
+		final ModelTransformation<DTMC, ? extends DTMC> transformation = transformModel(model, expression, statesOfInterest);
 		final Expression transformedExpression = transformExpression(expression);
-
 		return new BasicModelExpressionTransformation<DTMC, DTMC>(transformation, expression, transformedExpression);
 	}
 
@@ -53,6 +52,6 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer.Ba
 		return expression.getObjective();
 	}
 
-	protected abstract ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression,
+	protected abstract ModelTransformation<DTMC, ? extends DTMC> transformModel(final DTMC model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException;
 }
