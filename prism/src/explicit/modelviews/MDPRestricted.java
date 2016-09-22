@@ -373,7 +373,7 @@ public class MDPRestricted extends MDPView
 	{
 		final MDPRestricted restricted = new MDPRestricted(model, states, restriction);
 		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(states);
-		return new BasicModelTransformation<>(model, restricted, transformedStates, restricted.mappingToRestrictedModel);
+		return new BasicModelTransformation<>(model, restricted, transformedStates, state -> restricted.mappingToRestrictedModel[state]);
 	}
 
 	public static void main(final String[] args) throws PrismException
