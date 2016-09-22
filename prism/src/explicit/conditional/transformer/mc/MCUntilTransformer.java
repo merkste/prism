@@ -4,8 +4,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import common.BitSetTools;
+import common.iterable.FunctionalIterable;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -23,11 +25,16 @@ import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.TerminalTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
+import explicit.modelviews.DTMCEquiv;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.DTMCView;
+import explicit.modelviews.EquivalenceRelationInteger;
 
 public class MCUntilTransformer extends MCConditionalTransformer
 {
+	public static final boolean DONT_NORMALIZE = false;
+	public static final boolean RESTRICT       = true;
+
 	private ConditionalReachabilityTransformer transformer;
 
 	public MCUntilTransformer(final DTMCModelChecker modelChecker)
@@ -55,10 +62,14 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
+		return transformModelOld(model, expression, statesOfInterest);
+	}
+
+	protected ModelTransformation<DTMC, DTMC> transformModelOld(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+			throws PrismException
+	{
 		Expression condition = expression.getCondition();
 		final boolean absorbing = !requiresSecondMode(expression);
-
-
 
 		final Expression until = ExpressionInspector.normalizeExpression(condition);
 		final BitSet remain    = getRemainStates(model, until);
@@ -72,7 +83,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 
 		// 2. create transformed model
 		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
-		final DTMCView transformedModel;
+		final DTMC transformedModel;
 		if (absorbing) {
 			getLog().println("Mode 2 has " + 0 + " states");
 			// make terminal states absorbing
@@ -95,6 +106,49 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(mode1, union);
 		
 		return nested;
+	}
+
+	protected ModelTransformation<DTMC, ? extends DTMC> transformModelNew(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+			throws PrismException
+	{
+		Expression condition = expression.getCondition();
+		final boolean absorbing = !requiresSecondMode(expression);
+
+		final Expression until = ExpressionInspector.normalizeExpression(condition);
+		final BitSet remain    = getRemainStates(model, until);
+		final BitSet goal      = getGoalStates(model, until);
+		final boolean negated  = until instanceof ExpressionUnaryOp;
+		final boolean collapse = !absorbing;
+
+		// 1. create mode 1 == conditional part
+		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, remain, goal, negated, statesOfInterest, collapse);
+		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
+
+		// 2. create transformed model
+		final Map<Integer, Integer> terminalLookup = mode1.getTerminalMapping();
+		BasicModelTransformation<DTMC, ? extends DTMC> transformation;
+		if (absorbing) {
+			getLog().println("Mode 2 has " + 0 + " states");
+			// make terminal states absorbing
+			DTMCAlteredDistributions transformedModel = DTMCAlteredDistributions.trapStates(mode1.getTransformedModel(), BitSetTools.asBitSet(terminalLookup.keySet()));
+			transformation = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
+		} else {
+			// mode 2 == submodel reachable from terminal states
+			final DTMCRestricted mode2 = new DTMCRestricted(model, terminalLookup.values());
+			getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
+
+			DTMCDisjointUnion unionModel = new DTMCDisjointUnion(mode1.getTransformedModel(), mode2);
+			BasicModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), unionModel, mode1.getTransformedStatesOfInterest());
+
+			Function<Entry<Integer, Integer>, BitSet> asEqClass = pair -> BitSetTools.asBitSet(pair.getKey(), mode2.mapStateToRestrictedModel(pair.getValue()) + unionModel.offset);
+			FunctionalIterable<BitSet> identify = FunctionalIterable.extend(terminalLookup.entrySet()).map(asEqClass);
+
+			BasicModelTransformation<DTMC, ? extends DTMC> equiv = DTMCEquiv.transform(unionModel, new EquivalenceRelationInteger(identify), DONT_NORMALIZE, RESTRICT);
+
+			transformation = equiv.compose(union);
+		}
+		// sane, as long as mode 1 is already restricted
+		return transformation.compose(mode1);
 	}
 
 	protected BitSet getRemainStates(final DTMC model, final Expression expression) throws PrismException
