@@ -60,12 +60,6 @@ public class MCLTLTransformer extends MCConditionalTransformer
 		final BitSet goal = ltlTransformer.findAcceptingStates(ltlTransformation);
 		final BasicModelTransformation<DTMC, DTMC> untilTransformation = untilTransformer.transformModel(ltlTransformation.getProductModel(), goal);
 
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			final Integer ltlState = ltlMapping[state];
-			mapping[state] = (ltlState == null) ? null : untilTransformation.mapToTransformedModel(ltlState);
-		}
-
 		return new ModelTransformationNested<>(ltlTransformation, untilTransformation);
 	}
 }

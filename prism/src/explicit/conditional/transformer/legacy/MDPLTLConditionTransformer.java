@@ -134,9 +134,8 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 			mapping[modelState] = productState;
 		}
 
-		final BitSet goalStates = new BitSet();
-		goalStates.set(goalState);
-
-		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
+		final BitSet goalStates                  = BitSetTools.asBitSet(goalState);
+		final BitSet transformedStatesOfInterest = BitSetTools.asBitSet(resetState);
+		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, transformedStatesOfInterest);
 	}
 }

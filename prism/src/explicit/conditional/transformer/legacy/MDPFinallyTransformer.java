@@ -109,15 +109,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		addDiracChoice(transformedModel, goalState, goalState, "goal loop");
 		addDiracChoice(transformedModel, stopState, stopState, "stop loop");
 
-		final Integer[] mapping = new Integer[model.getNumStates()];
-		for (int state = 0; state < mapping.length; state++) {
-			mapping[state] = state;
-		}
-
-		final BitSet goalStates = new BitSet();
-		goalStates.set(goalState);
-
-		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, BitSetTools.asBitSet(resetState));
+		final BitSet goalStates                  = BitSetTools.asBitSet(goalState);
+		final BitSet transformedStatesOfInterest = BitSetTools.asBitSet(resetState);
+		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, state -> state, goalStates, transformedStatesOfInterest);
 	}
 
 	@Override
