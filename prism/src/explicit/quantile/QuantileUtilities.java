@@ -633,11 +633,10 @@ public class QuantileUtilities
 	private StateValues solveQuantitativeQuantile(RewardWrapper model, ExpressionQuantileProbNormalForm expressionQuantile, BitSet statesOfInterest) throws PrismException
 	{
 		getLog().println("Solving quantile using algorithm for quantitative probability thresholds.");
-		long timer = System.currentTimeMillis();
+		final long timer = System.currentTimeMillis();
 		final Context4ExpressionQuantileProb context;
 		context = generateSuitableContext(model, expressionQuantile, statesOfInterest);
 		getLog().println("\nTime for context generation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.");
-		timer = System.currentTimeMillis();
 		finiteQuantileStates = context.determineFiniteQuantileStates();
 		restrictToStatesOfInterest(context.getStatesOfInterest());
 		getLog().println("Time for precomputation: " + (System.currentTimeMillis() - timer) / 1000.0 + " seconds.\n");
