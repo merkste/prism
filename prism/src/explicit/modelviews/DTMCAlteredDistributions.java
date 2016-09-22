@@ -1,7 +1,8 @@
 package explicit.modelviews;
 
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -11,7 +12,6 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import common.BitSetTools;
-import common.functions.Relation;
 import common.iterable.ChainedIterator;
 import common.iterable.EmptyIterator;
 import common.iterable.FunctionalIterable;
@@ -29,10 +29,10 @@ import explicit.Distribution;
 
 public class DTMCAlteredDistributions extends DTMCView
 {
-	private static final Predicate<Entry<Integer, Double>> nonZero = Relation.GT(0.0).compose((Function<Entry<Integer, Double>, Double>) Entry::getValue);
+	public static final Predicate<Entry<Integer, Double>> NON_ZERO = trans -> trans.getValue() > 0.0;
 
-	private DTMC model;
-	private IntFunction<Iterator<Entry<Integer, Double>>> mapping;
+	protected DTMC model;
+	protected IntFunction<Iterator<Entry<Integer, Double>>> mapping;
 
 
 
@@ -146,7 +146,7 @@ public class DTMCAlteredDistributions extends DTMCView
 		if (transitions == null) {
 			return model.getTransitionsIterator(state);
 		}
-		return FunctionalIterator.extend(transitions).filter(nonZero);
+		return FunctionalIterator.extend(transitions).filter(NON_ZERO);
 	}
 
 
@@ -169,15 +169,37 @@ public class DTMCAlteredDistributions extends DTMCView
 	public static DTMCAlteredDistributions fixDeadlocks(final DTMC model)
 	{
 		final BitSet deadlockStates = BitSetTools.asBitSet(model.getDeadlockStates());
-		final DTMCAlteredDistributions fixed = addSelfLoops(model, deadlockStates);
+		final DTMCAlteredDistributions fixed = trapStates(model, deadlockStates);
 		fixed.deadlockStates = deadlockStates;
 		fixed.fixedDeadlocks = true;
 		return fixed;
 	}
 
+	@Deprecated
 	public static DTMCAlteredDistributions addSelfLoops(final DTMC model, final BitSet states)
 	{
-		final IntFunction<Iterator<Entry<Integer, Double>>> addLoops = new IntFunction<Iterator<Entry<Integer, Double>>>()
+		return trapStates(model, states);
+	}
+
+	public static DTMCAlteredDistributions deadlockStates(final DTMC model, final BitSet states)
+	{
+		final IntFunction<Iterator<Entry<Integer, Double>>> deadlocks = new IntFunction<Iterator<Entry<Integer, Double>>>()
+		{
+			@Override
+			public Iterator<Entry<Integer, Double>> apply(final int state)
+			{
+				if (states.get(state)) {
+					return Collections.emptyIterator();
+				}
+				return null;
+			}
+		};
+		return new DTMCAlteredDistributions(model, deadlocks);
+	}
+
+	public static DTMCAlteredDistributions trapStates(final DTMC model, final BitSet states)
+	{
+		final IntFunction<Iterator<Entry<Integer, Double>>> traps = new IntFunction<Iterator<Entry<Integer, Double>>>()
 		{
 			@Override
 			public Iterator<Entry<Integer, Double>> apply(final int state)
@@ -188,10 +210,11 @@ public class DTMCAlteredDistributions extends DTMCView
 				return null;
 			}
 		};
-		return new DTMCAlteredDistributions(model, addLoops);
+		return new DTMCAlteredDistributions(model, traps);
 	}
 
-	public static DTMCRestricted identifyStates(final DTMC model, final Iterable<BitSet> equivalenceClasses)
+	@Deprecated
+	public static DTMC identifyStates(final DTMC model, final Iterable<BitSet> equivalenceClasses)
 	{
 		final EquivalenceRelationInteger identify = new EquivalenceRelationInteger(equivalenceClasses);
 		final BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
@@ -228,7 +251,7 @@ public class DTMCAlteredDistributions extends DTMCView
 				}
 				final int representative = identify.getRepresentative(target);
 				final Double probability = transition.getValue();
-				return new AbstractMap.SimpleImmutableEntry<>(representative, probability);
+				return new SimpleImmutableEntry<>(representative, probability);
 			}
 		};
 		final IntFunction<Iterator<Entry<Integer, Double>>> redirectDistribution = new IntFunction<Iterator<Entry<Integer, Double>>>()
