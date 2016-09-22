@@ -71,4 +71,15 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	 * @return set of indices in the transformed model
 	 */
 	public BitSet mapToTransformedModel(BitSet states);
+
+	/**
+	 * Nest the argument (A>B) into the receiver (B>C) to build a transformation (A>C).
+	 *
+	 * @param inner inner (first) model transformation
+	 * @return
+	 */
+	default <M extends Model> ModelTransformationNested<M, OriginalModel, TransformedModel> nest(final ModelTransformation<M, ? extends OriginalModel> inner)
+	{
+		return new ModelTransformationNested<>(inner, this);
+	}
 }
