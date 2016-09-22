@@ -128,7 +128,7 @@ public class PrismSettings implements Observer
 	public static final String PRISM_LTL2DA_TOOL					= "prism.ltl2daTool";
 	public static final String PRISM_LTL2DA_SYNTAX					= "prism.ltl2daSyntax";
 
-	public static final	String PRISM_JDD_SANITY_CHECKS					= "prism.ddsanity";
+	public static final	String PRISM_JDD_SANITY_CHECKS				= "prism.ddsanity";
 
 	public static final	String PRISM_PARAM_ENABLED					= "prism.param.enabled";
 	public static final	String PRISM_PARAM_PRECISION				= "prism.param.precision";
@@ -147,11 +147,13 @@ public class PrismSettings implements Observer
 	public static final String PRISM_FAU_ARRAYTHRESHOLD				= "prism.fau.arraythreshold";
 
 	//Conditional Model Checking
-	public static final String CONDITIONAL_USE_VIRTUAL_MODELS = "conditional.use.virtualModels";
-	public static final String CONDITIONAL_USE_LEGACY_METHODS = "conditional.use.legacyMethods";
-	public static final String CONDITIONAL_USE_RESET_FOR_MC   = "conditional.use.resetForMC";
-	public static final String CONDITIONAL_PATTERNS_SCALE     = "conditional.patterns.scale";
-	public static final String CONDITIONAL_PATTERNS_RESET     = "conditional.patterns.reset";
+	public static final String CONDITIONAL_USE_VIRTUAL_MODELS    = "conditional.use.virtualModels";
+	public static final String CONDITIONAL_USE_TACAS14_PROTOTYPE = "conditional.use.tacas14Impl";
+	public static final String CONDITIONAL_USE_VIRTUAL_PROTOTYPE = "conditional.use.costlyImpl";
+	public static final String CONDITIONAL_USE_RESET_FOR_MC      = "conditional.use.resetForMarkovChains";
+	public static final String CONDITIONAL_SCALE_LTL_MINIMIZE    = "conditional.scale.ltl.minimize";
+	public static final String CONDITIONAL_PATTERNS_SCALE        = "conditional.patterns.scale";
+	public static final String CONDITIONAL_PATTERNS_RESET        = "conditional.patterns.reset";
 
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
@@ -403,10 +405,14 @@ public class PrismSettings implements Observer
 			// CONDITIONAL MODEL CHECKING
 			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,		"Use virtual models for computation",	"4.2",			new Boolean(false),		"",
 																		"Compute conditional probabilities and expectations in virtual models." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_LEGACY_METHODS,		"Use legacy methods",	"4.2",					new Boolean(false),		"",
-																		"Use legacy implementation of methods for conditional probabilities and expectations." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_TACAS14_PROTOTYPE,	"Use TACAS'14 prototype implementation",	"4.2",		new Boolean(false),		"",
+																		"Use TACAS'14 prototype implementation for conditional probabilities and expectations." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_PROTOTYPE,	"Use virtual models prototype implementation",	"4.2",	new Boolean(false),		"",
+																		"Use prototype implemention based on virtual models for conditional probabilities and expectations." },
 			{ BOOLEAN_TYPE,		CONDITIONAL_USE_RESET_FOR_MC,		"Use reset method for Markov Chains",	"4.2",			new Boolean(false),		"",
 																		"Use reset method for DTMCs and CTMCs instead scale method." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_SCALE_LTL_MINIMIZE,		"Scale-ltl: minimize product",	"4.2",		new Boolean(false),		"",
+																		"Build DTMC quotient to identify prob1 product states." },
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_SCALE,			"Set patterns for scale method",	"4.2",			"all",		"",
 																		"Use the first applicable pattern for the scale method from a list of: " + DtmcTransformerType.getSpecificationHelp()},
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_RESET,			"Set patterns for reset method",	"4.2",			"all",		"",
@@ -1669,11 +1675,17 @@ public class PrismSettings implements Observer
 		else if (sw.equals("usevirtualmodels")) {
 			set(CONDITIONAL_USE_VIRTUAL_MODELS, true);
 		}
-		else if (sw.equals("uselegacymethods")) {
-			set(CONDITIONAL_USE_LEGACY_METHODS, true);
+		else if (sw.equals("usetacas14prototype")) {
+			set(CONDITIONAL_USE_TACAS14_PROTOTYPE, true);
+		}
+		else if (sw.equals("usevirtualprototype")) {
+			set(CONDITIONAL_USE_VIRTUAL_PROTOTYPE, true);
 		}
 		else if (sw.equals("useresetformc")) {
 			set(CONDITIONAL_USE_RESET_FOR_MC, true);
+		}
+		else if (sw.equals("scaleltlminimize")) {
+			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
 		}
 		else if (sw.equals("patternsscale")) {
 			if (i < args.length - 1) {
@@ -1879,8 +1891,10 @@ public class PrismSettings implements Observer
 		mainLog.println();
 		mainLog.println("CONDITIONAL MODEL CHECKING OPTIONS:");
 		mainLog.println("-usevirtualmodels .............. Use virtual models for computation");
-		mainLog.println("-uselegacymethods .............. Use legacy methods");
+		mainLog.println("-usetacas14prototype ........... Use TACAS'14 prototype implementations");
+		mainLog.println("-usevirtualprototype ........... Use virtual models prototype implementation");
 		mainLog.println("-useresetformc ................. Use reset method for Markov Chains");
+		mainLog.println("-scaleltlminimize .............. Minimize product model in scale-ltl");
 		mainLog.println("-patternsscale ................. Set patterns for scale method: " + DtmcTransformerType.getSpecificationHelp());
 		mainLog.println("-patternsreset ................. Set patterns for reset method: " + MdpTransformerType.getSpecificationHelp());
 		mainLog.println();

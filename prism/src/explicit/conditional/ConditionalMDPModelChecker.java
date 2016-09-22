@@ -169,7 +169,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 
 		ConditionalTransformer<MDP> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_LEGACY_METHODS)) {
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
@@ -187,7 +187,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 				if (transformer.canHandle(model, expression)) {
 					return transformer;
 				}
-				;
 			}
 		} else {
 			for (MdpTransformerType type : types) {
