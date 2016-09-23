@@ -164,6 +164,9 @@ prism/bin/prism prism-examples/dice/two_dice.nm -pf 'quantile( min r, Pmax>0.5 [
 "What is the minimal number of coin flips that is needed for the best scheduler to ensure that process 1
  is done (s=7) with probability at least 0.5"
 
+The implementation of the symbolic quantile engines has been improved since the TACAS'16 version as detailed in the
+article. You can still access the previous version using the -quantileTACAS16 flag.
+
 
 Expectations for co-safety LTL
 ------------------------------
