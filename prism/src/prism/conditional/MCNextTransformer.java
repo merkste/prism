@@ -10,11 +10,9 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
-import prism.Model;
 import prism.ModelChecker;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
-import prism.NondetModel;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -32,15 +30,6 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public boolean canHandle(Model model, ExpressionConditional expression)
-	{
-		if (!(model instanceof ProbModel) || (model instanceof NondetModel)) {
-			return false;
-		}
-		final ProbModel mc = (ProbModel) model;
-		return canHandleCondition(mc, expression) && canHandleObjective(mc, expression);
-	}
-
 	public boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
@@ -69,6 +58,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 		return true;
 	}
 
+	@Override
 	public boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
@@ -92,7 +82,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 //		new StateValuesMTBDD(statesOfInterest.copy(), model).print(prism.getLog());
 
 		final Expression next = ExpressionInspector.normalizeExpression(condition);
-		final JDDNode goal = getGoalStates(model, next);
+		final JDDNode goal    = getGoalStates(model, next);
 		final boolean negated = next instanceof ExpressionUnaryOp;
 
 		final JDDNode probs = computeProbabilities(model, goal, negated);
@@ -109,8 +99,8 @@ public class MCNextTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), probs.copy());
 //		new StateValuesMTBDD(probs.copy(), model).print(prism.getLog());
 
-		// pivots from prob0 or prob1;
-		JDDNode pivots = negated ? JDD.Not(goal) : goal;
+		JDDNode pivots = getPivotStates(model, goal, negated);
+		JDD.Deref(goal);
 		// switch mode in pivots
 		ModelTransformation<ProbModel, ProbModel> pivotTransformation = new MCPivotTransformation(model, pivots, statesOfInterest, false);
 
@@ -156,19 +146,20 @@ public class MCNextTransformer extends MCConditionalTransformer
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}
 
-	public JDDNode getPivots(final ProbModel model, final JDDNode remain, final JDDNode goal, final boolean negated)
+	/**
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
+	 */
+	public JDDNode getPivotStates(final ProbModel model, final JDDNode goal, final boolean negated)
 	{
-		if (!negated) {
-			// pivots = goal
+		if (! negated) {
 			return goal.copy();
 		}
-		// pivots = ! (remain | goal)
-		return JDD.Not(JDD.Or(remain.copy(), goal.copy()));
+		return JDD.Not(goal.copy());
 	}
 
 	protected JDDNode getGoalStates(final ProbModel model, final Expression expression) throws PrismException
 	{
-		final ExpressionTemporal next = getExpressionTemporal(expression);
+		ExpressionTemporal next = getExpressionTemporal(expression);
 		return checkExpression(model, next.getOperand2());
 	}
 
