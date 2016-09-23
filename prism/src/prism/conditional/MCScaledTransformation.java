@@ -17,11 +17,12 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	private Prism prism;
 
 	boolean debug = false;
-	
+
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>probReachGoal, statesOfInterest</i> ]
 	 */
-	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode probReachGoal, final JDDNode statesOfInterest) throws PrismException {
+	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode probReachGoal, final JDDNode statesOfInterest) throws PrismException
+	{
 		this.originalModel = originalModel;
 		this.prism = prism;
 
@@ -50,32 +51,41 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		// P'''(s,v) = 0 for P(s, reachGoal) = 0 and P''(s,v) otherwise
 		final JDDNode newTrans = JDD.Apply(JDD.TIMES, newTransScaled, reachGoal01.copy());
 
-		// start'(s) = start(s) & P(s, reachGoal) > 0
-		final JDDNode newStart = JDD.And(originalModel.getStart().copy(), reachGoal01.copy());
+		// start'(s) = statesOfInterest(s) && P(s, reachGoal) > 0
+		final JDDNode newStart = JDD.And(statesOfInterest, reachGoal01);
 
 		ProbModelTransformation scalingTransformation = 
-		new ProbModelTransformation(originalModel) {
+		new ProbModelTransformation(originalModel)
+		{
 			@Override
-			public int getExtraStateVariableCount() {return 0;}
-			
-			@Override
-			public JDDNode getTransformedTrans() {return newTrans.copy();}
+			public void clear()
+			{
+				super.clear();
+				JDD.Deref(newTrans, newStart);
+			}
 
 			@Override
-			public JDDNode getTransformedStart() {return newStart.copy();}
+			public int getExtraStateVariableCount()
+			{
+				return 0;
+			}
+
+			@Override
+			public JDDNode getTransformedTrans()
+			{
+				return newTrans.copy();
+			}
+
+			@Override
+			public JDDNode getTransformedStart()
+			{
+				return newStart.copy();
+			}
 		};
 
 		// store scale model
 		scaledModel = originalModel.getTransformed(scalingTransformation);
-		/*
-		try {
-			originalModel.exportToFile(Prism.EXPORT_DOT, true, new File("originalModel.dot"));
-			scaledModel.exportToFile(Prism.EXPORT_DOT, true, new File("scaledModel.dot"));
-		} catch (FileNotFoundException e) {}
-		*/
-		validStates = JDD.And(reachGoal01, statesOfInterest);
-
-		JDD.Deref(newTrans, newStart);
+		validStates = newStart.copy();
 		scalingTransformation.clear();
 	}
 
