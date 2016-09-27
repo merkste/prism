@@ -304,9 +304,9 @@ public class PrismSettings implements Observer
 			{ BOOLEAN_TYPE,		PRISM_NO_DA_SIMPLIFY,				"Do not simplify deterministic automata",			"4.3",			false,									"",
 																			"Do not attempt to simplify deterministic automata, acceptance conditions (for debugging)." },
 
-			{ BOOLEAN_TYPE,		PRISM_EXPLODE_BITS,						"Explode variable storage into individual bits",					"4.3",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		PRISM_EXPLODE_BITS,						"Explode variable storage into individual bits",					"4.3",			false,															"",
 																			"Explode variable storage into individual bits" },
-			{ BOOLEAN_TYPE,		PRISM_GLOBALIZE_VARIABLES,				"Globalize variables",					"4.3",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		PRISM_GLOBALIZE_VARIABLES,				"Globalize variables",					"4.3",			false,															"",
 																			"Globalize variables" },
 																			
 			// MULTI-OBJECTIVE MODEL CHECKING OPTIONS:
@@ -345,7 +345,7 @@ public class PrismSettings implements Observer
 																			"Number of extra DD state variables preallocated for use in model transformation." },
 			{ INTEGER_TYPE,		PRISM_DD_EXTRA_ACTION_VARS,				"Extra DD action var allocation",		"4.3",			20,														"",
 																			"Number of extra DD action variables preallocated for use in model transformation." },
-			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
+			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	false,			"",
 																		"Perform reordering when building the model." },
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
 																		"Comma-separated options for reordering (beforereach, noconstraints, optimizetrans, converge)." },
