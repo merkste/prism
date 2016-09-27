@@ -339,7 +339,7 @@ public class VarList
 		}
 		// Boolean type
 		else if (type instanceof TypeBool) {
-			return new Boolean(val != 0);
+			return val != 0;
 		}
 		// Anything else
 		return null;

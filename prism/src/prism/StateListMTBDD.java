@@ -348,7 +348,7 @@ public class StateListMTBDD implements StateList
 			if (varList.getType(i) instanceof TypeInt) {
 				o = v;
 			} else {
-				o = new Boolean(v == 1);
+				o = v == 1;
 			}
 			values.addValue(varList.getName(i), o);
 		}
