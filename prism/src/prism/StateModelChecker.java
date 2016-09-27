@@ -1165,7 +1165,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute min
 			d = vals.minOverBDD(ddFilter);
 			// Store as object/vector
-			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : new Double(d);
+			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : d;
 			resVals = new StateValuesMTBDD(JDD.Constant(d), model);
 			// Create explanation of result and print some details to log
 			resultExpl = "Minimum value over " + filterStatesString;
@@ -1179,7 +1179,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute max
 			d = vals.maxOverBDD(ddFilter);
 			// Store as object/vector
-			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : new Double(d);
+			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : d;
 			resVals = new StateValuesMTBDD(JDD.Constant(d), model);
 			// Create explanation of result and print some details to log
 			resultExpl = "Maximum value over " + filterStatesString;
@@ -1193,7 +1193,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute/display min
 			d = vals.minOverBDD(ddFilter);
 			mainLog.print("\nMinimum value over " + filterStatesString + ": ");
-			mainLog.println((expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : new Double(d));
+			mainLog.println((expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : d);
 			// Find states that (are close to) selected value
 			ddMatch = vals.getBDDFromCloseValue(d, prism.getTermCritParam(), prism.getTermCrit() == Prism.ABSOLUTE);
 			JDD.Ref(ddFilter);
@@ -1209,7 +1209,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute/display max
 			d = vals.maxOverBDD(ddFilter);
 			mainLog.print("\nMaximum value over " + filterStatesString + ": ");
-			mainLog.println((expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : new Double(d));
+			mainLog.println((expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : d);
 			// Find states that (are close to) selected value
 			ddMatch = vals.getBDDFromCloseValue(d, prism.getTermCritParam(), prism.getTermCrit() == Prism.ABSOLUTE);
 			JDD.Ref(ddFilter);
@@ -1236,7 +1236,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute sum
 			d = vals.sumOverBDD(ddFilter);
 			// Store as object/vector (note crazy Object cast to avoid Integer->int auto conversion)
-			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : new Double(d);
+			resObj = (expr.getType() instanceof TypeInt) ? Integer.valueOf((int) d) : d;
 			resVals = new StateValuesMTBDD(JDD.Constant(d), model);
 			// Create explanation of result and print some details to log
 			resultExpl = "Sum over " + filterStatesString;
@@ -1246,7 +1246,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			// Compute average
 			d = vals.sumOverBDD(ddFilter) / JDD.GetNumMinterms(ddFilter, allDDRowVars.n());
 			// Store as object/vector
-			resObj = new Double(d);
+			resObj = d;
 			resVals = new StateValuesMTBDD(JDD.Constant(d), model);
 			// Create explanation of result and print some details to log
 			resultExpl = "Average over " + filterStatesString;
@@ -1259,7 +1259,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			if (expr.getType() instanceof TypeInt) {
 				resObj = Integer.valueOf((int) d);
 			} else if (expr.getType() instanceof TypeDouble) {
-				resObj = new Double(d);
+				resObj = d;
 			} else {
 				resObj = d > 0;
 			}
@@ -1371,7 +1371,7 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 				if (expr.getType() instanceof TypeInt) {
 					resObj = Integer.valueOf((int) d);
 				} else if (expr.getType() instanceof TypeDouble) {
-					resObj = new Double(d);
+					resObj = d;
 				} else if (expr.getType() instanceof TypeBool) {
 					resObj = d > 0;
 				} else {

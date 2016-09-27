@@ -227,7 +227,7 @@ public class PTAModelChecker extends PrismComponent
 		prob = computeProbabilisticReachability(targetLocs, min);
 
 		// Return result
-		return new Result(new Double(prob));
+		return new Result(prob);
 	}
 
 	/**

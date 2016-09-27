@@ -1442,7 +1442,7 @@ public class StateValues implements StateVector
 				if (valuesD[i] < minD)
 					minD = valuesD[i];
 			}
-			return new Double(minD);
+			return minD;
 		}
 		throw new PrismException("Can't take min over a vector of type " + type);
 	}
@@ -1465,7 +1465,7 @@ public class StateValues implements StateVector
 				if (valuesD[i] > maxD)
 					maxD = valuesD[i];
 			}
-			return new Double(maxD);
+			return maxD;
 		}
 		throw new PrismException("Can't take max over a vector of type " + type);
 	}
@@ -1532,7 +1532,7 @@ public class StateValues implements StateVector
 			for (int i = filter.nextSetBit(0); i >= 0; i = filter.nextSetBit(i + 1)) {
 				sumD += valuesD[i];
 			}
-			return new Double(sumD);
+			return sumD;
 		}
 		throw new PrismException("Can't take sum over a vector of type " + type);
 	}
