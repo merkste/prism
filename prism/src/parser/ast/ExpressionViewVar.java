@@ -130,7 +130,7 @@ public class ExpressionViewVar extends Expression
 			value += bit;
 		}
 
-		return new Integer(value + low.evaluateInt(ec));
+		return value + low.evaluateInt(ec);
 	}
 
 	@Override

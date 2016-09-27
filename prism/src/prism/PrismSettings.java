@@ -341,9 +341,9 @@ public class PrismSettings implements Observer
 			{ DOUBLE_TYPE,		PRISM_CUDD_MAX_GROWTH,					"CUDD reordering max growth",							"4.3",			new Double(1.2),														"0.0,",																						
 																		"The max growth factor for CUDD reordering (e.g. 1.2 = maximal growth of 20%)." },
 
-			{ INTEGER_TYPE,		PRISM_DD_EXTRA_STATE_VARS,				"Extra DD state var allocation",		"4.3",			new Integer(20),														"",
+			{ INTEGER_TYPE,		PRISM_DD_EXTRA_STATE_VARS,				"Extra DD state var allocation",		"4.3",			20,														"",
 																			"Number of extra DD state variables preallocated for use in model transformation." },
-			{ INTEGER_TYPE,		PRISM_DD_EXTRA_ACTION_VARS,				"Extra DD action var allocation",		"4.3",			new Integer(20),														"",
+			{ INTEGER_TYPE,		PRISM_DD_EXTRA_ACTION_VARS,				"Extra DD action var allocation",		"4.3",			20,														"",
 																			"Number of extra DD action variables preallocated for use in model transformation." },
 			{ BOOLEAN_TYPE,		PRISM_DO_REORDER,						"MTBDD reordering",	"4.2.1",	new Boolean(false),			"",
 																		"Perform reordering when building the model." },
