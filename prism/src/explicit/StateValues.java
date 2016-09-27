@@ -1435,7 +1435,7 @@ public class StateValues implements StateVector
 				if (valuesI[i] < minI)
 					minI = valuesI[i];
 			}
-			return new Integer(minI);
+			return minI;
 		} else if (type instanceof TypeDouble) {
 			double minD = Double.POSITIVE_INFINITY;
 			for (int i = filter.nextSetBit(0); i >= 0; i = filter.nextSetBit(i + 1)) {
@@ -1458,7 +1458,7 @@ public class StateValues implements StateVector
 				if (valuesI[i] > maxI)
 					maxI = valuesI[i];
 			}
-			return new Integer(maxI);
+			return maxI;
 		} else if (type instanceof TypeDouble) {
 			double maxD = Double.NEGATIVE_INFINITY;
 			for (int i = filter.nextSetBit(0); i >= 0; i = filter.nextSetBit(i + 1)) {
@@ -1511,7 +1511,7 @@ public class StateValues implements StateVector
 				if (valuesB.get(i))
 					count++;
 			}
-			return new Integer(count);
+			return count;
 		}
 		throw new PrismException("Can't take count over a vector of type " + type);
 	}
@@ -1526,7 +1526,7 @@ public class StateValues implements StateVector
 			for (int i = filter.nextSetBit(0); i >= 0; i = filter.nextSetBit(i + 1)) {
 				sumI += valuesI[i];
 			}
-			return new Integer(sumI);
+			return sumI;
 		} else if (type instanceof TypeDouble) {
 			double sumD = 0.0;
 			for (int i = filter.nextSetBit(0); i >= 0; i = filter.nextSetBit(i + 1)) {

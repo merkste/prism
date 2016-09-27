@@ -39,7 +39,6 @@ import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
 import prism.ModelInfo;
-import prism.PrismException;
 import prism.PrismLangException;
 
 /**
@@ -448,23 +447,11 @@ public class Values //implements Comparable
 	@Override
 	public Object clone()
 	{
-		Values res;
-		int i, n;
-		String s;
-		Object o;
-		
-		res = new Values();
+		Values res = new Values();
 		res.modelInfo = modelInfo;
-		n = getNumValues();
-		for (i = 0; i < n; i++) {
-			s = getName(i);
-			o = getValue(i);
-			if (o instanceof Integer) o = new Integer(((Integer)o).intValue());
-			else if (o instanceof Double) o = new Double(((Double)o).doubleValue());
-			else o = new Boolean(((Boolean)o).booleanValue());
-			res.addValue(s, o);
+		for (int i = 0, n = getNumValues(); i < n; i++) {
+			res.addValue(getName(i), getValue(i));
 		}
-		
 		return res;
 	}
 
