@@ -257,7 +257,7 @@ public class PrismSettings implements Observer
 																			"Which engine (hybrid, sparse, MTBDD, explicit) should be used for model checking." },
 			{ BOOLEAN_TYPE,		PRISM_EXACT_ENABLED,					"Do exact model checking",			"4.2.1",			false,															"",
 																			"Perform exact model checking." },
-			{ BOOLEAN_TYPE,		PRISM_STORM_ENABLED,						"Do model checking via Storm",			"4.3.1",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		PRISM_STORM_ENABLED,						"Do model checking via Storm",			"4.3.1",			false,															"",
 																			"Model checking via Storm." },
 			{ CHOICE_TYPE,		PRISM_PTA_METHOD,						"PTA model checking method",			"3.3",			"Stochastic games",																	"Digital clocks,Stochastic games,Backwards reachability",																
 																			"Which method to use for model checking of PTAs." },
@@ -283,9 +283,9 @@ public class PrismSettings implements Observer
 																			"Path to the Storm executable." },
 			{ STRING_TYPE,		PRISM_STORM_OPTIONS,					"Additional options for Storm",			"4.3.1",			"",															"",
 																			"Additional options for Storm." },
-			{ BOOLEAN_TYPE,		PRISM_STORM_VERBOSE,					"Verbose output of the Storm execution",			"4.3.1",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		PRISM_STORM_VERBOSE,					"Verbose output of the Storm execution",			"4.3.1",			false,															"",
 																			"Verbose output of the Storm execution." },
-			{ BOOLEAN_TYPE,		PRISM_STORM_DEBUG,						"Storm invocation debugging",			"4.3.1",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		PRISM_STORM_DEBUG,						"Storm invocation debugging",			"4.3.1",			false,															"",
 																			"Increase verbosity for Storm invocation debugging." },
 
 			// MODEL CHECKING OPTIONS:
