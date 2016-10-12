@@ -2631,8 +2631,8 @@ public class PrismParser implements PrismParserConstants {
     case REG_DOUBLE:
       jj_consume_token(REG_DOUBLE);
                 try {
-                        double d = Double.parseDouble(getToken(0).image);
-                        ret = new ExpressionLiteral(TypeDouble.getInstance(), new Double(d), getToken(0).image);
+                        Double d = Double.valueOf(getToken(0).image);
+                        ret = new ExpressionLiteral(TypeDouble.getInstance(), d, getToken(0).image);
                 } catch (NumberFormatException e) {
                         // Need to catch this because some matches for regexp REG_DOUBLE
                         // may not be valid doubles.
@@ -2642,11 +2642,11 @@ public class PrismParser implements PrismParserConstants {
       break;
     case TRUE:
       jj_consume_token(TRUE);
-                 ret = new ExpressionLiteral(TypeBool.getInstance(), new Boolean(true));
+                 ret = new ExpressionLiteral(TypeBool.getInstance(), Boolean.TRUE);
       break;
     case FALSE:
       jj_consume_token(FALSE);
-                  ret = new ExpressionLiteral(TypeBool.getInstance(), new Boolean(false));
+                  ret = new ExpressionLiteral(TypeBool.getInstance(), Boolean.FALSE);
       break;
     default:
       jj_la1[75] = jj_gen;
