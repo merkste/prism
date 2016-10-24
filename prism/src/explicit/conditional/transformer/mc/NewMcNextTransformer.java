@@ -72,20 +72,23 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 		BitSet goal     = getGoalStates(model, next);
 		boolean negated = Expression.isNot(next);
 
-		double[] probs                     = computeNextProbs(model, goal, negated);
-		BitSet support                     = BitSetTools.asBitSet(new Interval(model.getNumStates()).filter((int state) -> probs[state] > 0.0));
+		int numStates = model.getNumStates();
+		final Interval states = new Interval(numStates);
+		double[] originProbs               = computeNextProbs(model, goal, negated);
+		double[] targetProbs               = states.map((int s) -> goal.get(s) ? 1.0 : 0.0).collect(new double[numStates]);
+		BitSet support                     = BitSetTools.asBitSet(states.filter((int state) -> originProbs[state] > 0.0));
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(statesOfInterest, support);
 		if (transformedStatesOfInterest.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 
 		// Switch in pivot states to copy of model
-		BitSet pivotStates                                          = getPivotStates(model, goal, negated);
+		BitSet pivotStates                                     = getPivotStates(model, goal, negated);
 		BasicModelTransformation<DTMC, ? extends DTMC> pivoted = McPivotTransformation.transform(model, pivotStates);
 		pivoted.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Scale probabilities
-		BasicModelTransformation<DTMC, ? extends DTMC> scaled = McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+		BasicModelTransformation<DTMC, ? extends DTMC> scaled = McScaledTransformation.transform(pivoted.getTransformedModel(), originProbs, targetProbs);
 		scaled.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Restrict to reachable states
@@ -93,7 +96,7 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 		BitSet restrictPrePivot                                    = transformedStatesOfInterest;
 		BitSet restrictAndPivot                                    = BitSetTools.intersect(reachability.computeSucc(restrictPrePivot), pivotStates);
 		BitSet restrictSuccPivot                                   = reachability.computeSuccStar(restrictAndPivot);
-		BitSet restrict                                            = BitSetTools.union(restrictPrePivot, BitSetTools.shiftUp(restrictSuccPivot, model.getNumStates()));
+		BitSet restrict                                            = BitSetTools.union(restrictPrePivot, BitSetTools.shiftUp(restrictSuccPivot, numStates));
 		BasicModelTransformation<DTMC, DTMCRestricted> restricted  = DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		restricted.setTransformedStatesOfInterest(restricted.mapToTransformedModel(transformedStatesOfInterest));
 

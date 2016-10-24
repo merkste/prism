@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.IntPredicate;
 
 import common.functions.Predicate;
 import common.iterable.FunctionalIterator;
@@ -18,32 +17,41 @@ import explicit.modelviews.DTMCAlteredDistributions;
 
 public class McScaledTransformation
 {
-	public static BasicModelTransformation<DTMC,DTMCAlteredDistributions> transform(DTMC model, double[] probabilities)
+	public static BasicModelTransformation<DTMC,DTMCAlteredDistributions> transform(DTMC model, double[] originProbs)
 	{
-		ScaleDistribution scaleDistribution = new ScaleDistribution(model, probabilities);
+		return transform(model, originProbs, originProbs);
+	}
+
+	public static BasicModelTransformation<DTMC,DTMCAlteredDistributions> transform(DTMC model, double[] originProbs, double[] targetProbs)
+	{
+		ScaleDistribution scaleDistribution = new ScaleDistribution(model, originProbs, targetProbs);
 		return new BasicModelTransformation<>(model, new DTMCAlteredDistributions(model, scaleDistribution));
 	}
 
 	public static class ScaleDistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
 	{
 		protected final DTMC model;
-		protected final double[] probabilities;
-		protected final IntPredicate inSupport;
+		protected final double[] originProbs;
+		protected final double[] targetProbs;
 		protected Predicate<Entry<Integer, Double>> toSupport;
 
-		private ScaleDistribution(final DTMC model, final double[] probs)
+		private ScaleDistribution(final DTMC model, final double[] originProbs)
 		{
-			this.model         = model;
-			this.probabilities = probs;
-			this.inSupport     = state -> state > probs.length || probs[state] > 0.0;
-			this.toSupport     = // trans -> {int state = trans.getKey(); return state > probs.length || probs[state] > 0.0;};
-			                     trans -> inSupport.test(trans.getKey());
+			this(model, originProbs, originProbs);
+		}
+
+		private ScaleDistribution(final DTMC model, final double[] originProbs, double[] targetProbs)
+		{
+			this.model       = model;
+			this.originProbs = originProbs;
+			this.targetProbs = targetProbs;
+			this.toSupport   = trans -> {int state = trans.getKey(); return state > targetProbs.length || targetProbs[state] > 0.0;};
 		}
 
 		@Override
 		public Iterator<Entry<Integer, Double>> apply(final int state)
 		{
-			double originProbability = state < probabilities.length ? probabilities[state] : 1.0;
+			double originProbability = state < originProbs.length ? originProbs[state] : 1.0;
 			if (originProbability == 1.0) {
 				// do not scale if prob == 1
 				return null;
@@ -53,20 +61,20 @@ public class McScaledTransformation
 				return Collections.emptyIterator();
 			}
 
-			Function<Entry<Integer, Double>, Entry<Integer, Double>> scale = new ScaleTransition(probabilities, originProbability);
+			Function<Entry<Integer, Double>, Entry<Integer, Double>> scale = new ScaleTransition(targetProbs, 1.0 / originProbability);
 			return FunctionalIterator.extend(model.getTransitionsIterator(state)).filter(toSupport).map(scale);
 		}
 	}
 
 	public static class ScaleTransition implements Function<Entry<Integer, Double>, Entry<Integer, Double>>
 	{
-		protected final double[] probabilities;
+		protected final double[] targetProbs;
 		protected final double originFactor;
 
-		public ScaleTransition(double[] probabilities, double originProbability)
+		public ScaleTransition(double[] targetProbs, double originFactor)
 		{
-			this.probabilities = probabilities;
-			this.originFactor  = 1.0 / originProbability;
+			this.targetProbs  = targetProbs;
+			this.originFactor = originFactor;
 		}
 
 		@Override
@@ -74,7 +82,7 @@ public class McScaledTransformation
 		{
 			int target           = transition.getKey();
 			double probability   = transition.getValue();
-			double scalingFactor = (target < probabilities.length) ? probabilities[target] * originFactor : originFactor;
+			double scalingFactor = (target < targetProbs.length) ? targetProbs[target] * originFactor : originFactor;
 			return new SimpleImmutableEntry<>(target, probability * scalingFactor);
 		}
 	}

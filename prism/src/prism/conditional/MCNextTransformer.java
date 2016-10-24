@@ -25,7 +25,8 @@ import jdd.JDDNode;
 
 public class MCNextTransformer extends MCConditionalTransformer
 {
-	public MCNextTransformer(ProbModelChecker modelChecker, Prism prism) {
+	public MCNextTransformer(ProbModelChecker modelChecker, Prism prism)
+	{
 		super(modelChecker, prism);
 	}
 
@@ -85,9 +86,10 @@ public class MCNextTransformer extends MCConditionalTransformer
 		final JDDNode goal    = getGoalStates(model, next);
 		final boolean negated = next instanceof ExpressionUnaryOp;
 
-		final JDDNode probs = computeProbabilities(model, goal, negated);
+		final JDDNode originProbs = computeProbabilities(model, goal, negated);
+		final JDDNode targetProbs = goal.copy();
 
-		final JDDNode support = JDD.Apply(JDD.GREATERTHAN, probs.copy(), JDD.ZERO.copy());
+		final JDDNode support     = JDD.Apply(JDD.GREATERTHAN, originProbs.copy(), JDD.ZERO.copy());
 		final boolean satisfiable = JDD.AreIntersecting(support, statesOfInterest);
 		JDD.Deref(support);
 		if (! satisfiable) {
@@ -95,9 +97,12 @@ public class MCNextTransformer extends MCConditionalTransformer
 		}
 
 //>>> Debug: print probabilities
-//		prism.getLog().println("Probs:");
-//		JDD.PrintMinterms(prism.getLog(), probs.copy());
-//		new StateValuesMTBDD(probs.copy(), model).print(prism.getLog());
+//		prism.getLog().println("Origin probs:");
+//		JDD.PrintMinterms(prism.getLog(), originProbs.copy());
+//		new StateValuesMTBDD(originProbs.copy(), model).print(prism.getLog());
+//		prism.getLog().println("Target probs:");
+//		JDD.PrintMinterms(prism.getLog(), targetProbs.copy());
+//		new StateValuesMTBDD(targetProbs.copy(), model).print(prism.getLog());
 
 		JDDNode pivots = getPivotStates(model, goal, negated);
 		JDD.Deref(goal);
@@ -111,19 +116,23 @@ public class MCNextTransformer extends MCConditionalTransformer
 
 		JDD.Deref(pivots);
 		// lift probs
-		JDDNode liftedProbs = JDD.Apply(JDD.MAX, probs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
-		JDD.Deref(probs);
+		JDDNode liftedOriginProbs = JDD.Apply(JDD.MAX, originProbs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
+		JDDNode liftedTargetProbs = JDD.Apply(JDD.MAX, targetProbs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
+		JDD.Deref(originProbs, targetProbs);
 
 //>>> Debug: print lifted probabilities
-//		prism.getLog().println("Lifted probs:");
-//		JDD.PrintMinterms(prism.getLog(), liftedProbs.copy());
-//		new StateValuesMTBDD(liftedProbs.copy(), pivotModel).print(prism.getLog());
+//		prism.getLog().println("Lifted origin probs:");
+//		JDD.PrintMinterms(prism.getLog(), liftedOriginProbs.copy());
+//		new StateValuesMTBDD(liftedOriginProbs.copy(), pivotModel).print(prism.getLog());
+//		prism.getLog().println("Lifted target probs:");
+//		JDD.PrintMinterms(prism.getLog(), liftedTargetProbs.copy());
+//		new StateValuesMTBDD(liftedTargetProbs.copy(), pivotModel).print(prism.getLog());
 
 		ProbModel pivotModel = pivotTransformation.getTransformedModel();
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
-		liftedProbs = JDD.Times(liftedProbs, pivotModel.getReach().copy());
+		liftedOriginProbs = JDD.Times(liftedOriginProbs, pivotModel.getReach().copy());
 
-		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
+		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, pivotModel, liftedOriginProbs.copy(), liftedTargetProbs.copy(), pivotStatesOfInterest.copy());
 
 //>>> Debug: print transformed states of interest
 //		prism.getLog().println("Transformed states of interest:");
@@ -141,7 +150,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 //			e.printStackTrace();
 //		}
 
-		JDD.Deref(liftedProbs, statesOfInterest, pivotStatesOfInterest);
+		JDD.Deref(liftedOriginProbs, liftedTargetProbs, statesOfInterest, pivotStatesOfInterest);
 
 		return new ModelTransformationNested<>(pivotTransformation, scaledTransformation);
 	}
@@ -222,7 +231,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 		return stateValues.convertToStateValuesMTBDD().getJDDNode();
 	}
 
-	private JDDNode computeProbabilities(final ProbModel model, final JDDNode goal, final boolean negated) throws PrismException
+	protected JDDNode computeProbabilities(final ProbModel model, final JDDNode goal, final boolean negated) throws PrismException
 	{
 		ProbModelChecker mc = (ProbModelChecker) modelChecker.createModelChecker(model);
 		StateValues probabilities = mc.computeNextProbs(model.getTrans(), goal);

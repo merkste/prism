@@ -10,7 +10,8 @@ import prism.ProbModelTransformation;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MCScaledTransformation implements ModelTransformation<ProbModel, ProbModel> {
+public class MCScaledTransformation implements ModelTransformation<ProbModel, ProbModel>
+{
 	private ProbModel originalModel;
 	private ProbModel scaledModel;
 	private JDDNode validStates;
@@ -19,40 +20,45 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	boolean debug = false;
 
 	/**
-	 * <br>[ REFS: <i>none</i>, DEREFS: <i>probReachGoal, statesOfInterest</i> ]
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, statesOfInterest</i> ]
 	 */
-	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode probReachGoal, final JDDNode statesOfInterest) throws PrismException
+	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode originProbs, final JDDNode statesOfInterest) throws PrismException
+	{
+		this(prism, originalModel, originProbs, originProbs.copy(), statesOfInterest);
+	}
+
+	/**
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, targetProbs, statesOfInterest</i> ]
+	 */
+	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode originProbs, final JDDNode targetProbs, final JDDNode statesOfInterest) throws PrismException
 	{
 		this.originalModel = originalModel;
 		this.prism = prism;
 
+		// originProbsInverted := state s -> 1/originProbs
+		JDDNode originProbsInverted = JDD.Apply(JDD.DIVIDE, JDD.Constant(1), originProbs.copy());
 		if (debug) {
-			StateValuesMTBDD.print(prism.getLog(), probReachGoal.copy(), originalModel, "probReachGoal");
+			StateValuesMTBDD.print(prism.getLog(), originProbs.copy(), originalModel, "originProbs");
+			StateValuesMTBDD.print(prism.getLog(), originProbsInverted.copy(), originalModel, "originProbsInverted");
 		}
 
-		// prob1DividedByReachGoal := state s -> 1/probReachGoal
-		JDDNode prob1DividedByReachGoal = JDD.Apply(JDD.DIVIDE, JDD.Constant(1), probReachGoal.copy());
-		if (debug) {
-			StateValuesMTBDD.print(prism.getLog(), prob1DividedByReachGoal.copy(), originalModel, "prob1DividedByReachGoal");
-		}
+		// support := state s -> 1 if originProbs>0, 0 if originProbs=0
+		JDDNode support = JDD.GreaterThan(originProbs.copy(), 0.0);
 
-		// reachGoal01 := state s -> 1 if probReachGoal>0, 0 if probReachGoal=0
-		JDDNode reachGoal01 = JDD.GreaterThan(probReachGoal.copy(), 0);
+		// targetProbsColumn := state s' -> targetProbs
+		JDDNode targetProbsColumn = JDD.PermuteVariables(targetProbs, originalModel.getAllDDRowVars(), originalModel.getAllDDColVars()); 
 
-		// probReachGoalColumn := state s' -> probReachGoal
-		JDDNode probReachGoalColumn = JDD.PermuteVariables(probReachGoal, originalModel.getAllDDRowVars(), originalModel.getAllDDColVars()); 
+		// P'(s,v) = P(s,v) * P(v, originProb)
+		JDDNode newTransTargetScaled = JDD.Apply(JDD.TIMES, originalModel.getTrans().copy(), targetProbsColumn);
 
-		// P'(s,v) = P(s,v) * P(v, reachGoal) 
-		JDDNode newTransSuccessorScaled = JDD.Apply(JDD.TIMES, originalModel.getTrans().copy(), probReachGoalColumn);
+		// P''(s,v) = P'(s,v) * (1 / P(s, originProb))
+		JDDNode newTransScaled = JDD.Apply(JDD.TIMES, newTransTargetScaled, originProbsInverted);
 
-		// P''(s,v) = P'(s,v) * (1 / P(s, reachGoal)) 
-		JDDNode newTransScaled = JDD.Apply(JDD.TIMES, newTransSuccessorScaled, prob1DividedByReachGoal);
-		
-		// P'''(s,v) = 0 for P(s, reachGoal) = 0 and P''(s,v) otherwise
-		final JDDNode newTrans = JDD.Apply(JDD.TIMES, newTransScaled, reachGoal01.copy());
+		// P'''(s,v) = 0 for P(s, originProb) = 0 and P''(s,v) otherwise
+		final JDDNode newTrans = JDD.Apply(JDD.TIMES, newTransScaled, support.copy());
 
-		// start'(s) = statesOfInterest(s) && P(s, reachGoal) > 0
-		final JDDNode newStart = JDD.And(statesOfInterest, reachGoal01);
+		// start'(s) = statesOfInterest(s) && P(s, originProb) > 0
+		final JDDNode newStart = JDD.And(statesOfInterest, support);
 
 		ProbModelTransformation scalingTransformation = 
 		new ProbModelTransformation(originalModel)
@@ -90,17 +96,20 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	}
 
 	@Override
-	public ProbModel getOriginalModel() {
+	public ProbModel getOriginalModel()
+	{
 		return originalModel;
 	}
 
 	@Override
-	public ProbModel getTransformedModel() {
+	public ProbModel getTransformedModel()
+	{
 		return scaledModel;
 	}
 
 	@Override
-	public StateValues projectToOriginalModel(StateValues svTransformed) throws PrismException {
+	public StateValues projectToOriginalModel(StateValues svTransformed) throws PrismException
+	{
 		if (debug) {
 			prism.getMainLog().println("svTransformed");
 			svTransformed.print(prism.getMainLog());
@@ -128,7 +137,8 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	}
 
 	@Override
-	public void clear() {
+	public void clear()
+	{
 		scaledModel.clear();
 		JDD.Deref(validStates);
 	}
