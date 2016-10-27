@@ -54,7 +54,6 @@ public class Jltl2dstarCmdLine {
 	public static void main(String[] args) {
 		int rv = 0;
 		int outfile_pos = 1;
-		BufferedReader r = null;
 		try {
 			String formula;
 			if (args.length == 0) {
@@ -66,11 +65,14 @@ public class Jltl2dstarCmdLine {
 				formula = args[1];
 				outfile_pos++;
 			} else {
+				BufferedReader r = null;
 				if (args[0].equals("-")) {
 					r = new BufferedReader(new InputStreamReader(System.in));
 				} else {
 					r = new BufferedReader(new FileReader(args[0]));
 				}
+				formula = r.readLine();
+				r.close();
 			}
 
 			if (outfile_pos >= args.length) {
@@ -84,8 +86,6 @@ public class Jltl2dstarCmdLine {
 				output = new PrintStream(outfile);
 			}
 
-			formula = r.readLine();
-			r.close();
 
 			Jltl2dstarCmdLine jltl2dstar = new Jltl2dstarCmdLine();
 			rv = jltl2dstar.run(formula, output);

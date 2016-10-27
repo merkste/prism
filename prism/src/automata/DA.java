@@ -34,14 +34,14 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import acceptance.AcceptanceOmega;
+import acceptance.AcceptanceRabin;
 import jltl2ba.APElement;
 import jltl2ba.APElementIterator;
 import prism.PrismException;
 import prism.PrismLog;
 import prism.PrismNotSupportedException;
 import prism.PrismPrintStreamLog;
-import acceptance.AcceptanceOmega;
-import acceptance.AcceptanceRabin;
 
 /**
  * Class to store a deterministic automata of some acceptance type Acceptance.

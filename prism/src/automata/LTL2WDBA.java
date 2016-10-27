@@ -4,10 +4,28 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Stack;
 
+import acceptance.AcceptanceBuchi;
+import acceptance.AcceptanceOmega;
+import acceptance.AcceptanceReach;
+import automata.finite.DeterministicFiniteAutomaton;
+import automata.finite.EdgeLabel;
+import automata.finite.SingleEdge;
+import automata.finite.State;
+import common.Wrapper;
+import common.iterable.IterableBitSet;
+import explicit.LTS;
+import explicit.LTSExplicit;
+import explicit.NonProbModelChecker;
+import explicit.SCCComputer;
+import explicit.SCCConsumer;
 import jltl2ba.APElement;
 import jltl2ba.MyBitSet;
 import jltl2ba.SimpleLTL;
@@ -17,18 +35,6 @@ import parser.ast.Expression;
 import prism.PrismComponent;
 import prism.PrismDevNullLog;
 import prism.PrismException;
-import acceptance.AcceptanceBuchi;
-import acceptance.AcceptanceOmega;
-import acceptance.AcceptanceReach;
-
-import common.iterable.IterableBitSet;
-import common.Wrapper;
-
-import explicit.LTS;
-import explicit.LTSExplicit;
-import explicit.NonProbModelChecker;
-import explicit.SCCComputer;
-import explicit.SCCConsumer;
 
 public class LTL2WDBA extends PrismComponent
 {
@@ -52,7 +58,7 @@ public class LTL2WDBA extends PrismComponent
 			
 			DA<BitSet, AcceptanceReach> dfa = toDFA(da, canNotAvoidF);
 			//dfa.printDot(System.out);
-			return dfa;
+			return  minimizeDfa(dfa);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -70,13 +76,16 @@ public class LTL2WDBA extends PrismComponent
 		NBA nba = ltl.toNBA();
 		PowersetDA P = powersetConstruction(nba);
 		determineF(P);
+		
+		normalise(P.da);
 
 		return P.da;
 	}
 
 	public DA<BitSet, AcceptanceBuchi> obligation2wdba(SimpleLTL ltl) throws PrismException
 	{
-		return ltl2wdba(ltl);
+		DA<BitSet, AcceptanceBuchi> wdba = ltl2wdba(ltl);
+		return minimizeWdba(wdba);
 	}
 
 	private static class PowersetDA
@@ -414,6 +423,286 @@ public class LTL2WDBA extends PrismComponent
 		return result;
 	}
 	
+	DA<BitSet, AcceptanceBuchi> deterministicFiniteAutomaton2wdba(DeterministicFiniteAutomaton<String> dfa)
+	{
+		DA<BitSet, AcceptanceBuchi> wdba = new DA<>();
+		HashMap<State, Integer> dfa2wdba = new HashMap<State,Integer>();
+		
+		//take over apList
+		wdba.setAPList(dfa.getApList());
+		
+		AcceptanceBuchi acc = new AcceptanceBuchi();
+		//take over state space
+		for(State dfaState : dfa.getStates()) {
+			int index = wdba.addState();
+			dfa2wdba.put(dfaState, index);
+			//Update acceptance
+			acc.getAcceptingStates().set(index, dfa.isAcceptingState(dfaState));
+			if(dfa.getInitialState() == dfaState) {
+				//Take over initial state
+				wdba.setStartState(index);
+			}
+		}
+		
+		//Take over acceptance
+		wdba.setAcceptance(acc);
+		
+		for(State dfaState : dfa.getStates()) {
+			for(SingleEdge<String> edge : dfa.getOutgoingEdges(dfaState)) {
+				int source = dfa2wdba.get(edge.getSource());
+				int sink = dfa2wdba.get(edge.getSink());
+				EdgeLabel<String> label = edge.getLabel();
+				wdba.addEdge(source, label.getValue(), sink);
+			}
+		}
+		
+		return wdba;
+	}
+
+	/**
+	 * Check, whether SCC is transient, i.e., it consists of exactly one state  and has
+	 * no edges
+	 * @param scc the analyzed scc
+	 * @param wdba the underlying wdba
+	 * @return true, if scc is transient
+	 */
+	public boolean isTransientSCC(Set<Integer> scc, DA<BitSet, AcceptanceBuchi> wdba)
+	{
+		if(scc.size() != 1) {
+			return false;
+		}
+		
+		Integer state = scc.stream().findAny().get();
+		//Search for edges within scc
+		for(int edge = 0; edge < wdba.getNumEdges(state); edge++) {
+			if(wdba.getEdgeDest(state, edge) == state) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	public boolean isFinalSCC(Set<Integer> scc, DA<BitSet, AcceptanceBuchi> wdba) {
+		int state = scc.stream().findAny().get();
+		return wdba.getAcceptance().getAcceptingStates().get(state);
+	}
+	
+	/**
+	 * Add states to acceptance condition
+	 * @param states the states which should be added
+	 * @param acc the acceptance condition
+	 */
+	public void addStates(Set<Integer> states, AcceptanceBuchi acc) {
+		for(int state : states) {
+			acc.getAcceptingStates().set(state);
+		}
+	}
+	
+	
+	public void normalise(DA<BitSet, AcceptanceBuchi> wdba)
+	{
+		//Generate SCC-Graph
+		SCCGraph<BitSet> graph = new SCCGraph<>(wdba);
+		
+		//Make a topologic ordering
+		List<Set<Integer>> ordered = graph.topologicOrdered();
+		
+		//Get maximal k big enough for coloring
+		final int k = (ordered.size() | 1) + 1; 
+		
+		Map<Set<Integer>, Integer> coloring = new HashMap<>();
+		AcceptanceBuchi normalisedAcceptance = new AcceptanceBuchi();
+		for(int i = ordered.size() - 1; i >= 0; i--) {
+			Set<Integer> scc = ordered.get(i);
+			if(graph.getSCCSucessors(scc).isEmpty()) {
+				//Check whether SCC has an accepting state
+				// <=> Check whether all states in SCC are accepting
+				if(isFinalSCC(scc, wdba)) {
+					coloring.put(scc, k);
+					//Add state for even color
+					addStates(scc, normalisedAcceptance);
+				} else {
+					coloring.put(scc, k - 1);
+				}
+			} else {
+				//Calculate colors of SCCs backwards
+				int color = k;
+				//Calculate the minimal color of the successors
+				for(Set<Integer> succ : graph.getSCCSucessors(scc)) {
+					if(color > coloring.get(succ)) {
+						color = coloring.get(succ);
+					}
+				}
+				if(isTransientSCC(scc, wdba) ||
+						(color % 2 == 0 ^ !isFinalSCC(scc, wdba))) {
+					//Take over the color, if scc is trivial
+					//(i.e. has exactly one state and no edge) or
+					//the coloring matches the acceptance
+					coloring.put(scc, color);
+					if(color % 2 == 0) {
+						//Add states for even color
+						addStates(scc, normalisedAcceptance);
+					}
+				} else {
+					//Decrement color if it does not matches the acceptance
+					coloring.put(scc, color - 1);
+					if(color % 2 == 1) {
+						//Add states for even color
+						addStates(scc, normalisedAcceptance);
+					}
+				}
+			}
+		}
+		
+		wdba.getAcceptance().setAcceptingStates(normalisedAcceptance.getAcceptingStates());
+	}
+	
+	/**
+	 * Transform WDBA to a DeterministicFiniteAutomaton (DFA)
+	 * @param da the wdba
+	 * @return the DeterministicFiniteAutomaton agreeing with wdba seen as graph
+	 */
+	DeterministicFiniteAutomaton<String> wdba2DeterministicFiniteAutomaton(DA<BitSet, AcceptanceBuchi> da)
+	{
+		DeterministicFiniteAutomaton<String> dfa = new DeterministicFiniteAutomaton<String>();
+		List<State> int2dfaState = new ArrayList<State>(dfa.getStates().size());
+		dfa.setApList(da.getAPList());
+		
+		//Take over statespace
+		for(int i = 0; i < da.size(); i++) {
+			State state = dfa.newState();
+			int2dfaState.add(i, state);
+			if(da.getStartState() == i) {
+				//Take over initial state
+				dfa.addInitialState(state);
+			}
+			if(((AcceptanceBuchi)da.getAcceptance()).getAcceptingStates().get(i)) {
+				//Take over accepting states
+				dfa.addAcceptingState(state);
+			}
+		}
+		
+		//Take over transitions
+		for(int i = 0; i < da.size(); i++) {
+			for(int edge = 0; edge < da.getNumEdges(i); edge++) {
+				State source = int2dfaState.get(i);
+				State sink = int2dfaState.get(da.getEdgeDest(i, edge));
+
+				SingleEdge<String> dfaEdge = new SingleEdge<String>(
+						source,
+						new EdgeLabel<String>(dfa.getApList(), da.getEdgeLabel(i, edge)),
+						sink);
+				dfa.addEdge(dfaEdge);
+			}
+		}
+		return dfa;
+	}
+	
+	/**
+	 * Transform DA<BitSet, AcceptanceBuchi> to a DeterministicFiniteAutomaton (DFA)
+	 * @param da the dfa
+	 * @return the DeterministicFiniteAutomaton agreeing with da
+	 */
+	DeterministicFiniteAutomaton<String> dfa2DeterministicFiniteAutomaton(DA<BitSet, AcceptanceReach> da)
+	{
+		DeterministicFiniteAutomaton<String> dfa = new DeterministicFiniteAutomaton<String>();
+		List<State> int2dfaState = new ArrayList<State>(dfa.getStates().size());
+		dfa.setApList(da.getAPList());
+		
+		//Take over statespace
+		for(int i = 0; i < da.size(); i++) {
+			State state = dfa.newState();
+			int2dfaState.add(i, state);
+			if(da.getStartState() == i) {
+				//Take over initial state
+				dfa.addInitialState(state);
+			}
+			if(((AcceptanceReach)da.getAcceptance()).getGoalStates().get(i)) {
+				//Take over accepting states
+				dfa.addAcceptingState(state);
+			}
+		}
+		
+		//Take over transitions
+		for(int i = 0; i < da.size(); i++) {
+			for(int edge = 0; edge < da.getNumEdges(i); edge++) {
+				State source = int2dfaState.get(i);
+				State sink = int2dfaState.get(da.getEdgeDest(i, edge));
+
+				SingleEdge<String> dfaEdge = new SingleEdge<String>(
+						source,
+						new EdgeLabel<String>(dfa.getApList(), da.getEdgeLabel(i, edge)),
+						sink);
+				dfa.addEdge(dfaEdge);
+			}
+		}
+		return dfa;
+	}
+
+	/**
+	 * Transform a DeterministicFiniteAutomaton (DFA) to DA<BitSet, AcceptanceBuchi>
+	 * @param da the dfa
+	 * @return the DA<BitSet, AcceptanceReach> agreeing with da
+	 */
+	DA<BitSet, AcceptanceReach> deterministicFiniteAutomaton2dfa(DeterministicFiniteAutomaton<String> dfa)
+	{
+		DA<BitSet, AcceptanceReach> wdba = new DA<BitSet,AcceptanceReach>();
+		HashMap<State, Integer> dfa2wdba = new HashMap<State,Integer>();
+		
+		//take over apList
+		wdba.setAPList(dfa.getApList());
+		
+		AcceptanceReach acc = new AcceptanceReach();
+		//take over state space
+		for(State dfaState : dfa.getStates()) {
+			int index = wdba.addState();
+			dfa2wdba.put(dfaState, index);
+			//Update acceptance
+			acc.getGoalStates().set(index, dfa.isAcceptingState(dfaState));
+			if(dfa.getInitialState() == dfaState) {
+				//Take over initial state
+				wdba.setStartState(index);
+			}
+		}
+		
+		//Take over acceptance
+		wdba.setAcceptance(acc);
+		
+		//Take over the edges
+		for(State dfaState : dfa.getStates()) {
+			for(SingleEdge<String> edge : dfa.getOutgoingEdges(dfaState)) {
+				int source = dfa2wdba.get(edge.getSource());
+				int sink = dfa2wdba.get(edge.getSink());
+				EdgeLabel<String> label = edge.getLabel();
+				wdba.addEdge(source, label.getValue(), sink);
+			}
+		}
+		
+		return wdba;
+	}
+	
+	/**
+	 * minimize a normalized weak DBA
+	 * @param wdba the normalized weak DBA, which should be minimized
+	 * @return the minimized weak DBA
+	 */
+	DA<BitSet, AcceptanceBuchi> minimizeWdba(DA<BitSet, AcceptanceBuchi> wdba)
+	{
+		DeterministicFiniteAutomaton<String> dfa = wdba2DeterministicFiniteAutomaton(wdba);
+		return deterministicFiniteAutomaton2wdba(dfa.minimize());
+	}
+	
+	/**
+	 * minimize a DFA
+	 * @param dfa the DFA, which should be minimized
+	 * @return the minimized DFA
+	 */
+	DA<BitSet, AcceptanceReach> minimizeDfa(DA<BitSet, AcceptanceReach> dfa)
+	{
+		DeterministicFiniteAutomaton<String> deterministicFiniteAutomaton = dfa2DeterministicFiniteAutomaton(dfa);
+		return deterministicFiniteAutomaton2dfa(deterministicFiniteAutomaton.minimize());
+	}
 	
 	/**
 	 * Simple test method: convert LTL formula (in LBT format) to HOA/Dot/txt
