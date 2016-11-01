@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -451,8 +450,9 @@ public class LTL2WDBA extends PrismComponent
 			for(SingleEdge<String> edge : dfa.getOutgoingEdges(dfaState)) {
 				int source = dfa2wdba.get(edge.getSource());
 				int sink = dfa2wdba.get(edge.getSink());
-				EdgeLabel<String> label = edge.getLabel();
-				wdba.addEdge(source, label.getValue(), sink);
+				for(EdgeLabel<String> explicitLabel : edge.getLabel().enumerateExplicit(dfa.getApList())) {
+					wdba.addEdge(source, explicitLabel.getValue(), sink);
+				}
 			}
 		}
 		
@@ -674,8 +674,9 @@ public class LTL2WDBA extends PrismComponent
 			for(SingleEdge<String> edge : dfa.getOutgoingEdges(dfaState)) {
 				int source = dfa2wdba.get(edge.getSource());
 				int sink = dfa2wdba.get(edge.getSink());
-				EdgeLabel<String> label = edge.getLabel();
-				wdba.addEdge(source, label.getValue(), sink);
+				for(EdgeLabel<String> explicitLabel : edge.getLabel().enumerateExplicit(dfa.getApList())) {
+					wdba.addEdge(source, explicitLabel.getValue(), sink);
+				}
 			}
 		}
 		

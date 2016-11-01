@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import common.iterable.IterableBitSet;
 
@@ -133,6 +135,46 @@ public class EdgeLabel<Symbol> {
 		for(Integer i : IterableBitSet.getSetBits(getRelevant())) {
 			result.add(symbols.get(i));
 		}
+		return result;
+	}
+	
+	public Set<EdgeLabel<Symbol>> enumerateExplicit(List<Symbol> symbols)
+	{
+		Set<EdgeLabel<Symbol>> result = new HashSet<>();
+		final int numberOfAPs = symbols.size();
+		if(isTrue()) {
+			// apToggle represents the positive/negative occurrence of APs
+			BitSet apToggle = new BitSet(numberOfAPs);
+						
+			// theTruth signifies that every AP is important
+			BitSet theTruth = new BitSet(numberOfAPs);
+			theTruth.set(0, numberOfAPs);
+						
+			while(apToggle.length() <= numberOfAPs) {
+				result.add(new EdgeLabel<>(
+						symbols, 
+						(BitSet)apToggle.clone(),
+						theTruth));
+				
+				// Increment apToggle (binary counting)
+				int nextAP = apToggle.nextClearBit(0);
+				apToggle.clear(0,nextAP);
+				apToggle.set(nextAP);
+			}
+		} else {
+		
+			if(isFalse()) {
+				BitSet value = new BitSet(numberOfAPs);
+				value.set(0, numberOfAPs, false);
+				// everything is relevant
+				BitSet relevant = new BitSet(numberOfAPs);
+				relevant.set(0, numberOfAPs, true);
+				result.add(new EdgeLabel<Symbol>(symbols, value, relevant));
+			} else {
+				result.add(this);
+			}
+		}
+		
 		return result;
 	}
 	
