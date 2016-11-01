@@ -1971,6 +1971,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-exportadvmdp <file> ........... Export an adversary from MDP model checking (as an MDP)");
 		mainLog.println("-ltl2datool <exec> ............. Run executable <exec> to convert LTL formulas to deterministic automata");
 		mainLog.println("-ltl2dasyntax <x> .............. Specify output format for -ltl2datool switch (lbt, spin, spot, rabinizer)");
+		mainLog.println("-allowltl2wdba ................. Activate LTL-to-weak-deterministic Büchi translation for obligation LTL formulas");
 		mainLog.println("-reorder ....................... Perform symbolic reordering after building model");
 		mainLog.println("-reorderoptions <x,y,z> ........ Reorder options: norebuild beforereach noconstraints optimisetrans converge");
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
