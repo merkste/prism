@@ -1,6 +1,10 @@
 This README provides details for the implementation presented in the
-"Advances in Symbolic Model Checking with PRISM" submission to the
-special TACAS'16 issue of STTT.
+
+"Advances in Probabilistic Model Checking with PRISM:
+ Variable Reordering, Quantiles and Weak Deterministic Buechi
+ Automata"
+
+submission to the special TACAS'16 issue of STTT.
 
 In case of problems / questions, feel free to contact
 klein@tcs.inf.tu-dresden.de (perhaps using a throw-away email account
@@ -10,10 +14,10 @@ to maintain anonymity).
 General information
 -------------------
 
-Our implementation for the enhancements presented in the TACAS'16 submission
-is based on the model checker PRISM (www.prismmodelchecker.org). We assume here
-a basic familarity with PRISM. For general information about PRISM
-and its use, please see the website / documentation.
+Our implementation for the enhancements presented in the article
+is based on the model checker PRISM (www.prismmodelchecker.org).
+We assume here a basic familarity with PRISM. For general information
+about PRISM and its use, please see the website / documentation.
 
 Our version is built upon a recent the PRISM trunk version 
 
@@ -37,7 +41,8 @@ Our version of PRISM can be built (Linux, OS X) by doing:
 cd prism
 make
 
-This requires an installed Java JDK (at least version 8) and C/C++ compiler.
+This requires an installed Java JDK (at least version 8), C/C++
+compiler and the usual build tools like make, etc.
 If you have trouble compiling our version, please try as well to compile
 the latest source version of PRISM from the PRISM home page.
 
@@ -117,8 +122,8 @@ state space.
 (Multi-)reward bounded properties
 ---------------------------------
 
-We exemplify the syntax for reward-bounded properties here for the P=? operator, it also works for
-Pmax and Pmin.
+We exemplify the syntax for reward-bounded properties here for the P=?
+operator, it also works for Pmax and Pmin.
 
   P=?[ F<3 "goal" ]                     standard step bound <3
   P=?[ F{steps<3} "goal" ]              extended syntax: step bound <3
@@ -142,15 +147,15 @@ use the option -boundsviacounters.
 Quantiles
 ---------
 
-We now detail the syntax for quantile queries (for MDPs, as they are the most interesting
-case for quantiles).
+We now detail the syntax for quantile queries, first for MDPs:
 
  quantile( min r, Pmax>0.5 [ F{reward{"rounds}<=r} "goal"] )
 
 would specify the quantile "the minimal number of rounds r that is needed to ensure reaching
 a state satisfying the goal label". Other combinations of min r / max r, Pmin/Pmax and
-upper and lower bounds in the F operator are supported as well. Some combinations do not make sense
-and for some, only strict / non-strict probability bounds are supported. To get a feel for the
+upper and lower bounds in the F operator are supported as well.
+Some combinations do not make sense and for some, only strict /
+non-strict probability bounds are supported. To get a feel for the
 quantile queries, there's an interactive tool at 
  http://wwwtcs.inf.tu-dresden.de/~klein/quantiles/quantile.html
 
@@ -161,11 +166,28 @@ Example:
 
 prism/bin/prism prism-examples/dice/two_dice.nm -pf 'quantile( min r, Pmax>0.5 [ F{reward{"coin_flips"}<=r} s1=7] )'
 
-"What is the minimal number of coin flips that is needed for the best scheduler to ensure that process 1
- is done (s=7) with probability at least 0.5"
+"What is the minimal number of coin flips that is needed for the best
+ scheduler to ensure that process 1 is done (s=7) with probability at least 0.5"
 
-The implementation of the symbolic quantile engines has been improved since the TACAS'16 version as detailed in the
-article. You can still access the previous version using the -quantileTACAS16 flag.
+
+The implementation of the symbolic quantile engines has been improved
+since the TACAS'16 version as detailed in the article. You can still
+access the previous implementation using the -quantileTACAS16 flag.
+
+For CTMCs, quantiles have the form
+
+quantile( min t, P>0.5 [ F<=t "goal" ] )
+
+i.e., using a time-bounded path formula. See the information about the
+experiments for an example.
+
+You can set the desired precision for the approximative quantile
+calculation via the -quantileCtmcPrecision parameter, e.g.,
+
+-quantileCtmcPrecision 1e-6
+
+would be the default setting.
+
 
 
 Expectations for co-safety LTL
@@ -175,10 +197,39 @@ You can simple specify a property of the form
 
  R=?[ X X X "goal" ]
 
-i.e., with a complex LTL formula inside the [ ] instead of the "standard" PRISM reward operators.
+i.e., with a complex LTL formula inside the [ ] instead of the
+"standard" PRISM reward operators. This supposes that the formula is
+syntactically co-safe, as described in the article.
 
 Some examples can be found in the prism test suite, e.g., here:
 
 https://github.com/prismmodelchecker/prism-tests/tree/d88ae235067d9b58fdfcf1a2fd61972a0a0c6565/functionality/verify/mdps/rewards/cosafe/
+
+
+Using WDBA for obligation LTL formulas
+--------------------------------------
+
+To activate the conversion via WBDA for syntactic obligation WDBA
+formulas, use the option
+
+ -allowltl2wdba
+
+Example:
+
+prism/bin/prism prism-examples/dice/dice.pm -pf 'P=?[ (F s=7) & (G d!=1) ]' -allowltl2wdba
+
+
+If you are interested in the generated automaton for a formula, you
+can use a command like
+
+PRISM_MAINCLASS=automata.LTL2WDBA prism/bin/prism 'U a b' -
+
+to directly obtain the HOA automaton for the 'U a b' formula ("a until
+b"). Second argument is the output file, or '-' for standard out.
+
+Formula syntax is the LBT syntax, i.e., in prefix notation with the
+
+boolean operators: ! (not), & (and), | (or), i (for implication)
+temporal operators: X (next), F (finally), G (globally), U (until), W (weak until)
 
 
