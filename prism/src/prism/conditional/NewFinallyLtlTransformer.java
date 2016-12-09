@@ -16,6 +16,7 @@ import prism.NondetModelChecker;
 import prism.Pair;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
@@ -211,10 +212,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			ProbabilisticRedistribution objectiveSatisfied = redistributeProb1MaxProbs(productModel, objectivePath, conditionPath);
 
 			// compute redistribution for falsified objective
-			// For efficiency, do not minimizing the probability to satisfy the condition, but
-			// maximize the probability to reach badStates | conditionFalsifiedStates, which is equivalent.
-			JDDNode nonAcceptingStates                     = JDD.Or(badStates.copy(), conditionFalsifiedStates.copy());
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0MaxProbs(productModel, objectivePath, nonAcceptingStates);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Obj(productModel, objectivePath, conditionFalsifiedStates, badStates);
 
 			// compute states where objective and condition can be satisfied
 			JDDNode instantGoalStates = computeInstantGoalStates(productModel, objectivePath, objectiveFalsified.getStates(), conditionPath, conditionFalsifiedStates.copy());
@@ -237,19 +235,41 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			return new Pair<>(transformation, transformedExpression);
 		}
 
-		public ProbabilisticRedistribution redistributeProb0MaxProbs(NondetModel model, Until pathStates, JDDNode nonAcceptingStates)
+		/**
+		 * Compute redistribution for falsified objective.
+		 * For efficiency, do not minimizing the probability to satisfy the condition, but
+		 * maximize the probability to reach badStates | conditionFalsifiedStates, which is equivalent.
+		 */
+		public ProbabilisticRedistribution redistributeProb0Obj(NondetModel model, Until objectivePath, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
 				throws PrismException
 		{
-			JDDNode states = computeProb0A(model, pathStates);
+			// Is condition path free of invariants?
+			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
+			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
+				// Skip costly normalization
+				return new ProbabilisticRedistribution();
+			}
+
+			// path to non-accepting states
+			JDDNode conditionFalsifiedStates = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
+			Finally conditionFalsifiedPath   = new Finally(model, conditionFalsifiedStates);
+
+			// compute redistribution
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0MaxProbs(model, objectivePath, conditionFalsifiedPath);
+			conditionFalsifiedPath.clear();
+			// swap target states
+			return objectiveFalsified.swap(model);
+		}
+
+		public ProbabilisticRedistribution redistributeProb0MaxProbs(NondetModel model, Until pathProb0, Until pathMaxProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb0A(model, pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				Finally nonAcceptingPath = new Finally(model, nonAcceptingStates);
-				JDDNode maxProbabilities = computeUntilMaxProbs(model, nonAcceptingPath);
-				nonAcceptingPath.clear();
-				// inverse probabilities to match redistribution target states
-				probabilities = JDD.Apply(JDD.MINUS, model.getReach().copy(), maxProbabilities);
+				probabilities = computeUntilMaxProbs(model, pathMaxProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}

@@ -152,6 +152,7 @@ public class PrismSettings implements Observer
 	public static final String CONDITIONAL_USE_VIRTUAL_PROTOTYPE = "conditional.use.costlyImpl";
 	public static final String CONDITIONAL_USE_RESET_FOR_MC      = "conditional.use.resetForMarkovChains";
 	public static final String CONDITIONAL_SCALE_LTL_MINIMIZE    = "conditional.scale.ltl.minimize";
+	public static final String CONDITIONAL_RESET_MDP_MINIMIZE    = "conditional.reset.mdp.minimize";
 	public static final String CONDITIONAL_PATTERNS_SCALE        = "conditional.patterns.scale";
 	public static final String CONDITIONAL_PATTERNS_RESET        = "conditional.patterns.reset";
 
@@ -412,6 +413,8 @@ public class PrismSettings implements Observer
 																		"Use reset method for DTMCs and CTMCs instead scale method." },
 			{ BOOLEAN_TYPE,		CONDITIONAL_SCALE_LTL_MINIMIZE,		"Scale-ltl: minimize product",	"4.2",		false,		"",
 																		"Build DTMC quotient to identify prob1 product states." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_RESET_MDP_MINIMIZE,		"Reset-MDP: minimize normal-form model",	"4.2",		false,		"",
+																		"Always minimize normal-form model for states falsifying the objective in MDPs." },
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_SCALE,			"Set patterns for scale method",	"4.2",			"all",		"",
 																		"Use the first applicable pattern for the scale method from a list of: " + DtmcTransformerType.getSpecificationHelp()},
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_RESET,			"Set patterns for reset method",	"4.2",			"all",		"",
@@ -1686,6 +1689,9 @@ public class PrismSettings implements Observer
 		else if (sw.equals("scaleltlminimize")) {
 			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
 		}
+		else if (sw.equals("resetobjminimize")) {
+			set(CONDITIONAL_RESET_MDP_MINIMIZE, true);
+		}
 		else if (sw.equals("patternsscale")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
@@ -1894,6 +1900,7 @@ public class PrismSettings implements Observer
 		mainLog.println("-usevirtualprototype ........... Use virtual models prototype implementation");
 		mainLog.println("-useresetformc ................. Use reset method for Markov Chains");
 		mainLog.println("-scaleltlminimize .............. Minimize product model in scale-ltl");
+		mainLog.println("-resetobjminimize .............. Minimize normal-form model for reset method in MDPs");
 		mainLog.println("-patternsscale ................. Set patterns for scale method: " + DtmcTransformerType.getSpecificationHelp());
 		mainLog.println("-patternsreset ................. Set patterns for reset method: " + MdpTransformerType.getSpecificationHelp());
 		mainLog.println();

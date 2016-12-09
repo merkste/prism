@@ -21,6 +21,7 @@ import prism.NondetModelChecker;
 import prism.Pair;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
@@ -101,7 +102,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		ProbabilisticRedistribution conditionSatisfied = redistributeProb1MaxProbs(model, conditionPath, objectivePath);
 
 		// compute redistribution for falsified objective
-		ProbabilisticRedistribution objectiveFalsified = redistributeProb0MinProbs(model, objectivePath, conditionPath);
+		ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(model, objectivePath, conditionPath);
 
 		// compute states where objective and condition can be satisfied
 		JDDNode instantGoalStates = computeInstantGoalStates(model, objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates.copy());
@@ -130,6 +131,9 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		conditionPath.clear();
 		return new Pair<>(transformation, transformedExpression);
 	}
+
+	ProbabilisticRedistribution redistributeProb0Objective(M model, Until objectivePath, Until conditionPath)
+			throws PrismException;
 
 	/**
 	 * [ REFS: <i>result</i>, DEREFS: <i>objectiveSatisfiedStates, objectiveFalsifiedStates, conditionSatisfiedStates, conditionFalsifiedStates</i> ]
@@ -162,7 +166,6 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		}
 		return new ProbabilisticRedistribution(states, probabilities);
 	}
-
 
 	JDDNode computeUntilMaxProbs(M model, Until until) throws PrismException;
 
@@ -231,6 +234,14 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 			JDD.Deref(objectiveFalsifiedStates, conditionFalsifiedStates);
 			return JDD.And(objectiveSatisfiedStates, conditionSatisfiedStates);
 		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0Objective(ProbModel model, Until objectivePath, Until conditionPath)
+				throws PrismException
+		{
+			// Always normalize
+			return redistributeProb0MinProbs(model, objectivePath, conditionPath);
+		}
 	}
 
 
@@ -264,6 +275,20 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 			JDDNode result = computeProb1E(model, remain, instantGoalStates);
 			JDD.Deref(remain, instantGoalStates);
 			return result;
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
+				throws PrismException
+		{
+			// Is condition path free of invariants?
+			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
+			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
+				// Skip costly normalization
+				return new ProbabilisticRedistribution();
+			}
+
+			return redistributeProb0MinProbs(model, objectivePath, conditionPath);
 		}
 	}
 }

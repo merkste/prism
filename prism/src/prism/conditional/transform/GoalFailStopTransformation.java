@@ -7,6 +7,7 @@ import common.StopWatch;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import prism.Model;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.NondetModel;
@@ -145,6 +146,13 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 		public JDDNode getProbabilities()
 		{
 			return probabilities.copy();
+		}
+
+		public ProbabilisticRedistribution swap(Model model)
+		{
+			// inverse probabilities to swap target states
+			probabilities = JDD.Apply(JDD.MINUS, model.getReach().copy(), probabilities);
+			return this;
 		}
 
 		public void clear()
