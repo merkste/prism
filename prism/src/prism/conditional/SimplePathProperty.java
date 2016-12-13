@@ -274,12 +274,7 @@ public abstract class SimplePathProperty implements Cloneable
 
 		public Finally(Model model, boolean negated, JDDNode goal)
 		{
-			this(negated, model.getReach().copy(), goal);
-		}
-
-		private Finally(boolean negated, JDDNode remain, JDDNode goal)
-		{
-			super(negated, remain, goal);
+			super(negated, model.getReach().copy(), goal);
 		}
 
 		@Override
