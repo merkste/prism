@@ -4,7 +4,6 @@ import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import mtbdd.PrismMTBDD;
-import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import prism.Model;
@@ -75,7 +74,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		}
 	}
 
-	public abstract ModelTransformation<M, M> transform(final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
+	ModelTransformation<M, M> transform(final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
 
 	PrismLog getLog();
 
@@ -85,20 +84,6 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 	LTLProductTransformer<M> getLtlTransformer();
 
-	default JDDNode computeStates(M model, Expression expression)
-			throws PrismException
-	{
-		return getModelChecker(model).checkExpressionDD(expression, JDD.Constant(1));
-	}
-
-	default JDDNode computeSuccStar(M model, JDDNode states)
-	{
-		return PrismMTBDD.Reachability(model.getTransReln(), model.getAllDDRowVars(), model.getAllDDColVars(), states);
-	}
-
-	JDDNode computeProb0(M model, Until until);
-
-	JDDNode computeProb1(M model, Until until);
 
 
 	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
@@ -125,6 +110,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return (MC) modelChecker.createModelChecker(model);
 		}
 
+		@Override
 		public LTLProductTransformer<M> getLtlTransformer()
 		{
 			if (ltlTransformer == null) {
@@ -179,7 +165,6 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
 		}
 
-		@Override
 		public JDDNode computeProb0(ProbModel model, Until until)
 		{
 			if (until.isNegated()) {
@@ -189,7 +174,6 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			}
 		}
 
-		@Override
 		public JDDNode computeProb1(ProbModel model, Until until)
 		{
 			if (until.isNegated()) {
@@ -304,21 +288,6 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			}
 		}
 
-		public JDDNode computeProb1E(NondetModel model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb0E(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb1E(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		@Override
-		public JDDNode computeProb0(NondetModel model, Until until)
-		{
-			return computeProb0A(model, until);
-		}
-
 		public JDDNode computeProb0A(NondetModel model, Until until)
 		{
 			if (until.isNegated()) {
@@ -328,10 +297,13 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			}
 		}
 
-		@Override
-		public JDDNode computeProb1(NondetModel model, Until until)
+		public JDDNode computeProb1E(NondetModel model, Until until)
 		{
-			return computeProb1A(model, until);
+			if (until.isNegated()) {
+				return computeProb0E(model, until.getRemain(), until.getGoal());
+			} else {
+				return computeProb1E(model, until.getRemain(), until.getGoal());
+			}
 		}
 
 		public JDDNode computeProb1A(NondetModel model, Until until)

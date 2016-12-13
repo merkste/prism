@@ -124,27 +124,11 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		return finallyUntilTransformer.transformNormalForm(productModel, objectivePath, conditionPath, statesOfInterest);
 	}
 
-
-	default ProbabilisticRedistribution redistributeProb1MaxProbs(M model, Until pathProb1, Until pathMaxProbs)
-			throws PrismException
-	{
-		JDDNode states = computeProb1(model, pathProb1);
-		JDDNode probabilities;
-		if (states.equals(JDD.ZERO)) {
-			probabilities = JDD.Constant(0);
-		} else {
-			probabilities = computeUntilMaxProbs(model, pathMaxProbs);
-		}
-		return new ProbabilisticRedistribution(states, probabilities);
-	}
-
 	default GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		return configureOperator(model, goalFail, new ProbabilisticRedistribution(), stopFail, instantGoalStates, instantFailStates, statesOfInterest);
 	}
-
-	JDDNode computeUntilMaxProbs(M model, Until until) throws PrismException;
 
 	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
 
@@ -164,13 +148,6 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
 			return transformNormalFormReach(product, objectivePath);
 		}
-
-		@Override
-		public JDDNode computeUntilMaxProbs(ProbModel model, Until until) throws PrismException
-		{
-			return computeUntilProbs(model, until);
-		}
-
 
 		@Override
 		public NewFinallyUntilTransformer.DTMC getFinallyUntilTransformer()
@@ -202,17 +179,16 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			Finally conditionPath    = new Finally(productModel, acceptStates);
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			JDDNode conditionFalsifiedStates = computeProb0(productModel, conditionPath);
-			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
+			JDDNode conditionFalsifiedStates = checkSatisfiability(productModel, conditionPath, statesOfInterest);
 
 			// compute bad states
 			JDDNode badStates = computeBadStates(product, conditionFalsifiedStates);
 
 			// compute redistribution for satisfied objective
-			ProbabilisticRedistribution objectiveSatisfied = redistributeProb1MaxProbs(productModel, objectivePath, conditionPath);
+			ProbabilisticRedistribution objectiveSatisfied = redistributeProb1(productModel, objectivePath, conditionPath);
 
 			// compute redistribution for falsified objective
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Obj(productModel, objectivePath, conditionFalsifiedStates, badStates);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(productModel, objectivePath, conditionFalsifiedStates, badStates);
 
 			// compute states where objective and condition can be satisfied
 			JDDNode instantGoalStates = computeInstantGoalStates(productModel, objectivePath, objectiveFalsified.getStates(), conditionPath, conditionFalsifiedStates.copy());
@@ -240,7 +216,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		 * For efficiency, do not minimizing the probability to satisfy the condition, but
 		 * maximize the probability to reach badStates | conditionFalsifiedStates, which is equivalent.
 		 */
-		public ProbabilisticRedistribution redistributeProb0Obj(NondetModel model, Until objectivePath, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
+		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
 				throws PrismException
 		{
 			// Is condition path free of invariants?
@@ -255,23 +231,10 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			Finally conditionFalsifiedPath   = new Finally(model, conditionFalsifiedStates);
 
 			// compute redistribution
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0MaxProbs(model, objectivePath, conditionFalsifiedPath);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(model, objectivePath, conditionFalsifiedPath);
 			conditionFalsifiedPath.clear();
 			// swap target states
-			return objectiveFalsified.swap(model);
-		}
-
-		public ProbabilisticRedistribution redistributeProb0MaxProbs(NondetModel model, Until pathProb0, Until pathMaxProbs)
-				throws PrismException
-		{
-			JDDNode states = computeProb0A(model, pathProb0);
-			JDDNode probabilities;
-			if (states.equals(JDD.ZERO)) {
-				probabilities = JDD.Constant(0);
-			} else {
-				probabilities = computeUntilMaxProbs(model, pathMaxProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
+			return objectiveFalsified;
 		}
 
 		/**

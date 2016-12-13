@@ -175,8 +175,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			JDDNode conditionFalsifiedStates = computeProb0(productModel, conditionPath);
-			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
+			JDDNode conditionFalsifiedStates = checkSatisfiability(productModel, conditionPath, statesOfInterest);
 
 			// compute badStates
 			JDDNode badStates = computeBadStates(productModel, conditionPath, conditionFalsifiedStates);
@@ -263,10 +262,10 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			Finally objectivePath = new Finally(productModel, acceptStates.copy());
 
 			// compute redistribution for satisfied condition
-			ProbabilisticRedistribution conditionSatisfied = redistributeProb1MaxProbs(productModel, conditionPath, objectivePath);
+			ProbabilisticRedistribution conditionSatisfied = redistributeProb1(productModel, conditionPath, objectivePath);
 
 			// compute redistribution for falsified objective
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Obj(productModel, objectivePath, conditionPath);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(productModel, objectivePath, conditionPath);
 			objectivePath.clear();
 
 			// compute accepting ECs to be normalized to goal
@@ -294,7 +293,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			return new NewFinallyUntilTransformer.MDP(getModelChecker());
 		}
 
-		public ProbabilisticRedistribution redistributeProb0Obj(NondetModel model, Until objectivePath, Until conditionPath)
+		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
 				throws PrismException
 		{
 			// Is condition path free of invariants?
@@ -304,33 +303,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 				return new ProbabilisticRedistribution();
 			}
 
-			return redistributeProb0MinProbs(model, objectivePath, conditionPath);
-		}
-
-		public ProbabilisticRedistribution redistributeProb1MaxProbs(NondetModel model, Until pathProb1, Until pathMaxProbs)
-				throws PrismException
-		{
-			JDDNode states = computeProb1(model, pathProb1);
-			JDDNode probabilities;
-			if (states.equals(JDD.ZERO)) {
-				probabilities = JDD.Constant(0);
-			} else {
-				probabilities = computeUntilMaxProbs(model, pathMaxProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
-		}
-
-		public ProbabilisticRedistribution redistributeProb0MinProbs(NondetModel model, Until pathProb0, Until pathMinProbs)
-				throws PrismException
-		{
-			JDDNode states = computeProb0A(model, pathProb0);
-			JDDNode probabilities;
-			if (states.equals(JDD.ZERO)) {
-				probabilities = JDD.Constant(0);
-			} else {
-				probabilities = computeUntilMinProbs(model, pathMinProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
+			return redistributeProb0(model, objectivePath, conditionPath);
 		}
 	}
 }

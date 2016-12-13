@@ -88,18 +88,17 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 			throws PrismException
 	{
 		// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-		JDDNode conditionFalsifiedStates = computeProb0(model, conditionPath);
-		checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
+		JDDNode conditionFalsifiedStates = checkSatisfiability(model, conditionPath, statesOfInterest);
 
 		// compute badStates
 		JDDNode badStates = computeBadStates(model, conditionPath, conditionFalsifiedStates);
 
 		// FIXME ALG: reuse precomputation?
 		// compute redistribution for satisfied objective
-		ProbabilisticRedistribution objectiveSatisfied = redistributeProb1MaxProbs(model, objectivePath, conditionPath);
+		ProbabilisticRedistribution objectiveSatisfied = redistributeProb1(model, objectivePath, conditionPath);
 
 		// compute redistribution for satisfied condition
-		ProbabilisticRedistribution conditionSatisfied = redistributeProb1MaxProbs(model, conditionPath, objectivePath);
+		ProbabilisticRedistribution conditionSatisfied = redistributeProb1(model, conditionPath, objectivePath);
 
 		// compute redistribution for falsified objective
 		ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(model, objectivePath, conditionPath);
@@ -141,36 +140,6 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 	JDDNode computeInstantGoalStates(M model, Until objectivePath, JDDNode objectiveSatisfiedStates, JDDNode objectiveFalsifiedStates, Until conditionPath, JDDNode conditionSatisfiedStates, JDDNode conditionFalsifiedStates)
 			throws PrismException;
 
-	default ProbabilisticRedistribution redistributeProb1MaxProbs(M model, Until pathProb1, Until pathMaxProbs)
-			throws PrismException
-	{
-		JDDNode states = computeProb1(model, pathProb1);
-		JDDNode probabilities;
-		if (states.equals(JDD.ZERO)) {
-			probabilities = JDD.Constant(0);
-		} else {
-			probabilities = computeUntilMaxProbs(model, pathMaxProbs);
-		}
-		return new ProbabilisticRedistribution(states, probabilities);
-	}
-
-	default ProbabilisticRedistribution redistributeProb0MinProbs(M model, Until pathProb0, Until pathMinProbs)
-			throws PrismException
-	{
-		JDDNode states = computeProb0(model, pathProb0);
-		JDDNode probabilities;
-		if (states.equals(JDD.ZERO)) {
-			probabilities = JDD.Constant(0);
-		} else {
-			probabilities = computeUntilMinProbs(model, pathMinProbs);
-		}
-		return new ProbabilisticRedistribution(states, probabilities);
-	}
-
-	JDDNode computeUntilMaxProbs(M model, Until until) throws PrismException;
-
-	JDDNode computeUntilMinProbs(M model, Until until) throws PrismException;
-
 
 
 
@@ -205,18 +174,6 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		}
 
 		@Override
-		public JDDNode computeUntilMaxProbs(ProbModel model, Until until) throws PrismException
-		{
-			return computeUntilProbs(model, until);
-		}
-
-		@Override
-		public JDDNode computeUntilMinProbs(ProbModel model, Until until) throws PrismException
-		{
-			return computeUntilProbs(model, until);
-		}
-
-		@Override
 		public JDDNode computeUntilProbs(ProbModel model, Until until) throws PrismException
 		{
 			Entry<? extends Model, ? extends SimplePathProperty> params = new AbstractMap.SimpleImmutableEntry<>(model, until);
@@ -240,7 +197,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 				throws PrismException
 		{
 			// Always normalize
-			return redistributeProb0MinProbs(model, objectivePath, conditionPath);
+			return redistributeProb0(model, objectivePath, conditionPath);
 		}
 	}
 
@@ -288,7 +245,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 				return new ProbabilisticRedistribution();
 			}
 
-			return redistributeProb0MinProbs(model, objectivePath, conditionPath);
+			return redistributeProb0(model, objectivePath, conditionPath);
 		}
 	}
 }

@@ -64,6 +64,9 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 			throws PrismException;
 
+	JDDNode checkSatisfiability(M model, Until conditionPath, JDDNode statesOfInterest)
+			throws UndefinedTransformationException;
+
 	default JDDNode checkSatisfiability(JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
 			throws UndefinedTransformationException
 	{
@@ -73,29 +76,16 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		return conditionUnsatisfied;
 	}
 
-//	default JDDNode findAcceptingStatesMax(LTLProduct<M> product)
-//			throws PrismException
-//	{
-//		return findAcceptingStatesMax(product, product.getProductModel().getReach().copy());
-//	}
-//
-//	/**
-//	 * Compute all states in remain from which acceptance can be guaranteed
-//	 */
-//	JDDNode findAcceptingStatesMax(LTLProduct<M> product, JDDNode remain)
-//			throws PrismException;
-
-//	JDDNode computeProb0A(M model, Until until);
-//
-//	JDDNode computeProb0E(M model, Until until);
-//
-//	JDDNode computeProb1A(M model, Until until);
-//
-//	JDDNode computeProb1E(M model, Until until);
-
 	JDDNode computeBadStates(M model, Until until, JDDNode unsatisfiedStates);
 
-	JDDNode computeBadStates(LTLProduct<M> product, JDDNode unsatisfiedStates) throws PrismException;
+	JDDNode computeBadStates(LTLProduct<M> product, JDDNode unsatisfiedStates)
+			throws PrismException;
+
+	ProbabilisticRedistribution redistributeProb1(M model, Until pathProb1, Until pathProbs)
+			throws PrismException;
+
+	ProbabilisticRedistribution redistributeProb0(M model, Until pathProb0, Until pathProbs)
+			throws PrismException;
 
 	GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 			throws PrismException;
@@ -110,35 +100,14 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			super(modelChecker);
 		}
 
-//		public JDDNode findAcceptingStatesMax(LTLProduct<ProbModel> product, JDDNode remain)
-//				throws PrismException
-//		{
-//			Until accept            = new Until(remain, getLtlTransformer().findAcceptingStates(product, remain));
-//			// States in remain that guarantee acceptance
-//			JDDNode acceptingStates = computeProb1(product.getProductModel(), accept);
-//			accept.clear();
-//			return acceptingStates;
-//		}
-
-//		public JDDNode computeProb0A(ProbModel model, Until until)
-//		{
-//			return computeProb0(model, until);
-//		}
-//
-//		public JDDNode computeProb0E(ProbModel model, Until until)
-//		{
-//			return computeProb0(model, until);
-//		}
-//
-//		public JDDNode computeProb1A(ProbModel model, Until until)
-//		{
-//			return computeProb1(model, until);
-//		}
-//
-//		public JDDNode computeProb1E(ProbModel model, Until until)
-//		{
-//			return computeProb1(model, until);
-//		}
+		@Override
+		public JDDNode checkSatisfiability(ProbModel model, Until conditionPath, JDDNode statesOfInterest)
+				throws UndefinedTransformationException
+		{
+			JDDNode conditionFalsifiedStates = computeProb0(model, conditionPath);
+			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
+			return conditionFalsifiedStates;
+		}
 
 		@Override
 		public NewMCResetTransformation transformReset(ProbModel model, JDDNode resetStates, JDDNode statesOfInterest)
@@ -162,6 +131,34 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
+		public ProbabilisticRedistribution redistributeProb1(ProbModel model, Until pathProb1, Until pathProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb1(model, pathProb1);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				probabilities = computeUntilProbs(model, pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0(ProbModel model, Until pathProb0, Until pathProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb0(model, pathProb0);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				probabilities = computeUntilProbs(model, pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		@Override
 		public GoalFailStopOperator<ProbModel> configureOperator(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
@@ -176,6 +173,15 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		public MDP(NondetModelChecker modelChecker)
 		{
 			super(modelChecker);
+		}
+
+		@Override
+		public JDDNode checkSatisfiability(NondetModel model, Until conditionPath, JDDNode statesOfInterest)
+				throws UndefinedTransformationException
+		{
+			JDDNode conditionFalsifiedStates = computeProb0A(model, conditionPath);
+			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
+			return conditionFalsifiedStates;
 		}
 
 		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product)
@@ -237,6 +243,51 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
+		public ProbabilisticRedistribution redistributeProb1(NondetModel model, Until pathProb1, Until pathProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb1A(model, pathProb1);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				probabilities = computeUntilMaxProbs(model, pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0(NondetModel model, Until pathProb0, Until pathProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb0A(model, pathProb0);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				probabilities = computeUntilMinProbs(model, pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		/**
+		 * Compute redistribution but use complementary path event for efficiency.
+		 * Instead of Pmin(path) use 1-Pmax(not path).
+		 */
+		public ProbabilisticRedistribution redistributeProb0Complement(NondetModel model, Until pathProb0, Until compPathProbs)
+				throws PrismException
+		{
+			JDDNode states = computeProb0A(model, pathProb0);
+			JDDNode probabilities;
+			if (states.equals(JDD.ZERO)) {
+				probabilities = JDD.Constant(0);
+			} else {
+				probabilities = computeUntilMaxProbs(model, compPathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities).swap(model);
+		}
+
+		@Override
 		public GoalFailStopOperator<NondetModel> configureOperator(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
@@ -269,11 +320,13 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			return badLabel;
 		}
 
+		@Override
 		public ExpressionConditional getOriginalExpression()
 		{
 			return (ExpressionConditional) originalExpression;
 		}
 
+		@Override
 		public ExpressionConditional getTransformedExpression()
 		{
 			return (ExpressionConditional) transformedExpression;

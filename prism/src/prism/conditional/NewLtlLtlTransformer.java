@@ -22,7 +22,6 @@ import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.conditional.SimplePathProperty.Finally;
-import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.GoalFailStopTransformation;
 import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
@@ -199,8 +198,7 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			Finally conditionPath                    = new Finally(conditionProductModel, acceptConditionStates);
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			JDDNode conditionFalsifiedStates = computeProb0(conditionProductModel, conditionPath);
-			checkSatisfiability(conditionFalsifiedStates, statesOfInterset);
+			JDDNode conditionFalsifiedStates = checkSatisfiability(conditionProductModel, conditionPath, statesOfInterset);
 			conditionPath.clear();
 
 			// compute bad states
@@ -228,7 +226,7 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 				conditionAcceptanceLifted.add(new StreettPairDD(R, G));
 			}
 			// compute redistribution for falsified objective
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Obj(objectiveAndConditionProduct, conditionFalsifiedLifted, badStatesLifted);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectiveAndConditionProduct, conditionFalsifiedLifted, badStatesLifted);
 
 			// 4) Conjunction of Objective and Condition Acceptance
 			AcceptanceStreettDD objectiveAndConditionAcceptance = new AcceptanceStreettDD();
@@ -260,23 +258,12 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			return new Pair<>(transformation, transformedExpression);
 		}
 
-		public NewLtlUntilTransformer.MDP getLtlUntilTransformer()
-		{
-			return new NewLtlUntilTransformer.MDP(getModelChecker());
-		}
-
-		@Override
-		public NewFinallyLtlTransformer.MDP getFinallyLtlTransformer()
-		{
-			return new NewFinallyLtlTransformer.MDP(getModelChecker());
-		}
-
 		/**
 		 * Compute redistribution for falsified objective.
 		 * For efficiency, do not minimizing the probability to satisfy the condition, but
 		 * maximize the probability to reach badStates | conditionFalsifiedStates, which is equivalent.
 		 */
-		public ProbabilisticRedistribution redistributeProb0Obj(LTLProduct<NondetModel> product, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
+		public ProbabilisticRedistribution redistributeProb0Objective(LTLProduct<NondetModel> product, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
 				throws PrismException
 		{
 			if ( !settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
@@ -294,24 +281,23 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			Finally conditionFalsifiedPath   = new Finally(productModel, conditionFalsifiedStates);
 
 			// compute redistribution
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0MaxProbs(productModel, objectivePath, conditionFalsifiedPath);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(productModel, objectivePath, conditionFalsifiedPath);
 			objectivePath.clear();
 			conditionFalsifiedPath.clear();
 			// swap target states
-			return objectiveFalsified.swap(productModel);
+			return objectiveFalsified;
 		}
 
-		public ProbabilisticRedistribution redistributeProb0MaxProbs(NondetModel model, Until pathProb0, Until pathMaxProbs)
-				throws PrismException
+		@Override
+		public NewLtlUntilTransformer.MDP getLtlUntilTransformer()
 		{
-			JDDNode states = computeProb0A(model, pathProb0);
-			JDDNode probabilities;
-			if (states.equals(JDD.ZERO)) {
-				probabilities = JDD.Constant(0);
-			} else {
-				probabilities = computeUntilMaxProbs(model, pathMaxProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
+			return new NewLtlUntilTransformer.MDP(getModelChecker());
+		}
+
+		@Override
+		public NewFinallyLtlTransformer.MDP getFinallyLtlTransformer()
+		{
+			return new NewFinallyLtlTransformer.MDP(getModelChecker());
 		}
 	}
 }
