@@ -37,6 +37,12 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		ltlModelChecker = new LTLModelChecker(this);
 	}
 
+	public StateModelChecker getModelChecker(M model) throws PrismException
+	{
+		// Create fresh model checker for model
+		return (StateModelChecker) modelChecker.createModelChecker(model);
+	}
+
 	public boolean canHandle(final Model model, final Expression expression)
 			throws PrismLangException
 	{
@@ -53,6 +59,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	public LabeledDA constructDA(final M model, final Expression expression, final AcceptanceType...acceptanceTypes)
 			throws PrismException
 	{
+		StateModelChecker mc                    = getModelChecker(model);
 		Vector<JDDNode> labels                  = new Vector<JDDNode>();
 		DA<BitSet,? extends AcceptanceOmega> da = null;
 
@@ -64,7 +71,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 			}
 			if (containsReach) {
 				getLog().print("\n[" + expression + "] is co-safe, attempting to construct acceptance REACH ... ");
-				da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, AcceptanceType.REACH, AcceptanceType.RABIN);
+				da = ltlModelChecker.constructDAForLTLFormula(mc, model, expression, labels, AcceptanceType.REACH, AcceptanceType.RABIN);
 				if (da.getAcceptance().getType() == AcceptanceType.REACH) {
 					getLog().println("Success.");
 				} else if (containsRabin){
@@ -81,7 +88,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		}
 		// Either formula is not co-safe or construction of acceptance REACH failed and RABIN is not allowed.
 		if (da == null) {
-			da = ltlModelChecker.constructDAForLTLFormula(modelChecker, model, expression, labels, acceptanceTypes);
+			da = ltlModelChecker.constructDAForLTLFormula(mc, model, expression, labels, acceptanceTypes);
 		}
 
 		return new LabeledDA(da, labels);

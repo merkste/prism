@@ -74,22 +74,29 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		}
 	}
 
-	ModelTransformation<M, M> transform(final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
+	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
 
 	PrismLog getLog();
 
 	MC getModelChecker();
 
-	MC getModelChecker(M model) throws PrismException;
+	@SuppressWarnings("unchecked")
+	default MC getModelChecker(M model) throws PrismException
+	{
+		// Create fresh model checker for model
+		return (MC) getModelChecker().createModelChecker(model);
+	}
 
-	LTLProductTransformer<M> getLtlTransformer();
+	default LTLProductTransformer<M> getLtlTransformer()
+	{
+		return new LTLProductTransformer<M>(getModelChecker());
+	}
 
 
 
 	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
 	{
 		protected MC modelChecker;
-		protected LTLProductTransformer<M> ltlTransformer;
 
 		public Basic(MC modelChecker) {
 			super(modelChecker);
@@ -100,23 +107,6 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		public MC getModelChecker()
 		{
 			return modelChecker;
-		}
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public MC getModelChecker(M model) throws PrismException
-		{
-			// Create fresh model checker for model
-			return (MC) modelChecker.createModelChecker(model);
-		}
-
-		@Override
-		public LTLProductTransformer<M> getLtlTransformer()
-		{
-			if (ltlTransformer == null) {
-				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
-			}
-			return ltlTransformer;
 		}
 	}
 

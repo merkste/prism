@@ -9,14 +9,14 @@ import java.util.function.IntFunction;
 import common.iterable.IterableArray;
 import explicit.DiracDistribution;
 
-public class BinaryRedistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
+public class ProbabilisticRedistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
 {
 	private final double[] probabilitiesA;
 	private final BitSet states;
 	private final int stateA;
 	private final int stateB;
 
-	public BinaryRedistribution(final BitSet states, final int stateA, final int stateB, final double[] probabilitiesA)
+	public ProbabilisticRedistribution(final BitSet states, final int stateA, final int stateB, final double[] probabilitiesA)
 	{
 		this.states = states;
 		this.probabilitiesA = probabilitiesA;
