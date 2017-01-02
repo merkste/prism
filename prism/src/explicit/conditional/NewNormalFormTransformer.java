@@ -1,12 +1,14 @@
 package explicit.conditional;
 
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import acceptance.AcceptanceOmega;
-import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
 import explicit.BasicModelExpressionTransformation;
+import explicit.BasicModelTransformation;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.MDPModelChecker;
@@ -15,10 +17,14 @@ import explicit.ModelExpressionTransformation;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.StateModelChecker;
-import explicit.conditional.GoalFailStopTransformation.ProbabilisticRedistribution;
+import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.SimplePathProperty.Finally;
+import explicit.conditional.SimplePathProperty.Reach;
 import explicit.conditional.SimplePathProperty.Until;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
+import explicit.modelviews.DTMCRestricted;
+import explicit.modelviews.MDPRestricted;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -34,81 +40,100 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		// 1) Normal-Form Transformation
 		NormalFormTransformation<M> normalFormTransformation = transformNormalForm(model, expression, statesOfInterest);
 		M normalFormModel                                    = normalFormTransformation.getTransformedModel();
-		getLog().println("Normal-form transformation: " + normalFormTransformation.getTransformedExpression());
+		getLog().println("\nNormal-form transformation: " + normalFormTransformation.getTransformedExpression());
 
 		// 2) Reset Transformation
-		BitSet badStates                                       = computeResetStates(normalFormTransformation);
-		BitSet transformedStatesOfInterest                     = normalFormTransformation.getTransformedStatesOfInterest();
+		BitSet badStates                                        = computeResetStates(normalFormTransformation);
+		BitSet transformedStatesOfInterest                      = normalFormTransformation.getTransformedStatesOfInterest();
 		ModelTransformation<M, ? extends M> resetTransformation = transformReset(normalFormModel, badStates, transformedStatesOfInterest);
 
-		// 3) Transform expression
+		// 3) Restrict to Reachable States
+		ModelTransformation<M, ? extends M> restrictTransformation = transformRestrict(resetTransformation);
+
+		// 4) Transform expression
 		Expression originalExpression    = normalFormTransformation.getOriginalExpression();
 		Expression transformedExpression = normalFormTransformation.getTransformedExpression().getObjective();
 
-		// 4) Compose Transformations
-		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(normalFormTransformation, resetTransformation);
-
+		// 5) Compose Transformations and Expressions
+		ModelTransformationNested<M, M, ? extends M> nested = restrictTransformation.nest(resetTransformation).nest(normalFormTransformation);
 		return new BasicModelExpressionTransformation<>(nested, originalExpression, transformedExpression);
 	}
 
 	NormalFormTransformation<M> transformNormalForm(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
 
+	ModelTransformation<M, ? extends M> transformReset(M model, BitSet resetStates, BitSet statesOfInterest)
+			throws PrismException;
+
+	ModelTransformation<M, ? extends M> transformRestrict(ModelTransformation<M, ? extends M> resetTransformation);
+
+	BitSet checkSatisfiability(Reach<M> conditionPath, BitSet statesOfInterest)
+			throws UndefinedTransformationException;
+
 	default BitSet computeResetStates(NormalFormTransformation<M> transformation)
 	{
 		BitSet badStates = transformation.getTransformedModel().getLabelStates(transformation.getBadLabel());
 		BitSet failState = transformation.getTransformedModel().getLabelStates(transformation.getFailLabel());
-		// FIXME ALG: handle bad/fail states == null
-		// FIXME ALG: check whether we may alter the returned sets
 		return BitSetTools.union(badStates, failState);
 	}
-
-	ModelTransformation<M, ? extends M> transformReset(M model, BitSet resetStates, BitSet statesOfInterest)
-			throws PrismException;
-
-	BitSet checkSatisfiability(M model, Until conditionPath, BitSet statesOfInterest)
-			throws UndefinedTransformationException;
 
 	default BitSet checkSatisfiability(BitSet conditionUnsatisfied, BitSet statesOfInterest)
 			throws UndefinedTransformationException
 	{
 		if (BitSetTools.isSubset(statesOfInterest, conditionUnsatisfied)) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
+			throw new UndefinedTransformationException("Condition is not satisfiable");
 		}
 		return conditionUnsatisfied;
 	}
 
-	BitSet computeBadStates(M model, Until until, BitSet unsatisfiedStates);
+	BitSet computeBadStates(Reach<M> reach, BitSet unsatisfiedStates);
 
 	BitSet computeBadStates(LTLProduct<M> product, BitSet unsatisfiedStates)
 			throws PrismException;
 
-	ProbabilisticRedistribution redistributeProb1(M model, Until pathProb1, Until pathProbs)
+	ProbabilisticRedistribution redistributeProb1(Reach<M> pathProb1, Reach<M> pathProbs)
 			throws PrismException;
 
-	ProbabilisticRedistribution redistributeProb0(M model, Until pathProb0, Until pathProbs)
+	ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 			throws PrismException;
 
-	GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, BitSet instantGoalStates, BitSet instantFailStates, BitSet statesOfInterest)
-			throws PrismException;
+	NewGoalFailStopTransformer<M> getGoalFailStopTransformer();
+
 
 
 
 	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 
-		private static final BitSet NO_STATES = new BitSet(0);
+		public static final BitSet NO_STATES = new BitSet(0);
+
+		protected Map<SimplePathProperty<explicit.DTMC>, double[]> cache;
 
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
+			cache = new HashMap<>();
+		}
+
+		/**
+		 * Override to enable caching of probabilities.
+		 *
+		 * @see NewNormalFormTransformer#transform(Model, ExpressionConditional, BitSet)
+		 */
+		@Override
+		public ModelExpressionTransformation<explicit.DTMC, explicit.DTMC> transform(explicit.DTMC model, ExpressionConditional expression, BitSet statesOfInterest)
+				throws PrismException
+		{
+			ModelExpressionTransformation<explicit.DTMC, explicit.DTMC> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			clear();
+			return result;
 		}
 
 		@Override
-		public BitSet checkSatisfiability(explicit.DTMC model, Until conditionPath, BitSet statesOfInterest)
+		public BitSet checkSatisfiability(Reach<explicit.DTMC> conditionPath, BitSet statesOfInterest)
 				throws UndefinedTransformationException
 		{
-			BitSet conditionFalsifiedStates = computeProb0(model, conditionPath);
+			BitSet conditionFalsifiedStates = computeProb0(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -121,7 +146,13 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public BitSet computeBadStates(explicit.DTMC model, Until until, BitSet unsatisfiedStates)
+		public BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformRestrict(ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> resetTransformation)
+		{
+			return DTMCRestricted.transform(resetTransformation.getTransformedModel(), resetTransformation.getTransformedStatesOfInterest());
+		}
+
+		@Override
+		public BitSet computeBadStates(Reach<explicit.DTMC> reach, BitSet unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
 			return NO_STATES;
@@ -135,40 +166,70 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb1(explicit.DTMC model, Until pathProb1, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb1(Reach<explicit.DTMC> pathProb1, Reach<explicit.DTMC> pathProbs)
 				throws PrismException
 		{
-			BitSet states = computeProb1(model, pathProb1);
+			pathProb1.requireSameModel(pathProbs);
+
+			BitSet states = computeProb1(pathProb1);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeUntilProbs(model, pathProbs);
+				probabilities = computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb0(explicit.DTMC model, Until pathProb0, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb0(Reach<explicit.DTMC> pathProb0, Reach<explicit.DTMC> pathProbs)
 				throws PrismException
 		{
-			BitSet states = computeProb0(model, pathProb0);
+			pathProb0.requireSameModel(pathProbs);
+
+			BitSet states = computeProb0(pathProb0);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeUntilProbs(model, pathProbs);
+				probabilities = computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		@Override
-		public GoalFailStopOperator<explicit.DTMC> configureOperator(explicit.DTMC model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, BitSet instantGoalStates, BitSet instantFailStates, BitSet statesOfInterest)
+		public NewGoalFailStopTransformer<explicit.DTMC> getGoalFailStopTransformer()
+		{
+			return new NewGoalFailStopTransformer.DTMC();
+		}
+
+		public void clear()
+		{
+			cache.clear();
+		}
+
+		@Override
+		public double[] computeProbs(Finally<explicit.DTMC> eventually)
 				throws PrismException
 		{
-			return new GoalFailStopOperator.DTMC(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, getLog());
+			if (! cache.containsKey(eventually)) {
+				double[] probabilities = super.computeProbs(eventually);
+				cache.put(eventually, probabilities);
+			}
+			return cache.get(eventually);
+		}
+
+		@Override
+		public double[] computeProbs(Until<explicit.DTMC> until)
+				throws PrismException
+		{
+			if (! cache.containsKey(until)) {
+				double[] probabilities = super.computeProbs(until);
+				cache.put(until, probabilities);
+			}
+			return cache.get(until);
 		}
 	}
 
@@ -182,30 +243,12 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public BitSet checkSatisfiability(explicit.MDP model, Until conditionPath, BitSet statesOfInterest)
+		public BitSet checkSatisfiability(Reach<explicit.MDP> conditionPath, BitSet statesOfInterest)
 				throws UndefinedTransformationException
 		{
-			BitSet conditionFalsifiedStates = computeProb0A(model, conditionPath);
+			BitSet conditionFalsifiedStates = computeProb0A(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
-		}
-
-		public BitSet findAcceptingStatesMax(LTLProduct<explicit.MDP> product)
-				throws PrismException
-		{
-			return findAcceptingStatesMax(product, product.getProductModel().getReach().copy(), true);
-		}
-
-		/**
-		 * [ REFS: <i>result</i>, DEREFS: <i>remain</i> ]
-		 */
-		public BitSet findAcceptingStatesMax(LTLProduct<explicit.MDP> product, BitSet remain, boolean alwaysRemain)
-				throws PrismException
-		{
-			BitSet acceptingStates = getLtlTransformer().findAcceptingStates(product, remain, alwaysRemain);
-			Until accept            = new Until(remain, acceptingStates, product.getProductModel());
-			// States in remain from which some scheduler can enforce acceptance to maximize probability
-			return computeProb1E(product.getProductModel(), accept);
 		}
 
 		@Override
@@ -216,9 +259,15 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public BitSet computeBadStates(explicit.MDP model, Until until, BitSet unsatisfiedStates)
+		public BasicModelTransformation<explicit.MDP, ? extends explicit.MDP> transformRestrict(ModelTransformation<explicit.MDP, ? extends explicit.MDP> resetTransformation)
 		{
-			BitSet maybeFalsified = computeProb0E(model, until);
+			return MDPRestricted.transform(resetTransformation.getTransformedModel(), resetTransformation.getTransformedStatesOfInterest());
+		}
+
+		@Override
+		public BitSet computeBadStates(Reach<explicit.MDP> reach, BitSet unsatisfiedStates)
+		{
+			BitSet maybeFalsified = computeProb0E(reach);
 			if (maybeFalsified.isEmpty()) {
 				return maybeFalsified;
 			}
@@ -234,7 +283,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 			// bad states == {s | Pmin=0[<> Condition]}
 			explicit.MDP productModel                     = product.getProductModel();
 			AcceptanceOmega conditionAcceptance           = product.getAcceptance();
-			AcceptanceOmega conditionAcceptanceComplement = conditionAcceptance.complement(AcceptanceType.allTypes());
+			AcceptanceOmega conditionAcceptanceComplement = conditionAcceptance.complement(productModel.getNumStates(), AcceptanceType.allTypes());
 			BitSet maybeUnsatisfiedStates                 = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptanceComplement);
 //			// reduce number of choices, i.e.
 //			// - reset only from r-states of streett acceptance
@@ -242,37 +291,41 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 //				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
 //				bad.and(rStates);
 //			}
-			BitSet maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, null, maybeUnsatisfiedStates);
+			BitSet maybeUnsatisfiedStatesProb1E = computeProb1E(new Finally<>(productModel, maybeUnsatisfiedStates));
 			maybeUnsatisfiedStatesProb1E.andNot(unsatisfiedStates);
 			return maybeUnsatisfiedStatesProb1E;
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb1(explicit.MDP model, Until pathProb1, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb1(Reach<explicit.MDP> pathProb1, Reach<explicit.MDP> pathProbs)
 				throws PrismException
 		{
-			BitSet states = computeProb1A(model, pathProb1);
+			pathProb1.requireSameModel(pathProbs);
+
+			BitSet states = computeProb1A(pathProb1);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeUntilMaxProbs(model, pathProbs);
+				probabilities = computeMaxProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb0(explicit.MDP model, Until pathProb0, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb0(Reach<explicit.MDP> pathProb0, Reach<explicit.MDP> pathProbs)
 				throws PrismException
 		{
-			BitSet states = computeProb0A(model, pathProb0);
+			pathProb0.requireSameModel(pathProbs);
+
+			BitSet states = computeProb0A(pathProb0);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeUntilMinProbs(model, pathProbs);
+				probabilities = computeMinProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -281,25 +334,26 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		 * Compute redistribution but use complementary path event for efficiency.
 		 * Instead of Pmin(path) use 1-Pmax(not path).
 		 */
-		public ProbabilisticRedistribution redistributeProb0Complement(explicit.MDP model, Until pathProb0, Until compPathProbs)
+		public ProbabilisticRedistribution redistributeProb0Complement(Reach<explicit.MDP> pathProb0, Reach<explicit.MDP> compPathProbs)
 				throws PrismException
 		{
-			BitSet states = computeProb0A(model, pathProb0);
+			pathProb0.requireSameModel(compPathProbs);
+
+			BitSet states = computeProb0A(pathProb0);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeUntilMaxProbs(model, compPathProbs);
+				probabilities = computeMaxProbs(compPathProbs);
 			}
-			return new ProbabilisticRedistribution(states, probabilities).swap(model);
+			return new ProbabilisticRedistribution(states, probabilities).swap();
 		}
 
 		@Override
-		public GoalFailStopOperator<explicit.MDP> configureOperator(explicit.MDP model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, BitSet instantGoalStates, BitSet instantFailStates, BitSet statesOfInterest)
-				throws PrismException
+		public NewGoalFailStopTransformer<explicit.MDP> getGoalFailStopTransformer()
 		{
-			return new GoalFailStopOperator.MDP(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, getLog());
+			return new NewGoalFailStopTransformer.MDP();
 		}
 	}
 

@@ -1,5 +1,10 @@
 package prism.conditional;
 
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -17,6 +22,7 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.LTLModelChecker.LTLProduct;
+import prism.Model;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.NewMCResetTransformation;
@@ -94,11 +100,28 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 
 	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<ProbModel, ProbModelChecker>
 	{
+		protected Map<Entry<? extends Model, ? extends SimplePathProperty>, JDDNode> cache;
 
 		public DTMC(ProbModelChecker modelChecker)
 		{
 			super(modelChecker);
+			cache = new HashMap<>();
 		}
+
+		/**
+		 * Override to enable caching of probabilities.
+		 *
+		 * @see NewNormalFormTransformer#transform(ProbModel, ExpressionConditional, JDDNode)
+		 */
+		@Override
+		public ModelExpressionTransformation<ProbModel, ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+				throws PrismException
+		{
+			ModelExpressionTransformation<ProbModel,ProbModel> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			clear();
+			return result;
+		}
+
 
 		@Override
 		public JDDNode checkSatisfiability(ProbModel model, Until conditionPath, JDDNode statesOfInterest)
@@ -164,6 +187,24 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		{
 			return new GoalFailStopOperator.DTMC(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, getLog());
 		}
+
+		public void clear()
+		{
+			cache.values().forEach(JDD::Deref);
+			cache.clear();
+		}
+
+		@Override
+		public JDDNode computeUntilProbs(ProbModel model, Until until)
+				throws PrismException
+		{
+			Entry<? extends Model, ? extends SimplePathProperty> params = new AbstractMap.SimpleImmutableEntry<>(model, until);
+			if (! cache.containsKey(params)) {
+				JDDNode probabilities = super.computeUntilProbs(model, until);
+				cache.put(params, probabilities);
+			}
+			return cache.get(params).copy();
+		}
 	}
 
 
@@ -187,16 +228,16 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product)
 				throws PrismException
 		{
-			return findAcceptingStatesMax(product, product.getProductModel().getReach().copy(), true);
+			return findAcceptingStatesMax(product, product.getProductModel().getReach().copy());
 		}
 
 		/**
 		 * [ REFS: <i>result</i>, DEREFS: <i>remain</i> ]
 		 */
-		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product, JDDNode remain, boolean alwaysRemain)
+		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product, JDDNode remain)
 				throws PrismException
 		{
-			JDDNode acceptingStates = getLtlTransformer().findAcceptingStates(product, remain, alwaysRemain);
+			JDDNode acceptingStates = getLtlTransformer().findAcceptingStates(product, remain);
 			Until accept            = new Until(remain, acceptingStates);
 			// States in remain from which some scheduler can enforce acceptance to maximize probability
 			JDDNode acceptingStatesMax = computeProb1E(product.getProductModel(), accept);

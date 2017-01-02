@@ -5,15 +5,14 @@ import java.util.BitSet;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.PrismException;
-import prism.PrismLangException;
 import explicit.BasicModelExpressionTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.conditional.transformer.ConditionalTransformer;
+import explicit.conditional.NewConditionalTransformer;
 
-public abstract class MCConditionalTransformer extends ConditionalTransformer.Basic<DTMC, DTMCModelChecker>
+public abstract class MCConditionalTransformer extends NewConditionalTransformer.Basic<DTMC, DTMCModelChecker>
 {
 	public MCConditionalTransformer(final DTMCModelChecker modelChecker)
 	{
@@ -21,30 +20,20 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer.Ba
 	}
 
 	@Override
-	public boolean canHandle(final Model model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleModelType(Model model)
 	{
-		if (!(model instanceof DTMC)) {
-			return false;
-		}
-		final DTMC dtmc = (DTMC) model;
-		return canHandleCondition(dtmc, expression) && canHandleObjective(dtmc, expression);
+		return model instanceof explicit.DTMC;
 	}
 
-	protected abstract boolean canHandleCondition(final DTMC model, final ExpressionConditional expression) throws PrismLangException;
-
-	protected abstract boolean canHandleObjective(final DTMC model, final ExpressionConditional expression) throws PrismLangException;
-
-	// FIXME ALG: add test canHandle for objective independent transformations
-
 	@Override
-	public BasicModelExpressionTransformation<DTMC, ? extends DTMC> transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public BasicModelExpressionTransformation<explicit.DTMC, ? extends explicit.DTMC> transform(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		checkCanHandle(model, expression);
 
-		final ModelTransformation<DTMC, ? extends DTMC> transformation = transformModel(model, expression, statesOfInterest);
+		final ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformation = transformModel(model, expression, statesOfInterest);
 		final Expression transformedExpression = transformExpression(expression);
-		return new BasicModelExpressionTransformation<DTMC, DTMC>(transformation, expression, transformedExpression);
+		return new BasicModelExpressionTransformation<explicit.DTMC, explicit.DTMC>(transformation, expression, transformedExpression);
 	}
 
 	protected Expression transformExpression(final ExpressionConditional expression)
@@ -52,6 +41,6 @@ public abstract class MCConditionalTransformer extends ConditionalTransformer.Ba
 		return expression.getObjective();
 	}
 
-	protected abstract ModelTransformation<DTMC, ? extends DTMC> transformModel(final DTMC model, final ExpressionConditional expression,
+	protected abstract ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException;
 }

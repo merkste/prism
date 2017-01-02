@@ -276,4 +276,25 @@ public interface Model
 	/** Clear any stored predecessor relation, e.g., because the model was modified */
 	public void clearPredecessorRelation();
 
+	/**
+	 * Adds a label and the set the states that satisfy it.
+	 * Any existing label with the same name is overwritten.
+	 * @param name The name of the label
+	 * @param states The states that satisfy the label 
+	 */
+	public void addLabel(String name, BitSet states);
+
+	/**
+	 * Add a label with corresponding state set, ensuring a unique, non-existing label.
+	 * The label will be either "X" or "X_i" where X is the content of the {@code prefix} argument
+	 * and i is a non-negative integer.
+	 * <br>
+	 * Note that a stored label takes preference over the on-the-fly calculation
+	 * of an ExpressionLabel, cf. {@link explicit.StateModelChecker#checkExpressionLabel}
+	 *
+	 * @param prefix the prefix for the unique label
+	 * @param labelStates the BitSet with the state set for the label
+	 * @return the generated unique label
+	 */
+	public String addUniqueLabel(String prefix, BitSet labelStates);
 }

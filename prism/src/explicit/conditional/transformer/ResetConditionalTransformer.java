@@ -9,18 +9,22 @@ import java.util.function.IntFunction;
 import common.BitSetTools;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
-import prism.ModelType;
-import prism.OpRelOpBound;
+import parser.ast.ExpressionTemporal;
 import prism.PrismException;
-import prism.PrismLangException;
+import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
 import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
+import explicit.MinMax;
 import explicit.Model;
+import explicit.ModelExpressionTransformation;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.PredecessorRelation;
+import explicit.ProbModelChecker;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -31,37 +35,23 @@ import explicit.modelviews.MDPDroppedAllChoices;
 import explicit.modelviews.MDPRestricted;
 
 // FIXME ALG: add comment
-public interface ResetConditionalTransformer<M extends Model> extends ConditionalTransformer<M>
+public interface ResetConditionalTransformer<M extends Model, MC extends ProbModelChecker> extends NewConditionalTransformer<M, MC>
 {
-	@SuppressWarnings("unchecked")
 	@Override
-	default boolean canHandle(Model model, ExpressionConditional expression)
-			throws PrismLangException
+	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+			throws PrismException
 	{
-		return canHandleModelType(model)
-		       && canHandleObjective((M) model, expression)
-		       && canHandleCondition((M) model, expression);
+		ConditionalReachabilitiyTransformation<M,M> transformation = transformReachability(model, expression, statesOfInterest);
+		// construct expression Pmax=? [ F "goal" ]
+		BitSet goalStates                 = transformation.getGoalStates();
+		String goalString                 = transformation.getTransformedModel().addUniqueLabel("goal", goalStates);
+		ExpressionTemporal finallyGoal    = Expression.Finally(new ExpressionLabel(goalString));
+		ExpressionProb probMaxFinallyGoal = new ExpressionProb(finallyGoal, MinMax.max(), "=", null);
+		// wrap in new transformation
+		return new BasicModelExpressionTransformation<>(transformation, expression, probMaxFinallyGoal);
 	}
 
-	boolean canHandleModelType(Model model);
-
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
-			throws PrismLangException
-	{
-		if (!(expression.getObjective() instanceof ExpressionProb)) {
-			return false;
-		}
-		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
-		// can handle maximal probabilities only
-		return oprel.getMinMax(model.getModelType()).isMax();
-	}
-
-	boolean canHandleCondition(M model, ExpressionConditional expression)
-			throws PrismLangException;
-
-	@Override
-	ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+	ConditionalReachabilitiyTransformation<M, M> transformReachability(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
 
 	default ModelTransformation<M, ? extends M> transformReset(M model, BitSet reset, BitSet statesOfInterest)
@@ -115,7 +105,7 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 
 
-	public static abstract class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements ResetConditionalTransformer<explicit.DTMC>
+	public static abstract class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements ResetConditionalTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 
 		public DTMC(DTMCModelChecker modelChecker)
@@ -126,7 +116,7 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		@Override
 		public boolean canHandleModelType(Model model)
 		{
-			return (model.getModelType() == ModelType.DTMC) && (model instanceof explicit.DTMC);
+			return model instanceof explicit.DTMC;
 		}
 
 		@Override
@@ -177,7 +167,7 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 
 
 
-	public static abstract class MDP extends ConditionalTransformer.Basic<explicit.MDP, MDPModelChecker> implements ResetConditionalTransformer<explicit.MDP>
+	public static abstract class MDP extends NewConditionalTransformer.Basic<explicit.MDP, MDPModelChecker> implements ResetConditionalTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -187,7 +177,7 @@ public interface ResetConditionalTransformer<M extends Model> extends Conditiona
 		@Override
 		public boolean canHandleModelType(Model model)
 		{
-			return (model.getModelType() == ModelType.MDP) && (model instanceof explicit.MDP);
+			return model instanceof explicit.MDP;
 		}
 
 		@Override

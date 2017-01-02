@@ -13,6 +13,7 @@ import prism.PrismLangException;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.TerminalTransformation;
@@ -33,7 +34,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 		reachabilityTransformer = new ConditionalReachabilityTransformer(modelChecker);
 	}
 
-	public boolean canHandle(final DTMC model, final Expression expression) throws PrismLangException
+	public boolean canHandle(final Model model, final Expression expression) throws PrismLangException
 	{
 		return ltlTransformer.canHandle(model, expression);
 	}

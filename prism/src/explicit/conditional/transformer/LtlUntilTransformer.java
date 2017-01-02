@@ -16,6 +16,7 @@ import explicit.MDPModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
+import explicit.ProbModelChecker;
 import explicit.ReachabilityComputer;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
@@ -25,12 +26,12 @@ import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 
 // FIXME ALG: add comment
-public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTransformer<M>
+public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
 
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
@@ -39,7 +40,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 
 	@Override
 	default
-	boolean canHandleObjective(M model, ExpressionConditional expression)
+	boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		if (! ResetConditionalTransformer.super.canHandleObjective(model, expression)) {
@@ -50,7 +51,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 	}
 
 	@Override
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+	default ConditionalReachabilitiyTransformation<M, M> transformReachability(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
 		checkCanHandle(model, expression);
@@ -88,7 +89,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		case REACH:
 			M objectiveModel = product.getTransformedModel();
 			objectiveGoal = getLtlTransformer().findAcceptingStates(product);
-			FinallyUntilTransformer<M> finallyTransformer = getFinallyFinallyTransformer();
+			FinallyUntilTransformer<M, MC> finallyTransformer = getFinallyFinallyTransformer();
 			getLog().println("\nDetected acceptance REACH for objective, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, conditionNegated, transformedStatesOfInterest);
 			break;
@@ -170,13 +171,13 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		}
 	}
 
-	FinallyUntilTransformer<M> getFinallyFinallyTransformer();
+	FinallyUntilTransformer<M, MC> getFinallyFinallyTransformer();
 
 	GoalStopTransformer<M> getNormalFormTransformer();
 
 
 
-	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlUntilTransformer<explicit.DTMC>
+	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -184,7 +185,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		}
 
 		@Override
-		public FinallyUntilTransformer<explicit.DTMC> getFinallyFinallyTransformer()
+		public FinallyUntilTransformer<explicit.DTMC, DTMCModelChecker> getFinallyFinallyTransformer()
 		{
 			return new FinallyUntilTransformer.DTMC(modelChecker);
 		}
@@ -198,7 +199,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 
 
 
-	public static class MDP extends ResetConditionalTransformer.MDP implements LtlUntilTransformer<explicit.MDP>
+	public static class MDP extends ResetConditionalTransformer.MDP implements LtlUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -206,7 +207,7 @@ public interface LtlUntilTransformer<M extends Model> extends ResetConditionalTr
 		}
 
 		@Override
-		public FinallyUntilTransformer<explicit.MDP> getFinallyFinallyTransformer()
+		public FinallyUntilTransformer<explicit.MDP, MDPModelChecker> getFinallyFinallyTransformer()
 		{
 			return new FinallyUntilTransformer.MDP(modelChecker);
 		}

@@ -62,7 +62,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 
 	private ModelTransformation<ProbModel, ProbModel> transformModel(final NewConditionalTransformer.DTMC transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
+		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
 		long timer = System.currentTimeMillis();
 		final ModelTransformation<ProbModel, ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
@@ -87,6 +87,10 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 	private NewConditionalTransformer.DTMC selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
 	{
 		PrismSettings settings = prism.getSettings();
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE) || settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+			throw new PrismException("There is no symbolic prototype conditionals.");
+		}
+
 		NewConditionalTransformer.DTMC transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
 			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
@@ -157,11 +161,6 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 
 		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
 
-		if (transformation instanceof ModelExpressionTransformation) {
-			
-		} else {
-		
-		}
 		final StateValues result = mcTransformed.checkExpression(transformedExpression, JDD.Constant(1));
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");

@@ -7,9 +7,9 @@ import parser.ast.ExpressionConditional;
 import prism.PrismException;
 import prism.PrismLangException;
 import explicit.BasicModelTransformation;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
@@ -19,7 +19,7 @@ import explicit.conditional.transformer.mc.MCConditionalTransformer;
 @Deprecated
 public class MCLTLTransformer extends MCConditionalTransformer
 {
-	protected LTLProductTransformer<DTMC> ltlTransformer;
+	protected LTLProductTransformer<explicit.DTMC> ltlTransformer;
 	protected MCUntilTransformer untilTransformer;
 
 	public MCLTLTransformer(final DTMCModelChecker modelChecker) throws PrismException
@@ -30,23 +30,23 @@ public class MCLTLTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		return ltlTransformer.canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// cannot handle steady state computation yet
 		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));
 	}
 
 	@Override
-	public ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public ModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		final LTLProduct<DTMC> ltlTransformation = ltlTransformer.transform(model, expression.getCondition(), statesOfInterest, AcceptanceType.RABIN);
+		final LTLProduct<explicit.DTMC> ltlTransformation = ltlTransformer.transform(model, expression.getCondition(), statesOfInterest, AcceptanceType.RABIN);
 
 		final Integer[] ltlMapping = new Integer[model.getNumStates()];
 		for (Integer productState : ltlTransformation.getProductModel().getInitialStates()) {
@@ -58,7 +58,7 @@ public class MCLTLTransformer extends MCConditionalTransformer
 		}
 
 		final BitSet goal = ltlTransformer.findAcceptingStates(ltlTransformation);
-		final BasicModelTransformation<DTMC, DTMC> untilTransformation = untilTransformer.transformModel(ltlTransformation.getProductModel(), goal);
+		final BasicModelTransformation<explicit.DTMC, explicit.DTMC> untilTransformation = untilTransformer.transformModel(ltlTransformation.getProductModel(), goal);
 
 		return new ModelTransformationNested<>(ltlTransformation, untilTransformation);
 	}

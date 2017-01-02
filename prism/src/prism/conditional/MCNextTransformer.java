@@ -10,6 +10,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
+import prism.Model;
 import prism.ModelChecker;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
@@ -31,7 +32,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public boolean canHandleCondition(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		try {
@@ -60,7 +61,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public boolean canHandleObjective(final ProbModel model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());

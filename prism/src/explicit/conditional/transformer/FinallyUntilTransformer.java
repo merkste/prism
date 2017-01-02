@@ -7,6 +7,7 @@ import explicit.MDPModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
+import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.GoalFailStopTransformer;
 import explicit.conditional.transformer.GoalFailStopTransformer.GoalFailStopTransformation;
@@ -20,10 +21,10 @@ import prism.PrismException;
 import prism.PrismLangException;
 
 // FIXME ALG: add comment
-public interface FinallyUntilTransformer<M extends Model> extends ResetConditionalTransformer<M>
+public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
 {
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
@@ -31,7 +32,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 	}
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		if (! ResetConditionalTransformer.super.canHandleObjective(model, expression)) {
@@ -44,7 +45,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 	}
 
 	@Override
-	default ConditionalReachabilitiyTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+	default ConditionalReachabilitiyTransformation<M, M> transformReachability(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
 		checkCanHandle(model, expression);
@@ -124,7 +125,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 
 
 
-	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyUntilTransformer<explicit.DTMC>
+	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -140,7 +141,7 @@ public interface FinallyUntilTransformer<M extends Model> extends ResetCondition
 
 
 
-	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyUntilTransformer<explicit.MDP>
+	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{

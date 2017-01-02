@@ -4,9 +4,9 @@ import java.util.BitSet;
 
 import common.BitSetTools;
 import common.iterable.IterableBitSet;
-import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.Model;
 import explicit.ModelCheckerResult;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.ResetTransformer;
@@ -43,7 +43,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	//====== Protocol: Conditional Transformation ======
 
 	@Override
-	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP> transformReachability(final explicit.MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
@@ -111,18 +111,18 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		final BitSet goalStates                  = BitSetTools.asBitSet(goalState);
 		final BitSet transformedStatesOfInterest = BitSetTools.asBitSet(resetState);
-		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, state -> state, goalStates, transformedStatesOfInterest);
+		return new ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP>(model, transformedModel, state -> state, goalStates, transformedStatesOfInterest);
 	}
 
 	@Override
-	protected boolean canHandleCondition(final MDP model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
 	@Override
-	protected boolean canHandleObjective(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;
@@ -132,7 +132,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
-	protected BitSet getTargetStates(final MDP model, final Expression condition) throws PrismException
+	protected BitSet getTargetStates(final explicit.MDP model, final Expression condition) throws PrismException
 	{
 		// assume non-negated until formula
 		final Expression target = ((ExpressionTemporal) condition).getOperand2();

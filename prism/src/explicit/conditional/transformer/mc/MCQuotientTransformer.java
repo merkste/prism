@@ -12,9 +12,9 @@ import prism.PrismException;
 import prism.PrismLangException;
 import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
+import explicit.Model;
 import explicit.conditional.transformer.UndefinedTransformationException;
 
 // FIXME ALG: add comment
@@ -26,14 +26,14 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		// FIXME ALG: Should check whether formula can be turned into ExpressionProb
 		return LTLModelChecker.isSupportedLTLFormula(ModelType.DTMC, expression.getCondition());
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// only prob formulae without bounds
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
@@ -43,7 +43,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public ConditionalQuotientTransformation transform(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public ConditionalQuotientTransformation transform(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		final double[] probabilities = computeProbability(model, expression.getCondition());
@@ -52,15 +52,15 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		if (support.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		final BasicModelExpressionTransformation<DTMC, ? extends DTMC> transformation = super.transform(model, expression, support);
+		final BasicModelExpressionTransformation<explicit.DTMC, ? extends explicit.DTMC> transformation = super.transform(model, expression, support);
 		return new ConditionalQuotientTransformation(transformation, probabilities);
 	}
 
 	@Override
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		return new BasicModelTransformation<DTMC, DTMC>(model, model, statesOfInterest);
+		return new BasicModelTransformation<explicit.DTMC, explicit.DTMC>(model, model, statesOfInterest);
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 		return new ExpressionProb(Expression.And(objective.getExpression(), condition), RelOp.COMPUTE_VALUES.toString(), null);
 	}
 
-	protected double[] computeProbability(final DTMC model, final Expression pathFormula) throws PrismException
+	protected double[] computeProbability(final explicit.DTMC model, final Expression pathFormula) throws PrismException
 	{
 		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
 

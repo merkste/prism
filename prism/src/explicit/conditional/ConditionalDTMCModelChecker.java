@@ -12,13 +12,9 @@ import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSparse;
-import explicit.ModelCheckerResult;
 import explicit.ModelExpressionTransformation;
-import explicit.ModelTransformation;
-import explicit.ModelTransformationNested;
 import explicit.StateValues;
 import explicit.conditional.transformer.DtmcTransformerType;
-import explicit.conditional.transformer.ConditionalTransformer;
 import explicit.conditional.transformer.FinallyUntilTransformer;
 import explicit.conditional.transformer.FinallyLtlTransformer;
 import explicit.conditional.transformer.LtlLtlTransformer;
@@ -31,7 +27,6 @@ import explicit.conditional.transformer.mc.MCUntilTransformer;
 import explicit.conditional.transformer.mc.NewMcLtlTransformer;
 import explicit.conditional.transformer.mc.NewMcNextTransformer;
 import explicit.conditional.transformer.mc.NewMcUntilTransformer;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 import explicit.modelviews.DTMCView;
 
 // FIXME ALG: add comment
@@ -48,20 +43,19 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 	@Override
 	public StateValues checkExpression(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		final ConditionalTransformer<DTMC> transformer = selectModelTransformer(model, expression);
-		final ModelTransformation<DTMC, ? extends DTMC> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		final NewConditionalTransformer<DTMC, DTMCModelChecker> transformer = selectModelTransformer(model, expression);
+		final ModelExpressionTransformation<DTMC, ? extends DTMC> transformation = transformModel(transformer, model, expression, statesOfInterest);
+
 		final StateValues result = checkExpressionTransformedModel(transformation);
 		return transformation.projectToOriginalModel(result);
 	}
 
-	public ModelTransformation<DTMC, ? extends DTMC> transformModel(final ConditionalTransformer<DTMC> transformer, final DTMC model,
+	public ModelExpressionTransformation<DTMC, ? extends DTMC> transformModel(final NewConditionalTransformer<DTMC, DTMCModelChecker> transformer, final DTMC model,
 			final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		String typeName = transformer.getClass().getSimpleName();
-		String enclosingName = transformer.getClass().getEnclosingClass() == null ? "" : transformer.getClass().getEnclosingClass().getSimpleName() + "."; 
-		mainLog.println("\nTransforming model (using " + enclosingName + typeName + ") for " + expression);
+		mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
 		long overallTime = System.currentTimeMillis();
-		ModelTransformation<DTMC, ? extends DTMC> transformation = transformer.transform(model, expression, statesOfInterest);
+		ModelExpressionTransformation<DTMC, ? extends DTMC> transformation = transformer.transform(model, expression, statesOfInterest);
 		long transformationTime = System.currentTimeMillis() - overallTime;
 		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
@@ -74,19 +68,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 				long buildTime = System.currentTimeMillis();
 				DTMCSparse transformedModelSparse = new DTMCSparse(transformedModel);
 				buildTime = System.currentTimeMillis() - buildTime;
-				ModelTransformation<DTMC, DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
-				sparseTransformation = new ModelTransformationNested<>(transformation, sparseTransformation);
-				if (transformation instanceof ModelExpressionTransformation) {
-					Expression originalExpression = ((ModelExpressionTransformation<?,?>) transformation).getOriginalExpression();
-					Expression transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
-					sparseTransformation = new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
-				} else if (transformation instanceof ConditionalReachabilitiyTransformation) {
-					sparseTransformation = new ConditionalReachabilitiyTransformation<>(sparseTransformation, ((ConditionalReachabilitiyTransformation<?,?>) transformation).getGoalStates());
-				}
-				transformation = sparseTransformation;
+				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
+				// build in transformation
+				BasicModelTransformation<DTMC, DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
+				sparseTransformation = sparseTransformation.compose(transformation);
+				// attach transformed expression
+				Expression originalExpression    = transformation.getOriginalExpression();
+				Expression transformedExpression = transformation.getTransformedExpression();
+				transformation = new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
 			}
 		}
-
 		overallTime = System.currentTimeMillis() - overallTime;
 		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
 		mainLog.print("Transformed model has ");
@@ -99,35 +90,61 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		return (model instanceof DTMCView) && ((DTMCView) model).isVirtual();
 	}
 
-	public ConditionalTransformer<DTMC> selectModelTransformer(final DTMC model, final ExpressionConditional expression) throws PrismException
+	public NewConditionalTransformer<DTMC, DTMCModelChecker> selectModelTransformer(final DTMC model, final ExpressionConditional expression) throws PrismException
 	{
-		ConditionalTransformer<DTMC> transformer;
+		NewConditionalTransformer<DTMC, DTMCModelChecker> transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
+			final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-			for (MdpTransformerType type : types) {
-				switch (type) {
-				case FinallyFinally:
-					transformer = new FinallyUntilTransformer.DTMC(modelChecker);
-					break;
-				case LtlFinally:
-					transformer = new LtlUntilTransformer.DTMC(modelChecker);
-					break;
-				case FinallyLtl:
-					transformer = new FinallyLtlTransformer.DTMC(modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new LtlLtlTransformer.DTMC(modelChecker);
-					break;
-				default:
-					continue;
+			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
+				throw new PrismException("There is no TACAS'14 prototype for the reset method in MCs");
+			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+				for (MdpTransformerType type : types) {
+					switch (type) {
+					case FinallyFinally:
+						transformer = new FinallyUntilTransformer.DTMC(modelChecker);
+						break;
+					case LtlFinally:
+						transformer = new LtlUntilTransformer.DTMC(modelChecker);
+						break;
+					case FinallyLtl:
+						transformer = new FinallyLtlTransformer.DTMC(modelChecker);
+						break;
+					case LtlLtl:
+						transformer = new LtlLtlTransformer.DTMC(modelChecker);
+						break;
+					default:
+						continue;
+					}
+					if (transformer.canHandle(model, expression)) {
+						return transformer;
+					}
 				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
+			} else {
+				for (MdpTransformerType type : types) {
+					switch (type) {
+					case FinallyFinally:
+						transformer = new NewFinallyUntilTransformer.DTMC(modelChecker);
+						break;
+					case LtlFinally:
+						transformer = new NewLtlUntilTransformer.DTMC(modelChecker);
+						break;
+					case FinallyLtl:
+						transformer = new NewFinallyLtlTransformer.DTMC(modelChecker);
+						break;
+					case LtlLtl:
+						transformer = new NewLtlLtlTransformer.DTMC(modelChecker);
+						break;
+					default:
+						continue;
+					}
+					if (transformer.canHandle(model, expression)) {
+						return transformer;
+					}
 				}
 			}
 		} else {
-			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
+			final String specification                 = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
 			final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
 				for (DtmcTransformerType type : types) {
@@ -201,24 +218,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		throw new PrismException("Cannot model check " + expression);
 	}
 
-	public StateValues checkExpressionTransformedModel(final ModelTransformation<DTMC, ? extends DTMC> transformation) throws PrismException
+	public StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<DTMC, ? extends DTMC> transformation) throws PrismException
 	{
-		final DTMC transformedModel = transformation.getTransformedModel();
-		final BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
+		DTMC transformedModel              = transformation.getTransformedModel();
+		Expression transformedExpression   = transformation.getTransformedExpression();
+		BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
+
 		mainLog.println("\nChecking property in transformed model ...");
-		final StateValues sv;
-		long timer = System.currentTimeMillis();
-		if (transformation instanceof ModelExpressionTransformation) {
-			Expression transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
-			sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
-		} else if (transformation instanceof ConditionalReachabilitiyTransformation){
-			BitSet goalStates = ((ConditionalReachabilitiyTransformation<?,?>) transformation).getGoalStates();
-			ModelCheckerResult result = modelChecker.computeReachProbs(transformedModel, goalStates);
-			sv = StateValues.createFromDoubleArray(result.soln, transformedModel);
-		} else {
-			throw new PrismException("Unsupported transformation for model checking");
-		}
-		timer = System.currentTimeMillis() - timer;
+		long timer     = System.currentTimeMillis();
+		StateValues sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
+		timer          = System.currentTimeMillis() - timer;
 		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return sv;

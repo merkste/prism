@@ -10,6 +10,7 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
+import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
@@ -38,7 +39,7 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 	}
 
 	@Override
-	public boolean canHandleCondition(NondetModel model, ExpressionConditional expression)
+	public boolean canHandleCondition(Model model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
@@ -46,7 +47,7 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 	}
 
 	@Override
-	public boolean canHandleObjective(NondetModel model, ExpressionConditional expression)
+	public boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		// can handle probabilites only

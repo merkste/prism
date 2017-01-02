@@ -17,6 +17,7 @@ import common.iterable.IterableBitSet;
 import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
+import common.iterable.collections.UnionSet;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;
 import explicit.MDP;
@@ -158,22 +159,27 @@ public class MDPRestricted extends MDPView
 	}
 
 	@Override
-	public BitSet getLabelStates(final String name)
+	public BitSet getLabelStates(String name)
 	{
-		final BitSet labelStates = model.getLabelStates(name);
-		return (labelStates == null) ? null : mapStatesToRestrictedModel(labelStates);
+		if (super.hasLabel(name)) {
+			return super.getLabelStates(name);
+		}
+		if (model.hasLabel(name)) {
+			return mapStatesToRestrictedModel(model.getLabelStates(name));
+		}
+		return null;
 	}
 
 	@Override
 	public Set<String> getLabels()
 	{
-		return model.getLabels();
+		return new UnionSet<>(super.getLabels(), model.getLabels());
 	}
 
 	@Override
 	public boolean hasLabel(String name)
 	{
-		return model.hasLabel(name);
+		return super.hasLabel(name) || model.hasLabel(name);
 	}
 
 	@Override

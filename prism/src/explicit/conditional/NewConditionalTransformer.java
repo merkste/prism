@@ -1,27 +1,39 @@
 package explicit.conditional;
 
 import java.util.BitSet;
+import java.util.Objects;
 
 import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
 import explicit.Model;
-import explicit.ModelTransformation;
+import explicit.ModelExpressionTransformation;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
+import explicit.conditional.SimplePathProperty.Finally;
+import explicit.conditional.SimplePathProperty.Globally;
+import explicit.conditional.SimplePathProperty.Next;
+import explicit.conditional.SimplePathProperty.Reach;
+import explicit.conditional.SimplePathProperty.Release;
+import explicit.conditional.SimplePathProperty.TemporalOperator;
 import explicit.conditional.SimplePathProperty.Until;
+import explicit.conditional.SimplePathProperty.WeakUntil;
 import explicit.conditional.transformer.LTLProductTransformer;
+import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
-import prism.ModelType;
+import parser.ast.ExpressionTemporal;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismLog;
 import prism.PrismComponent;
 
+// FIXME ALG: extend ConditionalTransformer for compatibility
 public interface NewConditionalTransformer<M extends Model, MC extends StateModelChecker>
 {
+	public static final BitSet ALL_STATES = null;
+
 	default String getName() {
 		Class<?> type = this.getClass();
 		type = type.getEnclosingClass() == null ? type : type.getEnclosingClass();
@@ -34,18 +46,17 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 	 * @return True iff this transformation type can handle the expression.
 	 * @throws PrismLangException if the expression is broken
 	 */
-	@SuppressWarnings("unchecked")
 	default boolean canHandle(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		return canHandleModelType(model)
-		       && canHandleObjective((M) model, expression)
-		       && canHandleCondition((M) model, expression);
+		       && canHandleObjective(model, expression)
+		       && canHandleCondition(model, expression);
 	}
 
 	boolean canHandleModelType(Model model);
 
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		// can handle probabilities only
@@ -53,33 +64,79 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
 		// can handle maximal probabilities only
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}
 
-	boolean canHandleCondition(M model,ExpressionConditional expression)
+	boolean canHandleCondition(Model model,ExpressionConditional expression)
 			throws PrismLangException;
 
 	/**
 	 * Throw an exception, iff the transformer cannot handle the model and expression.
 	 */
-	default void checkCanHandle(M model, ExpressionConditional expression) throws PrismException
+	default void checkCanHandle(Model model, ExpressionConditional expression) throws PrismException
 	{
 		if (! canHandle(model, expression)) {
 			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);
 		}
 	}
 
-	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException;
+	ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException;
 
 	PrismLog getLog();
 
 	MC getModelChecker();
 
-	MC getModelChecker(M model) throws PrismException;
-
 	LTLProductTransformer<M> getLtlTransformer();
+
+	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
+			throws PrismException
+	{
+		Expression trimmed = ExpressionInspector.trimUnaryOperations(expression);
+
+		if (!trimmed.isSimplePathFormula() || Expression.containsTemporalTimeBounds(trimmed) || Expression.containsTemporalRewardBounds(trimmed))
+		{
+			throw new IllegalArgumentException("expected unbounded simple path formula");
+		}
+
+		boolean negated = Expression.isNot(trimmed);
+		ExpressionTemporal temporal;
+		if (negated) {
+			temporal = (ExpressionTemporal) ExpressionInspector.removeNegation(trimmed);
+		} else {
+			temporal = (ExpressionTemporal) trimmed;
+		}
+
+		MC mc                     = getModelChecker();
+		TemporalOperator operator = TemporalOperator.fromConstant(temporal.getOperator());
+		BitSet goal, remain, stop;
+		switch (operator) {
+		case Next:
+			goal = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new Next<>(model, negated, goal);
+		case Finally:
+			goal = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new Finally<>(model, negated, goal);
+		case Globally:
+			remain = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new Globally<>(model, negated, remain);
+		case Until:
+			remain = mc.checkExpression(model, temporal.getOperand1(), ALL_STATES).getBitSet();
+			goal   = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new Until<>(model, negated, remain, goal);
+		case Release:
+			stop   = mc.checkExpression(model, temporal.getOperand1(), ALL_STATES).getBitSet();
+			remain = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new Release<>(model, negated, stop, remain);
+		case WeakUntil:
+			remain = mc.checkExpression(model, temporal.getOperand1(), ALL_STATES).getBitSet();
+			goal   = mc.checkExpression(model, temporal.getOperand2(), ALL_STATES).getBitSet();
+			return new WeakUntil<>(model, negated, remain, goal);
+		default:
+			throw new IllegalArgumentException("unsupported temporal operator arity");
+		}
+	}
 
 	/**
 	 * Subtract probabilities from one in-place.
@@ -114,14 +171,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return modelChecker;
 		}
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public MC getModelChecker(M model) throws PrismException
-		{
-			// Create fresh model checker for model
-			return (MC) modelChecker.createModelChecker(model.getModelType());
-		}
-
 		@Override
 		public LTLProductTransformer<M> getLtlTransformer()
 		{
@@ -142,48 +191,105 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		@Override
 		public boolean canHandleModelType(Model model)
 		{
-			return (model.getModelType() == ModelType.DTMC) && (model instanceof explicit.DTMC);
+			return model instanceof explicit.DTMC;
 		}
 
-		public BitSet computeProb0(explicit.DTMC model, BitSet remain, BitSet goal)
+		public BitSet computeProb0(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb1(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
 			return modelChecker.prob0(model, remain, goal, pre);
 		}
 
-		public BitSet computeProb1(explicit.DTMC model, BitSet remain, BitSet goal)
+		public BitSet computeProb1(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb0(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
 			return modelChecker.prob1(model, remain, goal, pre);
 		}
 
-		public BitSet computeProb0(explicit.DTMC model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb1(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb0(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public BitSet computeProb1(explicit.DTMC model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb0(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb1(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public double[] computeUntilProbs(explicit.DTMC model, Until until) throws PrismException
+		public double[] computeUntilProbs(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			// FIXME ALG: consider precomputation
-			double[] probabilities = modelChecker.computeUntilProbs(model, until.getRemain(), until.getGoal()).soln;
-			if (until.isNegated()) {
+			Objects.requireNonNull(goal);
+			double[] probabilities = modelChecker.computeUntilProbs(model, remain, goal).soln;
+			if (negated) {
 				return subtractFromOne(probabilities);
-			} else {
-				return probabilities;
 			}
+			return probabilities;
+		}
+
+		public BitSet computeProb0(Reach<explicit.DTMC> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb0((Finally<explicit.DTMC>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb0(((Globally<explicit.DTMC>)reach).asFinally());
+			}
+			return computeProb0(reach.asUntil());
+		}
+
+		public BitSet computeProb0(Finally<explicit.DTMC> eventually)
+		{
+			return computeProb0(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb0(Until<explicit.DTMC> until)
+		{
+			return computeProb0(until.getModel(), until.isNegated(),until.getRemain(), until.getGoal());
+		}
+
+		public BitSet computeProb1(Reach<explicit.DTMC> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb1((Finally<explicit.DTMC>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb1(((Globally<explicit.DTMC>)reach).asFinally());
+			}
+			return computeProb1(reach.asUntil());
+		}
+
+		public BitSet computeProb1(Finally<explicit.DTMC> eventually)
+		{
+			return computeProb1(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb1(Until<explicit.DTMC> until)
+		{
+			return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public double[] computeProbs(Reach<explicit.DTMC> reach)
+				throws PrismException
+		{
+			if (reach instanceof Finally) {
+				return computeProbs((Finally<explicit.DTMC>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProbs(((Globally<explicit.DTMC>)reach).asFinally());
+			}
+			return computeProbs(reach.asUntil());
+		}
+
+		public double[] computeProbs(Finally<explicit.DTMC> eventually)
+				throws PrismException
+		{
+			return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public double[] computeProbs(Until<explicit.DTMC> until)
+				throws PrismException
+		{
+			return computeUntilProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
 	}
@@ -200,91 +306,203 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		@Override
 		public boolean canHandleModelType(Model model)
 		{
-			return (model.getModelType() == ModelType.MDP) && (model instanceof explicit.MDP);
+			return model instanceof explicit.MDP;
 		}
 
-		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
+		public BitSet computeProb0A(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb1A(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return modelChecker.prob0(model, remain, goal, false, null, pre);
 		}
 
-		public BitSet computeProb0E(explicit.MDP model, BitSet remain, BitSet goal)
+		public BitSet computeProb0E(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb1E(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return modelChecker.prob0(model, remain, goal, true, null, pre);
 		}
 
-		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
+		public BitSet computeProb1A(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb0A(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return modelChecker.prob1(model, remain, goal, true, null, pre);
 		}
 
-		public BitSet computeProb1E(explicit.MDP model, BitSet remain, BitSet goal)
+		public BitSet computeProb1E(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 		{
+			if (negated) {
+				return computeProb0E(model, false, remain, goal);
+			}
+			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return modelChecker.prob1(model, remain, goal, false, null, pre);
 		}
 
-		public BitSet computeProb0E(explicit.MDP model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb1E(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb0E(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public BitSet computeProb0A(explicit.MDP model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb1A(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb0A(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public BitSet computeProb1E(explicit.MDP model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb0E(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb1E(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public BitSet computeProb1A(explicit.MDP model, Until until)
-		{
-			if (until.isNegated()) {
-				return computeProb0A(model, until.getRemain(), until.getGoal());
-			} else {
-				return computeProb1A(model, until.getRemain(), until.getGoal());
-			}
-		}
-
-		public double[] computeUntilMaxProbs(explicit.MDP model, Until until)
+		public double[] computeUntilMaxProbs(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 				throws PrismException
 		{
-			if (until.isNegated()) {
+			if (negated) {
 				// Pmax(¬φ) = 1 - Pmin(φ);
-				double[] probabilities = modelChecker.computeUntilProbs(model, until.getRemain(), until.getGoal(), true).soln;
+				double[] probabilities = computeUntilMinProbs(model, false, remain, goal);
 				return subtractFromOne(probabilities);
-			} else {
-				return modelChecker.computeUntilProbs(model, until.getRemain(), until.getGoal(), false).soln;
 			}
+			Objects.requireNonNull(goal);
+			return modelChecker.computeUntilProbs(model, remain, goal, false).soln;
 		}
 
-		public double[] computeUntilMinProbs(explicit.MDP model, Until until)
+		public double[] computeUntilMinProbs(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
 				throws PrismException
 		{
-			if (until.isNegated()) {
+			if (negated) {
 				// Pmin(¬φ) = 1 - Pmax(φ);
-				double[] probabilities = modelChecker.computeUntilProbs(model, until.getRemain(), until.getGoal(), false).soln;
+				double[] probabilities = computeUntilMaxProbs(model, false, remain, goal);
 				return subtractFromOne(probabilities);
-			} else {
-				return  modelChecker.computeUntilProbs(model, until.getRemain(), until.getGoal(), true).soln;
 			}
+			Objects.requireNonNull(goal);
+			return modelChecker.computeUntilProbs(model, remain, goal, true).soln;
+		}
+
+		public BitSet computeProb0E(Reach<explicit.MDP> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb0E((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb0E(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeProb0E(reach.asUntil());
+		}
+
+		public BitSet computeProb0E(Finally<explicit.MDP> eventually)
+		{
+			return computeProb0E(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb0E(Until<explicit.MDP> until)
+		{
+			return computeProb0E(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public BitSet computeProb0A(Reach<explicit.MDP> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb0A((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb0A(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeProb0A(reach.asUntil());
+		}
+
+		public BitSet computeProb0A(Finally<explicit.MDP> eventually)
+		{
+			return computeProb0A(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb0A(Until<explicit.MDP> until)
+		{
+			return computeProb0A(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public BitSet computeProb1E(Reach<explicit.MDP> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb1E((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb1E(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeProb1E(reach.asUntil());
+		}
+
+		public BitSet computeProb1E(Finally<explicit.MDP> eventually)
+		{
+			return computeProb1E(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb1E(Until<explicit.MDP> until)
+		{
+			return computeProb1E(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public BitSet computeProb1A(Reach<explicit.MDP> reach)
+		{
+			if (reach instanceof Finally) {
+				return computeProb1A((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeProb1A(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeProb1A(reach.asUntil());
+		}
+
+		public BitSet computeProb1A(Finally<explicit.MDP> eventually)
+		{
+			return computeProb1A(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public BitSet computeProb1A(Until<explicit.MDP> until)
+		{
+			return computeProb1A(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public double[] computeMaxProbs(Reach<explicit.MDP> reach)
+				throws PrismException
+		{
+			if (reach instanceof Finally) {
+				return computeMaxProbs((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeMaxProbs(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeMaxProbs(reach.asUntil());
+		}
+
+		public double[] computeMaxProbs(Finally<explicit.MDP> eventually)
+				throws PrismException
+		{
+			return computeUntilMaxProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public double[] computeMaxProbs(Until<explicit.MDP> until)
+				throws PrismException
+		{
+			return computeUntilMaxProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+		}
+
+		public double[] computeMinProbs(Reach<explicit.MDP> reach)
+				throws PrismException
+		{
+			if (reach instanceof Finally) {
+				return computeMinProbs((Finally<explicit.MDP>) reach);
+			}
+			if (reach instanceof Globally) {
+				return computeMinProbs(((Globally<explicit.MDP>)reach).asFinally());
+			}
+			return computeMinProbs(reach.asUntil());
+		}
+
+		public double[] computeMinProbs(Finally<explicit.MDP> eventually)
+				throws PrismException
+		{
+			return computeUntilMinProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public double[] computeMinProbs(Until<explicit.MDP> until)
+				throws PrismException
+		{
+			return computeUntilMinProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 	}
 }

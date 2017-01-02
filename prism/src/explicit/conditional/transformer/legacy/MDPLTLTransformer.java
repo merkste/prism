@@ -14,9 +14,9 @@ import parser.ast.ExpressionProb;
 import prism.PrismException;
 import prism.PrismLangException;
 import explicit.LTLModelChecker;
-import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.Model;
 import explicit.ModelCheckerResult;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.transformer.LTLProductTransformer;
@@ -27,7 +27,7 @@ import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformati
 @Deprecated
 public class MDPLTLTransformer extends MDPConditionalTransformer
 {
-	private LTLProductTransformer<MDP> ltlTransformer;
+	private LTLProductTransformer<explicit.MDP> ltlTransformer;
 	private LTLModelChecker ltlModelChecker;
 
 	public MDPLTLTransformer(final MDPModelChecker modelChecker) throws PrismException
@@ -38,13 +38,13 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		return ltlTransformer.canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	protected boolean canHandleObjective(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;
@@ -54,7 +54,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP> transformReachability(final explicit.MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
@@ -62,8 +62,8 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		final Expression objective = ((ExpressionProb) expression.getObjective()).getExpression();
 
 		// 1. Product Transformation
-		final LTLProduct<MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
-		final MDP conditionModel = conditionProduct.getProductModel();
+		final LTLProduct<explicit.MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
+		final explicit.MDP conditionModel = conditionProduct.getProductModel();
 
 		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
 		final BitSet conditionStates = ltlModelChecker.findAcceptingECStates(conditionModel, conditionAcceptance);
@@ -76,7 +76,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		}
 
 		final BitSet conditionStatesOfInterest = BitSetTools.asBitSet(conditionModel.getInitialStates());
-		final LTLProduct<MDP> objectiveAndConditionProduct = ltlTransformer.transform(conditionModel, objective, conditionStatesOfInterest,
+		final LTLProduct<explicit.MDP> objectiveAndConditionProduct = ltlTransformer.transform(conditionModel, objective, conditionStatesOfInterest,
 				AcceptanceType.STREETT);
 		assert objectiveAndConditionProduct.getProductModel().getNumInitialStates() == 1 : "expected one and only one initial state";
 
@@ -93,7 +93,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// construct target set F
 		// compute F aka "objective and condition states"
-		final MDP objectiveAndConditionModel = objectiveAndConditionProduct.getProductModel();
+		final explicit.MDP objectiveAndConditionModel = objectiveAndConditionProduct.getProductModel();
 		final BitSet objectiveAndConditionGoalStates = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, objectiveAndConditionAcceptance);
 
 		// compute B aka "bad states"
@@ -150,7 +150,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		final BitSet goalStates                  = BitSetTools.asBitSet(goalState);
 		final BitSet transformedStatesOfInterest = BitSetTools.asBitSet(resetState);
-		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, transformedStatesOfInterest);
+		return new ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP>(model, transformedModel, mapping, goalStates, transformedStatesOfInterest);
 
 	}
 }

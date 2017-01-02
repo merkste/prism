@@ -16,9 +16,9 @@ import common.BitSetTools;
 import common.iterable.IterableBitSet;
 import explicit.LTLModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
-import explicit.MDP;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
+import explicit.Model;
 import explicit.ModelCheckerResult;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
@@ -29,7 +29,7 @@ import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformati
 @Deprecated
 public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 {
-	protected LTLProductTransformer<MDP> ltlTransformer;
+	protected LTLProductTransformer<explicit.MDP> ltlTransformer;
 
 	public MDPLTLConditionTransformer(final MDPModelChecker modelChecker) throws PrismException
 	{
@@ -38,13 +38,13 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		return ltlTransformer.canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	protected boolean canHandleObjective(final MDP model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;
@@ -55,15 +55,15 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 	}
 
 	@Override
-	public ConditionalReachabilitiyTransformation<MDP, MDP> transform(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
+	public ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP> transformReachability(final explicit.MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
 		// 1. Product Transformation
 		final Expression condition = expression.getCondition();
 		final LTLModelChecker ltlModelChecker = new LTLModelChecker(this);
-		final LTLProduct<MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
-		final MDP productModel = conditionProduct.getProductModel();
+		final LTLProduct<explicit.MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
+		final explicit.MDP productModel = conditionProduct.getProductModel();
 
 		// compute Pmax(<>E | C)
 		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
@@ -136,6 +136,6 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		final BitSet goalStates                  = BitSetTools.asBitSet(goalState);
 		final BitSet transformedStatesOfInterest = BitSetTools.asBitSet(resetState);
-		return new ConditionalReachabilitiyTransformation<MDP, MDP>(model, transformedModel, mapping, goalStates, transformedStatesOfInterest);
+		return new ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP>(model, transformedModel, mapping, goalStates, transformedStatesOfInterest);
 	}
 }

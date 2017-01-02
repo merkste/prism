@@ -18,6 +18,7 @@ import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalIterator;
 import common.iterable.IterableBitSet;
 import common.iterable.MappingIterator;
+import common.iterable.collections.UnionSet;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -118,21 +119,21 @@ public class DTMCAlteredDistributions extends DTMCView
 	}
 
 	@Override
-	public BitSet getLabelStates(final String name)
+	public BitSet getLabelStates(String name)
 	{
-		return model.getLabelStates(name);
+		return super.hasLabel(name) ? super.getLabelStates(name) : model.getLabelStates(name);
 	}
 
 	@Override
 	public Set<String> getLabels()
 	{
-		return model.getLabels();
+		return new UnionSet<>(super.getLabels(), model.getLabels());
 	}
-	
+
 	@Override
 	public boolean hasLabel(String name)
 	{
-		return model.hasLabel(name);
+		return super.hasLabel(name) || model.hasLabel(name);
 	}
 
 

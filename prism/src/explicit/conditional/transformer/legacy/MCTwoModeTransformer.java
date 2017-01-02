@@ -15,9 +15,9 @@ import prism.PrismException;
 import explicit.BasicModelTransformation;
 import explicit.CTMC;
 import explicit.CTMCSimple;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
+import explicit.Model;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.mc.MCConditionalTransformer;
@@ -28,7 +28,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 	protected Integer[] mappingToModeOne;
 	protected Integer[] mappingToModeTwo;
 	protected BitSet pivots;
-	protected DTMC originalModel;
+	protected explicit.DTMC originalModel;
 	protected DTMCSimple transformedModel;
 
 	public MCTwoModeTransformer(final DTMCModelChecker modelChecker)
@@ -37,14 +37,14 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// cannot handle steady state computation yet
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
 	@Override
-	public BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		originalModel = model;
@@ -55,7 +55,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 		return transformModel(probabilities, target);
 	}
 
-	public BasicModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final BitSet target) throws PrismException
+	public BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final BitSet target) throws PrismException
 	{
 		originalModel = model;
 		final double[] probabilities = computeProbabilities(target);
@@ -63,7 +63,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 		return transformModel(probabilities, target);
 	}
 
-	protected BasicModelTransformation<DTMC, DTMC> transformModel(final double[] probabilities, final BitSet target) throws PrismException
+	protected BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final double[] probabilities, final BitSet target) throws PrismException
 	{
 		transformedModel = (originalModel instanceof CTMC) ? new CTMCSimple() : new DTMCSimple();
 		transformStates(probabilities, target);
@@ -72,7 +72,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 		transformedModel.findDeadlocks(false);
 
 		final Integer[] mapping = getMappingToTransformedModel();
-		final BasicModelTransformation<DTMC, DTMC> transformation = new BasicModelTransformation<DTMC, DTMC>(originalModel, transformedModel, null, mapping);
+		final BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformation = new BasicModelTransformation<explicit.DTMC, explicit.DTMC>(originalModel, transformedModel, null, mapping);
 		originalModel = transformedModel = null;
 		return transformation;
 	}
@@ -160,7 +160,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 
 	protected abstract void transformTransitionsModeOne(final double[] probabilities, final int state);
 
-	protected double[] computeProbability(final DTMC model, final Expression pathFormula) throws PrismException
+	protected double[] computeProbability(final explicit.DTMC model, final Expression pathFormula) throws PrismException
 	{
 		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
 

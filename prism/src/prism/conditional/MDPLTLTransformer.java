@@ -16,6 +16,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.LTLModelChecker;
 import prism.LTLModelChecker.LTLProduct;
+import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
@@ -32,7 +33,8 @@ import acceptance.AcceptanceRabinDD;
 import acceptance.AcceptanceStreettDD;
 import acceptance.AcceptanceType;
 
-public class MDPLTLTransformer extends MDPConditionalTransformer {
+public class MDPLTLTransformer extends MDPConditionalTransformer
+{
 	boolean debug = false;
 	boolean useNormalFormTransformation = false;
 
@@ -41,13 +43,13 @@ public class MDPLTLTransformer extends MDPConditionalTransformer {
 	}
 
 	@Override
-	public boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	public boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;

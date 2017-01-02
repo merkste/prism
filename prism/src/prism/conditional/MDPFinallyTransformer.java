@@ -14,6 +14,7 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
+import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
@@ -24,7 +25,8 @@ import prism.PrismLangException;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MDPFinallyTransformer extends MDPConditionalTransformer {
+public class MDPFinallyTransformer extends MDPConditionalTransformer
+{
 	private boolean debug = false;
 	
 	public MDPFinallyTransformer(NondetModelChecker modelChecker, Prism prism)
@@ -33,14 +35,14 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer {
 	}
 
 	@Override
-	public boolean canHandleCondition(final NondetModel model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}
 
 	@Override
-	public boolean canHandleObjective(final NondetModel model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;

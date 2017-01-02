@@ -27,6 +27,7 @@
 package explicit;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -190,46 +191,18 @@ public abstract class ModelExplicit implements Model
 		this.varList = varList;
 	}
 
-	/**
-	 * Adds a label and the set the states that satisfy it.
-	 * Any existing label with the same name is overwritten.
-	 * @param name The name of the label
-	 * @param states The states that satisfy the label 
-	 */
+	@Override
 	public void addLabel(String name, BitSet states)
 	{
 		labels.put(name, states);
 	}
 
-	/**
-	 * Add a label with corresponding state set, ensuring a unique, non-existing label.
-	 * The label will be either "X" or "X_i" where X is the content of the {@code prefix} argument
-	 * and i is a non-negative integer.
-	 * <br>
-	 * Note that a stored label takes preference over the on-the-fly calculation
-	 * of an ExpressionLabel, cf. {@link explicit.StateModelChecker#checkExpressionLabel}
-	 *
-	 * @param prefix the prefix for the unique label
-	 * @param labelStates the BitSet with the state set for the label
-	 * @return the generated unique label
-	 */
+	@Override
 	public String addUniqueLabel(String prefix, BitSet labelStates)
 	{
-		String label;
-		if (!hasLabel(prefix)) {
-			label = prefix;
-		} else {
-			int i = 0;
-			while (true) {
-				if (!hasLabel(prefix+"_"+i)) {
-					label = prefix+"_"+i;
-					break;
-				}
-				if (i == Integer.MAX_VALUE)
-					throw new UnsupportedOperationException("Integer overflow trying to add unique label");
-
-				i++;
-			}
+		String label = prefix;
+		for (BigInteger i=BigInteger.ZERO; hasLabel(label); i=i.add(BigInteger.ONE)) {
+			label = prefix + "_" + i;
 		}
 
 		addLabel(label, labelStates);

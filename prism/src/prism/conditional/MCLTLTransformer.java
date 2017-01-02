@@ -7,6 +7,7 @@ import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
+import prism.Model;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.Prism;
@@ -24,13 +25,13 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 	}
 
 	@Override
-	public boolean canHandleCondition(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleCondition(Model model, ExpressionConditional expression) throws PrismLangException
 	{
 		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	public boolean canHandleObjective(ProbModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(Model model, ExpressionConditional expression) throws PrismLangException
 	{
 		// cannot handle steady state computation yet
 		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));

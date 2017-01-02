@@ -144,27 +144,34 @@ public class DTMCDisjointUnion extends DTMCView
 	}
 
 	@Override
-	public BitSet getLabelStates(final String name)
+	public BitSet getLabelStates(String name)
 	{
-		final BitSet labelStates1 = model1.getLabelStates(name);
-		final BitSet labelStates2 = model2.getLabelStates(name);
-		final BitSet labelStates = (labelStates2 == null) ? new BitSet(0) : BitSetTools.shiftUp(labelStates2, offset);
-		labelStates.or((labelStates1 == null) ? new BitSet(0) : labelStates1);
-		return labelStates;
+		if (super.hasLabel(name)) {
+			return super.getLabelStates(name);
+		}
+		BitSet states1 = model1.getLabelStates(name);
+		BitSet states2 = model2.getLabelStates(name);
+		if (states2 == null) {
+			return states1;
+		}
+		BitSet states = BitSetTools.shiftUp(states2, offset);
+		if (states1 != null) {
+			states.or(states1);
+		}
+		return states;
 	}
 
 	@Override
 	public Set<String> getLabels()
 	{
-		return new UnionSet<>(model1.getLabels(), model2.getLabels());
+		return UnionSet.of(super.getLabels(), model1.getLabels(), model2.getLabels());
 	}
-	
+
 	@Override
 	public boolean hasLabel(String name)
 	{
-		return model1.hasLabel(name) | model2.hasLabel(name);
+		return super.hasLabel(name) || model1.hasLabel(name) || model2.hasLabel(name);
 	}
-
 
 	@Override
 	public int getNumTransitions()

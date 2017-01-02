@@ -15,8 +15,8 @@ import parser.ast.ExpressionUnaryOp;
 import prism.PrismException;
 import prism.PrismLangException;
 import explicit.BasicModelTransformation;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
@@ -40,7 +40,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		try {
@@ -69,27 +69,27 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// cannot handle steady state computation yet
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
 	@Override
-	protected ModelTransformation<DTMC, DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		return transformModelOld(model, expression, statesOfInterest);
 	}
 
-	protected ModelTransformation<DTMC, DTMC> transformModelOld(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<explicit.DTMC, explicit.DTMC> transformModelOld(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1. create mode 1 == conditional part
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final boolean negated = Expression.isNot(condition);
 		final BitSet goal = getGoalStates(model, condition);
-		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, goal, negated, statesOfInterest);
+		final TerminalTransformation<explicit.DTMC, explicit.DTMC> mode1 = transformer.transformModel(model, goal, negated, statesOfInterest);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create mode 2 == submodel reachable from terminal states
@@ -104,22 +104,22 @@ public class MCNextTransformer extends MCConditionalTransformer
 			identify.put(id.getKey(), mode2.mapStateToRestrictedModel(id.getValue()));
 		}
 		// FIXME ALG: consider making restriction optional
-		final DTMC transformedModel = DTMCDisjointUnion.DTMCUnion(mode1.getTransformedModel(), mode2, identify);
+		final explicit.DTMC transformedModel = DTMCDisjointUnion.DTMCUnion(mode1.getTransformedModel(), mode2, identify);
 		// sane, as long as mode 1 is already restricted
-		ModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
-		ModelTransformation<DTMC, DTMC> nested = new ModelTransformationNested<>(mode1, union);
+		ModelTransformation<explicit.DTMC, explicit.DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
+		ModelTransformation<explicit.DTMC, explicit.DTMC> nested = new ModelTransformationNested<>(mode1, union);
 
 		return nested;
 	}
 
-	protected ModelTransformation<DTMC, ? extends DTMC> transformModelNew(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModelNew(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1. create mode 1 == conditional part
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final boolean negated = Expression.isNot(condition);
 		final BitSet goal = getGoalStates(model, condition);
-		final TerminalTransformation<DTMC, DTMC> mode1 = transformer.transformModel(model, goal, negated, statesOfInterest);
+		final TerminalTransformation<explicit.DTMC, explicit.DTMC> mode1 = transformer.transformModel(model, goal, negated, statesOfInterest);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");
 
 		// 2. create mode 2 == submodel reachable from terminal states
@@ -130,17 +130,17 @@ public class MCNextTransformer extends MCConditionalTransformer
 		// 3. create union model
 		// FIXME ALG: code duplication, building identify map
 		DTMCDisjointUnion unionModel = new DTMCDisjointUnion(mode1.getTransformedModel(), mode2);
-		BasicModelTransformation<DTMC, DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), unionModel, mode1.getTransformedStatesOfInterest());
+		BasicModelTransformation<explicit.DTMC, explicit.DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), unionModel, mode1.getTransformedStatesOfInterest());
 
 		Function<Entry<Integer, Integer>, BitSet> asEqClass = pair -> BitSetTools.asBitSet(pair.getKey(), mode2.mapStateToRestrictedModel(pair.getValue()) + unionModel.offset);
 		FunctionalIterable<BitSet> identify = FunctionalIterable.extend(terminalLookup.entrySet()).map(asEqClass);
 
-		BasicModelTransformation<DTMC, ? extends DTMC> equiv = DTMCEquiv.transform(unionModel, new EquivalenceRelationInteger(identify), DONT_NORMALIZE, RESTRICT);
+		BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> equiv = DTMCEquiv.transform(unionModel, new EquivalenceRelationInteger(identify), DONT_NORMALIZE, RESTRICT);
 
 		return equiv.compose(union).compose(mode1);
 	}
 
-	protected BitSet getGoalStates(final DTMC model, final Expression expression) throws PrismException
+	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		final ExpressionTemporal next = getExpressionTemporal(expression);
 		return modelChecker.checkExpression(model, next.getOperand2(), null).getBitSet();

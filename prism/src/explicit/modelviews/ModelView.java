@@ -1,10 +1,14 @@
 package explicit.modelviews;
 
 import java.io.File;
+import java.math.BigInteger;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.PrimitiveIterator.OfInt;
+import java.util.Set;
 import java.util.function.IntConsumer;
 
 import common.iterable.FilteringIterable;
@@ -24,8 +28,9 @@ import prism.PrismLog;
 
 public abstract class ModelView implements Model
 {
-	protected BitSet deadlockStates = new BitSet();
-	protected boolean fixedDeadlocks = false;
+	protected boolean fixedDeadlocks    = false;
+	protected BitSet deadlockStates     = new BitSet();
+	protected Map<String,BitSet> labels = new HashMap<>();
 	protected PredecessorRelation predecessorRelation;
 
 
@@ -274,6 +279,42 @@ public abstract class ModelView implements Model
 	public void clearPredecessorRelation()
 	{
 		predecessorRelation = null;
+	}
+
+	@Override
+	public BitSet getLabelStates(String name)
+	{
+		return labels.containsKey(name) ? labels.get(name) : null;
+	}
+
+	@Override
+	public Set<String> getLabels()
+	{
+		return labels.keySet();
+	}
+
+	@Override
+	public boolean hasLabel(String name)
+	{
+		return labels.containsKey(name);
+	}
+
+	@Override
+	public void addLabel(String name, BitSet states)
+	{
+		labels.put(name, states);
+	}
+
+	@Override
+	public String addUniqueLabel(String prefix, BitSet labelStates)
+	{
+		String label = prefix;
+		for (BigInteger i=BigInteger.ZERO; hasLabel(label); i=i.add(BigInteger.ONE)) {
+			label = prefix + "_" + i;
+		}
+
+		addLabel(label, labelStates);
+		return label;
 	}
 
 

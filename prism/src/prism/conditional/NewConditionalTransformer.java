@@ -37,18 +37,17 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 	 * @return True iff this transformation type can handle the expression.
 	 * @throws PrismLangException if the expression is broken
 	 */
-	@SuppressWarnings("unchecked")
 	default boolean canHandle(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		return canHandleModelType(model)
-		       && canHandleObjective((M) model, expression)
-		       && canHandleCondition((M) model, expression);
+		       && canHandleObjective(model, expression)
+		       && canHandleCondition(model, expression);
 	}
 
 	boolean canHandleModelType(Model model);
 
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		// can handle probabilities only
@@ -61,13 +60,13 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}
 
-	boolean canHandleCondition(M model,ExpressionConditional expression)
+	boolean canHandleCondition(Model model,ExpressionConditional expression)
 			throws PrismLangException;
 
 	/**
 	 * Throw an exception, iff the transformer cannot handle the model and expression.
 	 */
-	default void checkCanHandle(M model, ExpressionConditional expression) throws PrismException
+	default void checkCanHandle(Model model, ExpressionConditional expression) throws PrismException
 	{
 		if (! canHandle(model, expression)) {
 			throw new PrismException("Cannot transform " + model.getModelType() + " for " + expression);

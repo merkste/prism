@@ -4,6 +4,9 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+
+import common.iterable.collections.UnionSet;
+
 import java.util.Set;
 
 import explicit.DTMC;
@@ -94,23 +97,22 @@ public class MDPFromDTMC extends MDPView
 	}
 
 	@Override
-	public BitSet getLabelStates(final String name)
+	public BitSet getLabelStates(String name)
 	{
-		return model.getLabelStates(name);
+		return super.hasLabel(name) ? super.getLabelStates(name) : model.getLabelStates(name);
 	}
 
 	@Override
 	public Set<String> getLabels()
 	{
-		return model.getLabels();
+		return new UnionSet<>(super.getLabels(), model.getLabels());
 	}
 
 	@Override
 	public boolean hasLabel(String name)
 	{
-		return model.hasLabel(name);
+		return super.hasLabel(name) || model.hasLabel(name);
 	}
-
 
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state)

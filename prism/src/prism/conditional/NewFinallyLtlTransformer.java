@@ -21,6 +21,7 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.LTLModelChecker.LTLProduct;
+import prism.Model;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.GoalFailStopTransformation;
@@ -40,7 +41,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
@@ -53,7 +54,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 	}
 
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		return getLtlTransformer().canHandle(model, expression.getCondition());
@@ -101,7 +102,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = transformNormalForm(product, objectivePathProduct);
 
 		// 3) Compose Transformations
-		GoalFailStopTransformation<M> transformation = result.first.compose(product);
+		GoalFailStopTransformation<M> transformation = result.first.chain(product);
 		ExpressionConditional transformedExpression  = result.second;
 
 		return new Pair<>(transformation, transformedExpression);
@@ -175,6 +176,8 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 
 			NondetModel productModel = product.getProductModel();
 			JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
+
+			// compute accepting states  (ECs or REACH states)
 			JDDNode acceptStates     = getLtlTransformer().findAcceptingStates(product);
 			Finally conditionPath    = new Finally(productModel, acceptStates);
 
@@ -243,12 +246,14 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		public JDDNode computeInstantGoalStates(NondetModel model, Until objectivePath, JDDNode objectiveFalsifiedStates, Until conditionPath, JDDNode conditionFalsifiedStates)
 				throws PrismException
 		{
+
+			// FIXME ALG: most likely plain wrong
 			if (objectivePath.isNegated()) {
 				JDDNode falsifiedStates   = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
 				JDDNode remain            = JDD.And(model.getReach().copy(), JDD.Not(falsifiedStates));
 				// find ECs that may accept condition and objective
 				ECComputer ecComputer     = ECComputer.createECComputer(getModelChecker(), model);
-				JDDNode restrict = JDD.And(conditionPath.getGoal().copy(), remain.copy());
+				JDDNode restrict          = JDD.And(conditionPath.getGoal().copy(), remain.copy());
 				ecComputer.computeMECStates(restrict);
 				JDD.Deref(restrict);
 				JDDNode instantGoalStates = ecComputer.getMECStates().stream().reduce(JDD.Constant(0), JDD::Or);
@@ -259,6 +264,23 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 			}
 			JDD.Deref(objectiveFalsifiedStates, conditionFalsifiedStates);
 			return JDD.Constant(0);
+
+//			explicit.MDP productModel = product.getProductModel();
+//			objectivePath.requireSameModel(productModel);
+//
+//			BitSet instantGoalStates = BitSetTools.intersect(objectiveSatisfiedStates, conditionAcceptStates);
+//
+//			// exclude objective/condition falsified states
+//			BitSet falsifiedStates    = BitSetTools.union(objectiveFalsifiedStates, conditionFalsifiedStates);
+//			BitSet notFalsifiedStates = BitSetTools.complement(productModel.getNumStates(), falsifiedStates);
+//
+//			// Does the condition, specify behavior in the limit?
+//			if (!objectivePath.isNegated()) {
+//				// Find accepting ECs that do not already include a normalize state
+//				BitSet remain     = BitSetTools.minus(conditionAcceptStates, objectiveSatisfiedStates, falsifiedStates);
+//				instantGoalStates = getLtlTransformer().findAcceptingStates(product, remain);
+//			}
+//			return computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
 		}
 
 		@Override

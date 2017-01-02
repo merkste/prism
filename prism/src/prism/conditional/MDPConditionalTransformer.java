@@ -29,9 +29,9 @@ public abstract class MDPConditionalTransformer extends NewConditionalTransforme
 		return canHandleCondition(mdp, expression) && canHandleObjective(mdp, expression);
 	}
 
-	public abstract boolean canHandleCondition(NondetModel model, ExpressionConditional expression)  throws PrismLangException;
+	public abstract boolean canHandleCondition(Model model, ExpressionConditional expression)  throws PrismLangException;
 
-	public boolean canHandleObjective(NondetModel model, ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(Model model, ExpressionConditional expression) throws PrismLangException
 	{
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;

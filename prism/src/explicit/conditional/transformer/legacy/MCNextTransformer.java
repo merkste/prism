@@ -9,8 +9,8 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.Model;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
 
@@ -34,7 +34,7 @@ public class MCNextTransformer extends MCTwoModeTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		try {

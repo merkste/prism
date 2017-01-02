@@ -7,7 +7,6 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import prism.PrismLangException;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.Model;
 import explicit.conditional.ExpressionInspector;
@@ -67,7 +66,7 @@ public class MCMatchingFinallyTransformer extends MCUntilTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		if (!super.canHandleCondition(model, expression)) {
 			return false;
@@ -78,7 +77,7 @@ public class MCMatchingFinallyTransformer extends MCUntilTransformer
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		if (!super.canHandleObjective(model, expression)) {
 			return false;

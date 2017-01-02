@@ -9,6 +9,7 @@ import java.util.function.IntFunction;
 import common.iterable.IterableArray;
 import explicit.DiracDistribution;
 
+@Deprecated
 public class ProbabilisticRedistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
 {
 	private final double[] probabilitiesA;

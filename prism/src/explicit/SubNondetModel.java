@@ -186,7 +186,7 @@ public class SubNondetModel implements NondetModel
 	{
 		throw new UnsupportedOperationException();
 	}
-	
+
 	@Override
 	public Set<String> getLabels() {
 		throw new UnsupportedOperationException();
@@ -200,6 +200,18 @@ public class SubNondetModel implements NondetModel
 
 	@Override
 	public boolean hasLabel(String name)
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void addLabel(String name, BitSet states)
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public String addUniqueLabel(String prefix, BitSet labelStates)
 	{
 		throw new UnsupportedOperationException();
 	}

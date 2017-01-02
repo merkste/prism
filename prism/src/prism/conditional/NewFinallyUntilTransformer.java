@@ -1,10 +1,5 @@
 package prism.conditional;
 
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import explicit.MinMax;
 import explicit.conditional.ExpressionInspector;
 import jdd.JDD;
@@ -36,7 +31,7 @@ import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedis
 public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewNormalFormTransformer<M, MC>
 {
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
@@ -49,7 +44,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 	}
 
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
@@ -65,11 +60,11 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		// 1) Objective: compute simple path property
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		Expression objectiveTmp  = objective.getExpression();
-		Until objectivePath    = new Until(objectiveTmp, getModelChecker(), true);
+		Until objectivePath      = new Until(objectiveTmp, getModelChecker(), true);
 
 		// 2) Condition: compute simple path property
-		Expression conditionTemp = ExpressionInspector.normalizeExpression(expression.getCondition());
-		Until conditionPath      = new Until(conditionTemp, getModelChecker(), true);
+		Expression conditionTmp = ExpressionInspector.normalizeExpression(expression.getCondition());
+		Until conditionPath     = new Until(conditionTmp, getModelChecker(), true);
 
 		// 3) Transform model
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = transformNormalForm(model, objectivePath, conditionPath, statesOfInterest);
@@ -142,46 +137,11 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 
 
 
-
 	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyUntilTransformer<ProbModel, ProbModelChecker>
 	{
-		protected Map<Entry<? extends Model, ? extends SimplePathProperty>, JDDNode> cache;
-
 		public DTMC(ProbModelChecker modelChecker)
 		{
 			super(modelChecker);
-			this.cache = new HashMap<>();
-		}
-
-		public void clear()
-		{
-			cache.values().forEach(JDD::Deref);
-			cache.clear();
-		}
-
-		/**
-		 * Override to enable caching of probabilities.
-		 *
-		 * @see NewFinallyUntilTransformer#transformNormalForm(ProbModel, Until, Until, JDDNode)
-		 */
-		@Override
-		public Pair<GoalFailStopTransformation<ProbModel>, ExpressionConditional> transformNormalForm(ProbModel model, Until objectivePath, Until conditionPath, JDDNode statesOfInterest)
-				throws PrismException
-		{
-			Pair<GoalFailStopTransformation<ProbModel>, ExpressionConditional> result = NewFinallyUntilTransformer.super.transformNormalForm(model, objectivePath, conditionPath, statesOfInterest);
-			clear();
-			return result;
-		}
-
-		@Override
-		public JDDNode computeUntilProbs(ProbModel model, Until until) throws PrismException
-		{
-			Entry<? extends Model, ? extends SimplePathProperty> params = new AbstractMap.SimpleImmutableEntry<>(model, until);
-			if (! cache.containsKey(params)) {
-				JDDNode probabilities = super.computeUntilProbs(model, until);
-				cache.put(params, probabilities);
-			}
-			return cache.get(params).copy();
 		}
 
 		@Override
@@ -216,17 +176,12 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		{
 			JDDNode instantGoalStates = JDD.And(objectiveSatisfiedStates, conditionSatisfiedStates);
 			// exclude objective/condition falsified states
-			JDDNode falsifiedStates = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
-			JDDNode remain          = JDD.And(model.getReach().copy(), JDD.Not(falsifiedStates));
+			JDDNode avoid  = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
+			JDDNode remain = JDD.And(model.getReach().copy(), JDD.Not(avoid));
 			if (objectivePath.isNegated() && conditionPath.isNegated()) {
 				// FIXME ALG: create constructor in ECComputerDefault
 				ECComputerDefault ecComputer = new ECComputerDefault(this, model.getReach(), model.getTrans(), model.getTrans01(), model.getAllDDRowVars(), model.getAllDDColVars(), ((NondetModel) model).getAllDDNondetVars());
-				instantGoalStates = JDD.Or(instantGoalStates, ecComputer.findMaximalStableSet(remain.copy()));
-//
-//				ECComputer ecComputer = ECComputer.createECComputer(getModelChecker(), model);
-//				ecComputer.computeMECStates(remain);
-//				List<JDDNode> mecs    = ecComputer.getMECStates();
-//				instantGoalStates     = JDD.Or(instantGoalStates, mecs.stream().reduce(JDD.Constant(0), JDD::Or));
+				instantGoalStates            = JDD.Or(instantGoalStates, ecComputer.findMaximalStableSet(remain.copy()));
 			}
 			// enlarge target set
 			JDDNode result = computeProb1E(model, remain, instantGoalStates);
@@ -238,7 +193,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
 				throws PrismException
 		{
-			// Is condition path free of invariants?
+			// Is objective path free of invariants?
 			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
 			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
 				// Skip costly normalization

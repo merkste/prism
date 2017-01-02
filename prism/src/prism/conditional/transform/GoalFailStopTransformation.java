@@ -55,16 +55,16 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 		stopLabel = transformedModel.addUniqueLabelDD("stop", JDD.And(operator.stop(ROW), transformedModel.getReach().copy()));
 
 		JDDNode nonTrapStates    = operator.notrap(ROW);
-		JDDNode normalFormStates = JDD.Or(operator.getGoalStopStates(), operator.getGoalFailStates());
+		JDDNode normalFormStates = JDD.Or(operator.getGoalStopStates(), JDD.Or(operator.getGoalFailStates(), JDD.Or(operator.getStopFailStates(), JDD.Or(operator.getInstantGoalStates(), operator.getInstantFailStates()))));
 		badStates                = JDD.And(badStates, transformedModel.getReach().copy());
 		badStates                = JDD.And(badStates, nonTrapStates);
 		badStates                = JDD.And(badStates, JDD.Not(normalFormStates));
 		badLabel                 = transformedModel.addUniqueLabelDD("bad", badStates);
 	}
 
-	public GoalFailStopTransformation<M> compose(ModelTransformation<M,M> transformation) throws PrismException
+	public GoalFailStopTransformation<M> chain(ModelTransformation<M,M> inner) throws PrismException
 	{
-		ModelTransformationNested<M,M,M> nested = new ModelTransformationNested<>(transformation, this);
+		ModelTransformationNested<M,M,M> nested = new ModelTransformationNested<>(inner, this);
 		return new GoalFailStopTransformation<>(nested, goalLabel, failLabel, stopLabel, badLabel);
 	}
 
@@ -628,16 +628,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 
 
 			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
-			 */
-			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
-					throws PrismException
-			{
-				this(model, goalFail, goalStop, new ProbabilisticRedistribution(), instantGoalStates, instantFailStates, statesOfInterest, log);
-			}
-
-			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, and statesOfInterest</i> ]
 			 */
 			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
 					throws PrismException
@@ -645,7 +636,8 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 				super(model);
 				this.log = log;
 
-				// FIXME ALG: ensure that the state set do not overlap 
+				// FIXME ALG: ensure that the state sets do not overlap or
+				//            check the distributions agree on common states
 //				assert (!JDD.AreIntersecting(goalFailStates, goalStopStates));
 //				assert (!JDD.AreIntersecting(goalFailStates, instantFailStates));
 
@@ -798,16 +790,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 
 
 			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
-			 */
-			public MDP(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
-					throws PrismException
-			{
-				this(model, goalFail, goalStop, new ProbabilisticRedistribution(), instantGoalStates, instantFailStates, statesOfInterest, log);
-			}
-
-			/**
-			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFailStates, goalFailProbs, goalStopStates, goalStopProbs, instantFailStates, and statesOfInterest</i> ]
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, and statesOfInterest</i> ]
 			 */
 			public MDP(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
 					throws PrismException

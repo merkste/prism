@@ -20,6 +20,7 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.LTLModelChecker.LTLProduct;
+import prism.Model;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.GoalFailStopTransformation;
@@ -39,7 +40,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 
 
 	@Override
-	default boolean canHandleObjective(M model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
@@ -50,7 +51,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 	}
 
 	@Override
-	default boolean canHandleCondition(M model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 	{
 		Expression normalized = ExpressionInspector.normalizeExpression(expression.getCondition());
 		Expression until = ExpressionInspector.removeNegation(normalized);
@@ -99,7 +100,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = transformNormalForm(product, conditionPathProduct);
 
 		// 3) Compose Transformations
-		GoalFailStopTransformation<M> transformation = result.first.compose(product);
+		GoalFailStopTransformation<M> transformation = result.first.chain(product);
 		ExpressionConditional transformedExpression  = result.second;
 
 		return new Pair<>(transformation, transformedExpression);
@@ -276,7 +277,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 				JDDNode restrict  = JDD.Not(JDD.Or(conditionFalsifiedStates.copy(), conditionSatisfied.getStates()));
 				// -> refine only accepting ECs
 				restrict          = JDD.And(acceptStates, restrict);
-				instantGoalStates = findAcceptingStatesMax(product, restrict, true);
+				instantGoalStates = findAcceptingStatesMax(product, restrict);
 			} else {
 				// ECs do not matter, since they are visited after the (non-negated) condition has already been satisfied
 				instantGoalStates = JDD.Constant(0);
@@ -296,7 +297,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
 				throws PrismException
 		{
-			// Is condition path free of invariants?
+			// Is objective path free of invariants?
 			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
 			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
 				// Skip costly normalization

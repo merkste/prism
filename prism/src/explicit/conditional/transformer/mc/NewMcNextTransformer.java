@@ -5,8 +5,8 @@ import java.util.BitSet;
 import common.BitSetTools;
 import common.iterable.Interval;
 import explicit.BasicModelTransformation;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
@@ -27,7 +27,7 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleCondition(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		try {
@@ -56,14 +56,14 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected boolean canHandleObjective(final DTMC model, final ExpressionConditional expression)
+	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// cannot handle steady state computation yet
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
 	@Override
-	protected ModelTransformation<DTMC, ? extends DTMC> transformModel(final DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
@@ -84,11 +84,11 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 
 		// Switch in pivot states to copy of model
 		BitSet pivotStates                                     = getPivotStates(model, goal, negated);
-		BasicModelTransformation<DTMC, ? extends DTMC> pivoted = McPivotTransformation.transform(model, pivotStates);
+		BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted = McPivotTransformation.transform(model, pivotStates);
 		pivoted.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Scale probabilities
-		BasicModelTransformation<DTMC, ? extends DTMC> scaled = McScaledTransformation.transform(pivoted.getTransformedModel(), originProbs, targetProbs);
+		BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled = McScaledTransformation.transform(pivoted.getTransformedModel(), originProbs, targetProbs);
 		scaled.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Restrict to reachable states
@@ -97,13 +97,13 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 		BitSet restrictAndPivot                                    = BitSetTools.intersect(reachability.computeSucc(restrictPrePivot), pivotStates);
 		BitSet restrictSuccPivot                                   = reachability.computeSuccStar(restrictAndPivot);
 		BitSet restrict                                            = BitSetTools.union(restrictPrePivot, BitSetTools.shiftUp(restrictSuccPivot, numStates));
-		BasicModelTransformation<DTMC, DTMCRestricted> restricted  = DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		BasicModelTransformation<explicit.DTMC, DTMCRestricted> restricted  = DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		restricted.setTransformedStatesOfInterest(restricted.mapToTransformedModel(transformedStatesOfInterest));
 
 		return restricted.compose(scaled).compose(pivoted);
 	}
 
-	public BitSet getPivotStates(final DTMC model, final BitSet goal, final boolean negated)
+	public BitSet getPivotStates(final explicit.DTMC model, final BitSet goal, final boolean negated)
 	{
 		if (! negated) {
 			return goal;
@@ -111,13 +111,13 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 		return BitSetTools.complement(model.getNumStates(), goal);
 	}
 
-	protected BitSet getGoalStates(final DTMC model, final Expression expression) throws PrismException
+	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		ExpressionTemporal next = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return modelChecker.checkExpression(model, next.getOperand2(), null).getBitSet();
 	}
 
-	public double[] computeNextProbs(final DTMC model, final BitSet goal, final boolean negated) throws PrismException
+	public double[] computeNextProbs(final explicit.DTMC model, final BitSet goal, final boolean negated) throws PrismException
 	{
 		double[] probabilities = modelChecker.computeNextProbs(model, goal).soln;
 		return negated ? ConditionalReachabilityTransformer.negateProbabilities(probabilities) : probabilities;
