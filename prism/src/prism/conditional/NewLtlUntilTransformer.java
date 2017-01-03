@@ -123,13 +123,13 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		return finallyUntilTransformer.transformNormalForm(productModel, objectivePath, conditionPath, statesOfInterest);
 	}
 
+	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
+
 	default GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		return configureOperator(model, new ProbabilisticRedistribution(), goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest);
 	}
-
-	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
 
 
 
@@ -189,14 +189,14 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			ExpressionTemporal transformedObjectiveTmp  = Expression.Finally(goal);
 			ExpressionProb transformedObjective         = new ExpressionProb(transformedObjectiveTmp, MinMax.max(), "=", null);
 			ExpressionTemporal transformedCondition;
-			if (conditionPath.isNegated()) {
-				// All paths violating the condition eventually reach the fail state.
-				ExpressionLabel fail      = new ExpressionLabel(transformation.getFailLabel());
-				transformedCondition      = Expression.Globally(Expression.Not(fail));
-			} else {
+			if (!conditionPath.isNegated()) {
 				// All paths satisfying the condition eventually reach the goal or stop state.
 				ExpressionLabel stopLabel = new ExpressionLabel(transformation.getStopLabel());
 				transformedCondition      = Expression.Finally(Expression.Parenth(Expression.Or(goal, stopLabel)));
+			} else {
+				// All paths violating the condition eventually reach the fail state.
+				ExpressionLabel fail      = new ExpressionLabel(transformation.getFailLabel());
+				transformedCondition      = Expression.Globally(Expression.Not(fail));
 			}
 			ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
 
@@ -297,14 +297,14 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
 				throws PrismException
 		{
+			// Do we have to reset once a state violates the objective?
 			// Is objective path free of invariants?
 			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
-			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
-				// Skip costly normalization
-				return new ProbabilisticRedistribution();
+			if (!isOptional || settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
+				return redistributeProb0(model, objectivePath, conditionPath);
 			}
-
-			return redistributeProb0(model, objectivePath, conditionPath);
+			// Skip costly normalization
+			return new ProbabilisticRedistribution();
 		}
 	}
 }

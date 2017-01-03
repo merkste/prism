@@ -125,13 +125,13 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		return finallyUntilTransformer.transformNormalForm(productModel, objectivePath, conditionPath, statesOfInterest);
 	}
 
+	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
+
 	default GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		return configureOperator(model, goalFail, new ProbabilisticRedistribution(), stopFail, instantGoalStates, instantFailStates, statesOfInterest);
 	}
-
-	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
 
 
 
@@ -222,22 +222,21 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, MC extends StateM
 		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
 				throws PrismException
 		{
+			// Do we have to reset once a state violates the objective?
 			// Is condition path free of invariants?
 			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
-			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
-				// Skip costly normalization
-				return new ProbabilisticRedistribution();
+			if (!isOptional || settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
+				// path to non-accepting states
+				JDDNode conditionFalsifiedStates = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
+				Finally conditionFalsifiedPath   = new Finally(model, conditionFalsifiedStates);
+				
+				// compute redistribution
+				ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(model, objectivePath, conditionFalsifiedPath);
+				conditionFalsifiedPath.clear();
+				return objectiveFalsified;
 			}
-
-			// path to non-accepting states
-			JDDNode conditionFalsifiedStates = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
-			Finally conditionFalsifiedPath   = new Finally(model, conditionFalsifiedStates);
-
-			// compute redistribution
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(model, objectivePath, conditionFalsifiedPath);
-			conditionFalsifiedPath.clear();
-			// swap target states
-			return objectiveFalsified;
+			// Skip costly normalization
+			return new ProbabilisticRedistribution();
 		}
 
 		/**

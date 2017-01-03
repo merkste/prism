@@ -132,15 +132,15 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		return new Pair<>(transformation, transformedExpression);
 	}
 
+	NewLtlUntilTransformer<M, MC> getLtlUntilTransformer();
+
+	NewFinallyLtlTransformer<M, MC> getFinallyLtlTransformer();
+
 	default GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		return configureOperator(model, new ProbabilisticRedistribution(), new ProbabilisticRedistribution(), stopFail, instantGoalStates, instantFailStates, statesOfInterest);
 	}
-
-	NewLtlUntilTransformer<M, MC> getLtlUntilTransformer();
-
-	NewFinallyLtlTransformer<M, MC> getFinallyLtlTransformer();
 
 
 
@@ -252,7 +252,6 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			// The label accept_condition is an artificial and stands for the automaton's acceptance condition.
 			Expression transformedCondition             = new ExpressionLabel("accept_condition");
 			ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
-
 
 			// 3) Compose Transformations
 			transformation = transformation.chain(objectiveAndConditionProduct).chain(conditionProduct);

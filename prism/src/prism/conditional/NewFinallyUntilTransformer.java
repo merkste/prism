@@ -110,14 +110,14 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		ExpressionTemporal transformedObjectiveTmp = Expression.Finally(goal);
 		ExpressionProb transformedObjective        = new ExpressionProb(transformedObjectiveTmp, MinMax.max(), "=", null);
 		Expression transformedCondition;
-		if (conditionPath.isNegated()) {
-			// All paths violating the condition eventually reach the fail state.
-			ExpressionLabel fail = new ExpressionLabel(transformation.getFailLabel());
-			transformedCondition = Expression.Globally(Expression.Not(fail));
-		} else {
+		if (! conditionPath.isNegated()) {
 			// All paths satisfying the condition eventually reach the goal or stop state.
 			ExpressionLabel stop = new ExpressionLabel(transformation.getStopLabel());
 			transformedCondition = Expression.Finally(Expression.Parenth(Expression.Or(goal, stop)));
+		} else {
+			// All paths violating the condition eventually reach the fail state.
+			ExpressionLabel fail = new ExpressionLabel(transformation.getFailLabel());
+			transformedCondition = Expression.Globally(Expression.Not(fail));
 		}
 		ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
 
@@ -175,17 +175,22 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 			throws PrismException
 		{
 			JDDNode instantGoalStates = JDD.And(objectiveSatisfiedStates, conditionSatisfiedStates);
+
 			// exclude objective/condition falsified states
-			JDDNode avoid  = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
-			JDDNode remain = JDD.And(model.getReach().copy(), JDD.Not(avoid));
+			JDDNode falsifiedStates    = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
+			JDDNode notFalsifiedStates = JDD.And(model.getReach().copy(), JDD.Not(falsifiedStates));
+
+			// Do both, the objective and the condition, specify behavior in the limit?
 			if (objectivePath.isNegated() && conditionPath.isNegated()) {
+				// Compute ECs that never falsify the objective/condition
+				// FIXME ALG: Use algorithm from explicit implementation
 				// FIXME ALG: create constructor in ECComputerDefault
 				ECComputerDefault ecComputer = new ECComputerDefault(this, model.getReach(), model.getTrans(), model.getTrans01(), model.getAllDDRowVars(), model.getAllDDColVars(), ((NondetModel) model).getAllDDNondetVars());
-				instantGoalStates            = JDD.Or(instantGoalStates, ecComputer.findMaximalStableSet(remain.copy()));
+				instantGoalStates            = JDD.Or(instantGoalStates, ecComputer.findMaximalStableSet(notFalsifiedStates.copy()));
 			}
 			// enlarge target set
-			JDDNode result = computeProb1E(model, remain, instantGoalStates);
-			JDD.Deref(remain, instantGoalStates);
+			JDDNode result = computeProb1E(model, notFalsifiedStates, instantGoalStates);
+			JDD.Deref(notFalsifiedStates, instantGoalStates);
 			return result;
 		}
 
@@ -193,14 +198,14 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		public ProbabilisticRedistribution redistributeProb0Objective(NondetModel model, Until objectivePath, Until conditionPath)
 				throws PrismException
 		{
+			// Do we have to reset once a state violates the objective?
 			// Is objective path free of invariants?
 			boolean isOptional = !objectivePath.isNegated() && JDD.IsContainedIn(model.getReach(), objectivePath.getRemain());
-			if (isOptional && ! settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
-				// Skip costly normalization
-				return new ProbabilisticRedistribution();
+			if (!isOptional || settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
+				return redistributeProb0(model, objectivePath, conditionPath);
 			}
-
-			return redistributeProb0(model, objectivePath, conditionPath);
+			// Skip costly normalization
+			return new ProbabilisticRedistribution();
 		}
 	}
 }

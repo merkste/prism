@@ -168,7 +168,6 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 				return transformNormalFormReach(product, objectivePath);
 			}
 
-			// FIXME ALG: remove redundancy?
 			explicit.MDP productModel           = product.getProductModel();
 			BitSet statesOfInterest             = product.getTransformedStatesOfInterest();
 
