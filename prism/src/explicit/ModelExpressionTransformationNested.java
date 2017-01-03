@@ -27,7 +27,6 @@
 package explicit;
 
 import parser.ast.Expression;
-import prism.PrismException;
 
 
 /**
