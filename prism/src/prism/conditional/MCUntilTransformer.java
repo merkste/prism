@@ -12,6 +12,7 @@ import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import prism.Model;
 import prism.ModelChecker;
+import prism.ModelExpressionTransformation;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.Prism;
@@ -21,6 +22,7 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
 import prism.conditional.SimplePathProperty.Until;
+import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.MCDeadlockTransformation;
 import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
@@ -47,15 +49,16 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public ModelTransformation<ProbModel, ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
 		Until conditionPath  = new Until(condition, getModelChecker(), true);
-		return transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
+		ModelTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
+		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 
-	protected ModelTransformation<ProbModel, ProbModel> transformModel(final ProbModel model, final Until conditionPath, final JDDNode statesOfInterest,
+	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Until conditionPath, final JDDNode statesOfInterest,
 			final boolean deadlock) throws PrismException
 	{
 //>>> Debug: print states of interest

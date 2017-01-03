@@ -12,6 +12,7 @@ import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import prism.Model;
 import prism.ModelChecker;
+import prism.ModelExpressionTransformation;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.Prism;
@@ -20,6 +21,7 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -68,14 +70,15 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public ModelTransformation<ProbModel, ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
-		return transformModel(model, condition, statesOfInterest);
+		ModelTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(model, condition, statesOfInterest);
+		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 
-	protected ModelTransformation<ProbModel, ProbModel> transformModel(final ProbModel model, final Expression condition, final JDDNode statesOfInterest)
+	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Expression condition, final JDDNode statesOfInterest)
 			throws PrismException
 	{
 //>>> Debug: print states of interest

@@ -13,7 +13,6 @@ import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
-import prism.ModelTransformation;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
@@ -51,7 +50,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 			}
 		}
 
-		final ModelTransformation<ProbModel, ProbModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		final ModelExpressionTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
 		final StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
 
 		final StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
@@ -60,11 +59,11 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		return resultOriginal;
 	}
 
-	private ModelTransformation<ProbModel, ProbModel> transformModel(final NewConditionalTransformer.DTMC transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	private ModelExpressionTransformation<ProbModel, ? extends ProbModel> transformModel(final NewConditionalTransformer.DTMC transformer, final ProbModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
 		long timer = System.currentTimeMillis();
-		final ModelTransformation<ProbModel, ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
+		final ModelExpressionTransformation<ProbModel, ? extends ProbModel> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
 		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
@@ -93,7 +92,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 
 		NewConditionalTransformer.DTMC transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-			final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
+			final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 			for (MdpTransformerType type : types) {
 				switch (type) {
@@ -146,15 +145,11 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		return null;
 	}
 
-	private StateValues checkExpressionTransformedModel(final ModelTransformation<ProbModel, ProbModel> transformation, final ExpressionConditional expression) throws PrismException
+	private StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<ProbModel, ? extends ProbModel> transformation, final ExpressionConditional expression) throws PrismException
 	{
 		final ProbModel transformedModel = transformation.getTransformedModel();
 		final Expression transformedExpression;
-		if (transformation instanceof ModelExpressionTransformation) {
-			transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
-		} else {
-			transformedExpression = expression.getObjective();
-		}
+		transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
 
 		prism.getLog().println("\nChecking property in transformed model ...");
 		long timer = System.currentTimeMillis();

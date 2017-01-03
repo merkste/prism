@@ -70,13 +70,6 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 	BitSet checkSatisfiability(Reach<M> conditionPath, BitSet statesOfInterest)
 			throws UndefinedTransformationException;
 
-	default BitSet computeResetStates(NormalFormTransformation<M> transformation)
-	{
-		BitSet badStates = transformation.getTransformedModel().getLabelStates(transformation.getBadLabel());
-		BitSet failState = transformation.getTransformedModel().getLabelStates(transformation.getFailLabel());
-		return BitSetTools.union(badStates, failState);
-	}
-
 	default BitSet checkSatisfiability(BitSet conditionUnsatisfied, BitSet statesOfInterest)
 			throws UndefinedTransformationException
 	{
@@ -84,6 +77,13 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 			throw new UndefinedTransformationException("Condition is not satisfiable");
 		}
 		return conditionUnsatisfied;
+	}
+
+	default BitSet computeResetStates(NormalFormTransformation<M> transformation)
+	{
+		BitSet badStates = transformation.getTransformedModel().getLabelStates(transformation.getBadLabel());
+		BitSet failState = transformation.getTransformedModel().getLabelStates(transformation.getFailLabel());
+		return BitSetTools.union(badStates, failState);
 	}
 
 	BitSet computeBadStates(Reach<M> reach, BitSet unsatisfiedStates);
@@ -98,7 +98,6 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 			throws PrismException;
 
 	NewGoalFailStopTransformer<M> getGoalFailStopTransformer();
-
 
 
 

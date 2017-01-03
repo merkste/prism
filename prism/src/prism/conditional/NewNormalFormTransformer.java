@@ -60,13 +60,6 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 	NormalFormTransformation<M> transformNormalForm(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException;
 
-	default JDDNode computeResetStates(NormalFormTransformation<M> transformation)
-	{
-		JDDNode badStates = transformation.getTransformedModel().getLabelDD(transformation.getBadLabel());
-		JDDNode failState = transformation.getTransformedModel().getLabelDD(transformation.getFailLabel());
-		return JDD.Or(badStates.copy(), failState.copy());
-	}
-
 	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 			throws PrismException;
 
@@ -80,6 +73,13 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 		return conditionUnsatisfied;
+	}
+
+	default JDDNode computeResetStates(NormalFormTransformation<M> transformation)
+	{
+		JDDNode badStates = transformation.getTransformedModel().getLabelDD(transformation.getBadLabel());
+		JDDNode failState = transformation.getTransformedModel().getLabelDD(transformation.getFailLabel());
+		return JDD.Or(badStates.copy(), failState.copy());
 	}
 
 	JDDNode computeBadStates(M model, Until until, JDDNode unsatisfiedStates);
@@ -121,7 +121,6 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			clear();
 			return result;
 		}
-
 
 		@Override
 		public JDDNode checkSatisfiability(ProbModel model, Until conditionPath, JDDNode statesOfInterest)

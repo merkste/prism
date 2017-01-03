@@ -8,7 +8,7 @@ import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
 import prism.Model;
-import prism.ModelTransformation;
+import prism.ModelExpressionTransformation;
 import prism.ModelTransformationNested;
 import prism.Prism;
 import prism.PrismException;
@@ -17,6 +17,7 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
+import prism.conditional.transform.BasicModelExpressionTransformation;
 
 public class MCLTLTransformer extends MCConditionalTransformer {
 
@@ -38,7 +39,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 	}
 
 	@Override
-	public ModelTransformation<ProbModel, ProbModel> transform(
+	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(
 			ProbModel model,
 			ExpressionConditional expression,
 			JDDNode statesOfInterest)
@@ -77,6 +78,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, ltlProduct.getTransformedModel(), probReachGoal, statesOfInterest.copy());
 
 		JDD.Deref(statesOfInterest);
-		return new ModelTransformationNested<ProbModel, ProbModel, ProbModel>(ltlProduct, scaledTransformation);
+		ModelTransformationNested<ProbModel, ProbModel, ProbModel> transformation = new ModelTransformationNested<ProbModel, ProbModel, ProbModel>(ltlProduct, scaledTransformation);
+		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 }

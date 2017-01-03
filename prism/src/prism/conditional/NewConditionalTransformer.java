@@ -7,7 +7,7 @@ import mtbdd.PrismMTBDD;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import prism.Model;
-import prism.ModelTransformation;
+import prism.ModelExpressionTransformation;
 import prism.ModelType;
 import prism.NondetModel;
 import prism.NondetModelChecker;
@@ -55,7 +55,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
 		// can handle maximal probabilities only
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}
@@ -73,7 +73,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 		}
 	}
 
-	ModelTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
+	ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException;
 
 	PrismLog getLog();
 

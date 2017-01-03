@@ -29,7 +29,6 @@ import prism.PrismLangException;
 import prism.PrismLog;
 import prism.PrismComponent;
 
-// FIXME ALG: extend ConditionalTransformer for compatibility
 public interface NewConditionalTransformer<M extends Model, MC extends StateModelChecker>
 {
 	public static final BitSet ALL_STATES = null;

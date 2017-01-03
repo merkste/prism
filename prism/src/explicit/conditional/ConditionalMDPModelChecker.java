@@ -86,26 +86,22 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		// P>x [prop] <=>	Pmin=?[prop]	> x
 		//					1-Pmax=?[!prop]	> x
 		//					Pmax=?[!prop]	< 1-x
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-
-		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMin() : "Pmin expected: " + expression;
 
 		final Expression inverseExpression;
-
 		if (oprel.isNumeric()) {
-			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), MinMax.max(), RelOp.COMPUTE_VALUES.toString(),
-					null);
-			inverseExpression = Expression.Minus(Expression.Literal(1), new ExpressionConditional(inverseObjective, expression.getCondition()));
+			ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), MinMax.max(), RelOp.COMPUTE_VALUES.toString(), null);
+			inverseExpression               = Expression.Minus(Expression.Literal(1), new ExpressionConditional(inverseObjective, expression.getCondition()));
 		} else {
-			final RelOp inverseRelop = oprel.getRelOp().negate(true); // negate but keep strictness
-
-			final Expression inverseProb = Expression.Minus(Expression.Literal(1), objective.getProb());
-			final ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), inverseRelop.toString(), inverseProb);
+			RelOp inverseRelop              = oprel.getRelOp().negate(true); // negate but keep strictness
+			Expression inverseProb          = Expression.Minus(Expression.Literal(1), objective.getProb());
+			ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), inverseRelop.toString(), inverseProb);
 			inverseExpression = new ExpressionConditional(inverseObjective, expression.getCondition());
 		}
 		// Debug output
-		mainLog.println(inverseExpression);
+		getLog().println("Transform Pmin conditional expression to "+inverseExpression);
 		return modelChecker.checkExpression(model, inverseExpression, statesOfInterest);
 	}
 
