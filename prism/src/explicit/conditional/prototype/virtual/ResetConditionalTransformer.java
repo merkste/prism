@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 import java.util.Collections;
@@ -25,10 +25,10 @@ import explicit.ModelTransformationNested;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
 import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.MDPDroppedAllChoices;

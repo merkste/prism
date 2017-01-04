@@ -6,23 +6,15 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.PrismException;
 import explicit.BasicModelExpressionTransformation;
-import explicit.DTMC;
 import explicit.DTMCModelChecker;
-import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.conditional.NewConditionalTransformer;
 
-public abstract class MCConditionalTransformer extends NewConditionalTransformer.Basic<DTMC, DTMCModelChecker>
+public abstract class MCConditionalTransformer extends NewConditionalTransformer.DTMC
 {
 	public MCConditionalTransformer(final DTMCModelChecker modelChecker)
 	{
 		super(modelChecker);
-	}
-
-	@Override
-	public boolean canHandleModelType(Model model)
-	{
-		return model instanceof explicit.DTMC;
 	}
 
 	@Override

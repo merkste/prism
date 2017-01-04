@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype;
 
 import java.util.BitSet;
 

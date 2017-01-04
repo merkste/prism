@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 
@@ -20,10 +20,10 @@ import explicit.ProbModelChecker;
 import explicit.ReachabilityComputer;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.GoalStopTransformer;
-import explicit.conditional.transformer.GoalStopTransformer.GoalStopTransformation;
+import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
+import explicit.conditional.prototype.virtual.GoalStopTransformer.GoalStopTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 
 // FIXME ALG: add comment
 public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>

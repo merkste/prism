@@ -14,16 +14,16 @@ import explicit.DTMCModelChecker;
 import explicit.DTMCSparse;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
+import explicit.conditional.prototype.virtual.FinallyLtlTransformer;
+import explicit.conditional.prototype.virtual.FinallyUntilTransformer;
+import explicit.conditional.prototype.virtual.LtlLtlTransformer;
+import explicit.conditional.prototype.virtual.LtlUntilTransformer;
+import explicit.conditional.prototype.virtual.MCLTLTransformer;
+import explicit.conditional.prototype.virtual.MCNextTransformer;
+import explicit.conditional.prototype.virtual.MCUntilTransformer;
 import explicit.conditional.transformer.DtmcTransformerType;
-import explicit.conditional.transformer.FinallyUntilTransformer;
-import explicit.conditional.transformer.FinallyLtlTransformer;
-import explicit.conditional.transformer.LtlLtlTransformer;
-import explicit.conditional.transformer.LtlUntilTransformer;
 import explicit.conditional.transformer.MdpTransformerType;
-import explicit.conditional.transformer.mc.MCLTLTransformer;
-import explicit.conditional.transformer.mc.MCNextTransformer;
 import explicit.conditional.transformer.mc.MCQuotientTransformer;
-import explicit.conditional.transformer.mc.MCUntilTransformer;
 import explicit.conditional.transformer.mc.NewMcLtlTransformer;
 import explicit.conditional.transformer.mc.NewMcNextTransformer;
 import explicit.conditional.transformer.mc.NewMcUntilTransformer;
@@ -150,16 +150,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 				for (DtmcTransformerType type : types) {
 					switch (type) {
 					case Finally:
-						transformer = new explicit.conditional.transformer.legacy.MCMatchingFinallyTransformer(modelChecker);
+						transformer = new explicit.conditional.prototype.tacas14.MCMatchingFinallyTransformer(modelChecker);
 						break;
 					case Until:
-						transformer = new explicit.conditional.transformer.legacy.MCUntilTransformer(modelChecker);
+						transformer = new explicit.conditional.prototype.tacas14.MCUntilTransformer(modelChecker);
 						break;
 					case Next:
-						transformer = new explicit.conditional.transformer.legacy.MCNextTransformer(modelChecker);
+						transformer = new explicit.conditional.prototype.tacas14.MCNextTransformer(modelChecker);
 						break;
 					case Ltl:
-						transformer = new explicit.conditional.transformer.legacy.MCLTLTransformer(modelChecker);
+						transformer = new explicit.conditional.prototype.tacas14.MCLTLTransformer(modelChecker);
 						break;
 					default:
 						continue;

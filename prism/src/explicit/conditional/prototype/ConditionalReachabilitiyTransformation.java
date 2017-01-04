@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.mdp;
+package explicit.conditional.prototype;
 
 import java.util.BitSet;
 import java.util.function.IntFunction;
@@ -6,7 +6,6 @@ import java.util.function.IntFunction;
 import explicit.BasicModelTransformation;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.conditional.transformer.ReachabilityTransformation;
 
 //FIXME ALG: add comment
 public class ConditionalReachabilitiyTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM> implements ReachabilityTransformation<OM, TM>

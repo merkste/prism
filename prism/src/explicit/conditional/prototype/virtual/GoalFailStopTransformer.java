@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 import java.util.Iterator;
@@ -14,38 +14,46 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 
-public interface GoalStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
+public interface GoalFailStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
-	static final int STOP = 1;
+	static final int FAIL = 1;
+	static final int STOP = 2;
 
 
 
 	@Override
-	default GoalStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
-		throws PrismException
-	{
-		NormalFormTransformation<M> transformation = ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
-		return new GoalStopTransformation<>(transformation);
-	}
+	default GoalFailStopTransformation<M> transformModel(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated, BitSet statesOfInterest)
+			throws PrismException
+		{
+			NormalFormTransformation<M> transformation = ConditionalNormalFormTransformer.super.transformModel(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated, statesOfInterest);
+			return new GoalFailStopTransformation<>(transformation);
+		}
 
 	@Override
 	default public int getNumTrapStates()
 	{
-		return 2;
+		return 3;
 	};
 
 	@Override
 	default MappingInt<Iterator<Entry<Integer, Double>>> getTransitions(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 			throws PrismException
 	{
-		// compute Pmax(<> Objective)
-		double[] objectiveProbs = computeUntilProbs(model, null, objectiveGoal, false);
+		// compute normal states and enlarge set by prob1a
+		BitSet objectiveNormalStates = computeProb1A(model, null, objectiveGoal);
+		// compute Pmax(Objective)
+		// FIXME ALG: reuse precomputation?
+		double[] objectiveProbs      = computeUntilProbs(model, null, objectiveGoal, false);
 		// compute normal states and enlarge set by prob1a
 		BitSet conditionNormalStates = computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);
+		// compute Pmax(Condition)
+		double[] conditionProbs      = computeUntilProbs(model, conditionRemain, conditionGoal, conditionNegated);
 
 		return new MappingInt<Iterator<Entry<Integer, Double>>>()
 		{
 			final int offset = model.getNumStates();
+			final BinaryRedistribution objectiveRedistribution =
+					new BinaryRedistribution(objectiveNormalStates, offset + GOAL, offset + FAIL, conditionProbs);
 			final BinaryRedistribution conditionRedistribution =
 					new BinaryRedistribution(conditionNormalStates, offset + GOAL, offset + STOP, objectiveProbs);
 
@@ -55,6 +63,11 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 				Iterator<Entry<Integer, Double>> distribution = conditionRedistribution.apply(state);
 				if (distribution != null) {
 					// condition state
+					return distribution;
+				}
+				distribution = objectiveRedistribution.apply(state);
+				if (distribution != null) {
+					// objective\condition state
 					return distribution;
 				}
 				if (state >= offset) {
@@ -69,7 +82,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalStopTransformer<explicit.DTMC>
+	public static class DTMC extends ConditionalNormalFormTransformer.DTMC implements GoalFailStopTransformer<explicit.DTMC>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -79,7 +92,7 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 
 
 
-	public static class MDP extends ConditionalNormalFormTransformer.MDP implements GoalStopTransformer<explicit.MDP>
+	public static class MDP extends ConditionalNormalFormTransformer.MDP implements GoalFailStopTransformer<explicit.MDP>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -89,22 +102,29 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 		@Override
 		protected BitSet getTerminalStates(explicit.MDP model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 		{
-			return computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);
+			BitSet conditionTerminals = computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);
+
+			return BitSetTools.union(objectiveGoal, conditionTerminals);
 		}
 	}
 
 
 
-	public static class GoalStopTransformation<M extends Model> extends NormalFormTransformation<M>
+	public static class GoalFailStopTransformation<M extends Model> extends NormalFormTransformation<M>
 	{
-		public GoalStopTransformation(M originalModel, M transformedModel, BitSet transformedStatesOfInterest)
+		public GoalFailStopTransformation(M originalModel, M transformedModel, BitSet transformedStatesOfInterest)
 		{
 			super(originalModel, transformedModel, transformedStatesOfInterest);
 		}
 
-		public GoalStopTransformation(NormalFormTransformation<? extends M> transformation)
+		public GoalFailStopTransformation(final NormalFormTransformation<? extends M> transformation)
 		{
 			super(transformation);
+		}
+
+		public int getFailState()
+		{
+			return numberOfStates + FAIL;
 		}
 
 		public int getStopState()
@@ -144,9 +164,10 @@ public interface GoalStopTransformer<M extends Model> extends ConditionalNormalF
 		System.out.println("Initials:    " + BitSetTools.asBitSet(original.getInitialStates()));
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(original.getDeadlockStates()));
 		System.out.println(original);
+
 		System.out.println();
 
-		final GoalStopTransformer.MDP transformer = new GoalStopTransformer.MDP(new MDPModelChecker(null));
+		final GoalFailStopTransformer.MDP transformer = new GoalFailStopTransformer.MDP(new MDPModelChecker(null));
 		final BitSet objectiveGoal = BitSetTools.asBitSet(1);
 		final BitSet conditionGoal = BitSetTools.asBitSet(2);
 		final BitSet statesOfInterest = BitSetTools.asBitSet(1);

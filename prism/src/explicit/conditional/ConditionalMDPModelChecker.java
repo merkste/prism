@@ -21,10 +21,10 @@ import explicit.MinMax;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
 import explicit.conditional.NewFinallyUntilTransformer;
-import explicit.conditional.transformer.FinallyLtlTransformer;
-import explicit.conditional.transformer.FinallyUntilTransformer;
-import explicit.conditional.transformer.LtlLtlTransformer;
-import explicit.conditional.transformer.LtlUntilTransformer;
+import explicit.conditional.prototype.virtual.FinallyLtlTransformer;
+import explicit.conditional.prototype.virtual.FinallyUntilTransformer;
+import explicit.conditional.prototype.virtual.LtlLtlTransformer;
+import explicit.conditional.prototype.virtual.LtlUntilTransformer;
 import explicit.conditional.transformer.MdpTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.ModelView;
@@ -170,13 +170,13 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
-					transformer = new explicit.conditional.transformer.legacy.MDPFinallyTransformer(modelChecker);
+					transformer = new explicit.conditional.prototype.tacas14.MDPFinallyTransformer(modelChecker);
 					break;
 				case FinallyLtl:
-					transformer = new explicit.conditional.transformer.legacy.MDPLTLConditionTransformer(modelChecker);
+					transformer = new explicit.conditional.prototype.tacas14.MDPLTLConditionTransformer(modelChecker);
 					break;
 				case LtlLtl:
-					transformer = new explicit.conditional.transformer.legacy.MDPLTLTransformer(modelChecker);
+					transformer = new explicit.conditional.prototype.tacas14.MDPLTLTransformer(modelChecker);
 					break;
 				default:
 					continue;

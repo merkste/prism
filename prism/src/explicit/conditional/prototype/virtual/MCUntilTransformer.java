@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.mc;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.TerminalTransformation;
+import explicit.conditional.transformer.mc.MCConditionalTransformer;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCEquiv;

@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.mc;
+package explicit.conditional.prototype.virtual;
 
 import java.util.AbstractMap;
 import java.util.BitSet;
@@ -28,7 +28,6 @@ import explicit.DTMCSimple;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.PredecessorRelation;
-import explicit.conditional.transformer.TerminalTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;

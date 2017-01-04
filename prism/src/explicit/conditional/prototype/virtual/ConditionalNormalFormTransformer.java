@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 import java.util.Collections;
@@ -13,6 +13,7 @@ import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
 import explicit.Model;
 import explicit.PredecessorRelation;
+import explicit.conditional.prototype.ReachabilityTransformation;
 import explicit.modelviews.DTMCAdditionalStates;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.MDPAdditionalChoices;

@@ -145,7 +145,7 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 	 * @param probabilities
 	 * @return argument array altered to hold result
 	 */
-	static double[] subtractFromOne(final double[] probabilities)
+	public static double[] subtractFromOne(final double[] probabilities)
 	{
 		// FIXME ALG: code dupes, e.g., in ConditionalReachabilityTransformer::negateProbabilities
 		for (int state = 0; state < probabilities.length; state++) {

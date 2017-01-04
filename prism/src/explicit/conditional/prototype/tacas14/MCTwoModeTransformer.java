@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.legacy;
+package explicit.conditional.prototype.tacas14;
 
 import java.util.ArrayList;
 import java.util.BitSet;

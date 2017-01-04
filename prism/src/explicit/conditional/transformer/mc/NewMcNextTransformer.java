@@ -120,7 +120,7 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 	public double[] computeNextProbs(final explicit.DTMC model, final BitSet goal, final boolean negated) throws PrismException
 	{
 		double[] probabilities = getModelChecker(model).computeNextProbs(model, goal).soln;
-		return negated ? ConditionalReachabilityTransformer.negateProbabilities(probabilities) : probabilities;
+		return negated ? negateProbabilities(probabilities) : probabilities;
 	}
 
 	public static double[] negateProbabilities(final double[] probabilities)

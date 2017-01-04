@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.legacy;
+package explicit.conditional.prototype.tacas14;
 
 import java.util.BitSet;
 
@@ -11,7 +11,7 @@ import explicit.MinMax;
 import explicit.Model;
 import explicit.ModelExpressionTransformation;
 import explicit.conditional.NewConditionalTransformer;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
+import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;

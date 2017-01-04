@@ -1,4 +1,4 @@
-package explicit.conditional.transformer;
+package explicit.conditional.prototype.virtual;
 
 import java.util.BitSet;
 
@@ -9,9 +9,9 @@ import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.transformer.GoalFailStopTransformer;
-import explicit.conditional.transformer.GoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
+import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
+import explicit.conditional.prototype.virtual.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;

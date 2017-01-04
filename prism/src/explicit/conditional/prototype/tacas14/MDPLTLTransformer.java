@@ -1,4 +1,4 @@
-package explicit.conditional.transformer.legacy;
+package explicit.conditional.prototype.tacas14;
 
 import java.util.BitSet;
 
@@ -19,10 +19,10 @@ import explicit.MDPSimple;
 import explicit.Model;
 import explicit.ModelCheckerResult;
 import explicit.LTLModelChecker.LTLProduct;
+import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.conditional.transformer.mdp.ConditionalReachabilitiyTransformation;
 
 @Deprecated
 public class MDPLTLTransformer extends MDPConditionalTransformer
