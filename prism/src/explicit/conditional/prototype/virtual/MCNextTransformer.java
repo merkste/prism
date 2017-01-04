@@ -26,6 +26,7 @@ import explicit.modelviews.DTMCEquiv;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
 
+@Deprecated
 public class MCNextTransformer extends MCConditionalTransformer
 {
 	public static final boolean DONT_NORMALIZE = false;
@@ -98,12 +99,10 @@ public class MCNextTransformer extends MCConditionalTransformer
 		getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 
 		// 3. create union model
-		// FIXME ALG: code duplication, building identify map
 		final Map<Integer, Integer> identify = new HashMap<>(terminalLookup.size());
 		for (Entry<Integer, Integer> id : terminalLookup.entrySet()) {
 			identify.put(id.getKey(), mode2.mapStateToRestrictedModel(id.getValue()));
 		}
-		// FIXME ALG: consider making restriction optional
 		final explicit.DTMC transformedModel = DTMCDisjointUnion.DTMCUnion(mode1.getTransformedModel(), mode2, identify);
 		// sane, as long as mode 1 is already restricted
 		ModelTransformation<explicit.DTMC, explicit.DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), transformedModel, mode1.getTransformedStatesOfInterest());
@@ -128,7 +127,6 @@ public class MCNextTransformer extends MCConditionalTransformer
 		getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 
 		// 3. create union model
-		// FIXME ALG: code duplication, building identify map
 		DTMCDisjointUnion unionModel = new DTMCDisjointUnion(mode1.getTransformedModel(), mode2);
 		BasicModelTransformation<explicit.DTMC, explicit.DTMC> union = new BasicModelTransformation<>(mode1.getTransformedModel(), unionModel, mode1.getTransformedStatesOfInterest());
 

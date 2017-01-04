@@ -20,7 +20,7 @@ import parser.ast.ExpressionUnaryOp;
 import prism.PrismException;
 import prism.PrismLangException;
 
-// FIXME ALG: add comment
+@Deprecated
 public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
 {
 	@Override

@@ -23,7 +23,6 @@ import explicit.conditional.ExpressionInspector;
  * R=? [ F states][ F target ]
  * </code>
  */
-// FIXME ALG: adapt comment
 @Deprecated
 public class MCUntilTransformer extends MCTwoModeTransformer
 {
@@ -58,7 +57,6 @@ public class MCUntilTransformer extends MCTwoModeTransformer
 	protected BitSet getPivotStates(final BitSet support, final BitSet target)
 	{
 		// compute reachable target states == target & support
-		// FIXME ALG: pivots == target?
 		final BitSet states = (BitSet) target.clone();
 		states.and(support);
 		return states;

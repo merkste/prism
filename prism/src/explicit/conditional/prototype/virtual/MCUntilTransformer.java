@@ -29,6 +29,7 @@ import explicit.modelviews.DTMCEquiv;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
 
+@Deprecated
 public class MCUntilTransformer extends MCConditionalTransformer
 {
 	public static final boolean DONT_NORMALIZE = false;
@@ -53,7 +54,6 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// FIXME ALG: steady state computation
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
@@ -93,7 +93,6 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 		
 			// union of mode1 and mode2
-			// FIXME ALG: code duplication, building identify map
 			final Map<Integer, Integer> identify = new HashMap<>(terminalLookup);
 			for (Entry<Integer, Integer> id : terminalLookup.entrySet()) {
 				identify.put(id.getKey(), mode2.mapStateToRestrictedModel(id.getValue()));

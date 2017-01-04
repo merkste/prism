@@ -14,6 +14,7 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 
+@Deprecated
 public interface GoalStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
 	static final int STOP = 1;

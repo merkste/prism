@@ -32,6 +32,7 @@ import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 
+@Deprecated
 public class ConditionalReachabilityTransformer extends PrismComponent
 {
 	private DTMCModelChecker modelChecker;
@@ -63,7 +64,6 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 			final BitSet statesOfInterest, final boolean collapse) throws PrismException
 	{
 		// 1. compute probabilities of constraint reachability
-		// FIXME ALG: move exact results to ModelCheckerResults
 		final PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
 		final BitSet prob0 = modelChecker.prob0(model, remain, goal, pre);
 		final BitSet prob1 = modelChecker.prob1(model, remain, goal, pre);
@@ -136,7 +136,6 @@ public class ConditionalReachabilityTransformer extends PrismComponent
 		return terminals;
 	}
 
-	// FIXME ALG: similar code in ConditionalLTLTransformer, ConditionalNextTransformer
 	/**
 	 * Build Mapping terminal states in transformed model -> terminal states in original model
 	 */

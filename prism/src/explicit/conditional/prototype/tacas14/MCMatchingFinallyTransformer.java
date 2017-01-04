@@ -22,7 +22,6 @@ import explicit.conditional.ExpressionInspector;
  * @param expression
  * @return true iff instances of this transformation can handle {@code expression}
  */
-// FIXME ALG: adapt comment
 @Deprecated
 public class MCMatchingFinallyTransformer extends MCUntilTransformer
 {

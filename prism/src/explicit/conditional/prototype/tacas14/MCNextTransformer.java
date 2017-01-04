@@ -24,7 +24,6 @@ import explicit.conditional.ExpressionInspector;
  * R=? [ F states][ ! X target ]
  * </code>
  */
-// FIXME ALG: adapt comment
 @Deprecated
 public class MCNextTransformer extends MCTwoModeTransformer
 {

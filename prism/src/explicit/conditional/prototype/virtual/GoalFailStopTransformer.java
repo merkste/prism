@@ -14,6 +14,7 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 
+@Deprecated
 public interface GoalFailStopTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
 	static final int FAIL = 1;
@@ -42,7 +43,6 @@ public interface GoalFailStopTransformer<M extends Model> extends ConditionalNor
 		// compute normal states and enlarge set by prob1a
 		BitSet objectiveNormalStates = computeProb1A(model, null, objectiveGoal);
 		// compute Pmax(Objective)
-		// FIXME ALG: reuse precomputation?
 		double[] objectiveProbs      = computeUntilProbs(model, null, objectiveGoal, false);
 		// compute normal states and enlarge set by prob1a
 		BitSet conditionNormalStates = computeNormalStates(model, conditionRemain, conditionGoal, conditionNegated);

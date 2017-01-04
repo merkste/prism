@@ -22,6 +22,7 @@ import explicit.modelviews.MDPDroppedAllChoices;
 import prism.PrismComponent;
 import prism.PrismException;
 
+@Deprecated
 public interface ConditionalNormalFormTransformer<M extends Model>
 {
 	static final int GOAL = 0;
@@ -60,23 +61,15 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		} else {
 			return computeProb1A(model, conditionRemain, conditionGoal);
 		}
-// FIXME ALG: fishy: should be all states with Pmin=1 (Condition)
-//		BitSet conditionWeakRemain   = getWeakRemainStates(model, conditionRemain, conditionGoal, conditionNegated);
-//		BitSet conditionWeakGoal     = getWeakGoalStates(model, conditionRemain, conditionGoal, conditionNegated);
-//		BitSet goalStopStates = computeProb1A(model, conditionWeakRemain, conditionWeakGoal);
-//		return goalStopStates;
 	}
 
 	double[] computeUntilProbs(M model, BitSet remain, BitSet goal, boolean negated)
 			throws PrismException;
 
-	// FIXME ALG: code dupe in ResetConditionTransformer
 	BitSet computeProb0A(M model, BitSet remain, BitSet goal);
 
-	// FIXME ALG: code dupe in ResetConditionTransformer
 	BitSet computeProb1A(M model, BitSet remain, BitSet goal);
 
-	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
 	static double[] negateProbabilities(final double[] probabilities)
 	{
 		for (int state = 0; state < probabilities.length; state++) {
@@ -84,36 +77,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		}
 		return probabilities;
 	}
-
-//	// FIXME ALG: code dupe in ConditionalReachabilityTransformer
-//	default BitSet getWeakGoalStates(M model, BitSet remain, BitSet goal, boolean negated)
-//	{
-//		if (! negated) {
-//			return goal;
-//		}
-//		// terminal = ! (remain | goal)
-//		int numStates = model.getNumStates();
-//		if (goal == null || goal.cardinality() == numStates
-//			|| remain == null || remain.cardinality() == numStates) {
-//			return new BitSet();
-//		}
-//		BitSet terminals = BitSetTools.union(remain, goal);
-//		terminals.flip(0, numStates);
-//		return terminals;
-//	}
-//
-//	default BitSet getWeakRemainStates(M model, BitSet remain, BitSet goal, boolean negated)
-//	{
-//		if (! negated) {
-//			return remain;
-//		}
-//		// remain = ! goal
-//		final int numStates = model.getNumStates();
-//		if (goal == null || goal.cardinality() == numStates) {
-//			return new BitSet();
-//		}
-//		return BitSetTools.complement(numStates, goal);
-//	}
 
 
 
@@ -145,7 +108,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		public double[] computeUntilProbs(explicit.DTMC model, BitSet remain, BitSet goal, boolean negated)
 				throws PrismException
 		{
-			// FIXME ALG: consider precomputation
 			double[] probs = modelChecker.computeUntilProbs(model, remain, goal).soln;
 			if (negated) {
 				return negateProbabilities(probs);
@@ -153,7 +115,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			return probs;
 		}
 
-		// FIXME ALG: code dupe in ResetConditionTransformer
 		@Override
 		public BitSet computeProb0A(explicit.DTMC model, BitSet remain, BitSet goal)
 		{
@@ -161,7 +122,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			return modelChecker.prob0(model, remain, goal, pre);
 		}
 
-		// FIXME ALG: code dupe in ResetConditionTransformer
 		@Override
 		public BitSet computeProb1A(explicit.DTMC model, BitSet remain, BitSet goal)
 		{
@@ -191,7 +151,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 		public explicit.MDP normalizeTransitions(explicit.MDP model, explicit.MDP trapStatesModel, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean conditionNegated)
 				throws PrismException
 		{
-			// FIXME ALG: avoid duplicated computation of terminals
 			MDPDroppedAllChoices dropped = new MDPDroppedAllChoices(trapStatesModel, getTerminalStates(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated));
 
 			MappingInt<List<Iterator<Entry<Integer, Double>>>> choices = getChoices(model, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
@@ -228,7 +187,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			return probs;
 		}
 
-		// FIXME ALG: code dupe in ResetConditionTransformer
 		@Override
 		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
 		{
@@ -236,7 +194,6 @@ public interface ConditionalNormalFormTransformer<M extends Model>
 			return modelChecker.prob0(model, remain, goal, false, null, pre);
 		}
 
-		// FIXME ALG: code dupe in ResetConditionTransformer
 		@Override
 		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
 		{

@@ -29,6 +29,7 @@ import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 import explicit.modelviews.DTMCRestricted;
 
+@Deprecated
 public class ConditionalNextTransformer extends PrismComponent
 {
 	final DTMCModelChecker modelChecker;
@@ -91,7 +92,6 @@ public class ConditionalNextTransformer extends PrismComponent
 		return terminal;
 	}
 
-	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalLTLTransformer
 	public Map<Integer, Integer> buildTerminalLookup(final DTMCDisjointUnion model, final BitSet terminal, final ModelTransformation<?,?> transformation)
 	{
 		final int offset = model.offset;

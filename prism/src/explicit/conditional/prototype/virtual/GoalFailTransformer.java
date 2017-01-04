@@ -14,6 +14,7 @@ import explicit.MDPSimple;
 import explicit.Model;
 import prism.PrismException;
 
+@Deprecated
 public interface GoalFailTransformer<M extends Model> extends ConditionalNormalFormTransformer<M>
 {
 	static final int FAIL = 1;

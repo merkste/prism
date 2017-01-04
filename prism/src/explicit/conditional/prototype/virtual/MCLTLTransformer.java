@@ -23,6 +23,7 @@ import explicit.modelviews.DTMCEquiv;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
 
+@Deprecated
 public class MCLTLTransformer extends MCConditionalTransformer
 {
 	public static final boolean DONT_NORMALIZE = false;
@@ -69,7 +70,6 @@ public class MCLTLTransformer extends MCConditionalTransformer
 		getLog().println("Mode 2 has " + mode2.getNumStates() + " states");
 
 		// 3. create union model
-		// FIXME ALG: code duplication, building identify map
 		final Map<Integer, Integer> identify = new HashMap<>(terminalLookup);
 		for (Entry<Integer, Integer> id : terminalLookup.entrySet()) {
 			identify.put(id.getKey(), mode2.mapStateToRestrictedModel(id.getValue()));
@@ -84,7 +84,6 @@ public class MCLTLTransformer extends MCConditionalTransformer
 	protected ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModelNew(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
-		// FIXME ALG: Check whether product is DTMCSparse
 		// 1. create mode 1 == conditional part
 		final TerminalTransformation<explicit.DTMC, explicit.DTMC> mode1 = transformer.transformModel(model, expression.getCondition(), statesOfInterest);
 		getLog().println("Mode 1 has " + mode1.getTransformedModel().getNumStates() + " states");

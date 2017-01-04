@@ -18,9 +18,9 @@ import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.transformer.LTLProductTransformer;
 
+@Deprecated
 public class ConditionalLTLTransformer extends PrismComponent
 {
-	// FIXME ALG: allow all acceptance types
 	private static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.STREETT, AcceptanceType.GENERIC};
 
 	private final LTLProductTransformer<DTMC> ltlTransformer;
@@ -59,7 +59,6 @@ public class ConditionalLTLTransformer extends PrismComponent
 		return new TerminalTransformation<DTMC, DTMC>(nested, terminalLookup);
 	}
 
-	// FIXME ALG: similar code in ConditionalReachabilityTransformer, ConditionalNextTransformer
 	/**
 	 * Build Mapping terminal states in transformed model -> terminal states in original model
 	 */

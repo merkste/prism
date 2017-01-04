@@ -6,7 +6,7 @@ import explicit.BasicModelTransformation;
 import explicit.Model;
 import explicit.ModelTransformation;
 
-// FIXME ALG: add comment
+@Deprecated
 public class TerminalTransformation<OM extends Model, TM extends Model> extends BasicModelTransformation<OM, TM>
 {
 	protected final Map<Integer, Integer> terminalMapping;

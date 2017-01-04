@@ -34,7 +34,7 @@ import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.MDPDroppedAllChoices;
 import explicit.modelviews.MDPRestricted;
 
-// FIXME ALG: add comment
+@Deprecated
 public interface ResetConditionalTransformer<M extends Model, MC extends ProbModelChecker> extends NewConditionalTransformer<M, MC>
 {
 	@Override

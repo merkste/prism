@@ -27,7 +27,7 @@ import explicit.conditional.prototype.virtual.GoalFailTransformer.GoalFailTransf
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 
-// FIXME ALG: add comment
+@Deprecated
 public interface FinallyLtlTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
 {
 	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};

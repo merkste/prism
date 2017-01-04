@@ -25,7 +25,7 @@ import explicit.conditional.prototype.virtual.GoalStopTransformer.GoalStopTransf
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 
-// FIXME ALG: add comment
+@Deprecated
 public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
@@ -114,7 +114,6 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 
 		// 1) Normal-Form Transformation
 		GoalStopTransformer<M> normalFormTransformer = getNormalFormTransformer();
-		// FIXME ALG: consider moving objective-goal-computation to normal-form transformer
 		BitSet conditionNormalStates = normalFormTransformer.computeNormalStates(objectiveModel, conditionRemain, conditionGoal, conditionNegated);
 
 		// compute ECs in succ*(terminal) ...
@@ -138,7 +137,6 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 		ModelTransformation<M, M> deadlockTransformation = deadlockStates(normalFormModel, unsatisfiableLifted, normalFormTransformation.getTransformedStatesOfInterest());
 
 		// 3) Reset Transformation
-// FIXME ALG: do not reset from normal-form states
 		BitSet bad = computeBadStates(objectiveModel, objectiveGoal, conditionRemain, conditionGoal, conditionNegated);
 		// lift bad states from model to normal-form model and to deadlock model
 		BitSet badLifted = normalFormTransformation.mapToTransformedModel(bad);
@@ -150,7 +148,6 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 
 		// 4) Compose Transformations
 		ModelTransformationNested<M, M, ? extends M> nested = new ModelTransformationNested<>(deadlockTransformation, resetTransformation);
-		// FIXME ALG: consider moving goal-set computation to normal-form transformer
 		// All paths satisfying the objective and condition eventually reach goal or an accepting EC.
 		BitSet goalLifted = normalFormTransformation.mapToTransformedModel(acceptStatesConditionECs);
 		goalLifted.set(normalFormTransformation.getGoalState());
