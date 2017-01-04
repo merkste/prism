@@ -87,7 +87,7 @@ public class MCUntilTransformer extends MCTwoModeTransformer
 			// assume non-negated until formula
 			target = ((ExpressionTemporal) condition).getOperand2();
 		}
-		return modelChecker.checkExpression(originalModel, target, null).getBitSet();
+		return getModelChecker(originalModel).checkExpression(originalModel, target, null).getBitSet();
 	}
 
 	@Override
@@ -112,6 +112,6 @@ public class MCUntilTransformer extends MCTwoModeTransformer
 	@Override
 	protected double[] computeProbabilities(final BitSet target) throws PrismException
 	{
-		return modelChecker.computeUntilProbs(originalModel, null, target).soln;
+		return getModelChecker(originalModel).computeUntilProbs(originalModel, null, target).soln;
 	}
 }

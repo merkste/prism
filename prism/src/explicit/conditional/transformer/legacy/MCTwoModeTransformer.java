@@ -164,7 +164,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 	{
 		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
 
-		return modelChecker.checkExpression(model, expression, null).getDoubleArray();
+		return getModelChecker(model).checkExpression(model, expression, null).getDoubleArray();
 	}
 
 	protected abstract double[] computeProbabilities(final BitSet target) throws PrismException;

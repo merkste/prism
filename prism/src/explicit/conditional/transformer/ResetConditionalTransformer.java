@@ -73,7 +73,7 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 	ModelTransformation<M, ? extends M> transformRestrict(M model, BitSet states);
 
 	default BitSet checkSatisfiability(M model, BitSet remain, BitSet goal, boolean negated, BitSet statesOfInterest)
-			throws UndefinedTransformationException
+			throws PrismException
 	{
 		BitSet unsatisfiable = computeUnsatisfiable(model, remain, goal, negated);
 		if (!BitSetTools.areDisjoint(unsatisfiable, statesOfInterest)) {
@@ -83,6 +83,7 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 	}
 
 	default BitSet computeUnsatisfiable(M model, BitSet remain, BitSet goal, boolean negated)
+			throws PrismException
 	{
 		return negated ? computeProb1A(model, remain, goal) : computeProb0A(model, remain, goal);
 	}
@@ -90,16 +91,16 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 	default BitSet computeStates(M model, Expression expression)
 			throws PrismException
 	{
-		return getModelChecker().checkExpression(model, expression, null).getBitSet();
+		return getModelChecker(model).checkExpression(model, expression, null).getBitSet();
 	}
 
-	BitSet computeProb0A(M model, BitSet remain, BitSet goal);
+	BitSet computeProb0A(M model, BitSet remain, BitSet goal) throws PrismException;
 
-	BitSet computeProb0E(M model, BitSet remain, BitSet goal);
+	BitSet computeProb0E(M model, BitSet remain, BitSet goal) throws PrismException;
 
-	BitSet computeProb1A(M model, BitSet remain, BitSet goal);
+	BitSet computeProb1A(M model, BitSet remain, BitSet goal) throws PrismException;
 
-	BitSet computeProb1E(M model, BitSet remain, BitSet goal);
+	BitSet computeProb1E(M model, BitSet remain, BitSet goal) throws PrismException;
 
 	ModelTransformation<M, M> deadlockStates(M model, BitSet states, BitSet statesOfInterest);
 
@@ -133,26 +134,31 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 
 		@Override
 		public BitSet computeProb0A(explicit.DTMC model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
-			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
-			return modelChecker.prob0(model, remain, goal, pre);
+			DTMCModelChecker     mc = getModelChecker(model);
+			PredecessorRelation pre = model.getPredecessorRelation(mc, true);
+			return mc.prob0(model, remain, goal, pre);
 		}
 
 		@Override
 		public BitSet computeProb0E(explicit.DTMC model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			return computeProb0A(model, remain, goal);
 		}
 
 		@Override
 		public BitSet computeProb1A(explicit.DTMC model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
-			PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
-			return modelChecker.prob1(model, remain, goal, pre);
+			PredecessorRelation pre = model.getPredecessorRelation(this, true);
+			return getModelChecker(model).prob1(model, remain, goal, pre);
 		}
 
 		@Override
 		public BitSet computeProb1E(explicit.DTMC model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			return computeProb1A(model, remain, goal);
 		}
@@ -194,30 +200,34 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 
 		@Override
 		public BitSet computeProb0A(explicit.MDP model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return modelChecker.prob0(model, remain, goal, false, null, pre);
+			return getModelChecker(model).prob0(model, remain, goal, false, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb0E(explicit.MDP model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return modelChecker.prob0(model, remain, goal, true, null, pre);
+			return getModelChecker(model).prob0(model, remain, goal, true, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb1A(explicit.MDP model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return modelChecker.prob1(model, remain, goal, true, null, pre);
+			return getModelChecker(model).prob1(model, remain, goal, true, null, pre);
 		}
 
 		@Override
 		public BitSet computeProb1E(explicit.MDP model, BitSet remain, BitSet goal)
+				throws PrismException
 		{
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return modelChecker.prob1(model, remain, goal, false, null, pre);
+			return getModelChecker(model).prob1(model, remain, goal, false, null, pre);
 		}
 
 		@Override

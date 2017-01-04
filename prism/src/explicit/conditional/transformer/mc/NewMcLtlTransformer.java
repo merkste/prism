@@ -130,21 +130,23 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 
 	public BitSet computeProb0(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
 	{
-		PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
+		DTMCModelChecker mc     = getModelChecker(model);
+		PredecessorRelation pre = model.getPredecessorRelation(this, true);
 		if (negated) {
-			return modelChecker.prob1(model, remain, goal, pre);
+			return mc.prob1(model, remain, goal, pre);
 		} else {
-			return modelChecker.prob0(model, remain, goal, pre);
+			return mc.prob0(model, remain, goal, pre);
 		}
 	}
 
 	public BitSet computeProb1(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
 	{
-		PredecessorRelation pre = model.getPredecessorRelation(modelChecker, true);
+		DTMCModelChecker     mc = getModelChecker(model);
+		PredecessorRelation pre = model.getPredecessorRelation(this, true);
 		if (negated) {
-			return modelChecker.prob0(model, remain, goal, pre);
+			return mc.prob0(model, remain, goal, pre);
 		} else {
-			return modelChecker.prob1(model, remain, goal, pre);
+			return mc.prob1(model, remain, goal, pre);
 		}
 	}
 
@@ -157,7 +159,7 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 			init[iter.nextInt()] = 1.0;
 		}
 		BitSet known = BitSetTools.union(prob0, prob1);
-		double[] probabilities = modelChecker.computeReachProbs(model, remain, goal, init, known).soln;
+		double[] probabilities = getModelChecker(model).computeReachProbs(model, remain, goal, init, known).soln;
 		return negated ? negateProbabilities(probabilities) : probabilities;
 	}
 

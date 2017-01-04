@@ -114,12 +114,12 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		ExpressionTemporal next = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
-		return modelChecker.checkExpression(model, next.getOperand2(), null).getBitSet();
+		return getModelChecker(model).checkExpression(model, next.getOperand2(), null).getBitSet();
 	}
 
 	public double[] computeNextProbs(final explicit.DTMC model, final BitSet goal, final boolean negated) throws PrismException
 	{
-		double[] probabilities = modelChecker.computeNextProbs(model, goal).soln;
+		double[] probabilities = getModelChecker(model).computeNextProbs(model, goal).soln;
 		return negated ? ConditionalReachabilityTransformer.negateProbabilities(probabilities) : probabilities;
 	}
 

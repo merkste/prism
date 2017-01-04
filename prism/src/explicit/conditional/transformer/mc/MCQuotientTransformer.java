@@ -76,6 +76,6 @@ public class MCQuotientTransformer extends MCConditionalTransformer
 	{
 		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
 
-		return modelChecker.checkExpression(model, expression, null).getDoubleArray();
+		return getModelChecker(model).checkExpression(model, expression, null).getDoubleArray();
 	}
 }

@@ -143,7 +143,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		final ExpressionTemporal next = getExpressionTemporal(expression);
-		return modelChecker.checkExpression(model, next.getOperand2(), null).getBitSet();
+		return getModelChecker(model).checkExpression(model, next.getOperand2(), null).getBitSet();
 	}
 
 	protected ExpressionTemporal getExpressionTemporal(final Expression expression) throws PrismLangException

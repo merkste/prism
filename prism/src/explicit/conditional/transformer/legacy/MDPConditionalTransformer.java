@@ -79,7 +79,7 @@ public abstract class MDPConditionalTransformer extends NewConditionalTransforme
 			return false;
 		}
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		final OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
+		final OpRelOpBound oprel = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
 		// can handle maximal probabilities only
 		return oprel.getMinMax(model.getModelType()).isMax();
 	}

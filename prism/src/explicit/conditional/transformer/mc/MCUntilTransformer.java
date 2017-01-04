@@ -153,13 +153,13 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	protected BitSet getRemainStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		final ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
-		return modelChecker.checkExpression(model, until.getOperand1(), null).getBitSet();
+		return getModelChecker(model).checkExpression(model, until.getOperand1(), null).getBitSet();
 	}
 
 	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
 	{
 		final ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
-		return modelChecker.checkExpression(model, until.getOperand2(), null).getBitSet();
+		return getModelChecker(model).checkExpression(model, until.getOperand2(), null).getBitSet();
 	}
 
 	protected boolean requiresSecondMode(final ExpressionConditional expression)

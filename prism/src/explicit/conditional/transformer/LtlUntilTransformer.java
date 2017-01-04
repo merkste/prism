@@ -160,6 +160,7 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 	}
 
 	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean negated)
+			throws PrismException
 	{
 		if (negated) {
 			// bad states == {s | Pmax=1[<> Condition]}

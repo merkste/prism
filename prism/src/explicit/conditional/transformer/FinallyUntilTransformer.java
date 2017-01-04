@@ -106,6 +106,7 @@ public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelCh
 	}
 
 	default BitSet computeBadStates(M model, BitSet objectiveGoal, BitSet conditionRemain, BitSet conditionGoal, boolean negated)
+			throws PrismException
 	{
 		BitSet badStates;
 		if (negated) {

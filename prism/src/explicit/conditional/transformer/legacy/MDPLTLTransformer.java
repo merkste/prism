@@ -70,7 +70,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// check whether the condition is satisfiable in the state of interest
 		assert conditionModel.getNumInitialStates() == 1 : "expected one and only one initial state";
-		final BitSet noPathToCondition = modelChecker.prob0(conditionModel, null, conditionStates, false, null);
+		final BitSet noPathToCondition = getModelChecker(conditionModel).prob0(conditionModel, null, conditionStates, false, null);
 		if (noPathToCondition.get(conditionModel.getFirstInitialState())) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
@@ -111,7 +111,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// compute Pmax(<>E | C)
 		final BitSet target = ltlModelChecker.findAcceptingECStates(objectiveAndConditionModel, conditionAcceptance);
-		final ModelCheckerResult conditionMaxResult = modelChecker.computeReachProbs(objectiveAndConditionModel, target, false);
+		final ModelCheckerResult conditionMaxResult = getModelChecker(objectiveAndConditionModel).computeReachProbs(objectiveAndConditionModel, target, false);
 		double[] conditionMaxProbs = conditionMaxResult.soln;
 
 		// copy MDP to new MDPSimple

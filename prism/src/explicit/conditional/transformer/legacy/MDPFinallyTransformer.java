@@ -47,13 +47,15 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	{
 		ResetTransformer.checkStatesOfInterest(model, statesOfInterest);
 
+		MDPModelChecker mc = getModelChecker(model);
+
 		// compute C aka "condition goalState"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
-		final BitSet conditionStates = modelChecker.checkExpression(model, conditionGoal, null).getBitSet();
+		final BitSet conditionStates = mc.checkExpression(model, conditionGoal, null).getBitSet();
 
 		// check whether the condition is satisfiable in the state of interest
 		final int resetState = statesOfInterest.nextSetBit(0);
-		final BitSet noPathToCondition = modelChecker.prob0(model, null, conditionStates, false, null);
+		final BitSet noPathToCondition = mc.prob0(model, null, conditionStates, false, null);
 		if (noPathToCondition.get(resetState)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
@@ -61,19 +63,19 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		// compute E aka "objective goalState"
 		final ExpressionProb objectiveProb = (ExpressionProb) expression.getObjective();
 		final Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveProb.getExpression())).getOperand2();
-		final BitSet objectiveGoalStates = modelChecker.checkExpression(model, objectiveGoal, null).getBitSet();
+		final BitSet objectiveGoalStates = mc.checkExpression(model, objectiveGoal, null).getBitSet();
 
 		// compute B aka "bad states" == {s | Pmin=0(<> (E or C))}
 		BitSet targetStates = (BitSet) objectiveGoalStates.clone();
 		targetStates.or(conditionStates);
-		BitSet badStates = modelChecker.prob0(model, null, targetStates, true, null);
+		BitSet badStates = mc.prob0(model, null, targetStates, true, null);
 
 		// compute Pmax(<>E | C)
-		ModelCheckerResult objectiveMaxResult = modelChecker.computeReachProbs(model, objectiveGoalStates, false);
+		ModelCheckerResult objectiveMaxResult = mc.computeReachProbs(model, objectiveGoalStates, false);
 		double[] objectiveMaxProbs = objectiveMaxResult.soln;
 
 		// compute Pmax(<>C | E)
-		ModelCheckerResult conditionMaxResult = modelChecker.computeReachProbs(model, conditionStates, false);
+		ModelCheckerResult conditionMaxResult = mc.computeReachProbs(model, conditionStates, false);
 		double[] conditionMaxProbs = conditionMaxResult.soln;
 
 		// copy MDP to new MDPSimple
@@ -136,6 +138,6 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 	{
 		// assume non-negated until formula
 		final Expression target = ((ExpressionTemporal) condition).getOperand2();
-		return modelChecker.checkExpression(model, target, null).getBitSet();
+		return getModelChecker(model).checkExpression(model, target, null).getBitSet();
 	}
 }

@@ -68,7 +68,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 	ModelTransformation<M, ? extends M> transformRestrict(ModelTransformation<M, ? extends M> resetTransformation);
 
 	BitSet checkSatisfiability(Reach<M> conditionPath, BitSet statesOfInterest)
-			throws UndefinedTransformationException;
+			throws PrismException;
 
 	default BitSet checkSatisfiability(BitSet conditionUnsatisfied, BitSet statesOfInterest)
 			throws UndefinedTransformationException
@@ -86,7 +86,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		return BitSetTools.union(badStates, failState);
 	}
 
-	BitSet computeBadStates(Reach<M> reach, BitSet unsatisfiedStates);
+	BitSet computeBadStates(Reach<M> reach, BitSet unsatisfiedStates) throws PrismException;
 
 	BitSet computeBadStates(LTLProduct<M> product, BitSet unsatisfiedStates)
 			throws PrismException;
@@ -130,7 +130,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 
 		@Override
 		public BitSet checkSatisfiability(Reach<explicit.DTMC> conditionPath, BitSet statesOfInterest)
-				throws UndefinedTransformationException
+				throws PrismException
 		{
 			BitSet conditionFalsifiedStates = computeProb0(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
@@ -243,7 +243,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 
 		@Override
 		public BitSet checkSatisfiability(Reach<explicit.MDP> conditionPath, BitSet statesOfInterest)
-				throws UndefinedTransformationException
+				throws PrismException
 		{
 			BitSet conditionFalsifiedStates = computeProb0A(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
@@ -265,6 +265,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 
 		@Override
 		public BitSet computeBadStates(Reach<explicit.MDP> reach, BitSet unsatisfiedStates)
+				throws PrismException
 		{
 			BitSet maybeFalsified = computeProb0E(reach);
 			if (maybeFalsified.isEmpty()) {

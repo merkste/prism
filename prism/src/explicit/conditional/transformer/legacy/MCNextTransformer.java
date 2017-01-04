@@ -93,7 +93,7 @@ public class MCNextTransformer extends MCTwoModeTransformer
 	{
 		assert condition instanceof ExpressionTemporal : "ExpressionTemporal expected";
 
-		return modelChecker.checkExpression(originalModel, ((ExpressionTemporal) condition).getOperand2(), null).getBitSet();
+		return getModelChecker(originalModel).checkExpression(originalModel, ((ExpressionTemporal) condition).getOperand2(), null).getBitSet();
 	}
 
 	@Override
@@ -118,7 +118,7 @@ public class MCNextTransformer extends MCTwoModeTransformer
 	@Override
 	protected double[] computeProbabilities(final BitSet target) throws PrismException
 	{
-		return modelChecker.computeNextProbs(originalModel, target).soln;
+		return getModelChecker(originalModel).computeNextProbs(originalModel, target).soln;
 	}
 
 	@Override

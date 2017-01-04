@@ -64,6 +64,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		final LTLModelChecker ltlModelChecker = new LTLModelChecker(this);
 		final LTLProduct<explicit.MDP> conditionProduct = ltlTransformer.transform(model, condition, statesOfInterest, AcceptanceType.STREETT);
 		final explicit.MDP productModel = conditionProduct.getProductModel();
+		MDPModelChecker mc = getModelChecker(productModel);
 
 		// compute Pmax(<>E | C)
 		final AcceptanceStreett conditionAcceptance = (AcceptanceStreett) conditionProduct.getAcceptance();
@@ -71,7 +72,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 
 		// check whether the condition is satisfiable in the state of interest
 		assert productModel.getNumInitialStates() == 1 : "expected one and only one initial state";
-		final BitSet noPathToCondition = modelChecker.prob0(productModel, null, conditionStates, false, null);
+		final BitSet noPathToCondition = mc.prob0(productModel, null, conditionStates, false, null);
 		if (noPathToCondition.get(productModel.getFirstInitialState())) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
@@ -79,7 +80,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		// compute E aka "objective goalState"
 		final ExpressionProb objectiveProb = (ExpressionProb) expression.getObjective();
 		final Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveProb.getExpression())).getOperand2();
-		final BitSet objectiveGoalStates = modelChecker.checkExpression(productModel, objectiveGoal, null).getBitSet();
+		final BitSet objectiveGoalStates = mc.checkExpression(productModel, objectiveGoal, null).getBitSet();
 
 		// compute B aka "bad states"
 		final BitSet badEcStates = ltlModelChecker.findAcceptingECStates(productModel, conditionAcceptance.complementToRabin());
@@ -96,7 +97,7 @@ public class MDPLTLConditionTransformer extends MDPConditionalTransformer
 		// P′(s,fail) = 1−Prmax_M,s(ψ)
 
 		// compute Pmax(<>E | C)
-		final ModelCheckerResult conditionMaxResult = modelChecker.computeReachProbs(productModel, conditionStates, false);
+		final ModelCheckerResult conditionMaxResult = mc.computeReachProbs(productModel, conditionStates, false);
 		final double[] conditionMaxProbs = conditionMaxResult.soln;
 
 		// copy MDP to new MDPSimple

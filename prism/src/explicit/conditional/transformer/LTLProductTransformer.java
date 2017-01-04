@@ -37,12 +37,13 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		ltlModelChecker = new LTLModelChecker(this);
 	}
 
-	public ProbModelChecker getModelChecker(M model) throws PrismException
+	public ProbModelChecker getModelChecker(M model)
+			throws PrismException
 	{
-		return modelChecker;
-		// FIXME ALG: Check why this leads to constants that cannot be evaluated.
 		// Create fresh model checker for model
-		// return (ProbModelChecker) ProbModelChecker.createModelChecker(model.getModelType());
+		ProbModelChecker mc = (ProbModelChecker) ProbModelChecker.createModelChecker(model.getModelType(), this);
+		mc.inheritSettings(modelChecker);
+		return mc;
 	}
 
 	public boolean canHandle(final Model model, final Expression expression)
