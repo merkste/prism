@@ -12,7 +12,6 @@ import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.PredecessorRelation;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -62,14 +61,14 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 		explicit.DTMC productModel        = product.getProductModel();
 		BitSet goal              = ltlTransformer.findAcceptingStates(product);
 
-		BitSet prob0                       = computeProb0(productModel, null, goal, false);
+		BitSet prob0                       = computeProb0(productModel, false, null, goal);
 		BitSet support                     = BitSetTools.complement(productModel.getNumStates(), prob0);
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(product.getTransformedStatesOfInterest(), support);
 		if (transformedStatesOfInterest.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		BitSet prob1                       = computeProb1(productModel, null, goal, false);
-		double[] probs                     = computeUntilProbs(productModel, null, goal, false, prob0, prob1);
+		BitSet prob1                       = computeProb1(productModel, false, null, goal);
+		double[] probs                     = computeUntilProbs(productModel, false, null, goal, prob0, prob1);
 
 		BitSet restrict;
 		BasicModelTransformation<explicit.DTMC,? extends explicit.DTMC> scaled;
@@ -126,49 +125,5 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Iterable<BitSet> classes = (Iterable) new IterableArray.Of<>(equivalenceClasses).filter(set -> (set instanceof BitSet));
 		return new EquivalenceRelationInteger(classes);
-	}
-
-	public BitSet computeProb0(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
-	{
-		DTMCModelChecker mc     = getModelChecker(model);
-		PredecessorRelation pre = model.getPredecessorRelation(this, true);
-		if (negated) {
-			return mc.prob1(model, remain, goal, pre);
-		} else {
-			return mc.prob0(model, remain, goal, pre);
-		}
-	}
-
-	public BitSet computeProb1(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
-	{
-		DTMCModelChecker     mc = getModelChecker(model);
-		PredecessorRelation pre = model.getPredecessorRelation(this, true);
-		if (negated) {
-			return mc.prob0(model, remain, goal, pre);
-		} else {
-			return mc.prob1(model, remain, goal, pre);
-		}
-	}
-
-	public double[] computeUntilProbs(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated, final BitSet prob0, final BitSet prob1)
-			throws PrismException
-	{
-		double[] init = new double[model.getNumStates()]; // initialized with 0.0's
-		BitSet setToOne = negated ? prob0 : prob1;
-		for (OfInt iter = new IterableBitSet(setToOne).iterator(); iter.hasNext();) {
-			init[iter.nextInt()] = 1.0;
-		}
-		BitSet known = BitSetTools.union(prob0, prob1);
-		double[] probabilities = getModelChecker(model).computeReachProbs(model, remain, goal, init, known).soln;
-		return negated ? negateProbabilities(probabilities) : probabilities;
-	}
-
-
-	public static double[] negateProbabilities(final double[] probabilities)
-	{
-		for (int state = 0; state < probabilities.length; state++) {
-			probabilities[state] = 1 - probabilities[state];
-		}
-		return probabilities;
 	}
 }

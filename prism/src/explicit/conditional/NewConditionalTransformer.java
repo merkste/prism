@@ -139,23 +139,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		}
 	}
 
-	/**
-	 * Subtract probabilities from one in-place.
-	 * 
-	 * @param probabilities
-	 * @return argument array altered to hold result
-	 */
-	public static double[] subtractFromOne(final double[] probabilities)
-	{
-		// FIXME ALG: code dupes, e.g., in ConditionalReachabilityTransformer::negateProbabilities
-		for (int state = 0; state < probabilities.length; state++) {
-			probabilities[state] = 1 - probabilities[state];
-		}
-		return probabilities;
-	}
-
-
-
 	public static abstract class Basic<M extends Model, MC extends ProbModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
 	{
 		protected MC modelChecker;
@@ -190,6 +173,21 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
 			}
 			return ltlTransformer;
+		}
+
+		/**
+		 * Subtract probabilities from one in-place.
+		 * 
+		 * @param probabilities
+		 * @return argument array altered to hold result
+		 */
+		public static double[] subtractFromOne(final double[] probabilities)
+		{
+			// FIXME ALG: code dupes, e.g., in ConditionalReachabilityTransformer::negateProbabilities
+			for (int state = 0; state < probabilities.length; state++) {
+				probabilities[state] = 1 - probabilities[state];
+			}
+			return probabilities;
 		}
 	}
 
@@ -226,6 +224,17 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return getModelChecker(model).prob1(model, remain, goal, pre);
+		}
+
+		public double[] computeNextProbs(explicit.DTMC model, boolean negated, BitSet goal)
+				throws PrismException
+		{
+			Objects.requireNonNull(goal);
+			double[] probabilities = getModelChecker(model).computeNextProbs(model, goal).soln;
+			if (negated) {
+				return subtractFromOne(probabilities);
+			}
+			return probabilities;
 		}
 
 		public double[] computeUntilProbs(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
@@ -288,22 +297,34 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public double[] computeProbs(Reach<explicit.DTMC> reach)
+		public double[] computeProbs(SimplePathProperty<explicit.DTMC> path)
 				throws PrismException
 		{
-			if (reach instanceof Finally) {
-				return computeProbs((Finally<explicit.DTMC>) reach);
+			if (path instanceof Finally) {
+				return computeProbs((Finally<explicit.DTMC>) path);
 			}
-			if (reach instanceof Globally) {
-				return computeProbs(((Globally<explicit.DTMC>)reach).asFinally());
+			if (path instanceof Globally) {
+				return computeProbs(((Globally<explicit.DTMC>)path).asFinally());
 			}
-			return computeProbs(reach.asUntil());
+			if (path instanceof Next) {
+				return computeProbs((Next<explicit.DTMC>)path);
+			}
+			if (path instanceof Reach) {
+				return computeProbs(((Reach<explicit.DTMC>)path).asUntil());
+			}
+			throw new PrismException("Unsupported simple path property " + path);
 		}
 
 		public double[] computeProbs(Finally<explicit.DTMC> eventually)
 				throws PrismException
 		{
 			return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public double[] computeProbs(Next<explicit.DTMC> next)
+				throws PrismException
+		{
+			return computeNextProbs(next.getModel(), next.isNegated(), next.getGoal());
 		}
 
 		public double[] computeProbs(Until<explicit.DTMC> until)
@@ -371,6 +392,30 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			Objects.requireNonNull(goal);
 			PredecessorRelation pre = model.getPredecessorRelation(this, true);
 			return getModelChecker(model).prob1(model, remain, goal, false, null, pre);
+		}
+
+		public double[] computeNextMaxProbs(explicit.MDP model, boolean negated, BitSet goal)
+				throws PrismException
+		{
+			if (negated) {
+				// Pmax(¬φ) = 1 - Pmin(φ);
+				double[] probabilities = computeNextMinProbs(model, false, goal);
+				return subtractFromOne(probabilities);
+			}
+			Objects.requireNonNull(goal);
+			return getModelChecker(model).computeNextProbs(model, goal, false).soln;
+		}
+
+		public double[] computeNextMinProbs(explicit.MDP model, boolean negated, BitSet goal)
+				throws PrismException
+		{
+			if (negated) {
+				// Pmin(¬φ) = 1 - Pmax(φ);
+				double[] probabilities = computeNextMaxProbs(model, false, goal);
+				return subtractFromOne(probabilities);
+			}
+			Objects.requireNonNull(goal);
+			return getModelChecker(model).computeNextProbs(model, goal, true).soln;
 		}
 
 		public double[] computeUntilMaxProbs(explicit.MDP model, boolean negated, BitSet remain, BitSet goal)
@@ -493,16 +538,22 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return computeProb1A(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public double[] computeMaxProbs(Reach<explicit.MDP> reach)
+		public double[] computeMaxProbs(SimplePathProperty<explicit.MDP> path)
 				throws PrismException
 		{
-			if (reach instanceof Finally) {
-				return computeMaxProbs((Finally<explicit.MDP>) reach);
+			if (path instanceof Finally) {
+				return computeMaxProbs((Finally<explicit.MDP>) path);
 			}
-			if (reach instanceof Globally) {
-				return computeMaxProbs(((Globally<explicit.MDP>)reach).asFinally());
+			if (path instanceof Globally) {
+				return computeMaxProbs(((Globally<explicit.MDP>)path).asFinally());
 			}
-			return computeMaxProbs(reach.asUntil());
+			if (path instanceof Next) {
+				return computeMaxProbs((Next<explicit.MDP>) path);
+			}
+			if (path instanceof Reach) {
+				return computeMaxProbs(((Reach<explicit.MDP>)path).asUntil());
+			}
+			throw new PrismException("Unsupported simple path property " + path);
 		}
 
 		public double[] computeMaxProbs(Finally<explicit.MDP> eventually)
@@ -511,28 +562,45 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return computeUntilMaxProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 		}
 
+		public double[] computeMaxProbs(Next<explicit.MDP> next)
+				throws PrismException
+		{
+			return computeNextMaxProbs(next.getModel(), next.isNegated(), next.getGoal());
+		}
+
 		public double[] computeMaxProbs(Until<explicit.MDP> until)
 				throws PrismException
 		{
 			return computeUntilMaxProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public double[] computeMinProbs(Reach<explicit.MDP> reach)
+		public double[] computeMinProbs(SimplePathProperty<explicit.MDP> path)
 				throws PrismException
 		{
-			if (reach instanceof Finally) {
-				return computeMinProbs((Finally<explicit.MDP>) reach);
+			if (path instanceof Finally) {
+				return computeMinProbs((Finally<explicit.MDP>) path);
 			}
-			if (reach instanceof Globally) {
-				return computeMinProbs(((Globally<explicit.MDP>)reach).asFinally());
+			if (path instanceof Globally) {
+				return computeMinProbs(((Globally<explicit.MDP>)path).asFinally());
 			}
-			return computeMinProbs(reach.asUntil());
-		}
+			if (path instanceof Next) {
+				return computeMinProbs((Next<explicit.MDP>) path);
+			}
+			if (path instanceof Reach) {
+				return computeMinProbs(((Reach<explicit.MDP>)path).asUntil());
+			}
+			throw new PrismException("Unsupported simple path property " + path);		}
 
 		public double[] computeMinProbs(Finally<explicit.MDP> eventually)
 				throws PrismException
 		{
 			return computeUntilMinProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
+		}
+
+		public double[] computeMinProbs(Next<explicit.MDP> next)
+				throws PrismException
+		{
+			return computeNextMinProbs(next.getModel(), next.isNegated(), next.getGoal());
 		}
 
 		public double[] computeMinProbs(Until<explicit.MDP> until)

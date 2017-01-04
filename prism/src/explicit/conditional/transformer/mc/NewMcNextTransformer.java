@@ -74,7 +74,7 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 
 		int numStates = model.getNumStates();
 		final Interval states = new Interval(numStates);
-		double[] originProbs               = computeNextProbs(model, goal, negated);
+		double[] originProbs               = computeNextProbs(model, negated, goal);
 		double[] targetProbs               = states.map((int s) -> goal.get(s) ? 1.0 : 0.0).collect(new double[numStates]);
 		BitSet support                     = BitSetTools.asBitSet(states.filter((int state) -> originProbs[state] > 0.0));
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(statesOfInterest, support);
@@ -103,7 +103,7 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 		return restricted.compose(scaled).compose(pivoted);
 	}
 
-	public BitSet getPivotStates(final explicit.DTMC model, final BitSet goal, final boolean negated)
+	protected BitSet getPivotStates(final explicit.DTMC model, final BitSet goal, final boolean negated)
 	{
 		if (! negated) {
 			return goal;
@@ -115,19 +115,5 @@ public class NewMcNextTransformer extends MCConditionalTransformer
 	{
 		ExpressionTemporal next = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return getModelChecker(model).checkExpression(model, next.getOperand2(), null).getBitSet();
-	}
-
-	public double[] computeNextProbs(final explicit.DTMC model, final BitSet goal, final boolean negated) throws PrismException
-	{
-		double[] probabilities = getModelChecker(model).computeNextProbs(model, goal).soln;
-		return negated ? negateProbabilities(probabilities) : probabilities;
-	}
-
-	public static double[] negateProbabilities(final double[] probabilities)
-	{
-		for (int state = 0; state < probabilities.length; state++) {
-			probabilities[state] = 1 - probabilities[state];
-		}
-		return probabilities;
 	}
 }

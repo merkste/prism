@@ -212,7 +212,7 @@ public interface NewGoalFailStopTransformer<M extends Model>
 		public ProbabilisticRedistribution swap()
 		{
 			// inverse probabilities to swap target states
-			probabilities = NewConditionalTransformer.subtractFromOne(probabilities);
+			probabilities = NewConditionalTransformer.Basic.subtractFromOne(probabilities);
 			return this;
 		}
 	}

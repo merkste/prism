@@ -1,16 +1,13 @@
 package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.function.IntFunction;
 
 import common.BitSetTools;
-import common.iterable.IterableBitSet;
 import explicit.BasicModelTransformation;
 import explicit.DTMCModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.PredecessorRelation;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -59,14 +56,14 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 		BitSet goal      = getGoalStates(model, until);
 		boolean negated  = Expression.isNot(until);
 
-		BitSet prob0                       = computeProb0(model, remain, goal, negated);
+		BitSet prob0                       = computeProb0(model, negated, remain, goal);
 		BitSet support                     = BitSetTools.complement(model.getNumStates(), prob0);
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(statesOfInterest, support);
 		if (transformedStatesOfInterest.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		BitSet prob1                       = computeProb1(model, remain, goal, negated);
-		double[] probs                     = computeUntilProbs(model, remain, goal, negated, prob0, prob1);
+		BitSet prob1                       = computeProb1(model, negated, remain, goal);
+		double[] probs                     = computeUntilProbs(model, negated, remain, goal, prob0, prob1);
 
 		ReachabilityComputer reachability = new ReachabilityComputer(model);
 		BitSet pivotStates, restrict;
@@ -122,7 +119,7 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 		return getModelChecker(model).checkExpression(model, until.getOperand1(), null).getBitSet();
 	}
 
-	public BitSet getPivotStates(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated)
+	protected BitSet getPivotStates(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated)
 	{
 		if (! negated) {
 			return goal;
@@ -142,49 +139,6 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 	{
 		ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return getModelChecker(model).checkExpression(model, until.getOperand2(), null).getBitSet();
-	}
-
-	public BitSet computeProb0(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
-	{
-		DTMCModelChecker     mc = getModelChecker(model);
-		PredecessorRelation pre = model.getPredecessorRelation(this, true);
-		if (negated) {
-			return mc.prob1(model, remain, goal, pre);
-		} else {
-			return mc.prob0(model, remain, goal, pre);
-		}
-	}
-
-	public BitSet computeProb1(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated) throws PrismException
-	{
-		DTMCModelChecker     mc = getModelChecker(model);
-		PredecessorRelation pre = model.getPredecessorRelation(this, true);
-		if (negated) {
-			return mc.prob0(model, remain, goal, pre);
-		} else {
-			return mc.prob1(model, remain, goal, pre);
-		}
-	}
-
-	public double[] computeUntilProbs(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated, final BitSet prob0, final BitSet prob1)
-			throws PrismException
-	{
-		double[] init = new double[model.getNumStates()]; // initialized with 0.0's
-		BitSet setToOne = negated ? prob0 : prob1;
-		for (OfInt iter = new IterableBitSet(setToOne).iterator(); iter.hasNext();) {
-			init[iter.nextInt()] = 1.0;
-		}
-		BitSet known = BitSetTools.union(prob0, prob1);
-		double[] probabilities = getModelChecker(model).computeReachProbs(model, remain, goal, init, known).soln;
-		return negated ? negateProbabilities(probabilities) : probabilities;
-	}
-
-	public static double[] negateProbabilities(final double[] probabilities)
-	{
-		for (int state = 0; state < probabilities.length; state++) {
-			probabilities[state] = 1 - probabilities[state];
-		}
-		return probabilities;
 	}
 
 	protected boolean requiresSecondMode(final ExpressionConditional expression)
