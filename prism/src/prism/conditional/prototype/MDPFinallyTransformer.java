@@ -1,4 +1,4 @@
-package prism.conditional;
+package prism.conditional.prototype;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,14 +24,16 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
+import prism.conditional.NewConditionalTransformer;
 
-public class MDPFinallyTransformer extends MDPConditionalTransformer
+@Deprecated
+public class MDPFinallyTransformer extends NewConditionalTransformer.MDP
 {
 	private boolean debug = false;
 	
-	public MDPFinallyTransformer(NondetModelChecker modelChecker, Prism prism)
+	public MDPFinallyTransformer(NondetModelChecker modelChecker)
 	{
-		super(modelChecker, prism);
+		super(modelChecker);
 	}
 
 	@Override
@@ -68,23 +70,23 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		// compute E aka "objective goalState"
 		final ExpressionProb objectiveProb = (ExpressionProb) expression.getObjective();
 		final Expression objectiveGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveProb.getExpression())).getOperand2();
-		prism.getLog().println("Compute F (target for objective)");
+		getLog().println("Compute F (target for objective)");
 		time = System.currentTimeMillis();
 		final JDDNode objectiveGoalStates = mc.checkExpressionDD(objectiveGoal, JDD.Constant(1));
 		time = System.currentTimeMillis() - time;
-		prism.getLog().println("Time for computing F: " + time / 1000.0 + " seconds.");
+		getLog().println("Time for computing F: " + time / 1000.0 + " seconds.");
 		if (debug)
-			JDD.PrintMinterms(prism.getLog(), objectiveGoalStates.copy(), "objectiveGoalStates");
+			JDD.PrintMinterms(getLog(), objectiveGoalStates.copy(), "objectiveGoalStates");
 		
 		// compute C aka "condition goalState"
 		final Expression conditionGoal = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(expression.getCondition())).getOperand2();
 		time = System.currentTimeMillis();
-		prism.getLog().println("Compute G (target for condition)");
+		getLog().println("Compute G (target for condition)");
 		final JDDNode conditionGoalStates = mc.checkExpressionDD(conditionGoal, JDD.Constant(1));
 		time = System.currentTimeMillis() - time;
-		prism.getLog().println("Time for computing G: " + time / 1000.0 + " seconds.");
+		getLog().println("Time for computing G: " + time / 1000.0 + " seconds.");
 		if (debug)
-			JDD.PrintMinterms(prism.getLog(), conditionGoalStates.copy(), "conditionGoalStates");
+			JDD.PrintMinterms(getLog(), conditionGoalStates.copy(), "conditionGoalStates");
 		
 		// compute bad states == {s | Pmin=0[<> Condition]}
 		JDDNode targetStates = conditionGoalStates.copy();
@@ -101,15 +103,15 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 
 		// compute Pmax(<>E | C)
 		time = System.currentTimeMillis();
-		prism.getLog().println("Compute Pmax(<> F)");
+		getLog().println("Compute Pmax(<> F)");
 		StateValuesMTBDD objectiveMaxResult = mc.checkProbUntil(model.getReach(),
 		                                                        objectiveGoalStates,
 		                                                        false, false).convertToStateValuesMTBDD();
 		time = System.currentTimeMillis() - time;
-		prism.getLog().println("Time for computing Pmax(<> F): " + time / 1000.0 + " seconds.");
+		getLog().println("Time for computing Pmax(<> F): " + time / 1000.0 + " seconds.");
 		if (debug) {
-			prism.getLog().println("objectiveMaxResult");
-			objectiveMaxResult.print(prism.getLog());
+			getLog().println("objectiveMaxResult");
+			objectiveMaxResult.print(getLog());
 		}
 		final JDDNode objectiveMaxProbs = objectiveMaxResult.getJDDNode().copy();
 		objectiveMaxResult.clear();
@@ -122,27 +124,27 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		}
 		JDD.Deref(prob0A);
 		time = System.currentTimeMillis();
-		prism.getLog().println("Compute Pmax(<> G)");
+		getLog().println("Compute Pmax(<> G)");
 		StateValuesMTBDD conditionMaxResult = mc.checkProbUntil(model.getReach(),
 		                                                        conditionGoalStates,
 		                                                        false, false).convertToStateValuesMTBDD();
 		time = System.currentTimeMillis() - time;
-		prism.getLog().println("Time for computing Pmax(<> G): " + time / 1000.0 + " seconds.");
+		getLog().println("Time for computing Pmax(<> G): " + time / 1000.0 + " seconds.");
 		if (debug) {
-			prism.getLog().println("conditionMaxResult");
-			conditionMaxResult.print(prism.getLog());
+			getLog().println("conditionMaxResult");
+			conditionMaxResult.print(getLog());
 		}
 
 		final JDDNode conditionMaxProbs = conditionMaxResult.getJDDNode().copy();
 		conditionMaxResult.clear();
 
 		time = System.currentTimeMillis();
-		prism.getLog().println("Compute G' = G \\ F:");
+		getLog().println("Compute G' = G \\ F:");
 		final JDDNode conditionGoalStatesClean = JDD.And(conditionGoalStates.copy(), JDD.Not(objectiveGoalStates.copy()));
 		time = System.currentTimeMillis() - time;
-		prism.getLog().println("Time for G': " + time / 1000.0 + " seconds.");
+		getLog().println("Time for G': " + time / 1000.0 + " seconds.");
 		if (debug)
-			JDD.PrintMinterms(prism.getLog(), conditionGoalStatesClean.copy(), "conditionGoalStatesClean");
+			JDD.PrintMinterms(getLog(), conditionGoalStatesClean.copy(), "conditionGoalStatesClean");
 
 		class GoalFailTransformation extends NondetModelTransformation {
 			public GoalFailTransformation(NondetModel model)
@@ -218,10 +220,10 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 				JDDNode newTrans;
 				long time;
 
-				prism.getLog().println("Goal/fail transformation:");
+				getLog().println("Goal/fail transformation:");
 
 				if (debug)
-					originalModel.printTransInfo(prism.getLog(), true);
+					originalModel.printTransInfo(getLog(), true);
 
 				time = System.currentTimeMillis();
 				JDDNode normal_to_normal =
@@ -232,10 +234,10 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          normal(false),
 					          originalModel.getTrans().copy());
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" normal_to_normal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(normal_to_normal));
+				getLog().println(" normal_to_normal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(normal_to_normal));
 				if (debug) {
-					JDD.PrintMinterms(prism.getLog(), originalModel.getTrans().copy(), "trans");
-					JDD.PrintMinterms(prism.getLog(), normal_to_normal.copy(), "normal_to_normal");
+					JDD.PrintMinterms(getLog(), originalModel.getTrans().copy(), "trans");
+					JDD.PrintMinterms(getLog(), normal_to_normal.copy(), "normal_to_normal");
 				}
 
 				time = System.currentTimeMillis();
@@ -246,9 +248,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          goal(false),
 					          conditionMaxProbs.copy());
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" objective_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(objective_to_goal));
+				getLog().println(" objective_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(objective_to_goal));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), objective_to_goal.copy(), "objective_to_goal");
+					JDD.PrintMinterms(getLog(), objective_to_goal.copy(), "objective_to_goal");
 
 				time = System.currentTimeMillis();
 				JDDNode oneMinusConditionMaxProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), conditionMaxProbs.copy());
@@ -259,9 +261,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          fail(false),
 					          oneMinusConditionMaxProbs);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" objective_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(objective_to_fail));
+				getLog().println(" objective_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(objective_to_fail));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), objective_to_fail.copy(), "objective_to_fail");
+					JDD.PrintMinterms(getLog(), objective_to_fail.copy(), "objective_to_fail");
 
 				time = System.currentTimeMillis();
 				JDDNode condition_to_goal =
@@ -271,9 +273,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          goal(false),
 					          objectiveMaxProbs.copy());
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" condition_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(condition_to_goal));
+				getLog().println(" condition_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(condition_to_goal));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), condition_to_goal.copy(), "condition_to_goal");
+					JDD.PrintMinterms(getLog(), condition_to_goal.copy(), "condition_to_goal");
 
 				time = System.currentTimeMillis();
 				JDDNode oneMinusObjectiveMaxProbs = JDD.Apply(JDD.MINUS, JDD.Constant(1), objectiveMaxProbs.copy());
@@ -284,9 +286,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          stop(false),
 					          oneMinusObjectiveMaxProbs);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" condition_to_stop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(condition_to_stop));
+				getLog().println(" condition_to_stop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(condition_to_stop));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), condition_to_stop.copy(), "condition_to_stop");
+					JDD.PrintMinterms(getLog(), condition_to_stop.copy(), "condition_to_stop");
 
 				time = System.currentTimeMillis();
 				JDDNode goal_self_loop =
@@ -294,9 +296,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          tau(),
 					          goal(false));
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" goal_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(goal_self_loop));
+				getLog().println(" goal_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(goal_self_loop));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), goal_self_loop.copy(), "goal_self_loop");
+					JDD.PrintMinterms(getLog(), goal_self_loop.copy(), "goal_self_loop");
 
 				time = System.currentTimeMillis();
 				JDDNode startCol =
@@ -312,9 +314,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          startCol.copy(),
 					          normal(false));
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" bad_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(bad_reset));
+				getLog().println(" bad_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(bad_reset));
 				if (debug) {
-					JDD.PrintMinterms(prism.getLog(), bad_reset.copy(), "bad_reset");
+					JDD.PrintMinterms(getLog(), bad_reset.copy(), "bad_reset");
 				}
 
 				time = System.currentTimeMillis();
@@ -324,9 +326,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          startCol,
 					          normal(false));
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" fail_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(fail_reset));
+				getLog().println(" fail_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(fail_reset));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), fail_reset.copy(), "fail_reset");
+					JDD.PrintMinterms(getLog(), fail_reset.copy(), "fail_reset");
 
 				time = System.currentTimeMillis();
 				JDDNode stop_self_loop =
@@ -334,53 +336,53 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 					          tau(),
 					          stop(false));
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println(" stop_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(stop_self_loop));
+				getLog().println(" stop_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(stop_self_loop));
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), stop_self_loop, "stop_self_loop");
+					JDD.PrintMinterms(getLog(), stop_self_loop, "stop_self_loop");
 
 				
 				// plug new transitions together...
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, goal_self_loop, fail_reset);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("\n goal_self_loop\n  |= fail_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("\n goal_self_loop\n  |= fail_reset: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, stop_self_loop);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= stop_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= stop_self_loop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_goal);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= objective_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= objective_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, objective_to_fail);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= objective_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= objective_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_goal);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= condition_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= condition_to_goal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, condition_to_stop);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= condition_to_stop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
-				
+				getLog().println("  |= condition_to_stop: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, bad_reset);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= bad_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= bad_to_fail: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
 				time = System.currentTimeMillis();
 				newTrans = JDD.Apply(JDD.MAX, newTrans, normal_to_normal);
 				time = System.currentTimeMillis() - time;
-				prism.getLog().println("  |= normal_to_normal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
+				getLog().println("  |= normal_to_normal: "+ time / 1000.0 +" seconds, MTBDD nodes = "+JDD.GetNumNodes(newTrans));
 
-				if (debug) JDD.PrintMinterms(prism.getLog(), newTrans.copy(), "newTrans");
+				if (debug) JDD.PrintMinterms(getLog(), newTrans.copy(), "newTrans");
 
 				return newTrans;
 			}
@@ -390,7 +392,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 			{
 				JDDNode newStart = JDD.And(normal(true), statesOfInterest.copy());
 				if (debug)
-					JDD.PrintMinterms(prism.getLog(), newStart.copy(), "newStart");
+					JDD.PrintMinterms(getLog(), newStart.copy(), "newStart");
 				return newStart;
 			}
 
@@ -403,10 +405,10 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		
 		GoalFailTransformation transform = new GoalFailTransformation(model);
 
-		prism.getLog().println("\nTransforming using goal/fail transformation...");
+		getLog().println("\nTransforming using goal/fail transformation...");
 		time = System.currentTimeMillis();
 		final NondetModel transformedModel = model.getTransformed(transform);
-		prism.getLog().println("Time for goal/fail transformation: " + time / 1000.0 + " seconds.\n");
+		getLog().println("Time for goal/fail transformation: " + time / 1000.0 + " seconds.\n");
 		final JDDNode goalStates = transform.goal(true);
 		// store goal state under a unique label
 		final String goalLabel = transformedModel.addUniqueLabelDD("goal", goalStates);
@@ -459,16 +461,16 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 			{
 				StateValuesMTBDD sv = svTransformedModel.convertToStateValuesMTBDD();
 				if (debug) {
-					prism.getLog().println("sv:");
-					sv.print(prism.getLog());
-					StateValuesMTBDD.print(prism.getLog(), mask.copy(), getTransformedModel(), "mask");
+					getLog().println("sv:");
+					sv.print(getLog());
+					StateValuesMTBDD.print(getLog(), mask.copy(), getTransformedModel(), "mask");
 				}
 				sv.filter(mask);
 
 				StateValues result = sv.sumOverDDVars(extraRowVars, getOriginalModel());
 				if (debug) {
-					prism.getLog().println("result:");
-					result.print(prism.getLog());
+					getLog().println("result:");
+					result.print(getLog());
 				}
 				sv.clear();
 

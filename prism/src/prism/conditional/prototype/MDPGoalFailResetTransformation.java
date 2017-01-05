@@ -1,4 +1,4 @@
-package prism.conditional.transform;
+package prism.conditional.prototype;
 
 import common.StopWatch;
 
@@ -27,6 +27,7 @@ import prism.PrismLog;
  * not get the additional reset action, i.e., effectively
  * resetStates = resetStates minus goalFailStates.
  */
+@Deprecated
 public class MDPGoalFailResetTransformation extends NondetModelTransformation {
 	/** The log */
 	private PrismLog log;

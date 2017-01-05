@@ -1,4 +1,4 @@
-package prism.conditional.transform;
+package prism.conditional.prototype;
 
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -24,8 +24,7 @@ import prism.conditional.NewConditionalTransformer;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Until;
 
-
-
+@Deprecated
 public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 {
 	public static final boolean ROW    = true;

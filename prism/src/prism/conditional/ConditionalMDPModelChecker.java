@@ -25,6 +25,8 @@ import prism.PrismSettings;
 import prism.ProbModel;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
+import prism.conditional.prototype.MDPFinallyTransformer;
+import prism.conditional.prototype.MDPLTLTransformer;
 
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel> {
 	
@@ -126,32 +128,51 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	private NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
 	{
 		PrismSettings settings = prism.getSettings();
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE) || settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
-			throw new PrismException("There is no symbolic prototype conditionals.");
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
+			throw new PrismException("There is no symbolic TACAS'14 prototype");
 		}
 
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-		for (MdpTransformerType type : types) {
-			NewConditionalTransformer.MDP transformer;
-			switch (type) {
-			case FinallyFinally:
-				transformer = new NewFinallyUntilTransformer.MDP(mc);
-				break;
-			case LtlFinally:
-				transformer = new NewLtlUntilTransformer.MDP(mc);
-				break;
-			case FinallyLtl:
-				transformer = new NewFinallyLtlTransformer.MDP(mc);
-				break;
-			case LtlLtl:
-				transformer = new NewLtlLtlTransformer.MDP(mc);
-				break;
-			default:
-				continue;
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+			for (MdpTransformerType type : types) {
+				NewConditionalTransformer.MDP transformer;
+				switch (type) {
+				case FinallyFinally:
+					transformer = new MDPFinallyTransformer(mc);
+					break;
+				case LtlLtl:
+					transformer = new MDPLTLTransformer(mc);
+					break;
+				default:
+					continue;
+				}
+				if (transformer.canHandle(model, expression)) {
+					return transformer;
+				}
 			}
-			if (transformer.canHandle(model, expression)) {
-				return transformer;
+		} else {
+			for (MdpTransformerType type : types) {
+				NewConditionalTransformer.MDP transformer;
+				switch (type) {
+				case FinallyFinally:
+					transformer = new NewFinallyUntilTransformer.MDP(mc);
+					break;
+				case LtlFinally:
+					transformer = new NewLtlUntilTransformer.MDP(mc);
+					break;
+				case FinallyLtl:
+					transformer = new NewFinallyLtlTransformer.MDP(mc);
+					break;
+				case LtlLtl:
+					transformer = new NewLtlLtlTransformer.MDP(mc);
+					break;
+				default:
+					continue;
+				}
+				if (transformer.canHandle(model, expression)) {
+					return transformer;
+				}
 			}
 		}
 

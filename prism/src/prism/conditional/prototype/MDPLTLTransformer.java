@@ -1,4 +1,4 @@
-package prism.conditional;
+package prism.conditional.prototype;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,19 +27,20 @@ import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
-import prism.conditional.transform.MDPGoalFailResetTransformation;
+import prism.conditional.NewConditionalTransformer;
 import prism.conditional.transform.MDPResetTransformation;
 import acceptance.AcceptanceRabinDD;
 import acceptance.AcceptanceStreettDD;
 import acceptance.AcceptanceType;
 
-public class MDPLTLTransformer extends MDPConditionalTransformer
+@Deprecated
+public class MDPLTLTransformer extends NewConditionalTransformer.MDP
 {
 	boolean debug = false;
 	boolean useNormalFormTransformation = false;
 
-	public MDPLTLTransformer(NondetModelChecker modelChecker, Prism prism) {
-		super(modelChecker, prism);
+	public MDPLTLTransformer(NondetModelChecker modelChecker) {
+		super(modelChecker);
 	}
 
 	@Override
@@ -66,11 +67,11 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			throws PrismException {
 
 		if (!JDD.isSingleton(statesOfInterest, model.getAllDDRowVars())) {
-			JDD.PrintMinterms(prism.getLog(), statesOfInterest.copy());
+			JDD.PrintMinterms(getLog(), statesOfInterest.copy());
 			throw new PrismNotSupportedException("conditional MDP transformations only supported for a single state");
 		}
-		StopWatch stopwatch = new StopWatch(prism.getLog());
-		final LTLModelChecker ltlModelChecker = new LTLModelChecker(prism);
+		StopWatch stopwatch = new StopWatch(getLog());
+		final LTLModelChecker ltlModelChecker = new LTLModelChecker(this);
 
 		// 1. Condition LTL product
 		final Expression condition = expression.getCondition();
@@ -87,7 +88,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// compute conditionGoalStates = { s : Pmax_s( acc(condition) )=1 }
 		final AcceptanceStreettDD conditionAcceptance = (AcceptanceStreettDD) conditionProduct.getAcceptance();
-		prism.getLog().println("Compute Pmax=1[ condition ]...");
+		getLog().println("Compute Pmax=1[ condition ]...");
 		stopwatch.start("Pmax=1[ condition ]");
 		final JDDNode conditionGoalStates =
 			ltlModelChecker.findAcceptingECStates(conditionAcceptance,
@@ -95,7 +96,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 		stopwatch.stop();
 
 		// check whether the condition is satisfiable in the state of interest
-		prism.getLog().println("Check whether condition is satisfiable...");
+		getLog().println("Check whether condition is satisfiable...");
 		stopwatch.start("condition satisfiability check");
 		JDDNode prob0AForCondition =
 			PrismMTBDD.Prob0A(conditionModel.getTrans01(),
@@ -138,7 +139,7 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// compute "objective and condition goal states"
 		final NondetModel objectiveAndConditionModel = objectiveAndConditionProduct.getProductModel();
-		prism.getLog().println("Compute Pmax=1[ objective & condition ])");
+		getLog().println("Compute Pmax=1[ objective & condition ])");
 		stopwatch.start("Pmax=1[ objective & condition ]");
 		final JDDNode objectiveAndConditionGoalStates =
 			ltlModelChecker.findAcceptingECStates(objectiveAndConditionAcceptance,
@@ -147,18 +148,18 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			                                      null,
 			                                      false);
 		stopwatch.stop();
-		prism.getLog().println("Pmax=1[ objective & condition ] satisfied for "+JDD.GetNumMintermsString(objectiveAndConditionGoalStates, objectiveAndConditionModel.getNumDDRowVars())+" states.\n");		
+		getLog().println("Pmax=1[ objective & condition ] satisfied for "+JDD.GetNumMintermsString(objectiveAndConditionGoalStates, objectiveAndConditionModel.getNumDDRowVars())+" states.\n");		
 		objectiveAndConditionAcceptance.clear();
 
 		// compute "bad states", states where the scheduler has a strategy
 		// to ensure that the condition is never satisfied
 		final AcceptanceRabinDD complementConditionAcceptance = conditionAcceptance.complement();
-		prism.getLog().println("Compute Pmax=1[ !condition ]");
+		getLog().println("Compute Pmax=1[ !condition ]");
 		stopwatch.start("Pmax=1[ !condition ]");
 		// TODO(JK): Can be computed in conditionModel instead...
 		JDDNode badEcStates = ltlModelChecker.findAcceptingECStates(complementConditionAcceptance, objectiveAndConditionModel, null, null, false);
 		stopwatch.stop();
-		prism.getLog().println("Pmax=1[ !condition ] satisfied for "+JDD.GetNumMintermsString(badEcStates, objectiveAndConditionModel.getNumDDRowVars())+" states.\n");
+		getLog().println("Pmax=1[ !condition ] satisfied for "+JDD.GetNumMintermsString(badEcStates, objectiveAndConditionModel.getNumDDRowVars())+" states.\n");
 		complementConditionAcceptance.clear();
 
 		// restrict badEcStates to those that are not also objectiveAndConditionGoalStates
@@ -175,9 +176,9 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 //		}
 //		final JDDNode badStates = JDD.And(badEcStates, r_states);
 		JDDNode badStates = badEcStates;
-		prism.getLog().println("Reset states (Pmax=1[!condition] and in R for some pair) = "+JDD.GetNumMintermsString(badStates, objectiveAndConditionModel.getNumDDRowVars())+" states.");		
+		getLog().println("Reset states (Pmax=1[!condition] and in R for some pair) = "+JDD.GetNumMintermsString(badStates, objectiveAndConditionModel.getNumDDRowVars())+" states.");		
 		if (debug)
-			StateValuesMTBDD.print(prism.getLog(), badStates.copy(), objectiveAndConditionModel, "badStates");
+			StateValuesMTBDD.print(getLog(), badStates.copy(), objectiveAndConditionModel, "badStates");
 
 		final JDDVars extraRowVars = new JDDVars();
 		extraRowVars.mergeVarsFrom(objectiveAndConditionProduct.getAutomatonRowVars());
@@ -192,10 +193,10 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 				new MDPResetTransformation(objectiveAndConditionModel,
 				                                       badStates.copy(),
 				                                       objectiveAndConditionModel.getStart().copy(),
-				                                       prism.getLog()
+				                                       getLog()
 				                                      );
 
-			prism.getLog().println("\nTransforming using reset transformation...");
+			getLog().println("\nTransforming using reset transformation...");
 			stopwatch.start("reset transformation");
 			transformedModel = objectiveAndConditionModel.getTransformed(mr_transform);
 			stopwatch.stop();
@@ -210,10 +211,10 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			// P′(s,goal) = Prmax_M,s(ψ)
 			// P′(s,fail) = 1−Prmax_M,s(ψ)
 
-			prism.getLog().println("Compute Pmax[ condition ]");
+			getLog().println("Compute Pmax[ condition ]");
 			stopwatch.start("Pmax[ condition ]");
 			// TODO(JK): Could be done in conditionModel and lifted...
-			NondetModelChecker mcProduct = modelChecker.createNewModelChecker(prism, objectiveAndConditionModel, null);
+			NondetModelChecker mcProduct = getModelChecker(objectiveAndConditionModel);
 			StateValuesMTBDD conditionMaxResult =
 					mcProduct.checkProbUntil(objectiveAndConditionModel.getReach(),  // true ...
 					                         conditionGoalStates,   // ... Until target
@@ -233,11 +234,11 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			                                       conditionMaxProbs.copy(),
 			                                       badStates.copy(),
 			                                       objectiveAndConditionModel.getStart().copy(),
-			                                       prism.getLog()
+			                                       getLog()
 			                                      );
 
 			JDD.Deref(conditionMaxProbs);
-			prism.getLog().println("\nTransforming using goal/fail/reset transformation...");
+			getLog().println("\nTransforming using goal/fail/reset transformation...");
 			stopwatch.start("goal/fail/reset transformation");
 			transformedModel = objectiveAndConditionModel.getTransformed(mgfr_transform);
 			stopwatch.stop();
@@ -259,11 +260,11 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		if (debug) {
 			try {
-				prism.exportTransToFile(objectiveAndConditionModel, true, Prism.EXPORT_DOT_STATES, new File("product.dot"));
+				objectiveAndConditionModel.exportToFile(Prism.EXPORT_DOT_STATES, true, new File("product.dot"));
 			} catch (FileNotFoundException e) {}
 
 			try {
-				prism.exportTransToFile(transformedModel, true, Prism.EXPORT_DOT_STATES, new File("transformed.dot"));
+				transformedModel.exportToFile(Prism.EXPORT_DOT_STATES, true, new File("transformed.dot"));
 			} catch (FileNotFoundException e) {}
 		}
 
@@ -309,16 +310,16 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 			{
 				StateValuesMTBDD sv = svTransformedModel.convertToStateValuesMTBDD();
 				if (debug) {
-					prism.getLog().println("sv:");
-					sv.print(prism.getLog());
-					StateValuesMTBDD.print(prism.getLog(), transformedStatesOfInterest.copy(), getTransformedModel(), "mask");
+					getLog().println("sv:");
+					sv.print(getLog());
+					StateValuesMTBDD.print(getLog(), transformedStatesOfInterest.copy(), getTransformedModel(), "mask");
 				}
 				sv.filter(transformedStatesOfInterest);
 
 				StateValues result = sv.sumOverDDVars(extraRowVars, getOriginalModel());
 				if (debug) {
-					prism.getLog().println("result:");
-					result.print(prism.getLog());
+					getLog().println("result:");
+					result.print(getLog());
 				}
 				sv.clear();
 
