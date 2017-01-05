@@ -185,7 +185,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 					return transformer;
 				}
 			}
-		} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+		} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 			for (MdpTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:

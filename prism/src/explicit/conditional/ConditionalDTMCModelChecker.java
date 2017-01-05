@@ -98,7 +98,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
 				throw new PrismException("There is no TACAS'14 prototype for the reset method in MCs");
-			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 				for (MdpTransformerType type : types) {
 					switch (type) {
 					case FinallyFinally:
@@ -168,7 +168,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 						return transformer;
 					}
 				}
-			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 				for (DtmcTransformerType type : types) {
 					switch (type) {
 					case Quotient:

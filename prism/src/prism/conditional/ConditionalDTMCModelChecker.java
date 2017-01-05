@@ -89,7 +89,7 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<ProbMod
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
 			throw new PrismException("There is no symbolic TACAS'14 prototype");
 		}
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 			throw new PrismException("There is no symbolic prototype for the reset method in MCs");
 		}
 

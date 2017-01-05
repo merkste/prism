@@ -134,7 +134,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
 		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_PROTOTYPE)) {
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 			for (MdpTransformerType type : types) {
 				NewConditionalTransformer.MDP transformer;
 				switch (type) {
