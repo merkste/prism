@@ -1,9 +1,7 @@
 package prism.conditional;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
@@ -22,7 +20,8 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.LTLModelChecker.LTLProduct;
-import prism.Model;
+import prism.conditional.SimplePathProperty.Finally;
+import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.NewMCResetTransformation;
@@ -40,7 +39,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		// 1) Normal-Form Transformation
 		NormalFormTransformation<M> normalFormTransformation = transformNormalForm(model, expression, statesOfInterest);
 		M normalFormModel                                    = normalFormTransformation.getTransformedModel();
-		getLog().println("Normal-form transformation: " + normalFormTransformation.getTransformedExpression());
+		getLog().println("\nNormal-form transformation: " + normalFormTransformation.getTransformedExpression());
 
 		// 2) Reset Transformation
 		JDDNode badStates                                       = computeResetStates(normalFormTransformation);
@@ -63,14 +62,14 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 	ModelTransformation<M, ? extends M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 			throws PrismException;
 
-	JDDNode checkSatisfiability(M model, Until conditionPath, JDDNode statesOfInterest)
-			throws UndefinedTransformationException;
+	JDDNode checkSatisfiability(Reach<M> conditionPath, JDDNode statesOfInterest)
+			throws PrismException;
 
 	default JDDNode checkSatisfiability(JDDNode conditionUnsatisfied, JDDNode statesOfInterest)
 			throws UndefinedTransformationException
 	{
 		if (JDD.IsContainedIn(statesOfInterest, conditionUnsatisfied)) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
+			throw new UndefinedTransformationException("Condition is not satisfiable");
 		}
 		return conditionUnsatisfied;
 	}
@@ -82,15 +81,15 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		return JDD.Or(badStates.copy(), failState.copy());
 	}
 
-	JDDNode computeBadStates(M model, Until until, JDDNode unsatisfiedStates);
+	JDDNode computeBadStates(Reach<M> reach, JDDNode unsatisfiedStates) throws PrismException;
 
 	JDDNode computeBadStates(LTLProduct<M> product, JDDNode unsatisfiedStates)
 			throws PrismException;
 
-	ProbabilisticRedistribution redistributeProb1(M model, Until pathProb1, Until pathProbs)
+	ProbabilisticRedistribution redistributeProb1(Reach<M> pathProb1, Reach<M> pathProbs)
 			throws PrismException;
 
-	ProbabilisticRedistribution redistributeProb0(M model, Until pathProb0, Until pathProbs)
+	ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 			throws PrismException;
 
 	GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
@@ -100,7 +99,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 
 	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<ProbModel, ProbModelChecker>
 	{
-		protected Map<Entry<? extends Model, ? extends SimplePathProperty>, JDDNode> cache;
+		protected Map<SimplePathProperty<ProbModel>, JDDNode> cache;
 
 		public DTMC(ProbModelChecker modelChecker)
 		{
@@ -123,10 +122,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode checkSatisfiability(ProbModel model, Until conditionPath, JDDNode statesOfInterest)
-				throws UndefinedTransformationException
+		public JDDNode checkSatisfiability(Reach<ProbModel> conditionPath, JDDNode statesOfInterest)
+				throws PrismException
 		{
-			JDDNode conditionFalsifiedStates = computeProb0(model, conditionPath);
+			JDDNode conditionFalsifiedStates = computeProb0(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -139,43 +138,47 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode computeBadStates(ProbModel model, Until until, JDDNode unsatisfiedStates)
+		public JDDNode computeBadStates(Reach<ProbModel> reach, JDDNode unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
-			return JDD.Constant(0);
+			return noStates();
 		}
 
 		@Override
 		public JDDNode computeBadStates(LTLProduct<ProbModel> product, JDDNode unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
-			return JDD.Constant(0);
+			return noStates();
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb1(ProbModel model, Until pathProb1, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb1(Reach<ProbModel> pathProb1, Reach<ProbModel> pathProbs)
 				throws PrismException
 		{
-			JDDNode states = computeProb1(model, pathProb1);
+			pathProb1.requireSameModel(pathProbs);
+
+			JDDNode states = computeProb1(pathProb1);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeUntilProbs(model, pathProbs);
+				probabilities = computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb0(ProbModel model, Until pathProb0, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb0(Reach<ProbModel> pathProb0, Reach<ProbModel> pathProbs)
 				throws PrismException
 		{
-			JDDNode states = computeProb0(model, pathProb0);
+			pathProb0.requireSameModel(pathProbs);
+
+			JDDNode states = computeProb0(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeUntilProbs(model, pathProbs);
+				probabilities = computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -189,20 +192,31 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 
 		public void clear()
 		{
+			cache.keySet().forEach(SimplePathProperty::clear);
 			cache.values().forEach(JDD::Deref);
 			cache.clear();
 		}
 
 		@Override
-		public JDDNode computeUntilProbs(ProbModel model, Until until)
+		public JDDNode computeProbs(Finally<ProbModel> eventually)
 				throws PrismException
 		{
-			Entry<? extends Model, ? extends SimplePathProperty> params = new AbstractMap.SimpleImmutableEntry<>(model, until);
-			if (! cache.containsKey(params)) {
-				JDDNode probabilities = super.computeUntilProbs(model, until);
-				cache.put(params, probabilities);
+			if (! cache.containsKey(eventually)) {
+				JDDNode probabilities = super.computeProbs(eventually);
+				cache.put(eventually.clone(), probabilities);
 			}
-			return cache.get(params).copy();
+			return cache.get(eventually).copy();
+		}
+
+		@Override
+		public JDDNode computeProbs(Until<ProbModel> until)
+				throws PrismException
+		{
+			if (! cache.containsKey(until)) {
+				JDDNode probabilities = super.computeProbs(until);
+				cache.put(until.clone(), probabilities);
+			}
+			return cache.get(until).copy();
 		}
 	}
 
@@ -216,10 +230,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode checkSatisfiability(NondetModel model, Until conditionPath, JDDNode statesOfInterest)
-				throws UndefinedTransformationException
+		public JDDNode checkSatisfiability(Reach<NondetModel> conditionPath, JDDNode statesOfInterest)
+				throws PrismException
 		{
-			JDDNode conditionFalsifiedStates = computeProb0A(model, conditionPath);
+			JDDNode conditionFalsifiedStates = computeProb0A(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -236,10 +250,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product, JDDNode remain)
 				throws PrismException
 		{
-			JDDNode acceptingStates = getLtlTransformer().findAcceptingStates(product, remain);
-			Until accept            = new Until(remain, acceptingStates);
+			JDDNode acceptingStates   = getLtlTransformer().findAcceptingStates(product, remain);
+			Until<NondetModel> accept = new Until<>(product.getProductModel(), remain, acceptingStates);
 			// States in remain from which some scheduler can enforce acceptance to maximize probability
-			JDDNode acceptingStatesMax = computeProb1E(product.getProductModel(), accept);
+			JDDNode acceptingStatesMax = computeProb1E(accept);
 			accept.clear();
 			return acceptingStatesMax;
 		}
@@ -252,9 +266,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode computeBadStates(NondetModel model, Until until, JDDNode unsatisfiedStates)
+		public JDDNode computeBadStates(Reach<NondetModel> reach, JDDNode unsatisfiedStates)
+				throws PrismException
 		{
-			JDDNode maybeFalsified = computeProb0E(model, until);
+			JDDNode maybeFalsified = computeProb0E(reach);
 			if (maybeFalsified.equals(JDD.ZERO)) {
 				return maybeFalsified;
 			}
@@ -277,35 +292,39 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 //				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
 //				bad.and(rStates);
 //			}
-			JDDNode maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, null, maybeUnsatisfiedStates);
+			JDDNode maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
 			JDD.Deref(maybeUnsatisfiedStates);
 			return JDD.And(maybeUnsatisfiedStatesProb1E, JDD.Not(unsatisfiedStates.copy()));
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb1(NondetModel model, Until pathProb1, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb1(Reach<NondetModel> pathProb1, Reach<NondetModel> pathProbs)
 				throws PrismException
 		{
-			JDDNode states = computeProb1A(model, pathProb1);
+			pathProb1.requireSameModel(pathProbs);
+
+			JDDNode states = computeProb1A(pathProb1);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeUntilMaxProbs(model, pathProbs);
+				probabilities = computeMaxProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb0(NondetModel model, Until pathProb0, Until pathProbs)
+		public ProbabilisticRedistribution redistributeProb0(Reach<NondetModel> pathProb0, Reach<NondetModel> pathProbs)
 				throws PrismException
 		{
-			JDDNode states = computeProb0A(model, pathProb0);
+			pathProb0.requireSameModel(pathProbs);
+
+			JDDNode states = computeProb0A(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeUntilMinProbs(model, pathProbs);
+				probabilities = computeMinProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -314,17 +333,19 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		 * Compute redistribution but use complementary path event for efficiency.
 		 * Instead of Pmin(path) use 1-Pmax(not path).
 		 */
-		public ProbabilisticRedistribution redistributeProb0Complement(NondetModel model, Until pathProb0, Until compPathProbs)
+		public ProbabilisticRedistribution redistributeProb0Complement(Reach<NondetModel> pathProb0, Reach<NondetModel> compPathProbs)
 				throws PrismException
 		{
-			JDDNode states = computeProb0A(model, pathProb0);
+			pathProb0.requireSameModel(compPathProbs);
+
+			JDDNode states = computeProb0A(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeUntilMaxProbs(model, compPathProbs);
+				probabilities = computeMaxProbs(compPathProbs);
 			}
-			return new ProbabilisticRedistribution(states, probabilities).swap(model);
+			return new ProbabilisticRedistribution(states, probabilities).swap(pathProb0.getModel());
 		}
 
 		@Override

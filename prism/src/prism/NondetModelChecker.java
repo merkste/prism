@@ -1592,7 +1592,7 @@ public class NondetModelChecker extends NonProbModelChecker
 
 	// compute probabilities for next
 
-	protected StateValues computeNextProbs(JDDNode tr, JDDNode b, boolean min)
+	public StateValues computeNextProbs(JDDNode tr, JDDNode b, boolean min)
 	{
 		JDDNode tmp;
 		StateValues probs = null;

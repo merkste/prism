@@ -21,7 +21,7 @@ import prism.PrismLangException;
 import prism.PrismLog;
 import prism.StateValues;
 import prism.conditional.NewConditionalTransformer;
-import prism.conditional.SimplePathProperty.Finally;
+import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 
 @Deprecated
@@ -54,7 +54,7 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
 		// can handle maximal probabilities only
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return false;
@@ -73,12 +73,15 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 	{
 		// 1) Objective: extract objective
 		Expression objectiveExpr = ((ExpressionProb) expression.getObjective()).getExpression();
-		Finally objectivePath    = new Finally(objectiveExpr, getModelChecker(), true);
+		Until<NondetModel> objectivePath = ((Reach<NondetModel>) computeSimplePathProperty(model, objectiveExpr)).asUntil();
+
 //		Expression objectiveGoalExpr = ((ExpressionTemporal) ExpressionInspector.normalizeExpression(objectiveExpr.getExpression())).getOperand2();
 //		JDDNode objectiveGoal        = computeStates(model, objectiveGoalExpr);
 
 		// 2) Condition: compute "condition remain and goal states"
-		Until conditionPath      = new Until(expression.getCondition(), getModelChecker(), true);
+		Reach<NondetModel> conditionReach = (Reach<NondetModel>) computeSimplePathProperty(model, expression.getCondition());
+		Until<NondetModel> conditionPath  = conditionReach.asUntil();
+		conditionReach.clear();
 //		Expression conditionExpr       = ExpressionInspector.normalizeExpression(expression.getCondition());
 //		ExpressionTemporal untilExpr   = (ExpressionTemporal)ExpressionInspector.removeNegation(conditionExpr);
 //		Expression conditionRemainExpr = untilExpr.getOperand1();
@@ -93,21 +96,21 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 		JDD.Deref(statesOfInterest);
 
 		// compute objective normal states and enlarge set by prob1a
-		JDDNode objectiveNormalStates = computeProb1A(model, objectivePath.getRemain(), objectivePath.getGoal());
+		JDDNode objectiveNormalStates = computeProb1A(model, false, objectivePath.getRemain(), objectivePath.getGoal());
 		// compute Pmax(Objective)
 		// FIXME ALG: reuse precomputation?
-		JDDNode objectiveProbs        = computeUntilMaxProbs(model, objectivePath);
+		JDDNode objectiveProbs        = computeUntilMaxProbs(model, false, objectivePath.getRemain(), objectivePath.getGoal());
 		objectivePath.clear();
 
 		// compute normal-form states and probabilities for objective
 		// FIXME ALG: reuse precomputation?
-		JDDNode conditionNormalStates = computeNormalFormStates(model, conditionPath);
+		JDDNode conditionNormalStates = computeNormalFormStates(conditionPath);
 ////>>> Debug: print goalStopStates
 //getLog().println("goalStopStates:");
 //JDD.PrintMinterms(getLog(), goalStopStates.copy());
 //new StateValuesMTBDD(goalStopStates.copy(), model).print(getLog());
 		conditionNormalStates         = JDD.And(conditionNormalStates, JDD.Not(objectiveNormalStates.copy()));
-		JDDNode conditionProbs        = computeNormalFormProbs(model, conditionPath);
+		JDDNode conditionProbs        = computeNormalFormProbs(conditionPath);
 		conditionPath.clear();
 		//>>> Debug: print probabilities
 //		getLog().println("goalStopStates:");
@@ -123,33 +126,32 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 		return new MDPGoalFailStopTransformation(model, expression, operator);
 }
 
-	public JDDNode checkSatisfiability(NondetModel model, Until condition, JDDNode statesOfInterest)
-			throws UndefinedTransformationException
+	public JDDNode checkSatisfiability(NondetModel model, Until<NondetModel> condition, JDDNode statesOfInterest)
+			throws PrismException
 	{
-		JDDNode conditionUnsatisfied  = computeUnsatified(model, condition);
+		JDDNode conditionUnsatisfied  = computeUnsatified(condition);
 		if (JDD.IsContainedIn(statesOfInterest, conditionUnsatisfied)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 		return conditionUnsatisfied;
 	}
 
-	public JDDNode computeUnsatified(NondetModel model, Until until)
+	public JDDNode computeUnsatified(Until<NondetModel> until)
+			throws PrismException
 	{
-		return until.isNegated() ? computeProb1A(model, until.getRemain(), until.getGoal()) : computeProb0A(model, until.getRemain(), until.getGoal());
+		return computeProb0A(until);
 	}
 
-	public JDDNode computeNormalFormStates(NondetModel model, Until until)
+	public JDDNode computeNormalFormStates(Until<NondetModel> until)
+			throws PrismException
 	{
-		if (until.isNegated()) {
-			return computeProb0A(model, until.getRemain(), until.getGoal());
-		} else {
-			return computeProb1A(model, until.getRemain(), until.getGoal());
-		}
+		return computeProb1A(until);
 	}
 
-	public JDDNode computeNormalFormProbs(NondetModel model, Until until) throws PrismException
+	public JDDNode computeNormalFormProbs(Until<NondetModel> until)
+			throws PrismException
 	{
-		return computeUntilMaxProbs(model, until);
+		return computeMaxProbs(until);
 	}
 
 	public JDDNode getWeakGoalStates(NondetModel model, JDDNode remain, JDDNode goal, boolean negated)

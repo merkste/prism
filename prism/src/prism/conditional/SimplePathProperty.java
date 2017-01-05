@@ -1,88 +1,39 @@
 package prism.conditional;
 
-import explicit.conditional.ExpressionInspector;
+import java.util.Objects;
+
 import jdd.JDD;
 import jdd.JDDNode;
-import parser.ast.Expression;
 import parser.ast.ExpressionTemporal;
+import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
-import prism.PrismException;
-import prism.PrismLangException;
-import prism.StateModelChecker;
 
-public abstract class SimplePathProperty implements Cloneable
+
+
+public abstract class SimplePathProperty<M extends Model> implements Cloneable
 {
+	protected M       model;
 	protected boolean negated;
-	protected JDDNode goal;
 
 
 
-	public SimplePathProperty()
+	public SimplePathProperty(M model, boolean negated)
 	{
-		// Empty constructor to support flexible subclass instantiation.
+		Objects.requireNonNull(model);
+		this.model     = model;
+		this.negated   = negated;
 	}
 
 	/**
-	 * Copy constructor that restricts the state sets to the 
-	 * @param model
-	 * @param property
+	 * Deref all referenced state sets (JDD nodes). Do not clear the model.
 	 */
-	public SimplePathProperty(Model model, SimplePathProperty property)
-	{
-		this(property.negated, JDD.And(property.goal.copy(), model.getReach().copy()));
-	}
+	public abstract void clear();
 
-	public SimplePathProperty(boolean negated, JDDNode goal)
-	{
-		this.negated = negated;
-		this.goal    = goal;
-	}
+	public abstract TemporalOperator getOperator();
 
-	/**
-	 * [ REFS: <i>goal</i>, DEREFS: none ]
-	 */
-	@Override
-	public SimplePathProperty clone()
+	public M getModel()
 	{
-		try {
-			SimplePathProperty clone = (SimplePathProperty) super.clone();
-			clone.goal = goal.copy();
-			return clone;
-		} catch (CloneNotSupportedException e) {
-			e.printStackTrace();
-			throw new RuntimeException("Object#clone is expected to work for Cloneable objects.", e);
-		}
-	}
-
-	/**
-	 * Convenience method to match JDDNode's copy semantics.
-	 * Override in Subclasses to enforce type-safety!
-	 * 
-	 * @return a clone
-	 * @see #clone
-	 */
-	public SimplePathProperty copy()
-	{
-		return clone();
-	}
-
-	/**
-	 * Construct a property which state sets are subsets of a model's reachable state space.
-	 * 
-	 * @param model
-	 * @return a property in {@code model}
-	 */
-	public SimplePathProperty copy(Model model)
-	{
-		SimplePathProperty copy = this.copy();
-		copy.goal = JDD.And(copy.goal, model.getReach().copy());
-		return copy;
-	}
-
-	public JDDNode getGoal()
-	{
-		// FIXME ALG: should return a copy
-		return goal;
+		return model;
 	}
 
 	public boolean isNegated()
@@ -90,320 +41,976 @@ public abstract class SimplePathProperty implements Cloneable
 		return negated;
 	}
 
-	public SimplePathProperty negated()
+	public abstract boolean isCoSafe();
+
+	public abstract SimplePathProperty<M> lift(LTLProduct<M> product);
+
+	/**
+	 * Construct a property which state sets are subsets of a model's reachable state space.
+	 * 
+	 * @param model
+	 * @return a property in {@code model}
+	 */
+	public abstract <OM extends Model> SimplePathProperty<OM> copy(OM model);
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public SimplePathProperty<M> clone()
 	{
-		SimplePathProperty clone = clone();
-		clone.negated = ! negated;
-		return clone;
+		try {
+			return (SimplePathProperty<M>) super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Object#clone is expected to work for Cloneable objects.", e);
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((model == null) ? 0 : model.hashCode());
+		result = prime * result + (negated ? 1231 : 1237);
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SimplePathProperty)) {
+			return false;
+		}
+		@SuppressWarnings("rawtypes")
+		SimplePathProperty other = (SimplePathProperty) obj;
+		return model == other.model && negated == other.negated;
 	}
 
 	/**
-	 * [ REFS: none, DEREFS: <i>goal</i> ]
+	 * [ REFS: <i>result</i>, DEREFS: none ]
 	 */
-	public void clear()
+	protected JDDNode allStates()
 	{
-		JDD.Deref(goal);
+		return model.getReach().copy();
 	}
 
-	public static SimplePathProperty fromExpression(Expression expression, StateModelChecker modelChecker) throws PrismException
+	protected boolean isAllStates(JDDNode states)
 	{
-		ExpressionTemporal temporalExpression;
-		try {
-			temporalExpression = Expression.getTemporalOperatorForSimplePathFormula(expression);
-		} catch (PrismLangException e) {
-			throw new IllegalArgumentException(e);
-		}
-		int operator = temporalExpression.getOperator();
-		switch (operator) {
-		case ExpressionTemporal.P_X:
-			return new Next(expression, modelChecker);
-		case ExpressionTemporal.P_F:
-		case ExpressionTemporal.P_G:
-			return new Finally(expression, modelChecker, true);
-		case ExpressionTemporal.P_U:
-		case ExpressionTemporal.P_R:
-		case ExpressionTemporal.P_W:
-			return new Until(expression, modelChecker, true);
-		default:
-			throw new IllegalArgumentException("Unsupported temporal operator: " + operator);
-		}
+		return model.getReach().equals(states);
 	}
 
-	public static void requireUnboundedSimplePathFormula(Expression expression)
+	/**
+	 * Throw an exception, iff the paths are defined for different models.
+	 */
+	protected void requireSameModel(SimplePathProperty<?> path)
 	{
-		if (! isUnboundedSimplePathFormula(expression)) {
-			throw new IllegalArgumentException("Expression is not an unbounded simple path formula: " + expression);
+		requireSameModel(path.getModel());
+	}
+
+	/**
+	 * Throw an exception, iff the receiver's model is defined from the argument.
+	 */
+	protected void requireSameModel(Model model)
+	{
+		if (this.model != model) {
+			throw new IllegalArgumentException("Both models must be the same");
 		}
 	}
 
-
-	public static boolean isUnboundedSimplePathFormula(Expression expression)
+	/**
+	 * [ REFS: result, DEREFS: <i>states</i> ]
+	 */
+	protected JDDNode restrict(JDDNode states)
 	{
-		try {
-			if (! expression.isSimplePathFormula()) {
-				return false;
-			}
-			ExpressionTemporal temporalExpression = Expression.getTemporalOperatorForSimplePathFormula(expression);
-			if (temporalExpression.hasBounds()) {
-				return false;
-			}
-		} catch (PrismLangException e) {
-			throw new RuntimeException(e);
-		}
-		return true;
+		Objects.requireNonNull(states);
+		return JDD.And(states, allStates());
 	}
 
 
 
-	public static class Until extends SimplePathProperty
+	public static class Next<M extends Model> extends SimplePathProperty<M>
 	{
-		protected JDDNode remain;
+		public static final TemporalOperator OPERATOR = TemporalOperator.Next;
 
-		public Until(Expression expression, StateModelChecker modelChecker) throws PrismException 
+		protected JDDNode goal;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Next(M model, JDDNode goal)
 		{
-			this(expression, modelChecker, false);
-		}
-
-		public Until(Expression expression, StateModelChecker modelChecker, boolean convert) throws PrismException 
-		{
-			Expression canonical     = normalizeUnboundedSimpleUntilFormula(expression, convert);
-			ExpressionTemporal until = Expression.getTemporalOperatorForSimplePathFormula(canonical);
-
-			negated = Expression.isNot(canonical);
-			remain  = modelChecker.checkExpressionDD(until.getOperand1(), JDD.Constant(1));
-			goal    = modelChecker.checkExpressionDD(until.getOperand2(), JDD.Constant(1));
-		}
-
-		public Until(JDDNode remain, JDDNode goal)
-		{
-			this(false, remain, goal);
-		}
-
-		public Until(boolean negated, JDDNode remain, JDDNode goal)
-		{
-			super(negated, goal);
-			this.remain = remain;
+			this(model, false, goal);
 		}
 
 		/**
-		 * [ REFS: <i>remain, goal</i>, DEREFS: none ]
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
 		 */
-		@Override
-		public Until clone()
+		public Next(M model, boolean negated, JDDNode goal)
 		{
-			Until clone = (Until) super.clone();
-			clone.remain = remain.copy();
+			super(model, negated);
+			this.goal = restrict(goal);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(goal);
+		}
+
+		@Override
+		public TemporalOperator getOperator()
+		{
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
+		{
+			return goal;
+		}
+
+		@Override
+		public boolean isCoSafe()
+		{
+			return true;
+		}
+
+		@Override
+		public Next<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new Next<>(product.getProductModel(), negated, goal.copy());
+		}
+
+		@Override
+		public <OM extends Model> Next<OM> copy(OM model)
+		{
+			return new Next<>(model, negated, goal.copy());
+		}
+
+		@Override
+		public Next<M> clone()
+		{
+			Next<M> clone = (Next<M>) super.clone();
+			clone.goal    = goal.copy();
 			return clone;
 		}
 
 		@Override
-		public Until copy()
+		public String toString()
 		{
-			return clone();
+			String goalString     = isAllStates(goal)   ? "true" : "goal";
+			String temporalString = getOperator() + " " + goalString;
+			return negated ? "! " + temporalString : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((goal == null) ? 0 : goal.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
+			}
+			if (!(obj instanceof Next)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			Next other = (Next) obj;
+			return goal.equals(other.goal);
+		}
+	}
+
+
+
+	public static abstract class Reach<M extends Model> extends SimplePathProperty<M>
+	{
+		public Reach(M model, boolean negated)
+		{
+			super(model, negated);
+		}
+
+		public abstract boolean hasToRemain();
+
+		/**
+		 * Convert reach property to until property.
+		 *
+		 * @return a new until instance that is equivalent to the receiver
+		 */
+		public abstract Until<M> asUntil();
+
+		@Override
+		public abstract Reach<M> lift(LTLProduct<M> product);
+
+		@Override
+		public abstract <OM extends Model> Reach<OM> copy(OM model);
+
+		@Override
+		public Reach<M> clone()
+		{
+			return (Reach<M>) super.clone();
+		};
+	}
+
+
+
+	public static class Finally<M extends Model> extends Reach<M>
+	{
+		public static final TemporalOperator OPERATOR = TemporalOperator.Finally;
+
+		protected JDDNode goal;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Finally(M model, JDDNode goal)
+		{
+			this(model, false, goal);
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Finally(M model, boolean negated, JDDNode goal)
+		{
+			super(model, negated);
+			this.goal = restrict(goal);
 		}
 
 		@Override
-		public Until copy(Model model)
+		public void clear()
 		{
-			Until copy = this.copy();
-			copy.remain = JDD.And(copy.remain, model.getReach().copy());
-			copy.goal   = JDD.And(copy.goal, model.getReach().copy());
-			return copy;
+			JDD.Deref(goal);
 		}
 
+		@Override
+		public TemporalOperator getOperator()
+		{
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
+		{
+			return goal;
+		}
+
+		@Override
+		public boolean isCoSafe()
+		{
+			return ! negated;
+		}
+
+		@Override
+		public boolean hasToRemain()
+		{
+			return negated;
+		}
+
+		/**
+		 * Convert property to finally property.
+		 *
+		 * @return a new finally instance that is equivalent to the receiver
+		 */
+		public Finally<M> asFinally()
+		{
+			return this.clone();
+		}
+
+		@Override
+		public Until<M> asUntil()
+		{
+			return new Until<>(model, negated, allStates(), goal.copy());
+		}
+
+		@Override
+		public Finally<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new Finally<>(product.getProductModel(), negated, goal.copy());
+		}
+
+		@Override
+		public <OM extends Model> Finally<OM> copy(OM model)
+		{
+			return new Finally<>(model, negated, goal.copy());
+		}
+
+		@Override
+		public Finally<M> clone()
+		{
+			Finally<M> clone = (Finally<M>) super.clone();
+			clone.goal       = goal.copy();
+			return clone;
+		}
+
+		@Override
+		public String toString()
+		{
+			String goalString     = isAllStates(goal)   ? "true" : "goal";
+			String temporalString = getOperator() + " " + goalString;
+			return negated ? "! " + temporalString : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((goal == null) ? 0 : goal.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
+			}
+			if (!(obj instanceof Finally)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			Finally other = (Finally) obj;
+			return goal.equals(other.goal);
+		}
+	}
+
+
+
+	public static class Globally<M extends Model> extends Reach<M>
+	{
+		public static final TemporalOperator OPERATOR = TemporalOperator.Globally;
+
+		protected JDDNode remain;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>remain</i> ]
+		 */
+		public Globally(M model, JDDNode remain)
+		{
+			this(model, false, remain);
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: <i>remain</i> ]
+		 */
+		public Globally(M model, boolean negated, JDDNode remain)
+		{
+			super(model, negated);
+			this.remain = restrict(remain);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(remain);
+		}
+
+		@Override
+		public TemporalOperator getOperator()
+		{
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
 		public JDDNode getRemain()
 		{
-			// FIXME ALG: should return a copy
 			return remain;
 		}
 
 		@Override
-		public Until negated()
+		public boolean isCoSafe()
 		{
-			return (Until) super.negated();
+			return negated;
+		}
+
+		@Override
+		public boolean hasToRemain()
+		{
+			return ! negated;
+		}
+
+		/**
+		 * Convert property to finally property.
+		 *
+		 * @return a new finally instance that is equivalent to the receiver
+		 */
+		public Finally<M> asFinally()
+		{
+			JDDNode finallyGoal = JDD.And(allStates(), JDD.Not(remain.copy()));
+			return new Finally<>(model, ! negated, finallyGoal);
+		}
+
+		@Override
+		public Until<M> asUntil()
+		{
+			JDDNode untilGoal = JDD.And(allStates(), JDD.Not(remain.copy()));
+			return new Until<>(model, ! negated, allStates(), untilGoal);
+		}
+
+		@Override
+		public Globally<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new Globally<>(product.getProductModel(), negated, remain.copy());
+		}
+
+		@Override
+		public <OM extends Model> Globally<OM> copy(OM model)
+		{
+			return new Globally<>(model, negated, remain.copy());
+		}
+
+		@Override
+		public Globally<M> clone()
+		{
+			Globally<M> clone = (Globally<M>) super.clone();
+			clone.remain      = remain.copy();
+			return clone;
+		}
+
+		@Override
+		public String toString()
+		{
+			String remainString   = isAllStates(remain) ? "true" : "remain";
+			String temporalString = getOperator() + " " + remainString;
+			return negated ? "! " + temporalString : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((remain == null) ? 0 : remain.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
+			}
+			if (!(obj instanceof Globally)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			Globally other = (Globally) obj;
+			return remain.equals(other.remain);
+		}
+	}
+
+
+
+	public static class Until<M extends Model> extends Reach<M>
+	{
+		public static final TemporalOperator OPERATOR = TemporalOperator.Until;
+
+		protected JDDNode remain;
+		protected JDDNode goal;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public Until(M model, JDDNode remain, JDDNode goal)
+		{
+			this(model, false, remain, goal);
 		}
 
 		/**
 		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
 		 */
+		public Until(M model, boolean negated, JDDNode remain, JDDNode goal)
+		{
+			super(model, negated);
+			this.remain = restrict(remain);
+			this.goal   = restrict(goal);
+		}
+
 		@Override
 		public void clear()
 		{
-			super.clear();
-			JDD.Deref(remain);
+			JDD.Deref(remain, goal);
 		}
 
-		public static Expression normalizeUnboundedSimpleUntilFormula(Expression expression, boolean convert)
+		@Override
+		public TemporalOperator getOperator()
 		{
-			requireUnboundedSimplePathFormula(expression);
-			try {
-				Expression canonical;
-				if (convert) {
-					canonical = Expression.convertSimplePathFormulaToCanonicalForm(expression);
-				} else {
-					canonical = ExpressionInspector.trimUnaryOperations(expression);
-				}
-				ExpressionTemporal temporal = Expression.getTemporalOperatorForSimplePathFormula(canonical);
-				if (temporal.getOperator() == ExpressionTemporal.P_U) {
-					return canonical;
-				}
-			} catch (PrismLangException e) {
-				// throw IllegalArgumentException below
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
+		{
+			return remain;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
+		{
+			return goal;
+		}
+
+		@Override
+		public boolean isCoSafe()
+		{
+			return ! negated;
+		}
+
+		@Override
+		public boolean hasToRemain()
+		{
+			if (negated) {
+				// stay in S\goal
+				return ! goal.equals(JDD.ZERO);
+			} else {
+				// stay in remain
+				return ! isAllStates(remain);
 			}
-			throw new IllegalArgumentException("Expression cannot be converted to until form: " + expression);
+		}
+
+		@Override
+		public Until<M> asUntil()
+		{
+			return this.clone();
+		}
+
+		@Override
+		public Until<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new Until<>(product.getProductModel(), negated, remain.copy(), goal.copy());
+		}
+
+		@Override
+		public <OM extends Model> Until<OM> copy(OM model)
+		{
+			return new Until<>(model, negated, remain.copy(), goal.copy());
+		}
+
+		@Override
+		public Until<M> clone()
+		{
+			Until<M> clone = (Until<M>) super.clone();
+			clone.remain   = remain.copy();
+			clone.goal     = goal.copy();
+			return clone;
+		}
+
+		@Override
+		public String toString()
+		{
+			String remainString   = isAllStates(remain) ? "true" : "remain";
+			String goalString     = isAllStates(goal)   ? "true" : "goal";
+			String temporalString = remainString + " " + getOperator() + " " + goalString;
+			return negated ? "!(" + temporalString + ")" : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((goal == null) ? 0 : goal.hashCode());
+			result = prime * result + ((remain == null) ? 0 : remain.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
+			}
+			if (!(obj instanceof Until)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			Until other = (Until) obj;
+			return remain.equals(other.remain) && goal.equals(other.goal);
 		}
 	}
 
 
 
-	public static class Finally extends Until
+	public static class Release<M extends Model> extends Reach<M>
 	{
-		public Finally(Expression expression, StateModelChecker modelChecker) throws PrismException
+		public static final TemporalOperator OPERATOR = TemporalOperator.Release;
+
+		protected JDDNode stop;
+		protected JDDNode remain;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>stop, remain</i> ]
+		 */
+		public Release(M model, JDDNode stop, JDDNode remain)
 		{
-			this(expression, modelChecker, false);
-		}
-		public Finally(Expression expression, StateModelChecker modelChecker, boolean convert) throws PrismException
-		{
-			super(normalizeUnboundedSimpleFinallyFormula(expression, convert), modelChecker, true);
+			this(model, false, stop, remain);
 		}
 
-		public Finally(Model model, JDDNode goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>stop, remain</i> ]
+		 */
+		public Release(M model, boolean negated, JDDNode stop, JDDNode remain)
 		{
-			super(model.getReach().copy(), goal);
-		}
-
-		public Finally(Model model, boolean negated, JDDNode goal)
-		{
-			super(negated, model.getReach().copy(), goal);
-		}
-
-		@Override
-		public Finally clone()
-		{
-			return (Finally) super.clone();
+			super(model, negated);
+			this.stop   = restrict(stop);
+			this.remain = restrict(remain);
 		}
 
 		@Override
-		public Finally copy()
+		public void clear()
 		{
-			return clone();
+			JDD.Deref(stop, remain);
 		}
 
 		@Override
-		public Finally copy(Model model)
+		public TemporalOperator getOperator()
 		{
-			Finally copy = this.copy();
-			copy.remain = JDD.And(copy.remain, model.getReach().copy());
-			copy.goal   = JDD.And(copy.goal, model.getReach().copy());
-			return copy;
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getStop()
+		{
+			return stop;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
+		{
+			return remain;
 		}
 
 		@Override
-		public Finally negated()
+		public boolean isCoSafe()
 		{
-			return (Finally) super.negated();
+			return negated;
 		}
 
-		public static Expression normalizeUnboundedSimpleFinallyFormula(Expression expression, boolean convert)
+		@Override
+		public boolean hasToRemain()
 		{
-			requireUnboundedSimplePathFormula(expression);
+			Until<M> until = asUntil();
+			boolean result = until.hasToRemain();
+			until.clear();
+			return result;
+		}
 
-			try {
-				ExpressionTemporal temporal = Expression.getTemporalOperatorForSimplePathFormula(expression);
-				int operator                = temporal.getOperator();
-				if (operator == ExpressionTemporal.P_F) {
-					return ExpressionInspector.trimUnaryOperations(expression);
-				}
-				if (convert) {
-					// convert G, U, R, W
-					Expression canonical = Expression.convertSimplePathFormulaToCanonicalForm(expression);
-					temporal             = Expression.getTemporalOperatorForSimplePathFormula(canonical);
-					operator             = temporal.getOperator();
-					if (operator == ExpressionTemporal.P_U && Expression.isTrue(temporal.getOperand1())) {
-						ExpressionTemporal eventually = Expression.Finally(temporal.getOperand2());
-						return Expression.isNot(canonical) ? Expression.Not(eventually) : eventually;
-					}
-				}
-			} catch (PrismLangException e) {
-				// throw IllegalArgumentException below
+		@Override
+		public Until<M> asUntil()
+		{
+			// φ R ψ = ¬(¬φ U ¬ψ)
+			JDDNode untilRemain = JDD.And(allStates(), JDD.Not(stop.copy()));
+			JDDNode untilStop   = JDD.And(allStates(), JDD.Not(remain.copy()));
+			return new Until<>(model, ! negated, untilRemain, untilStop);
+		}
+
+		@Override
+		public Release<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new Release<>(product.getProductModel(), negated, stop.copy(), remain.copy());
+		}
+
+		@Override
+		public <OM extends Model> Release<OM> copy(OM model)
+		{
+			return new Release<>(model, negated, stop.copy(), remain.copy());
+		}
+
+		@Override
+		public Release<M> clone()
+		{
+			Release<M> clone = (Release<M>) super.clone();
+			clone.stop       = stop.copy();
+			clone.remain     = remain.copy();
+			return clone;
+		}
+
+		@Override
+		public String toString()
+		{
+			String stopString     = isAllStates(stop)   ? "true" : "stop";
+			String remainString   = isAllStates(remain) ? "true" : "remain";
+			String temporalString = stopString + " " + getOperator() + " " + remainString;
+			return negated ? "!(" + temporalString + ")" : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((remain == null) ? 0 : remain.hashCode());
+			result = prime * result + ((stop == null) ? 0 : stop.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
 			}
-			throw new IllegalArgumentException("Expression cannot be converted to finally form: " + expression);
+			if (!(obj instanceof Release)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			Release other = (Release) obj;
+			return stop.equals(other.stop) && remain.equals(other.remain);
 		}
 	}
 
 
 
-	public static class Next extends SimplePathProperty
+	public static class WeakUntil<M extends Model> extends Reach<M>
 	{
-		public Next(Expression expression, StateModelChecker modelChecker) throws PrismException 
+		public static final TemporalOperator OPERATOR = TemporalOperator.WeakUntil;
+
+		protected JDDNode remain;
+		protected JDDNode goal;
+
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public WeakUntil(M model, JDDNode remain, JDDNode goal)
 		{
-			this(expression, modelChecker, false);
+			this(model, false, remain, goal);
 		}
 
-		public Next(Expression expression, StateModelChecker modelChecker, boolean convert) throws PrismException 
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public WeakUntil(M model, boolean negated, JDDNode remain, JDDNode goal)
 		{
-			Expression canonical    = normalizeUnboundedSimpleNextFormula(expression, convert);
-			ExpressionTemporal next = Expression.getTemporalOperatorForSimplePathFormula(canonical);
-
-			negated = Expression.isNot(canonical);
-			goal    = modelChecker.checkExpressionDD(next.getOperand2(), JDD.Constant(1));
-		}
-
-		public Next(JDDNode goal)
-		{
-			this(false, goal);
-		}
-
-		public Next(boolean negated, JDDNode goal)
-		{
-			super(negated, goal);
-		}
-
-		@Override
-		public Next clone()
-		{
-			return (Next) super.clone();
+			super(model, negated);
+			this.remain = restrict(remain);
+			this.goal   = restrict(goal);
 		}
 
 		@Override
-		public Next copy()
+		public void clear()
 		{
-			return clone();
+			JDD.Deref(remain, goal);
 		}
 
 		@Override
-		public Next copy(Model model)
+		public TemporalOperator getOperator()
 		{
-			Next copy = this.copy();
-			copy.goal = JDD.And(copy.goal, model.getReach().copy());
-			return copy;
+			return OPERATOR;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
+		{
+			return remain;
+		}
+
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
+		{
+			return goal;
 		}
 
 		@Override
-		public Next negated()
+		public boolean isCoSafe()
 		{
-			return (Next) super.negated();
+			return negated;
 		}
 
-		public static Expression normalizeUnboundedSimpleNextFormula(Expression expression, boolean convert)
+		@Override
+		public boolean hasToRemain()
 		{
-			requireUnboundedSimplePathFormula(expression);
+			Until<M> until = asUntil();
+			boolean result = until.hasToRemain();
+			until.clear();
+			return result;
+		}
 
-			try {
-				Expression canonical;
-				if (convert) {
-					canonical = Expression.convertSimplePathFormulaToCanonicalForm(expression);
-				} else {
-					canonical = ExpressionInspector.trimUnaryOperations(expression);
-				}
-				ExpressionTemporal temporal = Expression.getTemporalOperatorForSimplePathFormula(canonical);
-				if (temporal.getOperator() == ExpressionTemporal.P_X) {
-					return canonical;
-				}
-			} catch (PrismLangException e) {
-				// throw IllegalArgumentException below
+		@Override
+		public Until<M> asUntil()
+		{
+			// φ W ψ ≡ ¬((φ ∧ ¬ψ) U (¬φ ∧ ¬ψ))
+			JDDNode untilRemain = JDD.And(remain.copy(), JDD.Not(goal.copy()));
+			JDDNode untilGoal   = JDD.And(allStates(), JDD.Not(remain.copy()));
+			untilGoal           = JDD.And(untilGoal, JDD.Not(goal.copy()));
+			return new Until<>(model, ! negated, untilRemain, untilGoal);
+		}
+
+		@Override
+		public WeakUntil<M> lift(LTLProduct<M> product)
+		{
+			requireSameModel(product.getOriginalModel());
+			return new WeakUntil<>(product.getProductModel(), negated, remain.copy(), goal.copy());
+		}
+
+		@Override
+		public <OM extends Model> WeakUntil<OM> copy(OM model)
+		{
+			return new WeakUntil<>(model, remain.copy(), goal.copy());
+		}
+
+		@Override
+		public WeakUntil<M> clone()
+		{
+			WeakUntil<M> clone = (WeakUntil<M>) super.clone();
+			clone.remain       = remain.copy();
+			clone.goal         = goal.copy();
+			return clone;
+		}
+
+		@Override
+		public String toString()
+		{
+			String remainString   = isAllStates(remain) ? "true" : "remain";
+			String goalString     = isAllStates(goal)   ? "true" : "goal";
+			String temporalString = remainString + " " + getOperator() + " " + goalString;
+			return negated ? "!(" + temporalString + ")" : temporalString;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode()
+		{
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((goal == null) ? 0 : goal.hashCode());
+			result = prime * result + ((remain == null) ? 0 : remain.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj)
+		{
+			if (!super.equals(obj)) {
+				return false;
 			}
-			throw new IllegalArgumentException("Expression cannot be converted to next form: " + expression);
+			if (!(obj instanceof WeakUntil)) {
+				return false;
+			}
+			@SuppressWarnings("rawtypes")
+			WeakUntil other = (WeakUntil) obj;
+			return remain.equals(other.remain) && goal.equals(other.goal);
+		}
+	}
+
+
+
+	public static enum TemporalOperator
+	{
+		Finally(ExpressionTemporal.P_F, 1),
+		Globally(ExpressionTemporal.P_G, 1),
+		Next(ExpressionTemporal.P_X, 1),
+		Release(ExpressionTemporal.P_R, 2),
+		Until(ExpressionTemporal.P_U, 2),
+		WeakUntil(ExpressionTemporal.P_W, 2);
+
+		protected int constant;
+		protected int arity;
+
+		private TemporalOperator(int constant, int arity)
+		{
+			this.constant = constant;
+			this.arity    = arity;
+		}
+
+		public int getConstant()
+		{
+			return constant;
+		}
+
+		public int getArity() {
+			return arity;
+		}
+
+		public String toString()
+		{
+			return ExpressionTemporal.opSymbols[getConstant()];
+		}
+
+		public static TemporalOperator fromConstant(int c)
+		{
+			for (TemporalOperator op : values()) {
+				if (op.getConstant() == c) {
+					return op;
+				}
+			}
+			throw new IllegalArgumentException("unknown temporal opertar constant: " + c);
 		}
 	}
 }

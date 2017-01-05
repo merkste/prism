@@ -94,12 +94,12 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		LTLProduct<M> product           = getLtlTransformer().constructProduct(model, objectiveDA, statesOfInterest);
 		M productModel                  = product.getTransformedModel();
 		JDDNode acceptStates            = getLtlTransformer().findAcceptingStates(product);
-		Finally objectivePathProduct    = new Finally(productModel, acceptStates);
+		Finally<M> objectivePathProduct = new Finally<>(productModel, acceptStates);
 		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
 
 		NewFinallyLtlTransformer<M, MC> finallyLtlTransformer = getFinallyLtlTransformer();
 		getLog().println("\nDelegating to " + finallyLtlTransformer.getName());
-		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(productModel, objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
 		conditionDA.clear();
 
 		// 3) Compose Transformations
@@ -116,13 +116,13 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		LTLProduct<M> product           = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 		M productModel                  = product.getTransformedModel();
 		JDDNode acceptStates            = getLtlTransformer().findAcceptingStates(product);
-		Finally conditionPathProduct    = new Finally(productModel, acceptStates);
+		Finally<M> conditionPathProduct = new Finally<>(productModel, acceptStates);
 		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
 
 		// 2) Normal-Form Transformation
 		NewLtlUntilTransformer<M,MC> ltlUntilTransformer = getLtlUntilTransformer();
 		getLog().println("\nDelegating to " + ltlUntilTransformer.getName());
-		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(productModel, objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
 		objectiveDA.clear();
 
 		// 3) Compose Transformations
@@ -196,10 +196,11 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			NondetModel conditionProductModel        = conditionProduct.getProductModel();
 			JDDNode statesOfInterset                 = conditionProduct.getTransformedStatesOfInterest();
 			JDDNode acceptConditionStates            = getLtlTransformer().findAcceptingStates(conditionProduct);
-			Finally conditionPath                    = new Finally(conditionProductModel, acceptConditionStates);
+			Finally<NondetModel> conditionPath       = new Finally<>(conditionProductModel, acceptConditionStates);
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			JDDNode conditionFalsifiedStates = checkSatisfiability(conditionProductModel, conditionPath, statesOfInterset);
+			// FIXME ALG: check statesOfInterset VS statesOfInterest
+			JDDNode conditionFalsifiedStates = checkSatisfiability(conditionPath, statesOfInterset);
 			conditionPath.clear();
 
 			// compute bad states
@@ -273,16 +274,16 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 			}
 
 			// compute accepting states  (ECs or REACH states)
-			NondetModel productModel      = product.getProductModel();
-			JDDNode acceptObjectiveStates = getLtlTransformer().findAcceptingStates(product);
-			Finally objectivePath         = new Finally(productModel, acceptObjectiveStates);
+			NondetModel productModel           = product.getProductModel();
+			JDDNode acceptObjectiveStates      = getLtlTransformer().findAcceptingStates(product);
+			Finally<NondetModel> objectivePath = new Finally<>(productModel, acceptObjectiveStates);
 
 			// path to non-accepting states
-			JDDNode conditionFalsifiedStates = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
-			Finally conditionFalsifiedPath   = new Finally(productModel, conditionFalsifiedStates);
+			JDDNode conditionFalsifiedStates            = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
+			Finally<NondetModel> conditionFalsifiedPath = new Finally<>(productModel, conditionFalsifiedStates);
 
 			// compute redistribution
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(productModel, objectivePath, conditionFalsifiedPath);
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(objectivePath, conditionFalsifiedPath);
 			objectivePath.clear();
 			conditionFalsifiedPath.clear();
 			return objectiveFalsified;

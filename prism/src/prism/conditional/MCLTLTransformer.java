@@ -19,6 +19,7 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 
+// FIXME ALG: support PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE
 public class MCLTLTransformer extends MCConditionalTransformer {
 
 	public MCLTLTransformer(ProbModelChecker modelChecker, Prism prism) {

@@ -21,6 +21,7 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.MCDeadlockTransformation;
@@ -38,7 +39,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
-		final Expression until = removeNegation(condition);
+		final Expression until     = removeNegation(condition);
 		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
@@ -52,13 +53,15 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
-		Expression condition = expression.getCondition();
-		Until conditionPath  = new Until(condition, getModelChecker(), true);
+		Expression condition            = expression.getCondition();
+		Reach<ProbModel> conditionReach = (Reach<ProbModel>) computeSimplePathProperty(model, condition);
+		Until<ProbModel> conditionPath  = conditionReach.asUntil();
+		conditionReach.clear();
 		ModelTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
 		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 
-	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Until conditionPath, final JDDNode statesOfInterest,
+	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Until<ProbModel> conditionPath, final JDDNode statesOfInterest,
 			final boolean deadlock) throws PrismException
 	{
 //>>> Debug: print states of interest
@@ -67,9 +70,9 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //		new StateValuesMTBDD(statesOfInterest.copy(), model).print(prism.getLog());
 
 		// FIXME ALG: reuse prob0, prob1
-		final JDDNode prob0 = computeProb0(model, conditionPath);
-		final JDDNode prob1 = computeProb1(model, conditionPath);
-		final JDDNode probs = computeUntilProbs(model, conditionPath);
+		final JDDNode prob0 = computeProb0(conditionPath);
+		final JDDNode prob1 = computeProb1(conditionPath);
+		final JDDNode probs = computeProbs(conditionPath);
 
 		if (JDD.IsContainedIn(statesOfInterest, prob0)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
@@ -142,7 +145,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
 	 */
-	public JDDNode getPivots(final ProbModel model, final Until until)
+	public JDDNode getPivots(final ProbModel model, final Until<ProbModel> until)
 	{
 		if (! until.isNegated()) {
 			// pivots = goal
