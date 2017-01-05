@@ -105,7 +105,7 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 	}
 
 	Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalForm(LTLProduct<M> product, Reach<M> objectivePath)
-			throws PrismException, UndefinedTransformationException;
+			throws PrismException;
 
 	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalFormReach(LTLProduct<M> product, Reach<M> objectivePath)
 			throws PrismException
@@ -118,9 +118,11 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 		BitSet acceptStates      = getLtlTransformer().findAcceptingStates(product);
 		Finally<M> conditionPath = new Finally<M>(productModel, acceptStates);
 
-		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer = getFinallyUntilTransformer();
+		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
-		return finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		finallyUntilTransformer.clear();
+		return result;
 	}
 
 	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
@@ -160,7 +162,7 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 
 		@Override
 		public Pair<GoalFailStopTransformation<explicit.MDP>, ExpressionConditional> transformNormalForm(LTLProduct<explicit.MDP> product, Reach<explicit.MDP> objectivePath)
-				throws PrismException, UndefinedTransformationException
+				throws PrismException
 		{
 			objectivePath.requireSameModel(product.getProductModel());
 
@@ -191,9 +193,8 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 			BitSet instantGoalStates = computeInstantGoalStates(product, objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), acceptStates, conditionFalsifiedStates);
 
 			// transform goal-fail-stop
-			NewGoalFailStopTransformer<explicit.MDP> transformer    = getGoalFailStopTransformer();
 			ProbabilisticRedistribution conditionSatisfied          = new ProbabilisticRedistribution();
-			GoalFailStopTransformation<explicit.MDP> transformation = transformer.transformModel(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
+			GoalFailStopTransformation<explicit.MDP> transformation = transformGoalFailStop(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 			// build expression
 			ExpressionLabel goal                = new ExpressionLabel(transformation.getGoalLabel());
@@ -230,7 +231,6 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 		public BitSet computeInstantGoalStates(LTLProduct<explicit.MDP> product, Reach<explicit.MDP> objectivePath, BitSet objectiveSatisfiedStates, BitSet objectiveFalsifiedStates, BitSet conditionAcceptStates, BitSet conditionFalsifiedStates)
 				throws PrismException
 		{
-			// FIXME ALG: compare to symbolic approach
 			explicit.MDP productModel = product.getProductModel();
 			objectivePath.requireSameModel(productModel);
 
@@ -240,11 +240,12 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 			BitSet falsifiedStates    = BitSetTools.union(objectiveFalsifiedStates, conditionFalsifiedStates);
 			BitSet notFalsifiedStates = BitSetTools.complement(productModel.getNumStates(), falsifiedStates);
 
-			// Does the condition, specify behavior in the limit?
+			// Does the objective specify behavior in the limit?
 			if (!objectivePath.isCoSafe()) {
 				// Find accepting ECs that do not already include a normalize state
-				BitSet remain     = BitSetTools.minus(conditionAcceptStates, objectiveSatisfiedStates, falsifiedStates);
-				instantGoalStates = getLtlTransformer().findAcceptingStates(product, remain);
+				BitSet remain       = BitSetTools.minus(conditionAcceptStates, objectiveSatisfiedStates, falsifiedStates);
+				BitSet acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
+				instantGoalStates.or(acceptStates);
 			}
 			return computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
 		}

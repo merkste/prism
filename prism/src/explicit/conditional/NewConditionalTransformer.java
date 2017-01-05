@@ -32,8 +32,10 @@ import prism.PrismComponent;
 public interface NewConditionalTransformer<M extends Model, MC extends StateModelChecker>
 {
 	public static final BitSet ALL_STATES = null;
+	public static final BitSet NO_STATES  = new BitSet(0);
 
-	default String getName() {
+	default String getName()
+	{
 		Class<?> type = this.getClass();
 		type = type.getEnclosingClass() == null ? type : type.getEnclosingClass();
 		return type.getSimpleName();
@@ -139,6 +141,8 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		}
 	}
 
+
+
 	public static abstract class Basic<M extends Model, MC extends ProbModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
 	{
 		protected MC modelChecker;
@@ -181,7 +185,7 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		 * @param probabilities
 		 * @return argument array altered to hold result
 		 */
-		public static double[] subtractFromOne(final double[] probabilities)
+		public static double[] subtractFromOne(double[] probabilities)
 		{
 			// FIXME ALG: code dupes, e.g., in ConditionalReachabilityTransformer::negateProbabilities
 			for (int state = 0; state < probabilities.length; state++) {
@@ -190,6 +194,8 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			return probabilities;
 		}
 	}
+
+
 
 	public static abstract class DTMC extends Basic<explicit.DTMC, DTMCModelChecker>
 	{
@@ -332,7 +338,6 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 		{
 			return computeUntilProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
-
 	}
 
 

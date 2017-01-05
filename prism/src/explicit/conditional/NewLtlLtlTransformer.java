@@ -95,9 +95,10 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		Finally<M> objectivePathProduct = new Finally<>(productModel, acceptStates);
 		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
-		NewFinallyLtlTransformer<M, MC> finallyLtlTransformer = getFinallyLtlTransformer();
+		NewFinallyLtlTransformer<M, MC> finallyLtlTransformer             = getFinallyLtlTransformer();
 		getLog().println("\nDelegating to " + finallyLtlTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
+		finallyLtlTransformer.clear();
 
 		// 3) Compose Transformations
 		GoalFailStopTransformation<M> transformation = result.first.chain(product);
@@ -112,14 +113,15 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		// 1) LTL Product Transformation for Condition
 		LTLProduct<M> product           = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 		M productModel                  = product.getTransformedModel();
-		BitSet acceptStates            = getLtlTransformer().findAcceptingStates(product);
-		Finally<M> conditionPathProduct    = new Finally<>(productModel, acceptStates);
-		BitSet statesOfInterestProduct = product.getTransformedStatesOfInterest();
+		BitSet acceptStates             = getLtlTransformer().findAcceptingStates(product);
+		Finally<M> conditionPathProduct = new Finally<>(productModel, acceptStates);
+		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
 		// 2) Normal-Form Transformation
-		NewLtlUntilTransformer<M,MC> ltlUntilTransformer = getLtlUntilTransformer();
+		NewLtlUntilTransformer<M,MC> ltlUntilTransformer                  = getLtlUntilTransformer();
 		getLog().println("\nDelegating to " + ltlUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
+		ltlUntilTransformer.clear();
 
 		// 3) Compose Transformations
 		GoalFailStopTransformation<M> transformation = result.first.chain(product);
@@ -177,25 +179,26 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		{
 			if (conditionDA.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
 				return transformNormalFormReachCondition(model, objectiveDA, conditionDA, statesOfInterest);
-			} else if (objectiveDA.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
+			}
+			if (objectiveDA.getAutomaton().getAcceptance().getType() == AcceptanceType.REACH) {
 				return transformNormalFormReachObjective(model, objectiveDA, conditionDA, statesOfInterest);
 			}
 
 			// 1) LTL Product Transformation for Condition
 			LTLProduct<explicit.MDP> conditionProduct = getLtlTransformer().constructProduct(model, conditionDA, statesOfInterest);
 			explicit.MDP conditionProductModel        = conditionProduct.getProductModel();
-			BitSet statesOfInterset                   = conditionProduct.getTransformedStatesOfInterest();
+			BitSet conditionStatesOfInterest          = conditionProduct.getTransformedStatesOfInterest();
 			BitSet acceptConditionStates              = getLtlTransformer().findAcceptingStates(conditionProduct);
 			Finally<explicit.MDP> conditionPath       = new Finally<>(conditionProductModel, acceptConditionStates);
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			BitSet conditionFalsifiedStates = checkSatisfiability(conditionPath, statesOfInterset);
+			BitSet conditionFalsifiedStates = checkSatisfiability(conditionPath, conditionStatesOfInterest);
 
 			// compute bad states
 			BitSet badStates = computeBadStates(conditionProduct, conditionFalsifiedStates);
 
 			// 2) LTL Product Transformation for Objective
-			LTLProduct<explicit.MDP> objectiveAndConditionProduct = getLtlTransformer().constructProduct(conditionProductModel, objectiveDA.liftToProduct(conditionProduct), statesOfInterset);
+			LTLProduct<explicit.MDP> objectiveAndConditionProduct = getLtlTransformer().constructProduct(conditionProductModel, objectiveDA.liftToProduct(conditionProduct), conditionStatesOfInterest);
 			explicit.MDP objectiveAndConditionModel               = objectiveAndConditionProduct.getProductModel();
 			BitSet objectiveAndConditionStatesOfInterest        = objectiveAndConditionProduct.getTransformedStatesOfInterest();
 
@@ -223,9 +226,9 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 			BitSet instantGoalStates = computeInstantGoalStates(objectiveAndConditionProduct);
 
 			// transform goal-fail-stop
-			// FIXME ALG: check transformation arguments
-			NewGoalFailStopTransformer<explicit.MDP> transformer    = getGoalFailStopTransformer();
-			GoalFailStopTransformation<explicit.MDP> transformation = transformer.transformModel(objectiveAndConditionModel, new ProbabilisticRedistribution(), new ProbabilisticRedistribution(), objectiveFalsified, instantGoalStates, conditionFalsifiedLifted, badStatesLifted, objectiveAndConditionStatesOfInterest);
+			ProbabilisticRedistribution objectiveSatisfied          = new ProbabilisticRedistribution();
+			ProbabilisticRedistribution conditionSatisfied          = new ProbabilisticRedistribution();
+			GoalFailStopTransformation<explicit.MDP> transformation = transformGoalFailStop(objectiveAndConditionModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedLifted, badStatesLifted, objectiveAndConditionStatesOfInterest);
 
 			// build expression
 			ExpressionLabel goal                        = new ExpressionLabel(transformation.getGoalLabel());

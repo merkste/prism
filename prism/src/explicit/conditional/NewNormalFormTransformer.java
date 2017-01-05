@@ -17,6 +17,7 @@ import explicit.ModelExpressionTransformation;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.StateModelChecker;
+import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.SimplePathProperty.Reach;
@@ -25,13 +26,14 @@ import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.MDPRestricted;
+import jdd.Clearable;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.PrismException;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends Model, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
+public interface NewNormalFormTransformer<M extends Model, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>, Clearable
 {
 	@Override
 	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
@@ -97,15 +99,21 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 	ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 			throws PrismException;
 
-	NewGoalFailStopTransformer<M> getGoalFailStopTransformer();
+	GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
+			throws PrismException;
+
+	// FIXME ALG: Leak. Ensure clear is called after transformation even if an exception occurs
+	@Override
+	default void clear()
+	{
+		// No-Op except caching for mc results is implemented
+	}
+
 
 
 
 	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<explicit.DTMC, DTMCModelChecker>
 	{
-
-		public static final BitSet NO_STATES = new BitSet(0);
-
 		protected Map<SimplePathProperty<explicit.DTMC>, double[]> cache;
 
 		public DTMC(DTMCModelChecker modelChecker)
@@ -199,9 +207,11 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public NewGoalFailStopTransformer<explicit.DTMC> getGoalFailStopTransformer()
+		public GoalFailStopTransformation<explicit.DTMC> transformGoalFailStop(explicit.DTMC model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
+				throws PrismException
 		{
-			return new NewGoalFailStopTransformer.DTMC();
+			NewGoalFailStopTransformer<explicit.DTMC> transformer = new NewGoalFailStopTransformer.DTMC();
+			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 		}
 
 		public void clear()
@@ -291,7 +301,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 //				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
 //				bad.and(rStates);
 //			}
-			BitSet maybeUnsatisfiedStatesProb1E = computeProb1E(new Finally<>(productModel, maybeUnsatisfiedStates));
+			BitSet maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
 			maybeUnsatisfiedStatesProb1E.andNot(unsatisfiedStates);
 			return maybeUnsatisfiedStatesProb1E;
 		}
@@ -351,9 +361,11 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public NewGoalFailStopTransformer<explicit.MDP> getGoalFailStopTransformer()
+		public GoalFailStopTransformation<explicit.MDP> transformGoalFailStop(explicit.MDP model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
+				throws PrismException
 		{
-			return new NewGoalFailStopTransformer.MDP();
+			NewGoalFailStopTransformer<explicit.MDP> transformer = new NewGoalFailStopTransformer.MDP();
+			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 		}
 	}
 

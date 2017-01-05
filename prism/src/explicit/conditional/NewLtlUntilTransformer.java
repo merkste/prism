@@ -15,7 +15,6 @@ import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformatio
 import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.SimplePathProperty.Until;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -115,9 +114,11 @@ public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChe
 		Finally<M> objectivePath = new Finally<M>(productModel, acceptStates);
 
 		// FIXME ALG: reuse computation of conditionSatisfied?
-		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer = getFinallyUntilTransformer();
+		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
-		return finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		finallyUntilTransformer.clear();
+		return result;
 	}
 
 	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
@@ -192,10 +193,8 @@ public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChe
 			BitSet instantGoalStates = computeInstantGoalStates(product, acceptStates, objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates);
 
 			// transform goal-fail-stop
-			NewGoalFailStopTransformer<explicit.MDP> transformer = getGoalFailStopTransformer();
-
-			// transform goal-fail-stop
-			GoalFailStopTransformation<explicit.MDP> transformation = transformer.transformModel(productModel, new ProbabilisticRedistribution(), conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
+			ProbabilisticRedistribution objectiveSatisfied          = new ProbabilisticRedistribution();
+			GoalFailStopTransformation<explicit.MDP> transformation = transformGoalFailStop(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 			// transform expression
 			ExpressionLabel goal                        = new ExpressionLabel(transformation.getGoalLabel());
@@ -216,38 +215,9 @@ public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChe
 			return new Pair<>(transformation, transformedExpression);
 		}
 
-//		/**
-//		 * 1) search all accepting ECs and<br>
-//		 * 2) refine in {@code AccEC \ (Pmax=0(condition) | Pmin=1(condition))}.
-//		 */
-//		public GoalFailStopTransformation<explicit.MDP> transformOmega(LTLProduct<explicit.MDP> product, Reach<explicit.MDP> conditionPath, BitSet conditionFalsifiedStates, BitSet statesOfInterest)
-//				throws PrismException
-//		{
-//			explicit.MDP productModel = product.getProductModel();
-//			conditionPath.requireSameModel(productModel);
-//
-//			// compute accepting states  (ECs or REACH states)
-//			BitSet acceptStates                 = getLtlTransformer().findAcceptingStates(product);
-//			Finally<explicit.MDP> objectivePath = new Finally<>(productModel, acceptStates);
-//
-//			// compute redistribution for satisfied condition
-//			ProbabilisticRedistribution conditionSatisfied = redistributeProb1(conditionPath, objectivePath);
-//
-//			// compute redistribution for falsified objective
-//			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectivePath, conditionPath);
-//
-//			// compute states where objective and condition can be satisfied
-//			BitSet instantGoalStates = computeInstantGoalStates(product, acceptStates, objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates);
-//
-//			// transform goal-fail-stop
-//			NewGoalFailStopTransformer<explicit.MDP> transformer = getGoalFailStopTransformer();
-//			return transformer.transformModel(productModel, new ProbabilisticRedistribution(), conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, null, statesOfInterest);
-//		}
-
 		public BitSet computeInstantGoalStates(LTLProduct<explicit.MDP> product, BitSet objectiveAcceptStates, BitSet objectiveFalsifiedStates, Reach<explicit.MDP> conditionPath, BitSet conditionSatisfiedStates, BitSet conditionFalsifiedStates)
 				throws PrismException
 		{
-			// FIXME ALG: compare to symbolic approach
 			explicit.MDP productModel = product.getProductModel();
 			conditionPath.requireSameModel(productModel);
 
@@ -257,13 +227,14 @@ public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChe
 			BitSet falsifiedStates    = BitSetTools.union(objectiveFalsifiedStates, conditionFalsifiedStates);
 			BitSet notFalsifiedStates = BitSetTools.complement(productModel.getNumStates(), falsifiedStates);
 
-			// Does the condition, specify behavior in the limit?
+			// Does the condition specify behavior in the limit?
 			if (!conditionPath.isCoSafe()) {
 				// Find accepting ECs that do not already include a normalize state
-				BitSet remain     = BitSetTools.minus(objectiveAcceptStates, conditionSatisfiedStates, falsifiedStates);
-				instantGoalStates = getLtlTransformer().findAcceptingStates(product, remain);
+				BitSet remain       = BitSetTools.minus(objectiveAcceptStates, conditionSatisfiedStates, falsifiedStates);
+				BitSet acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
+				instantGoalStates.or(acceptStates);
 			}
-			return computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
+			return computeProb1E(productModel, false, notFalsifiedStates, instantGoalStates);
 		}
 
 		@Override

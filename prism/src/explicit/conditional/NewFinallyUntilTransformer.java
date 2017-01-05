@@ -13,7 +13,6 @@ import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformatio
 import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Globally;
 import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.SimplePathProperty.Until;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
@@ -104,8 +103,7 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 
 		// transform goal-fail-stop
 		M model                                      = objectivePath.getModel();
-		NewGoalFailStopTransformer<M> transformer    = getGoalFailStopTransformer();
-		GoalFailStopTransformation<M> transformation = transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
+		GoalFailStopTransformation<M> transformation = transformGoalFailStop(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 		// build expression 
 		ExpressionLabel goal                       = new ExpressionLabel(transformation.getGoalLabel());
@@ -189,7 +187,7 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 				instantGoalStates.or(neverFalsifiedStates);
 			}
 			// enlarge target set
-			return computeProb1E(new Until<>(model, notFalsifiedStates, instantGoalStates));
+			return computeProb1E(model, false, notFalsifiedStates, instantGoalStates);
 		}
 
 		@Override

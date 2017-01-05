@@ -76,31 +76,31 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	}
 
 	/* (non-Javadoc)
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(Object obj)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj)
 	{
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof SimplePathProperty)) {
-				return false;
-			}
-			@SuppressWarnings("rawtypes")
-			SimplePathProperty other = (SimplePathProperty) obj;
-			return model == other.model && negated == other.negated;
+		if (this == obj) {
+			return true;
 		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SimplePathProperty)) {
+			return false;
+		}
+		@SuppressWarnings("rawtypes")
+		SimplePathProperty other = (SimplePathProperty) obj;
+		return model == other.model && negated == other.negated;
+	}
 
 	protected BitSet allStates()
-		{
-			BitSet states = new BitSet(numStates);
-			states.set(0, numStates);
-			return states;
-		}
+	{
+		BitSet states = new BitSet(numStates);
+		states.set(0, numStates);
+		return states;
+	}
 
 	protected boolean isAllStates(BitSet states)
 	{
@@ -124,7 +124,6 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			throw new IllegalArgumentException("Both models must be the same");
 		}
 	}
-
 
 	protected BitSet restrict(BitSet states)
 	{
@@ -380,7 +379,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		{
 			return OPERATOR;
 		}
-	
+
 		public BitSet getRemain()
 		{
 			return remain;
@@ -499,7 +498,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		{
 			return remain;
 		}
-		
+
 		public BitSet getGoal()
 		{
 			return goal;
@@ -608,6 +607,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			this.stop   = restrict(stop);
 			this.remain = restrict(remain);
 		}
+
 		@Override
 		public TemporalOperator getOperator()
 		{
@@ -759,7 +759,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			// φ W ψ ≡ ¬((φ ∧ ¬ψ) U (¬φ ∧ ¬ψ))
 			BitSet untilRemain = BitSetTools.minus(remain, goal);
 			BitSet untilGoal   = BitSetTools.complement(numStates, remain);
-			goal.andNot(goal);
+			untilGoal.andNot(goal);
 			return new Until<>(model, ! negated, untilRemain, untilGoal);
 		}
 
