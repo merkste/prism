@@ -233,7 +233,8 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 
 	public static abstract class Reach<M extends Model> extends SimplePathProperty<M>
 	{
-		public Reach(M model, boolean negated) {
+		public Reach(M model, boolean negated)
+		{
 			super(model, negated);
 		}
 
@@ -243,6 +244,15 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 
 		@Override
 		public abstract Reach<M> lift(LTLProduct<M> product);
+
+		@Override
+		public abstract <OM extends Model> Reach<OM> copy(OM model);
+
+		@Override
+		public Reach<M> clone()
+		{
+			return (Reach<M>) super.clone();
+		};
 	}
 
 
