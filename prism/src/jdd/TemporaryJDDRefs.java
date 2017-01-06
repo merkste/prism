@@ -83,15 +83,35 @@ public class TemporaryJDDRefs implements AutoCloseable
 	}
 
 	/** Register a JDDNode reference */
-	public void register(JDDNode node) {
-		if (node == null) return;
-		activeRefs.add(node);
+	public JDDNode register(JDDNode node) {
+		if (node != null) {
+			activeRefs.add(node);
+		}
+		return node;
+	}
+
+	/** Register JDDNode references */
+	public JDDNode[] register(JDDNode ... nodes) {
+		for (JDDNode node : nodes) {
+			register(node);
+		}
+		return nodes;
 	}
 
 	/** Register a Clearable reference */
-	public void register(Clearable clearable) {
-		if (clearable == null) return;
-		activeClearables.add(clearable);
+	public Clearable register(Clearable clearable) {
+		if (clearable != null) {
+			activeClearables.add(clearable);
+		}
+		return clearable;
+	}
+
+	/** Register a Clearable reference */
+	public Clearable[] register(Clearable ... clearables) {
+		for (Clearable clearable: clearables) {
+			register(clearable);
+		}
+		return clearables;
 	}
 
 	/**
