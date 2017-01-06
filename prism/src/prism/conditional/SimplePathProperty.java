@@ -2,6 +2,7 @@ package prism.conditional;
 
 import java.util.Objects;
 
+import jdd.Clearable;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.ExpressionTemporal;
@@ -10,7 +11,7 @@ import prism.Model;
 
 
 
-public abstract class SimplePathProperty<M extends Model> implements Cloneable
+public abstract class SimplePathProperty<M extends Model> implements Clearable, Cloneable
 {
 	protected M       model;
 	protected boolean negated;
@@ -27,6 +28,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	/**
 	 * Deref all referenced state sets (JDD nodes). Do not clear the model.
 	 */
+	@Override
 	public abstract void clear();
 
 	public abstract TemporalOperator getOperator();

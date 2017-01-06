@@ -19,6 +19,7 @@ import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceReachDD;
 import acceptance.AcceptanceType;
 import automata.DA;
+import jdd.Clearable;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
@@ -178,7 +179,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 
 
 
-	public static class LabeledDA implements Cloneable
+	public static class LabeledDA implements Clearable, Cloneable
 	{
 		final protected DA<BitSet, ? extends AcceptanceOmega> automaton;
 		protected Vector<JDDNode> labels;
@@ -189,6 +190,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 			this.labels = labels;
 		}
 
+		@Override
 		public void clear()
 		{
 			for (JDDNode label : labels) {
@@ -230,12 +232,8 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 
 		public LabeledDA liftToProduct(LTLProduct<? extends Model> product)
 		{
-//			JDDNode reach = product.getProductModel().getReach();
 			Vector<JDDNode> lifted = new Vector<JDDNode>(labels.size());
 			for (JDDNode label : labels) {
-				// Limit label to reachable states in product.
-//				lifted.add(JDD.And(label.copy(), reach.copy());
-				// Just reference the labels.
 				lifted.add(label.copy());
 			}
 			return new LabeledDA(automaton, lifted);
