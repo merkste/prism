@@ -43,7 +43,7 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		}
 
 		// support := state s -> 1 if originProbs>0, 0 if originProbs=0
-		JDDNode support = JDD.GreaterThan(originProbs.copy(), 0.0);
+		JDDNode support = JDD.GreaterThan(originProbs, 0.0);
 
 		// targetProbsColumn := state s' -> targetProbs
 		JDDNode targetProbsColumn = JDD.PermuteVariables(targetProbs, originalModel.getAllDDRowVars(), originalModel.getAllDDColVars()); 

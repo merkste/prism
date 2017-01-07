@@ -151,7 +151,7 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 	public JDDNode findAcceptingStates(final M productModel, final AcceptanceReachDD acceptance, JDDNode remain)
 			throws PrismException
 	{
-		JDDNode acceptingStates = acceptance.getGoalStates();
+		JDDNode acceptingStates = JDD.And(acceptance.getGoalStates(), productModel.getReach().copy());
 		// if remain is null we allow all reachable states
 		if (remain == null || JDD.IsContainedIn(acceptingStates, remain)) {
 			return acceptingStates;

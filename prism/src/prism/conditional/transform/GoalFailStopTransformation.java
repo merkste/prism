@@ -140,12 +140,12 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 
 		public JDDNode getStates()
 		{
-			return states.copy();
+			return states;
 		}
 
 		public JDDNode getProbabilities()
 		{
-			return probabilities.copy();
+			return probabilities;
 		}
 
 		public ProbabilisticRedistribution swap(Model model)
@@ -670,37 +670,37 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			@Override
 			public JDDNode getGoalFailStates()
 			{
-				return goalFail.getStates();
+				return goalFail.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getGoalFailProbs()
 			{
-				return goalFail.getProbabilities();
+				return goalFail.getProbabilities().copy();
 			}
 
 			@Override
 			public JDDNode getGoalStopStates()
 			{
-				return goalStop.getStates();
+				return goalStop.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getGoalStopProbs()
 			{
-				return goalStop.getProbabilities();
+				return goalStop.getProbabilities().copy();
 			}
 
 			@Override
 			public JDDNode getStopFailStates()
 			{
-				return stopFail.getStates();
+				return stopFail.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getStopFailProbs()
 			{
-				return stopFail.getProbabilities();
+				return stopFail.getProbabilities().copy();
 			}
 
 			@Override
@@ -831,37 +831,37 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			@Override
 			public JDDNode getGoalFailStates()
 			{
-				return goalFail.getStates();
+				return goalFail.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getGoalFailProbs()
 			{
-				return goalFail.getProbabilities();
+				return goalFail.getProbabilities().copy();
 			}
 
 			@Override
 			public JDDNode getGoalStopStates()
 			{
-				return goalStop.getStates();
+				return goalStop.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getGoalStopProbs()
 			{
-				return goalStop.getProbabilities();
+				return goalStop.getProbabilities().copy();
 			}
 
 			@Override
 			public JDDNode getStopFailStates()
 			{
-				return stopFail.getStates();
+				return stopFail.getStates().copy();
 			}
 
 			@Override
 			public JDDNode getStopFailProbs()
 			{
-				return stopFail.getProbabilities();
+				return stopFail.getProbabilities().copy();
 			}
 
 			@Override

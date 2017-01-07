@@ -22,7 +22,6 @@ import prism.StateModelChecker;
 import prism.conditional.SimplePathProperty.Globally;
 import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.transform.GoalFailStopTransformation;
-import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
 
 
@@ -101,12 +100,11 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectivePath, conditionPath);
 
 		// compute states where objective and condition can be satisfied
-		JDDNode instantGoalStates = computeInstantGoalStates(objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates.copy());
+		JDDNode instantGoalStates = computeInstantGoalStates(objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates);
 
 		// transform goal-fail-stop
 		M model                                      = objectivePath.getModel();
-		GoalFailStopOperator<M> operator             = configureOperator(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest);
-		GoalFailStopTransformation<M> transformation = new GoalFailStopTransformation<>(model, operator, badStates);
+		GoalFailStopTransformation<M> transformation = transformGoalFailStop(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 		// build expression 
 		ExpressionLabel goal                       = new ExpressionLabel(transformation.getGoalLabel());
@@ -132,9 +130,6 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 	ProbabilisticRedistribution redistributeProb0Objective(Reach<M> objectivePath, Reach<M> conditionPath)
 			throws PrismException;
 
-	/**
-	 * [ REFS: <i>result</i>, DEREFS: <i>objectiveSatisfiedStates, objectiveFalsifiedStates, conditionSatisfiedStates, conditionFalsifiedStates</i> ]
-	 */
 	JDDNode computeInstantGoalStates(Reach<M> objectivePath, JDDNode objectiveSatisfiedStates, JDDNode objectiveFalsifiedStates, Reach<M> conditionPath, JDDNode conditionSatisfiedStates, JDDNode conditionFalsifiedStates)
 			throws PrismException;
 
@@ -153,8 +148,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 		{
 			objectivePath.requireSameModel(conditionPath);
 
-			JDD.Deref(objectiveFalsifiedStates, conditionFalsifiedStates);
-			return JDD.And(objectiveSatisfiedStates, conditionSatisfiedStates);
+			return JDD.And(objectiveSatisfiedStates.copy(), conditionSatisfiedStates.copy());
 		}
 
 		@Override
@@ -182,10 +176,10 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 			objectivePath.requireSameModel(conditionPath);
 			NondetModel model = objectivePath.getModel();
 
-			JDDNode instantGoalStates = JDD.And(objectiveSatisfiedStates, conditionSatisfiedStates);
+			JDDNode instantGoalStates = JDD.And(objectiveSatisfiedStates.copy(), conditionSatisfiedStates.copy());
 
 			// exclude objective/condition falsified states
-			JDDNode falsifiedStates    = JDD.Or(objectiveFalsifiedStates, conditionFalsifiedStates);
+			JDDNode falsifiedStates    = JDD.Or(objectiveFalsifiedStates.copy(), conditionFalsifiedStates.copy());
 			JDDNode notFalsifiedStates = JDD.And(model.getReach().copy(), JDD.Not(falsifiedStates));
 
 			// Do both, the objective and the condition, specify behavior in the limit?

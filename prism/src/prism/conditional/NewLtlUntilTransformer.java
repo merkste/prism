@@ -24,7 +24,6 @@ import prism.Model;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.transform.GoalFailStopTransformation;
-import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 
@@ -117,20 +116,14 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 		Finally<M> objectivePath = new Finally<M>(productModel, acceptStates);
 
 		// FIXME ALG: reuse computation of conditionSatisfied?
-		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer = getFinallyUntilTransformer();
+		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
-		return finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
+		finallyUntilTransformer.clear();
+		return result;
 	}
 
 	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
-
-	default GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
-			throws PrismException
-	{
-		return configureOperator(model, new ProbabilisticRedistribution(), goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest);
-	}
-
-
 
 	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewLtlUntilTransformer<ProbModel, ProbModelChecker>
 	{
@@ -182,8 +175,23 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			// compute badStates
 			JDDNode badStates = computeBadStates(conditionPath, conditionFalsifiedStates);
 
-			GoalFailStopOperator<NondetModel> operator             = transformOmega(product, conditionPath, conditionFalsifiedStates, statesOfInterest);
-			GoalFailStopTransformation<NondetModel> transformation = new GoalFailStopTransformation<>(productModel, operator, badStates);
+			// compute accepting states  (ECs or REACH states)
+			JDDNode acceptStates               = getLtlTransformer().findAcceptingStates(product);
+			Finally<NondetModel> objectivePath = new Finally<>(productModel, acceptStates.copy());
+
+			// compute redistribution for satisfied condition
+			ProbabilisticRedistribution conditionSatisfied = redistributeProb1(conditionPath, objectivePath);
+
+			// compute redistribution for falsified objective
+			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectivePath, conditionPath);
+
+			// compute states where objective and condition can be satisfied
+			JDDNode instantGoalStates = computeInstantGoalStates(product, acceptStates, objectiveFalsified.getStates(), conditionPath, conditionSatisfied.getStates(), conditionFalsifiedStates);
+			JDD.Deref(acceptStates);
+
+			// transform goal-fail-stop
+			ProbabilisticRedistribution objectiveSatisfied         = new ProbabilisticRedistribution();
+			GoalFailStopTransformation<NondetModel> transformation = transformGoalFailStop(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 			// transform expression
 			ExpressionLabel goal                        = new ExpressionLabel(transformation.getGoalLabel());
@@ -201,92 +209,34 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			}
 			ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
 
+			objectivePath.clear();
 			conditionPath.clear();
 			return new Pair<>(transformation, transformedExpression);
 		}
 
-//		/**
-//		 * 1) Search accepting ECs in {@code succ*(Pmin=1(condition))} and<br>
-//		 * 2) Search accepting ECs in {@code S \ (Pmax=0(condition) | Pmin=1(condition))}.
-//		 */
-//		public GoalFailStopOperator<NondetModel> transformOmegaV1(LTLProduct<NondetModel> product, Until conditionPath, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
-//				throws PrismException
-//		{
-//getLog().println("tranformOmega");
-//			NondetModel productModel = product.getProductModel();
-//
-//			// compute redistribution for satisfied condition
-//			// compute normal-form states for condition (including all satisfying MECs)
-//			JDDNode conditionSatisfiedStates = computeProb1A(productModel, conditionPath);
-//			JDDNode conditionSatisfiedProbabilities;
-//			if (conditionSatisfiedStates.equals(JDD.ZERO)) {
-//				conditionSatisfiedProbabilities = JDD.Constant(0);
-//			} else {
-//				// compute accepting states in succ*(conditionSatisfied) (ECs or REACH states)
-//				JDDNode succConditionSatisfied   = computeSuccStar(productModel, conditionSatisfiedStates);
-//				JDDNode acceptSuccCondition      = getLtlTransformer().findAcceptingStates(product, succConditionSatisfied);
-//				JDD.Deref(succConditionSatisfied);
-//				// compute probabilities for objective
-//				Finally objectivePath            = new Finally(productModel, acceptSuccCondition);
-//				conditionSatisfiedProbabilities  = computeUntilMaxProbs(productModel, objectivePath);
-//				objectivePath.clear();
-//			}
-//			ProbabilisticRedistribution conditionSatisfied = new ProbabilisticRedistribution(conditionSatisfiedStates, conditionSatisfiedProbabilities);
-//
-//			// compute accepting ECs to be normalized to goal
-//			JDDNode instantGoalStates;
-//			if (conditionPath.isNegated()) {
-//				// ECs might satisfy objective and condition
-//				// -> exclude all states that falsify or satisfy the condition for sure
-//				JDDNode restrict  = JDD.Not(JDD.Or(conditionFalsifiedStates.copy(), conditionSatisfied.getStates()));
-//				restrict          = JDD.And(productModel.getReach().copy(), restrict);
-//				instantGoalStates = findAcceptingStatesMax(product, restrict, true);
-//			} else {
-//				// ECs do not matter, since they are visited after the (non-negated) condition has already been satisfied
-//				instantGoalStates = JDD.Constant(0);
-//			}
-//
-//			// transform goal-fail-stop
-//			return configureOperator(productModel, conditionSatisfied, instantGoalStates, conditionFalsifiedStates, statesOfInterest);
-//		}
-
-		/**
-		 * 1) search all accepting ECs and<br>
-		 * 2) refine in {@code AccEC \ (Pmax=0(condition) | Pmin=1(condition))}.
-		 */
-		public GoalFailStopOperator<NondetModel> transformOmega(LTLProduct<NondetModel> product, Reach<NondetModel> conditionPath, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
+		public JDDNode computeInstantGoalStates(LTLProduct<NondetModel> product, JDDNode objectiveAcceptStates, JDDNode objectiveFalsifiedStates, Reach<NondetModel> conditionPath, JDDNode conditionSatisfiedStates, JDDNode conditionFalsifiedStates)
 				throws PrismException
 		{
 			NondetModel productModel = product.getProductModel();
+			conditionPath.requireSameModel(productModel);
 
-			// compute accepting states  (ECs or REACH states)
-			JDDNode acceptStates               = getLtlTransformer().findAcceptingStates(product);
-			Finally<NondetModel> objectivePath = new Finally<>(productModel, acceptStates.copy());
+			JDDNode instantGoalStates = JDD.And(objectiveAcceptStates.copy(), conditionSatisfiedStates.copy());
 
-			// compute redistribution for satisfied condition
-			ProbabilisticRedistribution conditionSatisfied = redistributeProb1(conditionPath, objectivePath);
+			// exclude objective/condition falsified states
+			JDDNode falsifiedStates    = JDD.Or(objectiveFalsifiedStates.copy(), conditionFalsifiedStates.copy());
+			JDDNode notFalsifiedStates = JDD.And(allStates(productModel), JDD.Not(falsifiedStates.copy()));
 
-			// compute redistribution for falsified objective
-			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectivePath, conditionPath);
-			objectivePath.clear();
-
-			// compute accepting ECs to be normalized to goal
-			JDDNode instantGoalStates;
-			if (conditionPath.isNegated()) {
-				// ECs might satisfy objective and condition
-				// -> exclude all states that falsify or satisfy the condition for sure
-				JDDNode restrict  = JDD.Not(JDD.Or(conditionFalsifiedStates.copy(), conditionSatisfied.getStates()));
-				// -> refine only accepting ECs
-				restrict          = JDD.And(acceptStates, restrict);
-				instantGoalStates = findAcceptingStatesMax(product, restrict);
-			} else {
-				// ECs do not matter, since they are visited after the (non-negated) condition has already been satisfied
-				instantGoalStates = JDD.Constant(0);
-				JDD.Deref(acceptStates);
+			// Does the condition specify behavior in the limit?
+			if (!conditionPath.isCoSafe()) {
+				// Find accepting ECs that do not already include a normalize state
+				JDDNode remain       = JDD.And(objectiveAcceptStates.copy(), JDD.Not(JDD.Or(conditionSatisfiedStates.copy(), falsifiedStates.copy())));
+				JDDNode acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
+				instantGoalStates    = JDD.Or(instantGoalStates, acceptStates);
+				JDD.Deref(remain);
 			}
-
-			// transform goal-fail-stop
-			return configureOperator(productModel, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest);
+			JDDNode result = computeProb1E(productModel, false, notFalsifiedStates, instantGoalStates);
+			JDD.Deref(falsifiedStates, notFalsifiedStates, instantGoalStates);
+			return result;
 		}
 
 		@Override
@@ -301,7 +251,6 @@ public interface NewLtlUntilTransformer<M extends ProbModel, MC extends StateMod
 			objectivePath.requireSameModel(conditionPath);
 
 			// Do we have to reset once a state violates the objective?
-			// Is objective path free of invariants?
 			if (objectivePath.hasToRemain() || settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
 				return redistributeProb0(objectivePath, conditionPath);
 			}

@@ -6,6 +6,7 @@ import java.util.Map;
 import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
 import explicit.conditional.transformer.UndefinedTransformationException;
+import jdd.Clearable;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
@@ -24,13 +25,14 @@ import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
+import prism.conditional.transform.GoalFailStopTransformation;
 import prism.conditional.transform.NewMCResetTransformation;
 import prism.conditional.transform.NewMDPResetTransformation;
 import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>
+public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>, Clearable
 {
 	@Override
 	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
@@ -92,8 +94,16 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 	ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 			throws PrismException;
 
-	GoalFailStopOperator<M> configureOperator(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
+	GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
 			throws PrismException;
+
+	// FIXME ALG: Leak. Ensure clear is called after transformation even if an exception occurs
+	// FIXME ALG: Check Leakage in explicit implementation
+	@Override
+	default void clear()
+	{
+		// No-Op except caching for mc results is implemented
+	}
 
 
 
@@ -184,12 +194,14 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public GoalFailStopOperator<ProbModel> configureOperator(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
+		public GoalFailStopTransformation<ProbModel> transformGoalFailStop(ProbModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new GoalFailStopOperator.DTMC(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, getLog());
+			GoalFailStopOperator<ProbModel> operator = new GoalFailStopOperator.DTMC(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
+			return new GoalFailStopTransformation<>(model, operator, badStates);
 		}
 
+		@Override
 		public void clear()
 		{
 			cache.keySet().forEach(SimplePathProperty::clear);
@@ -238,26 +250,6 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			return conditionFalsifiedStates;
 		}
 
-		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product)
-				throws PrismException
-		{
-			return findAcceptingStatesMax(product, product.getProductModel().getReach().copy());
-		}
-
-		/**
-		 * [ REFS: <i>result</i>, DEREFS: <i>remain</i> ]
-		 */
-		public JDDNode findAcceptingStatesMax(LTLProduct<NondetModel> product, JDDNode remain)
-				throws PrismException
-		{
-			JDDNode acceptingStates   = getLtlTransformer().findAcceptingStates(product, remain);
-			Until<NondetModel> accept = new Until<>(product.getProductModel(), remain, acceptingStates);
-			// States in remain from which some scheduler can enforce acceptance to maximize probability
-			JDDNode acceptingStatesMax = computeProb1E(accept);
-			accept.clear();
-			return acceptingStatesMax;
-		}
-
 		@Override
 		public ModelTransformation<NondetModel, ? extends NondetModel> transformReset(NondetModel model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
@@ -273,6 +265,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 			if (maybeFalsified.equals(JDD.ZERO)) {
 				return maybeFalsified;
 			}
+			// FIXME ALG: check if we may alter the set if we use caching
 			return JDD.And(maybeFalsified, JDD.Not(unsatisfiedStates.copy()));
 		}
 
@@ -349,10 +342,11 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public GoalFailStopOperator<NondetModel> configureOperator(NondetModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest)
+		public GoalFailStopTransformation<NondetModel> transformGoalFailStop(NondetModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new GoalFailStopOperator.MDP(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, getLog());
+			GoalFailStopOperator<NondetModel> operator = new GoalFailStopOperator.MDP(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
+			return new GoalFailStopTransformation<>(model, operator, badStates);
 		}
 	}
 
