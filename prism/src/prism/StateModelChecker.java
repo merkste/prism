@@ -1109,10 +1109,20 @@ public class StateModelChecker extends PrismComponent implements ModelChecker
 			currentFilter = null;
 		}
 
+		// Determine the states of interest for the filter states
+		JDDNode filterStatesOfInterest;
+		if (op == FilterOperator.FIRST) {
+			// relies on the fact that JDD.RestrictToFirst and StateValues.firstFromBDD
+			// (used below in the handling of the result) select the same state from ddFilter
+			filterStatesOfInterest = JDD.RestrictToFirst(ddFilter.copy(), allDDRowVars);
+		} else {
+			filterStatesOfInterest = ddFilter.copy();
+		}
+
 		StateValues vals = null;
 		try {
 			// Check operand recursively
-			vals = checkExpression(expr.getOperand(), ddFilter.copy());
+			vals = checkExpression(expr.getOperand(), filterStatesOfInterest);
 		} catch (PrismException e) {
 			JDD.Deref(ddFilter);
 			JDD.Deref(statesOfInterest);
