@@ -94,11 +94,12 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 	{
 		NewConditionalTransformer<DTMC, DTMCModelChecker> transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-			final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
 				throw new PrismException("There is no TACAS'14 prototype for the reset method in MCs");
-			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
+			}
+			final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
+			final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
+			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
 				for (MdpTransformerType type : types) {
 					switch (type) {
 					case FinallyFinally:
