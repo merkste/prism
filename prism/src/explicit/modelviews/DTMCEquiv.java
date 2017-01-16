@@ -255,7 +255,7 @@ public class DTMCEquiv extends DTMCView
 		if (! removeNonRepresentatives) {
 			return quotient;
 		}
-		BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
+		BitSet representatives = identify.getRepresentatives(model.getNumStates());
 		BasicModelTransformation<DTMC, DTMCRestricted> restriction = DTMCRestricted.transform(quotient.getTransformedModel(), representatives, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		return restriction.compose(quotient);
 	}

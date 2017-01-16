@@ -218,7 +218,7 @@ public class DTMCAlteredDistributions extends DTMCView
 	public static DTMC identifyStates(final DTMC model, final Iterable<BitSet> equivalenceClasses)
 	{
 		final EquivalenceRelationInteger identify = new EquivalenceRelationInteger(equivalenceClasses);
-		final BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
+		final BitSet representatives = identify.getRepresentatives(model.getNumStates());
 
 		// 1. attach all transitions of an equivalence class to its representative
 		final IntFunction<Iterator<Entry<Integer, Double>>> reattach = new IntFunction<Iterator<Entry<Integer, Double>>>()

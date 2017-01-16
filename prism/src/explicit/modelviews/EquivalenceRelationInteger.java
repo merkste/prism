@@ -3,9 +3,12 @@ package explicit.modelviews;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.IntPredicate;
 
+import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.IterableBitSet;
+import common.iterable.IterableInt;
 
 public class EquivalenceRelationInteger implements PairPredicateInt
 {
@@ -44,12 +47,6 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 		return equivalenceClass != null && equivalenceClass.get(j);
 	}
 
-	public int getRepresentative(final int i)
-	{
-		final BitSet equivalenceClass = classes.get(i);
-		return equivalenceClass == null ? i : equivalenceClass.nextSetBit(0);
-	}
-
 	public BitSet getEquivalenceClass(final int i)
 	{
 		BitSet equivalenceClass = getEquivalenceClassOrNull(i);
@@ -73,6 +70,22 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 	public BitSet getNonRepresentatives()
 	{
 		return nonRepresentatives;
+	}
+
+	public int getRepresentative(final int i)
+	{
+		final BitSet equivalenceClass = classes.get(i);
+		return equivalenceClass == null ? i : equivalenceClass.nextSetBit(0);
+	}
+
+	public BitSet getRepresentatives(int upperBound)
+	{
+		return BitSetTools.complement(upperBound, nonRepresentatives);
+	}
+
+	public IterableInt getRepresentatives(IterableInt integers)
+	{
+		return integers.filter((IntPredicate) this::isRepresentative);
 	}
 
 	public boolean isRepresentative(final int i)

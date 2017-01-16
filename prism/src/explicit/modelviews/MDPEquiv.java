@@ -13,9 +13,9 @@ import java.util.function.ToIntFunction;
 import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.FunctionalIterator;
+import common.iterable.Interval;
 import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
-import common.iterable.IterableStateSet;
 import common.iterable.collections.UnionSet;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;
@@ -51,7 +51,7 @@ public class MDPEquiv extends MDPView
 		final int numStates = model.getNumStates();
 		this.numChoices = new int[numStates];
 		this.originalChoices = new StateChoicePair[numStates][];
-		for (OfInt representatives = new IterableStateSet(identify.nonRepresentatives, numStates, COMPLEMENT).iterator(); representatives.hasNext();) {
+		for (OfInt representatives = identify.getRepresentatives(new Interval(numStates)).iterator(); representatives.hasNext();) {
 			final int representative = representatives.nextInt();
 			BitSet equivalenceClass = this.identify.getEquivalenceClassOrNull(representative);
 			if (equivalenceClass == null || equivalenceClass.cardinality() == 1) {
@@ -256,7 +256,7 @@ public class MDPEquiv extends MDPView
 
 	public StateChoicePair mapToOriginalModel(final int state, final int choice)
 	{
-		StateChoicePair original = mapToOriginalModel(state, choice);
+		StateChoicePair original = mapToOriginalModelOrNull(state, choice);
 		return (original == null) ? new StateChoicePair(state, choice) : original;
 	}
 
@@ -302,7 +302,7 @@ public class MDPEquiv extends MDPView
 		if (! removeNonRepresentatives) {
 			return quotient;
 		}
-		BitSet representatives = BitSetTools.complement(model.getNumStates(), identify.getNonRepresentatives());
+		BitSet representatives = identify.getRepresentatives(model.getNumStates());
 		BasicModelTransformation<MDP, MDPRestricted> restriction = MDPRestricted.transform(quotient.getTransformedModel(), representatives, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		return restriction.compose(quotient);
 	}
