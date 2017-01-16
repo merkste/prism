@@ -182,21 +182,21 @@ public class MDPEquiv extends MDPView
 	@Override
 	public Object getAction(final int state, final int choice)
 	{
-		final StateChoicePair originals = mapToOriginalModel(state, choice);
+		final StateChoicePair originals = mapToOriginalModelOrNull(state, choice);
 		return (originals == null) ? model.getAction(state, choice) : model.getAction(originals.state, originals.choice);
 	}
 
 	@Override
 	public int getNumTransitions(final int state, final int choice)
 	{
-		final StateChoicePair originals = mapToOriginalModel(state, choice);
+		final StateChoicePair originals = mapToOriginalModelOrNull(state, choice);
 		return (originals == null) ? model.getNumTransitions(state, choice) : model.getNumTransitions(originals.state, originals.choice);
 	}
 
 	@Override
 	public Iterator<Integer> getSuccessorsIterator(final int state, final int choice)
 	{
-		StateChoicePair originals = mapToOriginalModel(state, choice);
+		StateChoicePair originals = mapToOriginalModelOrNull(state, choice);
 		final int originalState, originalChoice;
 		if (originals == null) {
 			originalState = state;
@@ -219,7 +219,7 @@ public class MDPEquiv extends MDPView
 	@Override
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(final int state, final int choice)
 	{
-		StateChoicePair originals = mapToOriginalModel(state, choice);
+		StateChoicePair originals = mapToOriginalModelOrNull(state, choice);
 		final int originalState, originalChoice;
 		if (originals == null) {
 			originalState = state;
@@ -254,44 +254,13 @@ public class MDPEquiv extends MDPView
 		hasTransitionToNonRepresentative = new BitSet();
 	}
 
-
-
-	//--- instance methods ---
-
-	public Entry<Integer, Double> mapToRepresentative(final Entry<Integer, Double> transition)
-	{
-		int state          = transition.getKey();
-		int representative = identify.getRepresentative(state);
-		if (state == representative) {
-			return transition;
-		}
-		Double probability = transition.getValue();
-		return new SimpleImmutableEntry<>(representative, probability);
-	}
-
-	public static class StateChoicePair
-	{
-		final int state;
-		final int choice;
-
-		protected StateChoicePair(final int state, final int choice)
-		{
-			this.state = state;
-			this.choice = choice;
-		}
-
-		public int getState()
-		{
-			return state;
-		}
-
-		public int getChoice()
-		{
-			return choice;
-		}
-	}
-
 	public StateChoicePair mapToOriginalModel(final int state, final int choice)
+	{
+		StateChoicePair original = mapToOriginalModel(state, choice);
+		return (original == null) ? new StateChoicePair(state, choice) : original;
+	}
+
+	public StateChoicePair mapToOriginalModelOrNull(final int state, final int choice)
 	{
 		if (! identify.isRepresentative(state)) {
 			throw new IndexOutOfBoundsException("choice index out of bounds");
@@ -301,6 +270,21 @@ public class MDPEquiv extends MDPView
 			return null;
 		}
 		return stateChoicePairs[choice];
+	}
+
+
+
+	//--- instance methods ---
+	
+	public Entry<Integer, Double> mapToRepresentative(final Entry<Integer, Double> transition)
+	{
+		int state          = transition.getKey();
+		int representative = identify.getRepresentative(state);
+		if (state == representative) {
+			return transition;
+		}
+		Double probability = transition.getValue();
+		return new SimpleImmutableEntry<>(representative, probability);
 	}
 
 
@@ -363,5 +347,29 @@ public class MDPEquiv extends MDPView
 		System.out.println("identify = " + equiv);
 		equiv.findDeadlocks(true);
 		System.out.println("fixed    = " + equiv);
+	}
+
+
+
+	public static class StateChoicePair
+	{
+		final int state;
+		final int choice;
+	
+		protected StateChoicePair(final int state, final int choice)
+		{
+			this.state = state;
+			this.choice = choice;
+		}
+	
+		public int getState()
+		{
+			return state;
+		}
+	
+		public int getChoice()
+		{
+			return choice;
+		}
 	}
 }
