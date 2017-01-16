@@ -89,8 +89,13 @@ public class BitSetTools
 
 	public static BitSet complement(final int toIndex, final BitSet indices)
 	{
+		return complement(0, toIndex, indices);
+	}
+
+	public static BitSet complement(final int fromIndex, final int toIndex, final BitSet indices)
+	{
 		final BitSet complement = (BitSet) indices.clone();
-		complement.flip(0, toIndex);
+		complement.flip(fromIndex, toIndex);
 		return complement;
 	}
 
