@@ -684,7 +684,7 @@ public class MDPModelChecker extends ProbModelChecker
 			BitSet R = (BitSet) target.clone();
 
 			while (!R.isEmpty()) {
-				int t = R.nextSetBit(0);
+				int t = R.previousSetBit(R.length());
 				R.clear(t);
 
 				for (int s : pre.getPre(t)) {
