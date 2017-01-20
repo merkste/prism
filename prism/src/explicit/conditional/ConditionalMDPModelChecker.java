@@ -16,6 +16,7 @@ import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
+import explicit.MDPSimple;
 import explicit.MDPSparse;
 import explicit.MinMax;
 import explicit.ModelExpressionTransformation;
@@ -115,11 +116,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
 		MDP transformedModel = transformation.getTransformedModel();
-		if (isVirtualModel(transformedModel)) {
+		if (isVirtualModel(transformedModel)  || transformedModel instanceof MDPSimple) {
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
-				mainLog.println("Using virtual model");
+				mainLog.println("Using simple/virtual model");
 			} else {
-				mainLog.println("\nConverting virtual model to " + MDPSparse.class.getSimpleName());
+				mainLog.println("\nConverting simple/virtual model to " + MDPSparse.class.getSimpleName());
 				long buildTime                   = System.currentTimeMillis();
 				MDPSparse transformedModelSparse = new MDPSparse(transformedModel);
 				buildTime = System.currentTimeMillis() - buildTime;

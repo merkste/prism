@@ -11,6 +11,7 @@ import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
+import explicit.DTMCSimple;
 import explicit.DTMCSparse;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
@@ -60,16 +61,16 @@ public class ConditionalDTMCModelChecker extends ConditionalModelChecker<DTMC>
 		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
 
 		DTMC transformedModel = transformation.getTransformedModel();
-		if (isVirtualModel(transformedModel)) {
+		if (isVirtualModel(transformedModel) || transformedModel instanceof DTMCSimple) {
 			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
-				mainLog.println("Using virtual model");
+				mainLog.println("Using simple/virtual model");
 			} else {
-				mainLog.println("\nConverting virtual model to " + DTMCSparse.class.getSimpleName());
+				mainLog.println("\nConverting simple/virtual model to " + DTMCSparse.class.getSimpleName());
 				long buildTime = System.currentTimeMillis();
 				DTMCSparse transformedModelSparse = new DTMCSparse(transformedModel);
 				buildTime = System.currentTimeMillis() - buildTime;
 				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-				// build in transformation
+				// build transformation
 				BasicModelTransformation<DTMC, DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
 				sparseTransformation = sparseTransformation.compose(transformation);
 				// attach transformed expression
