@@ -1736,7 +1736,7 @@ public class PrismSettings implements Observer
 		else if (sw.equals("scaleltlminimize")) {
 			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
 		}
-		else if (sw.equals("resetobjminimize")) {
+		else if (sw.equals("resetmdpminimize")) {
 			set(CONDITIONAL_RESET_MDP_MINIMIZE, true);
 		}
 		else if (sw.equals("patternsscale")) {
