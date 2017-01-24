@@ -8,6 +8,7 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 import explicit.ModelCheckerResult;
+import explicit.PredecessorRelation;
 import explicit.conditional.ExpressionInspector;
 import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
 import explicit.conditional.transformer.ResetTransformer;
@@ -54,8 +55,9 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		final BitSet conditionStates = mc.checkExpression(model, conditionGoal, null).getBitSet();
 
 		// check whether the condition is satisfiable in the state of interest
+		final PredecessorRelation pre  = model.getPredecessorRelation(this, true);
+		final BitSet noPathToCondition = mc.prob0(model, null, conditionStates, false, null, pre);
 		final int resetState = statesOfInterest.nextSetBit(0);
-		final BitSet noPathToCondition = mc.prob0(model, null, conditionStates, false, null);
 		if (noPathToCondition.get(resetState)) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
@@ -68,7 +70,7 @@ public class MDPFinallyTransformer extends MDPConditionalTransformer
 		// compute B aka "bad states" == {s | Pmin=0(<> (E or C))}
 		BitSet targetStates = (BitSet) objectiveGoalStates.clone();
 		targetStates.or(conditionStates);
-		BitSet badStates = mc.prob0(model, null, targetStates, true, null);
+		BitSet badStates = mc.prob0(model, null, targetStates, true, null, pre);
 
 		// compute Pmax(<>E | C)
 		ModelCheckerResult objectiveMaxResult = mc.computeReachProbs(model, objectiveGoalStates, false);

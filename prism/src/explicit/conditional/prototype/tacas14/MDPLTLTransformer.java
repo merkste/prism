@@ -18,6 +18,7 @@ import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;
 import explicit.ModelCheckerResult;
+import explicit.PredecessorRelation;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.conditional.prototype.ConditionalReachabilitiyTransformation;
 import explicit.conditional.transformer.LTLProductTransformer;
@@ -70,7 +71,8 @@ public class MDPLTLTransformer extends MDPConditionalTransformer
 
 		// check whether the condition is satisfiable in the state of interest
 		assert conditionModel.getNumInitialStates() == 1 : "expected one and only one initial state";
-		final BitSet noPathToCondition = getModelChecker(conditionModel).prob0(conditionModel, null, conditionStates, false, null);
+		final PredecessorRelation pre  = conditionModel.getPredecessorRelation(this, true);
+		final BitSet noPathToCondition = getModelChecker(conditionModel).prob0(conditionModel, null, conditionStates, false, null, pre);
 		if (noPathToCondition.get(conditionModel.getFirstInitialState())) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
