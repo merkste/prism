@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableArray;
 
 
@@ -41,10 +42,13 @@ public class UnionSet<T> extends AbstractSet<T>
 		return set1.contains(element) || set2.contains(element);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Iterator<T> iterator()
 	{
-		return stream().iterator();
+		FunctionalIterator<T> iterable1 = FunctionalIterator.extend(set1);
+		FunctionalIterator<T> iterable2 = FunctionalIterator.extend(set2).filter(notInSet1);
+		return iterable1.chain(iterable2);
 	}
 
 	@Override
@@ -59,7 +63,9 @@ public class UnionSet<T> extends AbstractSet<T>
 	public int size()
 	{
 		if (size < 0) {
-			size = Math.toIntExact(stream().count());
+			int size1 = set1.size();
+			int size2 = FunctionalIterator.extend(set2).filter(notInSet1).count();
+			size = size1 + size2;
 		}
 		return size;
 	}

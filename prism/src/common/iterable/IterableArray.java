@@ -1,6 +1,8 @@
 package common.iterable;
 
-import java.util.Arrays;
+import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.iterable.FunctionalPrimitiveIterable.IterableLong;
 
 public abstract class IterableArray<T> implements FunctionalIterable<T>
 {
@@ -9,6 +11,9 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 
 	public IterableArray(int fromIndex, int toIndex)
 	{
+		if (fromIndex < 0) {
+			throw new IllegalArgumentException("non-negative fromIndex expected, got: " + fromIndex);
+		}
 		this.fromIndex = fromIndex;
 		this.toIndex = toIndex;
 	}
@@ -17,6 +22,8 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 	{
 		return Math.max(0, toIndex - fromIndex);
 	}
+
+
 
 	public static class Of<T> extends IterableArray<T>
 	{
@@ -38,9 +45,11 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 		@Override
 		public FunctionalIterator<T> iterator()
 		{
-			return FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
+			return new ArrayIterator.Of<>(elements, fromIndex, toIndex);
 		}
 	}
+
+
 
 	public static class OfInt extends IterableArray<Integer> implements IterableInt
 	{
@@ -60,35 +69,13 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 		}
 
 		@Override
-		public FunctionalPrimitiveIterator.OfInt iterator()
+		public ArrayIterator.OfInt iterator()
 		{
-			return (FunctionalPrimitiveIterator.OfInt) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
+			return new ArrayIterator.OfInt(elements, fromIndex, toIndex);
 		}
 	}
 
-	public static class OfLong extends IterableArray<Long> implements IterableLong
-	{
-		protected final long[] elements;
 
-		@SafeVarargs
-		public OfLong(long... elements)
-		{
-			super(0, elements.length);
-			this.elements = elements;
-		}
-
-		public OfLong(long[] elements, int fromIndex, int toIndex)
-		{
-			super(fromIndex, toIndex);
-			this.elements = elements;
-		}
-
-		@Override
-		public FunctionalPrimitiveIterator.OfLong iterator()
-		{
-			return (FunctionalPrimitiveIterator.OfLong) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
-		}
-	}
 
 	public static class OfDouble extends IterableArray<Double> implements IterableDouble
 	{
@@ -108,9 +95,35 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 		}
 
 		@Override
-		public FunctionalPrimitiveIterator.OfDouble iterator()
+		public ArrayIterator.OfDouble iterator()
 		{
-			return (FunctionalPrimitiveIterator.OfDouble) FunctionalIterator.extend(Arrays.stream(elements, fromIndex, toIndex).iterator());
+			return new ArrayIterator.OfDouble(elements, fromIndex, toIndex);
+		}
+	}
+
+
+
+	public static class OfLong extends IterableArray<Long> implements IterableLong
+	{
+		protected final long[] elements;
+
+		@SafeVarargs
+		public OfLong(long... elements)
+		{
+			super(0, elements.length);
+			this.elements = elements;
+		}
+
+		public OfLong(long[] elements, int fromIndex, int toIndex)
+		{
+			super(fromIndex, toIndex);
+			this.elements = elements;
+		}
+
+		@Override
+		public ArrayIterator.OfLong iterator()
+		{
+			return new ArrayIterator.OfLong(elements, fromIndex, toIndex);
 		}
 	}
 }

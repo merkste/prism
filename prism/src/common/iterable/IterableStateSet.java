@@ -30,6 +30,8 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.function.IntPredicate;
 
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+
 /**
  * A convenience wrapper around IterableBitSet that handles the three cases of
  * iterating over the set or cleared bits of a BitSet representing a set of states

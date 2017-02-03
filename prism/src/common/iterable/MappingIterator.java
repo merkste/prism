@@ -1,19 +1,29 @@
 package common.iterable;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
@@ -22,24 +32,25 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
+// FIXME ALG: check whether inheritance could be improved
+public abstract class MappingIterator<S, E, I extends Iterator<S>> implements FunctionalIterator<E>
 {
-	protected final Iterator<S> iterator;
+	protected I iterator;
 
-	public MappingIterator(Iterable<S> iterable)
+	public MappingIterator(I iterator)
 	{
-		this(iterable.iterator());
-	}
-
-	public MappingIterator(Iterator<S> iterator)
-	{
+		Objects.requireNonNull(iterator);
 		this.iterator = iterator;
 	}
 
 	@Override
 	public boolean hasNext()
 	{
-		return iterator.hasNext();
+		if (iterator.hasNext()) {
+			return true;
+		}
+		release();
+		return false;
 	}
 
 	@Override
@@ -48,84 +59,109 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		iterator.remove();
 	}
 
-	public static class From<S, T> extends MappingIterator<S, T>
+	protected abstract void release();
+
+	protected void requireNext()
 	{
-		protected final Function<? super S, ? extends T> function;
-
-		public From(Iterable<S> iterable, Function<? super S, ? extends T> function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public From(Iterator<S> iterator, Function<? super S, ? extends T> function)
-		{
-			super(iterator);
-			this.function = function;
-		}
-
-		@Override
-		public T next()
-		{
-			return function.apply(iterator.next());
+		if (!hasNext()) {
+			throw new NoSuchElementException();
 		}
 	}
 
-	public static OfInt toInt(Iterable<Integer> iterable)
+	public static FunctionalPrimitiveIterator.OfDouble toDouble(Iterator<Double> iterator)
 	{
-		return toInt(iterable.iterator());
-	}
-
-	public static OfInt toInt(Iterator<Integer> iterator)
-	{
-		if (iterator instanceof OfInt) {
-			return (OfInt) iterator;
-		}
-		return new ToInt<>(iterator, Integer::intValue);
-	}
-
-	public static class ToInt<S> extends MappingIterator<S, Integer> implements FunctionalPrimitiveIterator.OfInt
-	{
-		protected ToIntFunction<? super S> function;
-
-		public ToInt(Iterable<S> iterable, ToIntFunction<? super S> function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public ToInt(Iterator<S> iterator, ToIntFunction<? super S> function)
-		{
-			super(iterator);
-			this.function = function;
-		}
-
-		@Override
-		public int nextInt()
-		{
-			return function.applyAsInt(iterator.next());
-		}
-	}
-
-	public static OfDouble toDouble(Iterable<Double> iterable)
-	{
-		return toDouble(iterable.iterator());
-	}
-
-	public static OfDouble toDouble(Iterator<Double> iterator)
-	{
-		if (iterator instanceof OfDouble) {
-			return (OfDouble) iterator;
+		if (iterator instanceof PrimitiveIterator.OfDouble) {
+			return FunctionalIterator.extend((PrimitiveIterator.OfDouble) iterator);
 		}
 		return new ToDouble<>(iterator, Double::doubleValue);
 	}
 
-	public static class ToDouble<S> extends MappingIterator<S, Double> implements FunctionalPrimitiveIterator.OfDouble
+	public static FunctionalPrimitiveIterator.OfInt toInt(Iterator<Integer> iterator)
+	{
+		if (iterator instanceof PrimitiveIterator.OfInt) {
+			return FunctionalIterator.extend((PrimitiveIterator.OfInt) iterator);
+		}
+		return new ToInt<>(iterator, Integer::intValue);
+	}
+
+	public static FunctionalPrimitiveIterator.OfLong toLong(Iterator<Long> iterator)
+	{
+		if (iterator instanceof PrimitiveIterator.OfLong) {
+			return FunctionalIterator.extend((PrimitiveIterator.OfLong) iterator);
+		}
+		return new ToLong<>(iterator, Long::longValue);
+	}
+
+
+
+	public static class From<S, E> extends MappingIterator<S, E, Iterator<S>>
+	{
+		protected final Function<? super S, ? extends E> function;
+
+		public From(Iterator<S> iterator, Function<? super S, ? extends E> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public E next()
+		{
+			requireNext();
+			return function.apply(iterator.next());
+		}
+
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalIterator) {
+				return ((FunctionalIterator<?>) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.next();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			if (iterator instanceof FunctionalIterator) {
+				result = ((FunctionalIterator<S>) iterator).reduce(result, (r, e) -> accumulator.apply(r, function.apply(e)));
+			} else {
+				while (iterator.hasNext()) {
+					result = accumulator.apply(result, function.apply(iterator.next()));
+				}
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.Of();
+		}
+	}
+
+	public static class ToDouble<S> extends MappingIterator<S, Double, Iterator<S>> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected ToDoubleFunction<? super S> function;
-
-		public ToDouble(Iterable<S> iterable, ToDoubleFunction<? super S> function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public ToDouble(Iterator<S> iterator, ToDoubleFunction<? super S> function)
 		{
@@ -136,31 +172,168 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public double nextDouble()
 		{
+			requireNext();
 			return function.applyAsDouble(iterator.next());
 		}
-	}
 
-	public static OfLong toLong(Iterable<Long> iterable)
-	{
-		return toLong(iterable.iterator());
-	}
-
-	public static OfLong toLong(Iterator<Long> iterator)
-	{
-		if (iterator instanceof OfLong) {
-			return (OfLong) iterator;
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsDouble(each)));
+			release();
 		}
-		return new ToLong<>(iterator, Long::longValue);
+
+		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalIterator) {
+				return ((FunctionalIterator<?>) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.next();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsDouble(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsDouble(result, function.applyAsDouble(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.Of();
+		}
 	}
 
-	public static class ToLong<S> extends MappingIterator<S, Long> implements FunctionalPrimitiveIterator.OfLong
+
+
+	public static class ToInt<S> extends MappingIterator<S, Integer, Iterator<S>> implements FunctionalPrimitiveIterator.OfInt
+	{
+		protected ToIntFunction<? super S> function;
+
+		public ToInt(Iterator<S> iterator, ToIntFunction<? super S> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			requireNext();
+			return function.applyAsInt(iterator.next());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsInt(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalIterator) {
+				return ((FunctionalIterator<?>) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.next();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsInt(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsInt(result, function.applyAsInt(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.Of();
+		}
+	}
+
+
+
+	public static class ToLong<S> extends MappingIterator<S, Long, Iterator<S>> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected ToLongFunction<? super S> function;
-
-		public ToLong(Iterable<S> iterable, ToLongFunction<? super S> function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public ToLong(Iterator<S> iterator, ToLongFunction<? super S> function)
 		{
@@ -171,150 +344,133 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public long nextLong()
 		{
+			requireNext();
 			return function.applyAsLong(iterator.next());
 		}
-	}
 
-	public static class FromInt<T> extends MappingIterator<Integer, T>
-	{
-		protected IntFunction<? extends T> function;
-
-		public FromInt(IterableInt iterable, IntFunction<? extends T> function)
+		@Override
+		public void forEachRemaining(LongConsumer action)
 		{
-			this(iterable.iterator(), function);
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsLong(each)));
+			release();
 		}
 
-		public FromInt(OfInt iterator, IntFunction<? extends T> function)
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalIterator) {
+				return ((FunctionalIterator<?>) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.next();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsLong(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsLong(result, function.applyAsLong(iterator.next()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.Of();
+		}
+	}
+
+
+
+	public static class FromDouble<E> extends MappingIterator<Double, E, PrimitiveIterator.OfDouble>
+	{
+		protected DoubleFunction<? extends E> function;
+
+		public FromDouble(OfDouble iterator, DoubleFunction<? extends E> function)
 		{
 			super(iterator);
 			this.function = function;
 		}
 
 		@Override
-		public T next()
+		public E next()
 		{
-			return function.apply(((OfInt) iterator).nextInt());
-		}
-	}
-
-	public static class FromIntToInt extends MappingIterator<Integer, Integer> implements FunctionalPrimitiveIterator.OfInt
-	{
-		protected IntUnaryOperator function;
-
-		public FromIntToInt(IterableInt iterable, IntUnaryOperator function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromIntToInt(PrimitiveIterator.OfInt iterator, IntUnaryOperator function)
-		{
-			super(iterator);
-			this.function = function;
+			requireNext();
+			return function.apply(iterator.nextDouble());
 		}
 
 		@Override
-		public int nextInt()
+		public void forEachRemaining(Consumer<? super E> action)
 		{
-			return function.applyAsInt(((PrimitiveIterator.OfInt) iterator).nextInt());
-		}
-	}
-
-	public static class FromIntToDouble extends MappingIterator<Integer, Double> implements FunctionalPrimitiveIterator.OfDouble
-	{
-		protected IntToDoubleFunction function;
-
-		public FromIntToDouble(IterableInt iterable, IntToDoubleFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromIntToDouble(PrimitiveIterator.OfInt iterator, IntToDoubleFunction function)
-		{
-			super(iterator);
-			this.function = function;
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.apply(each)));
+			release();
 		}
 
 		@Override
-		public double nextDouble()
+		public int count()
 		{
-			return function.applyAsDouble(((PrimitiveIterator.OfInt) iterator).nextInt());
-		}
-	}
-
-	public static class FromIntToLong extends MappingIterator<Integer, Long> implements FunctionalPrimitiveIterator.OfLong
-	{
-		protected IntToLongFunction function;
-
-		public FromIntToLong(IterableInt iterable, IntToLongFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromIntToLong(PrimitiveIterator.OfInt iterator, IntToLongFunction function)
-		{
-			super(iterator);
-			this.function = function;
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfDouble) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextDouble();
+				count++;
+			}
+			release();
+			return count;
 		}
 
 		@Override
-		public long nextLong()
+		protected void release()
 		{
-			return function.applyAsLong(((PrimitiveIterator.OfInt) iterator).nextInt());
+			iterator = EmptyIterator.OfDouble();
 		}
 	}
 
-	public static class FromDouble<T> extends MappingIterator<Double, T>
-	{
-		protected DoubleFunction<? extends T> function;
 
-		public FromDouble(IterableDouble iterable, DoubleFunction<? extends T> function)
-		{
-			this(iterable.iterator(), function);
-		}
 
-		public FromDouble(OfDouble iterator, DoubleFunction<? extends T> function)
-		{
-			super(iterator);
-			this.function = function;
-		}
-
-		@Override
-		public T next()
-		{
-			return function.apply(((OfDouble) iterator).nextDouble());
-		}
-	}
-
-	public static class FromDoubleToInt extends MappingIterator<Double, Integer> implements FunctionalPrimitiveIterator.OfInt
-	{
-		protected DoubleToIntFunction function;
-
-		public FromDoubleToInt(IterableDouble iterable, DoubleToIntFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromDoubleToInt(PrimitiveIterator.OfDouble iterator, DoubleToIntFunction function)
-		{
-			super(iterator);
-			this.function = function;
-		}
-
-		@Override
-		public int nextInt()
-		{
-			return function.applyAsInt(((PrimitiveIterator.OfDouble) iterator).nextDouble());
-		}
-	}
-
-	public static class FromDoubleToDouble extends MappingIterator<Double, Double> implements FunctionalPrimitiveIterator.OfDouble
+	public static class FromDoubleToDouble extends MappingIterator<Double, Double, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected DoubleUnaryOperator function;
-
-		public FromDoubleToDouble(IterableDouble iterable, DoubleUnaryOperator function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public FromDoubleToDouble(PrimitiveIterator.OfDouble iterator, DoubleUnaryOperator function)
 		{
@@ -325,18 +481,168 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public double nextDouble()
 		{
-			return function.applyAsDouble(((PrimitiveIterator.OfDouble) iterator).nextDouble());
+			requireNext();
+			return function.applyAsDouble(iterator.nextDouble());
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsDouble(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfDouble) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextDouble();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsDouble(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsDouble(result, function.applyAsDouble(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfDouble();
 		}
 	}
 
-	public static class FromDoubleToLong extends MappingIterator<Double, Long> implements FunctionalPrimitiveIterator.OfLong
+
+
+	public static class FromDoubleToInt extends MappingIterator<Double, Integer, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfInt
+	{
+		protected DoubleToIntFunction function;
+
+		public FromDoubleToInt(PrimitiveIterator.OfDouble iterator, DoubleToIntFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			requireNext();
+			return function.applyAsInt(iterator.nextDouble());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsInt(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfDouble) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextDouble();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsInt(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsInt(result, function.applyAsInt(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfDouble();
+		}
+	}
+
+
+
+	public static class FromDoubleToLong extends MappingIterator<Double, Long, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected DoubleToLongFunction function;
-
-		public FromDoubleToLong(IterableDouble iterable, DoubleToLongFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public FromDoubleToLong(PrimitiveIterator.OfDouble iterator, DoubleToLongFunction function)
 		{
@@ -347,40 +653,528 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public long nextLong()
 		{
-			return function.applyAsLong(((PrimitiveIterator.OfDouble) iterator).nextDouble());
+			requireNext();
+			return function.applyAsLong(iterator.nextDouble());
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfDouble) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextDouble();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsLong(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsLong(result, function.applyAsLong(iterator.nextDouble()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfDouble();
 		}
 	}
 
-	public static class FromLong<T> extends MappingIterator<Long, T>
+
+
+	public static class FromInt<E> extends MappingIterator<Integer, E, PrimitiveIterator.OfInt>
 	{
-		protected LongFunction<? extends T> function;
+		protected IntFunction<? extends E> function;
 
-		public FromLong(IterableLong iterable, LongFunction<? extends T> function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromLong(OfLong iterator, LongFunction<? extends T> function)
+		public FromInt(OfInt iterator, IntFunction<? extends E> function)
 		{
 			super(iterator);
 			this.function = function;
 		}
 
 		@Override
-		public T next()
+		public E next()
 		{
-			return function.apply(((PrimitiveIterator.OfLong) iterator).nextLong());
+			requireNext();
+			return function.apply(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfInt) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextInt();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfInt();
 		}
 	}
 
-	public static class FromLongToInt extends MappingIterator<Long, Integer> implements FunctionalPrimitiveIterator.OfInt
+
+
+	public static class FromIntToDouble extends MappingIterator<Integer, Double, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfDouble
+	{
+		protected IntToDoubleFunction function;
+	
+		public FromIntToDouble(PrimitiveIterator.OfInt iterator, IntToDoubleFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+	
+		@Override
+		public double nextDouble()
+		{
+			requireNext();
+			return function.applyAsDouble(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsDouble(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfInt) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextInt();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsDouble(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsDouble(result, function.applyAsDouble(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfInt();
+		}
+	}
+
+
+
+	public static class FromIntToInt extends MappingIterator<Integer, Integer, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfInt
+	{
+		protected IntUnaryOperator function;
+
+		public FromIntToInt(PrimitiveIterator.OfInt iterator, IntUnaryOperator function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public int nextInt()
+		{
+			requireNext();
+			return function.applyAsInt(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsInt(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfInt) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextInt();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsInt(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsInt(result, function.applyAsInt(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfInt();
+		}
+	}
+
+
+
+	public static class FromIntToLong extends MappingIterator<Integer, Long, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfLong
+	{
+		protected IntToLongFunction function;
+
+		public FromIntToLong(PrimitiveIterator.OfInt iterator, IntToLongFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public long nextLong()
+		{
+			requireNext();
+			return function.applyAsLong(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfInt) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextInt();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsLong(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsLong(result, function.applyAsLong(iterator.nextInt()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfInt();
+		}
+	}
+
+
+
+	public static class FromLong<E> extends MappingIterator<Long, E, PrimitiveIterator.OfLong>
+	{
+		protected LongFunction<? extends E> function;
+
+		public FromLong(OfLong iterator, LongFunction<? extends E> function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+
+		@Override
+		public E next()
+		{
+			requireNext();
+			return function.apply(iterator.nextLong());
+		}
+
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfLong) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextLong();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfLong();
+		}
+	}
+
+
+
+	public static class FromLongToDouble extends MappingIterator<Long, Double, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfDouble
+	{
+		protected LongToDoubleFunction function;
+	
+		public FromLongToDouble(PrimitiveIterator.OfLong iterator, LongToDoubleFunction function)
+		{
+			super(iterator);
+			this.function = function;
+		}
+	
+		@Override
+		public double nextDouble()
+		{
+			requireNext();
+			return function.applyAsDouble(iterator.nextLong());
+		}
+	
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsDouble(each)));
+			release();
+		}
+	
+		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfLong) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextLong();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsDouble(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsDouble(result, function.applyAsDouble(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfLong();
+		}
+	}
+
+
+
+	public static class FromLongToInt extends MappingIterator<Long, Integer, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected LongToIntFunction function;
-
-		public FromLongToInt(IterableLong iterable, LongToIntFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public FromLongToInt(PrimitiveIterator.OfLong iterator, LongToIntFunction function)
 		{
@@ -391,40 +1185,82 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public int nextInt()
 		{
-			return function.applyAsInt(((PrimitiveIterator.OfLong) iterator).nextLong());
-		}
-	}
-
-	public static class FromLongToDouble extends MappingIterator<Long, Double> implements FunctionalPrimitiveIterator.OfDouble
-	{
-		protected LongToDoubleFunction function;
-
-		public FromLongToDouble(IterableLong iterable, LongToDoubleFunction function)
-		{
-			this(iterable.iterator(), function);
-		}
-
-		public FromLongToDouble(PrimitiveIterator.OfLong iterator, LongToDoubleFunction function)
-		{
-			super(iterator);
-			this.function = function;
+			requireNext();
+			return function.applyAsInt(iterator.nextLong());
 		}
 
 		@Override
-		public double nextDouble()
+		public void forEachRemaining(IntConsumer action)
 		{
-			return function.applyAsDouble(((PrimitiveIterator.OfLong) iterator).nextLong());
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsInt(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfLong) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextLong();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsInt(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsInt(result, function.applyAsInt(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfLong();
 		}
 	}
 
-	public static class FromLongToLong extends MappingIterator<Long, Long> implements FunctionalPrimitiveIterator.OfLong
+
+
+	public static class FromLongToLong extends MappingIterator<Long, Long, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected LongUnaryOperator function;
-
-		public FromLongToLong(IterableLong iterable, LongUnaryOperator function)
-		{
-			this(iterable.iterator(), function);
-		}
 
 		public FromLongToLong(PrimitiveIterator.OfLong iterator, LongUnaryOperator function)
 		{
@@ -435,7 +1271,74 @@ public abstract class MappingIterator<S, T> implements FunctionalIterator<T>
 		@Override
 		public long nextLong()
 		{
-			return function.applyAsLong(((PrimitiveIterator.OfLong) iterator).nextLong());
+			requireNext();
+			return function.applyAsLong(iterator.nextLong());
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int count()
+		{
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfLong) iterator).count();
+			}
+			// do not use reduce to avoid auto-boxing of count variable
+			// exploit arithmetic operator
+			int count = 0;
+			while (iterator.hasNext()) {
+				iterator.nextLong();
+				count++;
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.apply(result, function.applyAsLong(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				result = accumulator.applyAsLong(result, function.applyAsLong(iterator.nextLong()));
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		protected void release()
+		{
+			iterator = EmptyIterator.OfLong();
 		}
 	}
 }

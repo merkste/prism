@@ -29,7 +29,7 @@ public class MappingList<S, T> extends AbstractList<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return new MappingIterator.From<>(list, function);
+		return new MappingIterator.From<>(list.iterator(), function);
 	}
 
 	@Override

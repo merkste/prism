@@ -6,6 +6,7 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 import common.iterable.IterableArray;
+import common.iterable.IterableBitSet;
 
 public class BitSetTools
 {
@@ -56,7 +57,7 @@ public class BitSetTools
 	public static BitSet shiftUp(final BitSet indices, final int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
-		return asBitSet(indices.stream().map(i -> i + offset));
+		return asBitSet(new IterableBitSet(indices).map((int i) -> i + offset));
 	}
 
 	public static boolean areDisjoint(final BitSet... sets)

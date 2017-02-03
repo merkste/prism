@@ -1,5 +1,9 @@
 package common.iterable;
 
+import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.iterable.FunctionalPrimitiveIterable.IterableLong;
+
 public abstract class SingletonIterable<T> implements FunctionalIterable<T>
 {
 	public static class Of<T> extends SingletonIterable<T>
@@ -18,6 +22,26 @@ public abstract class SingletonIterable<T> implements FunctionalIterable<T>
 		}
 	}
 
+
+
+	public static class OfDouble extends SingletonIterable<Double> implements IterableDouble
+	{
+		final double element;
+	
+		public OfDouble(double theElement)
+		{
+			element = theElement;
+		}
+	
+		@Override
+		public SingletonIterator.OfDouble iterator()
+		{
+			return new SingletonIterator.OfDouble(element);
+		}
+	}
+
+
+
 	public static class OfInt extends SingletonIterable<Integer> implements IterableInt
 	{
 		final int element;
@@ -34,6 +58,8 @@ public abstract class SingletonIterable<T> implements FunctionalIterable<T>
 		}
 	}
 
+
+
 	public static class OfLong extends SingletonIterable<Long> implements IterableLong
 	{
 		final long element;
@@ -47,22 +73,6 @@ public abstract class SingletonIterable<T> implements FunctionalIterable<T>
 		public SingletonIterator.OfLong iterator()
 		{
 			return new SingletonIterator.OfLong(element);
-		}
-	}
-
-	public static class OfDouble extends SingletonIterable<Double> implements IterableDouble
-	{
-		final double element;
-
-		public OfDouble(double theElement)
-		{
-			element = theElement;
-		}
-
-		@Override
-		public SingletonIterator.OfDouble iterator()
-		{
-			return new SingletonIterator.OfDouble(element);
 		}
 	}
 }

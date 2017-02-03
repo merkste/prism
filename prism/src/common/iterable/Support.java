@@ -3,13 +3,12 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
-import java.util.stream.IntStream;
 
-import common.BitSetTools;
 import common.IteratorTools;
 import common.functions.Relation;
 import common.functions.primitive.PredicateDouble;
 import common.functions.primitive.PredicateInt;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 
 // FIXME ALG: consider using e.g. Support(values) is equal to
 // support = Relation.LEQ.curry(0)
@@ -56,7 +55,7 @@ public class Support implements PredicateInt, IterableInt
 
 	public BitSet asBitSet()
 	{
-		return BitSetTools.asBitSet(this);
+		return collect(new BitSet());
 	}
 
 	@Override
@@ -65,10 +64,7 @@ public class Support implements PredicateInt, IterableInt
 		return new Interval(0, values.length).iterator().filter((IntPredicate) this);
 	}
 
-	public IntStream stream()
-	{
-		return new Interval(0, values.length).stream().filter(this);
-	}
+
 
 	public static void main(final String[] args)
 	{

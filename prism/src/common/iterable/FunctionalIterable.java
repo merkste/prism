@@ -1,9 +1,11 @@
 package common.iterable;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -11,25 +13,54 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
+import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.iterable.FunctionalPrimitiveIterable.IterableLong;
+
 public interface FunctionalIterable<E> extends Iterable<E>
 {
-	@Override
-	FunctionalIterator<E> iterator();
+	public class FunctionalWrapper<E, I extends Iterable<E>> implements FunctionalIterable<E>
+	{
+		protected final I iterable;
+
+		public FunctionalWrapper(I iterable)
+		{
+			Objects.requireNonNull(iterable);
+			this.iterable = iterable;
+		}
+
+		@Override
+		public FunctionalIterator<E> iterator()
+		{
+			return FunctionalIterator.extend(iterable.iterator());
+		}
+
+		@Override
+		public void forEach(Consumer<? super E> action)
+		{
+			iterable.forEach(action);
+		}
+	}
+
+
 
 	public static <E> FunctionalIterable<E> extend(Iterable<E> iterable)
 	{
 		if (iterable instanceof FunctionalIterable) {
 			return (FunctionalIterable<E>) iterable;
 		}
+		return new FunctionalWrapper<E, Iterable<E>>(iterable);
+	}
 
-		return new FunctionalIterable<E>()
-		{
-			@Override
-			public FunctionalIterator<E> iterator()
-			{
-				return FunctionalIterator.extend(iterable.iterator());
-			}
-		};
+
+
+	@Override
+	FunctionalIterator<E> iterator();
+
+	@Override
+	default void forEach(Consumer<? super E> action)
+	{
+		iterator().forEachRemaining(action);
 	}
 
 	// Testing
@@ -38,7 +69,10 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return iterator().hasNext();
 	}
 
+
+
 	// Transforming Methods
+
 	@SuppressWarnings("unchecked")
 	default FunctionalIterable<E> chain(Iterable<? extends E>... iterables)
 	{
@@ -60,18 +94,6 @@ public interface FunctionalIterable<E> extends Iterable<E>
 	default FunctionalIterable<E> dedupe()
 	{
 		return FilteringIterable.Of.dedupe(this);
-	}
-
-	default FunctionalIterable<E> drop(int n)
-	{
-		return new FunctionalIterable<E>()
-		{
-			@Override
-			public FunctionalIterator<E> iterator()
-			{
-				return iterator().drop(n);
-			}
-		};
 	}
 
 	default FunctionalIterable<E> filter(Predicate<? super E> function)
@@ -99,9 +121,9 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return new ChainedIterable.OfLong(map(function));
 	}
 
-	default E head()
+	default Iterable<E> isNull()
 	{
-		return iterator().head();
+		return FilteringIterable.isNull(this);
 	}
 
 	default <T> FunctionalIterable<T> map(Function<? super E, ? extends T> function)
@@ -124,24 +146,15 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return new MappingIterable.ToLong<>(this, function);
 	}
 
-	default FunctionalIterable<E> tail()
+	default Iterable<E> nonNull()
 	{
-		return drop(1);
+		return FilteringIterable.nonNull(this);
 	}
 
-	default FunctionalIterable<E> take(int n)
-	{
-		return new FunctionalIterable<E>()
-		{
-			@Override
-			public FunctionalIterator<E> iterator()
-			{
-				return iterator().take(n);
-			}
-		};
-	}
 
-	// Accumulations Methods (Consuming)
+
+	// Accumulations Methods
+
 	default boolean allMatch(Predicate<? super E> predicate)
 	{
 		return iterator().allMatch(predicate);
@@ -150,6 +163,11 @@ public interface FunctionalIterable<E> extends Iterable<E>
 	default boolean anyMatch(Predicate<? super E> predicate)
 	{
 		return iterator().anyMatch(predicate);
+	}
+
+	default String asString()
+	{
+		return iterator().asString();
 	}
 
 	default <C extends Collection<? super E>> C collect(Supplier<? extends C> constructor)
@@ -187,11 +205,6 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return iterator().collectAndCount(array, offset);
 	}
 
-	default Optional<E> detect(Predicate<? super E> predicate)
-	{
-		return iterator().detect(predicate);
-	}
-
 	default boolean contains(Object obj)
 	{
 		return iterator().contains(obj);
@@ -205,6 +218,11 @@ public interface FunctionalIterable<E> extends Iterable<E>
 	default int count(Predicate<? super E> predicate)
 	{
 		return iterator().count(predicate);
+	}
+
+	default Optional<E> detect(Predicate<? super E> predicate)
+	{
+		return iterator().detect(predicate);
 	}
 
 	default Optional<E> reduce(BinaryOperator<E> accumulator)

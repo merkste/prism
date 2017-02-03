@@ -5,26 +5,31 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import common.iterable.FunctionalIterator;
+import common.iterable.IterableArray;
 
 public class ChainedList<T> extends AbstractList<T>
 {
-	private final List<List<? extends T>> lists;
-	private int size = -1;
+	protected final ArrayList<List<? extends T>> lists;
+	protected int size = -1;
 
 	@SafeVarargs
 	public ChainedList(final List<? extends T>... lists)
 	{
-		this(Arrays.asList(lists));
+		this(new IterableArray.Of<>(lists));
 	}
 
 	public ChainedList(final Iterable<? extends List<? extends T>> lists)
 	{
-		final Stream<? extends List<? extends T>> streamOfLists = StreamSupport.stream(lists.spliterator(), false);
-		this.lists = streamOfLists.filter(l -> !(l == null || l.isEmpty())).collect(Collectors.toList());
+		this.lists = new ArrayList<>();
+		for (List<? extends T> list : lists) {
+			if (list != null && ! list.isEmpty()) {
+				this.lists.add(list);
+			}
+		}
+		this.lists.trimToSize();
 	}
 
 	@Override
@@ -32,10 +37,11 @@ public class ChainedList<T> extends AbstractList<T>
 	{
 		int localIndex = index;
 		for (List<? extends T> list : lists) {
-			if (localIndex < list.size()) {
+			int localSize = list.size();
+			if (localIndex < localSize) {
 				return list.get(localIndex);
 			}
-			localIndex -= list.size();
+			localIndex -= localSize;
 		}
 		throw new IndexOutOfBoundsException();
 	}
@@ -43,7 +49,7 @@ public class ChainedList<T> extends AbstractList<T>
 	@Override
 	public Iterator<T> iterator()
 	{
-		return stream().iterator();
+		return FunctionalIterator.extend(lists).flatMap(List::iterator);
 	}
 
 	@Override
@@ -63,12 +69,13 @@ public class ChainedList<T> extends AbstractList<T>
 
 	public static void main(final String[] args)
 	{
-		final List<Integer> l1 = Arrays.asList(new Integer[] { 1, 2, 3 });
-		final List<Integer> l2 = Arrays.asList(new Integer[] { 4, 5, 6 });
-		final List<Integer> l3 = Arrays.asList(new Integer[] { 7, 8, 9 });
+		final List<Integer> l1 = Arrays.asList(new Integer[] {0, 1, 2});
+		final List<Integer> l2 = Arrays.asList(new Integer[] {3, 4, 5});
+		final List<Integer> l3 = Arrays.asList(new Integer[] {6, 7, 8});
 		final List<Integer> chain = new ChainedList<>(null, new ArrayList<Integer>(), l1, l2, l3);
 
 		System.out.println(chain);
 		System.out.println("chain.size() = " + chain.size());
+		System.out.println("chain.get(6) = " + chain.get(6));
 	}
 }

@@ -32,6 +32,8 @@ public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 		return false;
 	}
 
+
+
 	public static class Of<T> extends EmptyIterator<T>
 	{
 		private Of() {};
@@ -42,6 +44,21 @@ public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 			throw new NoSuchElementException();
 		}
 	}
+
+
+
+	public static class OfDouble extends EmptyIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
+	{
+		private OfDouble() {};
+
+		@Override
+		public double nextDouble()
+		{
+			throw new NoSuchElementException();
+		}
+	}
+
+
 
 	public static class OfInt extends EmptyIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
@@ -54,23 +71,14 @@ public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 		}
 	}
 
+
+
 	public static class OfLong extends EmptyIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		private OfLong() {};
 
 		@Override
 		public long nextLong()
-		{
-			throw new NoSuchElementException();
-		}
-	}
-
-	public static class OfDouble extends EmptyIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
-	{
-		private OfDouble() {};
-
-		@Override
-		public double nextDouble()
 		{
 			throw new NoSuchElementException();
 		}

@@ -2,15 +2,18 @@ package common.iterable;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleConsumer;
 import java.util.function.Function;
+import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
+import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -18,143 +21,307 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
-import common.iterable.FunctionalPrimitiveIterator.OfDouble;
-import common.iterable.FunctionalPrimitiveIterator.OfInt;
-import common.iterable.FunctionalPrimitiveIterator.OfLong;
-
 public interface FunctionalIterator<E> extends Iterator<E>
 {
-	@SuppressWarnings("unchecked")
+	public abstract class FunctionalWrapper<E, I extends Iterator<E>> implements FunctionalIterator<E>
+	{
+		protected I iterator;
+
+		public FunctionalWrapper(I iterator)
+		{
+			Objects.requireNonNull(iterator);
+			this.iterator = iterator;
+		}
+
+		@Override
+		public boolean hasNext()
+		{
+			if(iterator.hasNext()) {
+				return true;
+			}
+			release();
+			return false;
+		}
+
+		@Override
+		public E next()
+		{
+			return iterator.next();
+		}
+
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			iterator.forEachRemaining(action);
+		}
+
+		/**
+		 * Unwrap a nested iterator if this instance is a decorating wrapper.
+		 * Use to avoid repeated indirections, especially in loops.
+		 * 
+		 * @return {@code this} instance or the wrapped iterator.
+		 */
+		@Override
+		public I unwrap()
+		{
+			return iterator;
+		}
+
+		protected abstract void release();
+
+
+
+		public static class Of<E> extends FunctionalWrapper<E, Iterator<E>>
+		{
+			public Of(Iterator<E> iterator)
+			{
+				super(iterator);
+			}
+
+			@Override
+			protected void release()
+			{
+				iterator = EmptyIterator.Of();
+			}
+		}
+
+
+
+		public static class OfDouble extends FunctionalWrapper<Double, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfDouble
+		{
+			public OfDouble(PrimitiveIterator.OfDouble iterator)
+			{
+				super(iterator);
+			}
+
+			@Override
+			public double nextDouble()
+			{
+				return iterator.nextDouble();
+			}
+
+			@Override
+			public void forEachRemaining(DoubleConsumer action)
+			{
+				iterator.forEachRemaining(action);
+				release();
+			}
+
+			@Override
+			public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfDouble local = iterator;
+				T result                         = identity;
+				while(local.hasNext()) {
+					result = accumulator.apply(result, local.nextDouble());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public double reduce(double identity, DoubleBinaryOperator accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfDouble local = iterator;
+				double result                    = identity;
+				while(local.hasNext()) {
+					result = accumulator.applyAsDouble(result, local.nextDouble());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public PrimitiveIterator.OfDouble unwrap()
+			{
+				return iterator;
+			}
+
+			@Override
+			protected void release()
+			{
+				iterator = EmptyIterator.OfDouble();
+			}
+		}
+
+
+
+		public static class OfInt extends FunctionalWrapper<Integer, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfInt
+		{
+			public OfInt(PrimitiveIterator.OfInt iterator)
+			{
+				super(iterator);
+			}
+
+			@Override
+			public int nextInt()
+			{
+				return iterator.nextInt();
+			}
+
+			@Override
+			public void forEachRemaining(IntConsumer action)
+			{
+				iterator.forEachRemaining(action);
+				release();
+			}
+
+			@Override
+			public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfInt local = iterator;
+				T result                      = identity;
+				while(local.hasNext()) {
+					result = accumulator.apply(result, local.nextInt());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public int reduce(int identity, IntBinaryOperator accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfInt local = iterator;
+				int result                    = identity;
+				while(local.hasNext()) {
+					result = accumulator.applyAsInt(result, local.nextInt());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public PrimitiveIterator.OfInt unwrap()
+			{
+				return iterator;
+			}
+
+			@Override
+			protected void release()
+			{
+				iterator = EmptyIterator.OfInt();
+			}
+		}
+
+
+
+		public static class OfLong extends FunctionalWrapper<Long, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfLong
+		{
+			public OfLong(PrimitiveIterator.OfLong iterator)
+			{
+				super(iterator);
+			}
+
+			@Override
+			public long nextLong()
+			{
+				return iterator.nextLong();
+			}
+
+			@Override
+			public void forEachRemaining(LongConsumer action)
+			{
+				iterator.forEachRemaining(action);
+				release();
+			}
+
+			@Override
+			public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfLong local = iterator;
+				T result                       = identity;
+				while(local.hasNext()) {
+					result = accumulator.apply(result, local.nextLong());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public long reduce(long identity, LongBinaryOperator accumulator)
+			{
+				Objects.requireNonNull(accumulator);
+				// faster access to local variable than to field
+				PrimitiveIterator.OfLong local = iterator;
+				long result                    = identity;
+				while(local.hasNext()) {
+					result = accumulator.applyAsLong(result, local.nextLong());
+				}
+				release();
+				return result;
+			}
+
+			@Override
+			public PrimitiveIterator.OfLong unwrap()
+			{
+				return iterator;
+			}
+
+			@Override
+			protected void release()
+			{
+				iterator = EmptyIterator.OfLong();
+			}
+		}
+	}
+
+
+
+	public static <E> FunctionalIterator<E> extend(Iterable<E> iterable)
+	{
+		return extend(iterable.iterator());
+	}
+
 	public static <E> FunctionalIterator<E> extend(Iterator<E> iterator)
 	{
 		if (iterator instanceof FunctionalIterator) {
 			return (FunctionalIterator<E>) iterator;
 		}
-		if ((iterator instanceof PrimitiveIterator.OfDouble) || (iterator instanceof PrimitiveIterator.OfInt) || (iterator instanceof PrimitiveIterator.OfLong)) {
-			return extend((PrimitiveIterator<E,?>) iterator);
-		}
-		return new FunctionalIterator<E>()
-		{
-			@Override
-			public boolean hasNext()
-			{
-				return iterator.hasNext();
-			}
-
-			@Override
-			public E next()
-			{
-				return iterator.next();
-			}
-
-			@Override
-			public void forEachRemaining(Consumer<? super E> action)
-			{
-				iterator.forEachRemaining(action);
-			}
-
-			@Override
-			public Iterator<E> unwrap()
-			{
-				return iterator;
-			}
-		};
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <E, E_CONS> FunctionalPrimitiveIterator<E,E_CONS> extend(PrimitiveIterator<E, E_CONS> iterator)
-	{
-		if (iterator instanceof FunctionalPrimitiveIterator) {
-			return (FunctionalPrimitiveIterator<E, E_CONS>) iterator;
-		}
 		if (iterator instanceof PrimitiveIterator.OfDouble) {
-			return (FunctionalPrimitiveIterator<E, E_CONS>) new OfDouble()
-			{
-				@Override
-				public boolean hasNext()
-				{
-					return ((PrimitiveIterator.OfDouble) iterator).hasNext();
-				}
-
-				@Override
-				public double nextDouble()
-				{
-					return ((PrimitiveIterator.OfDouble) iterator).nextDouble();
-				}
-
-				@Override
-				public void forEachRemaining(DoubleConsumer action)
-				{
-					((PrimitiveIterator.OfDouble) iterator).forEachRemaining(action);
-				}
-
-				@Override
-				public PrimitiveIterator.OfDouble unwrap()
-				{
-					return (PrimitiveIterator.OfDouble) iterator;
-				}
-			};
+			return extend(iterator);
 		}
 		if (iterator instanceof PrimitiveIterator.OfInt) {
-			return (FunctionalPrimitiveIterator<E, E_CONS>) new OfInt()
-			{
-				@Override
-				public boolean hasNext()
-				{
-					return ((PrimitiveIterator.OfInt) iterator).hasNext();
-				}
-
-				@Override
-				public int nextInt()
-				{
-					return ((PrimitiveIterator.OfInt) iterator).nextInt();
-				}
-
-				@Override
-				public void forEachRemaining(IntConsumer action)
-				{
-					((PrimitiveIterator.OfInt) iterator).forEachRemaining(action);
-				}
-
-				@Override
-				public PrimitiveIterator.OfInt unwrap()
-				{
-					return (PrimitiveIterator.OfInt) iterator;
-				}
-			};
+			return extend(iterator);
 		}
 		if (iterator instanceof PrimitiveIterator.OfLong) {
-			return (FunctionalPrimitiveIterator<E, E_CONS>) new OfLong()
-			{
-				@Override
-				public boolean hasNext()
-				{
-					return ((PrimitiveIterator.OfLong) iterator).hasNext();
-				}
-
-				@Override
-				public long nextLong()
-				{
-					return ((PrimitiveIterator.OfLong) iterator).nextLong();
-				}
-
-				@Override
-				public void forEachRemaining(LongConsumer action)
-				{
-					((PrimitiveIterator.OfLong) iterator).forEachRemaining(action);
-				}
-
-				@Override
-				public PrimitiveIterator.OfLong unwrap()
-				{
-					return (PrimitiveIterator.OfLong) iterator;
-				}
-			};
+			return extend(iterator);
 		}
-		throw new IllegalArgumentException("Unknown primitive iterator type, cannot extend.");
+		return new FunctionalWrapper.Of<>(iterator);
 	}
 
+	public static FunctionalPrimitiveIterator.OfDouble extend(PrimitiveIterator.OfDouble iterator)
+	{
+		if (iterator instanceof FunctionalPrimitiveIterator.OfDouble) {
+			return (FunctionalPrimitiveIterator.OfDouble) iterator;
+		}
+		return new FunctionalWrapper.OfDouble(iterator);
+	}
 
+	public static FunctionalPrimitiveIterator.OfInt extend(PrimitiveIterator.OfInt iterator)
+	{
+		if (iterator instanceof FunctionalPrimitiveIterator.OfInt) {
+			return (FunctionalPrimitiveIterator.OfInt) iterator;
+		}
+		return new FunctionalWrapper.OfInt(iterator);
+	}
+
+	public static FunctionalPrimitiveIterator.OfLong extend(PrimitiveIterator.OfLong iterator)
+	{
+		if (iterator instanceof FunctionalPrimitiveIterator.OfLong) {
+			return (FunctionalPrimitiveIterator.OfLong) iterator;
+		}
+		return new FunctionalWrapper.OfLong(iterator);
+	}
 
 	/**
 	 * Unwrap a nested iterator if this instance is a decorating wrapper.
@@ -167,61 +334,27 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return this;
 	}
 
+
+
 	// Transforming Methods
+
 	@SuppressWarnings("unchecked")
 	default FunctionalIterator<E> chain(Iterator<? extends E>... iterators)
 	{
-		switch (iterators.length) {
-		case 0:
+		if (iterators.length == 0) {
 			return this;
-		case 1:
-			return new ChainedIterator.Of<>(unwrap(), iterators[0]);
-		default:
-			return new ChainedIterator.Of<>(unwrap(), new ChainedIterator.Of<>(iterators));
 		}
+		return new ChainedIterator.Of<>(unwrap(), iterators);
 	}
 
 	default FunctionalIterator<E> chain(Iterator<Iterator<? extends E>> iterators)
 	{
-		return new ChainedIterator.Of<>(unwrap(), new ChainedIterator.Of<>(iterators));
+		return new ChainedIterator.Of<>(unwrap(), iterators);
 	}
 
 	default FunctionalIterator<E> dedupe()
 	{
 		return FilteringIterator.dedupe(unwrap());
-	}
-
-	default FunctionalIterator<E> drop(int n)
-	{
-		Iterator<E> iterator = unwrap();
-		return new FunctionalIterator<E>()
-		{
-			int count=n;
-
-			@Override
-			public E next()
-			{
-				while (count>0) {
-					count--;
-					iterator.next();
-				}
-				return iterator.next();
-			}
-
-			@Override
-			public boolean hasNext()
-			{
-				while (count>0) {
-					if (iterator.hasNext()) {
-						count--;
-						iterator.next();
-					} else {
-						count = 0;
-					}
-				}
-				return iterator.hasNext();
-			}
-		};
 	}
 
 	default FunctionalIterator<E> filter(Predicate<? super E> function)
@@ -232,6 +365,26 @@ public interface FunctionalIterator<E> extends Iterator<E>
 	default <T> FunctionalIterator<T> flatMap(Function<? super E, ? extends Iterator<? extends T>> function)
 	{
 		return new ChainedIterator.Of<>(map(function));
+	}
+
+	default <T> FunctionalPrimitiveIterator.OfDouble flatMapToDouble(Function<? super E, PrimitiveIterator.OfDouble> function)
+	{
+		return new ChainedIterator.OfDouble(map(function));
+	}
+
+	default <T> FunctionalPrimitiveIterator.OfInt flatMapToInt(Function<? super E, PrimitiveIterator.OfInt> function)
+	{
+		return new ChainedIterator.OfInt(map(function));
+	}
+
+	default <T> FunctionalPrimitiveIterator.OfLong flatMapToLong(Function<? super E, PrimitiveIterator.OfLong> function)
+	{
+		return new ChainedIterator.OfLong(map(function));
+	}
+
+	default FunctionalIterator<E> isNull()
+	{
+		return extend(FilteringIterator.isNull(unwrap()));
 	}
 
 	default <T> FunctionalIterator<T> map(Function<? super E, ? extends T> function)
@@ -254,46 +407,33 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new MappingIterator.ToLong<>(unwrap(), function);
 	}
 
-	default FunctionalIterator<E> take(int n)
+	default FunctionalIterator<E> nonNull()
 	{
-		Iterator<E> iterator = unwrap();
-		return new FunctionalIterator<E>()
-		{
-			int count=n;
-
-			@Override
-			public E next()
-			{
-				if (!hasNext()) {
-					throw new NoSuchElementException();
-				}
-				count--;
-				return iterator.next();
-			}
-
-			@Override
-			public boolean hasNext()
-			{
-				return count > 0 && iterator.hasNext();
-			}
-		};
+		return extend(FilteringIterator.nonNull(unwrap()));
 	}
 
+
+
 	// Accumulations Methods (Consuming)
+
 	default boolean allMatch(Predicate<? super E> predicate)
 	{
-		Iterator<E> self = unwrap();
-		while (self.hasNext()) {
-			if (! predicate.test(self.next())) {
-				return false;
-			}
-		}
-		return true;
+		return anyMatch(predicate.negate());
 	}
 
 	default boolean anyMatch(Predicate<? super E> predicate)
 	{
 		return detect(predicate).isPresent();
+	}
+
+	default String asString()
+	{
+		StringBuffer buffer = new StringBuffer("{");
+		if (hasNext()) {
+			buffer.append(next());
+		}
+		forEachRemaining(each -> buffer.append(", ").append(each));
+		return buffer.append("}").toString();
 	}
 
 	default <C extends Collection<? super E>> C collect(Supplier<? extends C> constructor)
@@ -305,10 +445,8 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 	default <C extends Collection<? super E>> C collect(C collection)
 	{
-		Iterator<E> self = unwrap();
-		while (self.hasNext()) {
-			collection.add(self.next());
-		}
+		forEachRemaining(collection::add);
+//		collectAndCount(collection);
 		return collection;
 	}
 
@@ -319,21 +457,20 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 	default E[] collect(E[] array, int offset)
 	{
-		Iterator<E> self = unwrap();
-		int count = offset;
-		while (self.hasNext()) {
-			array[count++] = self.next();
-		}
+		collectAndCount(array, offset);
 		return array;
 	}
 
+	// FIXME ALG: consider override in subclasses
 	default int collectAndCount(Collection<? super E> collection)
 	{
-		Iterator<E> self = unwrap();
+		// avoid redirection in wrappers
+		Iterator<E> local = unwrap();
+		// exploit arithmetic operator
 		int count = 0;
-		while (self.hasNext()) {
+		while (local.hasNext()) {
+			collection.add(local.next());
 			count++;
-			collection.add(self.next());
 		}
 		return count;
 	}
@@ -343,33 +480,36 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return collectAndCount(array, 0);
 	}
 
+	// FIXME ALG: consider override in subclasses
 	default int collectAndCount(E[] array, int offset)
 	{
-		Iterator<E> self = unwrap();
+		// avoid redirection in wrappers
+		Iterator<E> local = unwrap();
+		// avoid auto-boxing of array index
 		int count = offset;
-		while (self.hasNext()) {
-			array[count++] = self.next();
+		while (local.hasNext()) {
+			array[count++] = local.next();
 		}
 		return count - offset;
 	}
 
 	default boolean contains(Object obj)
 	{
-		Iterator<E> self = unwrap();
-		if (obj == null) {
-			while (self.hasNext()) {
-				if (self.next() == null) {
-					return true;
-				}
-			}
-		} else {
-			while (self.hasNext()) {
-				if (self.next().equals(obj)) {
-					return true;
-				}
-			}
+		return anyMatch((obj == null) ? Objects::isNull : obj::equals);
+	}
+
+	// FIXME ALG: consider override in subclasses
+	default int count()
+	{
+		// avoid redirection in wrappers
+		Iterator<E> local = unwrap();
+		// exploit arithmetic operator
+		int count = 0;
+		while (local.hasNext()) {
+			local.next();
+			count++;
 		}
-		return false;
+		return count;
 	}
 
 	default int count(Predicate<? super E> predicate)
@@ -377,35 +517,10 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return filter(predicate).count();
 	}
 
-	default int count()
-	{
-		Iterator<E> self = unwrap();
-		int count=0;
-		while (self.hasNext()) {
-			self.next();
-			count++;
-		}
-		return count;
-	}
-
 	default Optional<E> detect(Predicate<? super E> predicate)
 	{
-		Iterator<E> self = unwrap();
-		while (self.hasNext()) {
-			E next = self.next();
-			if (predicate.test(next)) {
-				return Optional.of(next);
-			}
-		}
-		return Optional.empty();
-	}
-
-	default E head()
-	{
-		if(hasNext()) {
-			throw new NoSuchElementException();
-		}
-		return next();
+		FunctionalIterator<E> filtered = filter(predicate);
+		return filtered.hasNext() ? Optional.of(filtered.next()) : Optional.empty();
 	}
 
 	default Optional<E> reduce(BinaryOperator<E> accumulator)
@@ -416,33 +531,16 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return Optional.of(reduce(next(), accumulator));
 	}
 
+	// FIXME ALG: consider override in subclasses
 	default <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
 	{
-		Iterator<E> self = unwrap();
-		T result = identity;
-		while(self.hasNext()) {
-			result = accumulator.apply(result, self.next());
+		Objects.requireNonNull(accumulator);
+		// avoid redirection in wrappers
+		Iterator<E> local = unwrap();
+		T result          = identity;
+		while(local.hasNext()) {
+			result = accumulator.apply(result, local.next());
 		}
 		return result;
-	}
-
-	default FunctionalIterator<E> tail()
-	{
-		head();
-		return this;
-	}
-
-	default String asString()
-	{
-		Iterator<E> self = unwrap();
-		StringBuffer buffer = new StringBuffer("{");
-		while (self.hasNext()) {
-			buffer.append(self.next());
-			if (self.hasNext()) {
-				buffer.append(", ");
-			}
-		}
-		buffer.append("}");
-		return buffer.toString();
 	}
 }
