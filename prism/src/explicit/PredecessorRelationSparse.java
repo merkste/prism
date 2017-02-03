@@ -34,12 +34,11 @@ import java.util.Iterator;
 import java.util.function.ToIntFunction;
 
 import common.StopWatch;
-import common.iterable.EmptyIterable;
-import common.iterable.EmptyIterator;
-import common.iterable.FunctionalIterable;
+import common.iterable.ArrayIterator;
 import common.iterable.FunctionalIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
+import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
 import prism.PrismComponent;
 
@@ -52,16 +51,20 @@ import prism.PrismComponent;
  * Note: Naturally, if the model changes, the predecessor relation
  * has to be recomputed to remain accurate.
  */
-public class PredecessorRelation
+public class PredecessorRelationSparse extends PredecessorRelation
 {
 	public static final ToIntFunction<Integer> INT_VALUE = Integer::intValue;
+
+	// FIXME ALG: Use in DTMC sparse, too
+	// FIXME ALG: Build during model build
 
 	/**
 	 * pre[i] provides the list of predecessors of state with index i.
 	 */
-	protected ArrayList<Integer>[] pre;
+	protected int[] offsets;
+	protected int[] predecessors;
 
-	protected PredecessorRelation() {}
+	protected PredecessorRelationSparse() {}
 
 	/**
 	 * Constructor. Computes the predecessor relation for the given model
@@ -70,12 +73,13 @@ public class PredecessorRelation
 	 * @param model the Model
 	 */
 	@SuppressWarnings("unchecked")
-	public PredecessorRelation(Model model)
+	public PredecessorRelationSparse(Model model)
 	{
-		int numStates = model.getNumStates();
+		int numStates         = model.getNumStates();
+		int countPredecessors = 0;
 
-		pre = new ArrayList[numStates];
-
+		// compute predecessors
+		ArrayList<Integer>[] pre = new ArrayList[numStates];
 		for (int state = 0; state < numStates; state++) {
 			for (Iterator<Integer> it = model.getSuccessorsIterator(state); it.hasNext();) {
 				int successor = it.next();
@@ -90,24 +94,40 @@ public class PredecessorRelation
 					pre[successor] = predecessors = new ArrayList<Integer>(5);
 				}
 				predecessors.add(state);
+				countPredecessors++;
 			}
 		}
+
+		// copy predecessors to sparse array
+		offsets      = new int[numStates + 1];
+		predecessors = new int[countPredecessors];
+		for (int state = 0, offset = 0; state < numStates; state++) {
+			offsets[state] = offset;
+			if (pre[state] == null) {
+				continue;
+			}
+			offset += FunctionalIterator.extend(pre[state]).map(INT_VALUE).collectAndCount(predecessors, offset);
+			pre[state] = null;
+		}
+		offsets[numStates] = countPredecessors;
 	}
 
 	/**
 	 * Get an Iterable over the predecessor states of {@code s}.
 	 */
+	@Override
 	public IterableInt getPre(int s)
 	{
-		return pre[s] == null ? EmptyIterable.OfInt() : FunctionalIterable.extend(pre[s]).map(INT_VALUE);
+		return new IterableArray.OfInt(predecessors, offsets[s], offsets[s+1]);
 	}
 
 	/**
 	 * Get an Iterator over the predecessor states of {@code s}.
 	 */
+	@Override
 	public OfInt getPreIterator(int s)
 	{
-		return pre[s] == null ? EmptyIterator.OfInt() : FunctionalIterator.extend(pre[s]).map(INT_VALUE);
+		return new ArrayIterator.OfInt(predecessors, offsets[s], offsets[s+1]);
 	}
 
 	/**
@@ -118,13 +138,13 @@ public class PredecessorRelation
 	 * @param model the model for which the predecessor relation should be computed
 	 * @returns the predecessor relation
 	 **/
-	public static PredecessorRelation forModel(PrismComponent parent, Model model)
+	public static PredecessorRelationSparse forModel(PrismComponent parent, Model model)
 	{
-		parent.getLog().print("Calculating predecessor relation for "+model.getModelType().fullName()+"...  ");
+		parent.getLog().print("Calculating predecessor relation (SPARSE) for "+model.getModelType().fullName()+"...  ");
 		parent.getLog().flush();
 
 		StopWatch watch = new StopWatch().start();
-		PredecessorRelation pre = new PredecessorRelation(model);
+		PredecessorRelationSparse pre = new PredecessorRelationSparse(model);
 
 		parent.getLog().println("done (" + watch.elapsedSeconds() + " seconds)");
 

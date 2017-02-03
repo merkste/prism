@@ -156,6 +156,8 @@ public class MDPSparse extends MDPExplicit
 		}
 		choiceStarts[numDistrs] = numTransitions;
 		rowStarts[numStates] = numDistrs;
+
+		predecessorRelation = mdp.hasStoredPredecessorRelation() ? mdp.getPredecessorRelation(null, false) : null;
 	}
 
 	private boolean hasActions(final MDP mdp)
@@ -236,6 +238,8 @@ public class MDPSparse extends MDPExplicit
 		}
 		choiceStarts[numDistrs] = numTransitions;
 		rowStarts[numStates] = numDistrs;
+
+		predecessorRelation = mdp.hasStoredPredecessorRelation() ? mdp.getPredecessorRelation(null, false) : null;
 	}
 
 	/**

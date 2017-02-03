@@ -1,6 +1,6 @@
 //==============================================================================
 //	
-//	Copyright (c) 2014-
+//	Copyright (c) 2016-
 //	Authors:
 //	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
 //	
@@ -34,34 +34,32 @@ import java.util.Iterator;
 import java.util.function.ToIntFunction;
 
 import common.StopWatch;
-import common.iterable.EmptyIterable;
-import common.iterable.EmptyIterator;
-import common.iterable.FunctionalIterable;
+import common.iterable.ArrayIterator;
 import common.iterable.FunctionalIterator;
-import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.FunctionalPrimitiveIterator.OfInt;
+import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
 import prism.PrismComponent;
 
 /**
- * A class for storing and accessing the predecessor relation of an explicit Model.
+ * A class for storing and accessing the incoming choices of an explicit NondetModel.
+ * This class can be seen as providing more detailed information than PredecessorRelation,
+ * as that class only stores information about the states and not the choices linking them. 
  * <p>
- * As Model only provide easy access to successors of states,
+ * As NondetModel only provide easy access to successors of states,
  * the predecessor relation is computed and stored for subsequent efficient access.
  * <p>
- * Note: Naturally, if the model changes, the predecessor relation
+ * Note: Naturally, if the NondetModel changes, the predecessor relation
  * has to be recomputed to remain accurate.
  */
-public class PredecessorRelation
+public class IncomingChoiceRelationSparse extends IncomingChoiceRelation
 {
 	public static final ToIntFunction<Integer> INT_VALUE = Integer::intValue;
 
 	/**
-	 * pre[i] provides the list of predecessors of state with index i.
+	 * pre[i] provides the list of incoming choices of the state with index i.
 	 */
-	protected ArrayList<Integer>[] pre;
-
-	protected PredecessorRelation() {}
+	protected int[] offsets;
+	protected Choice[] choices;
 
 	/**
 	 * Constructor. Computes the predecessor relation for the given model
@@ -70,61 +68,76 @@ public class PredecessorRelation
 	 * @param model the Model
 	 */
 	@SuppressWarnings("unchecked")
-	public PredecessorRelation(Model model)
+	public IncomingChoiceRelationSparse(NondetModel model)
 	{
-		int numStates = model.getNumStates();
+		int numStates    = model.getNumStates();
+		int countChoices = 0;
 
-		pre = new ArrayList[numStates];
-
+		// compute choices
+		ArrayList<Choice>[] pre = new ArrayList[numStates];
 		for (int state = 0; state < numStates; state++) {
-			for (Iterator<Integer> it = model.getSuccessorsIterator(state); it.hasNext();) {
-				int successor = it.next();
+			for (int choice = 0, numChoices = model.getNumChoices(state); choice < numChoices; choice++) {
+				Choice newChoice = new Choice(state, choice);
 
-				// Add the current state s to pre[successor].
-				//
-				// As getSuccessorsIterator guarantees that
-				// there are no duplicates in the successors,
-				// s will be added to successor exactly once.
-				ArrayList<Integer> predecessors = pre[successor];
-				if (predecessors == null) {
-					pre[successor] = predecessors = new ArrayList<Integer>(5);
+				for (Iterator<Integer> it = model.getSuccessorsIterator(state, choice); it.hasNext();) {
+					int successor = it.next();
+
+					// Add the current choice (s,c) to pre[successor].
+					ArrayList<Choice> choices = pre[successor];
+					if (choices == null) {
+						pre[successor] = choices = new ArrayList<Choice>(5);
+					}
+					choices.add(newChoice);
+					countChoices++;
 				}
-				predecessors.add(state);
 			}
 		}
+
+		// copy choices to sparse array
+		offsets = new int[numStates + 1];
+		choices = new Choice[countChoices];
+		for (int state = 0, offset = 0; state < numStates; state++) {
+			offsets[state] = offset;
+			if (pre[state] == null) {
+				continue;
+			}
+			offset += FunctionalIterator.extend(pre[state]).collectAndCount(choices, offset);
+			pre[state] = null;
+		}
+		offsets[numStates] = countChoices;
 	}
 
 	/**
-	 * Get an Iterable over the predecessor states of {@code s}.
+	 * Get an Iterable over the incoming choices of state {@code s}.
 	 */
-	public IterableInt getPre(int s)
+	public Iterable<Choice> getIncomingChoices(int s)
 	{
-		return pre[s] == null ? EmptyIterable.OfInt() : FunctionalIterable.extend(pre[s]).map(INT_VALUE);
+		return new IterableArray.Of<>(choices, offsets[s], offsets[s+1]);
 	}
 
 	/**
-	 * Get an Iterator over the predecessor states of {@code s}.
+	 * Get an Iterator over the incoming choices of state {@code s}.
 	 */
-	public OfInt getPreIterator(int s)
+	public Iterator<Choice> getIncomingChoicesIterator(int s)
 	{
-		return pre[s] == null ? EmptyIterator.OfInt() : FunctionalIterator.extend(pre[s]).map(INT_VALUE);
+		return new ArrayIterator.Of<>(choices, offsets[s], offsets[s+1]);
 	}
 
 	/**
-	 * Factory method to compute the predecessor relation for the given model.
+	 * Factory method to compute the incoming choices information for the given model.
 	 * Logs diagnostic information to the log of the given PrismComponent.
 	 *
 	 * @param parent a PrismComponent (for obtaining the log and settings)
-	 * @param model the model for which the predecessor relation should be computed
-	 * @returns the predecessor relation
+	 * @param model the non-deterministic model for which the predecessor relation should be computed
+	 * @returns the incoming choices information
 	 **/
-	public static PredecessorRelation forModel(PrismComponent parent, Model model)
+	public static IncomingChoiceRelationSparse forModel(PrismComponent parent, NondetModel model)
 	{
-		parent.getLog().print("Calculating predecessor relation for "+model.getModelType().fullName()+"...  ");
+		parent.getLog().print("Calculating incoming choice relation (SPARSE) for "+model.getModelType().fullName()+"...  ");
 		parent.getLog().flush();
 
 		StopWatch watch = new StopWatch().start();
-		PredecessorRelation pre = new PredecessorRelation(model);
+		IncomingChoiceRelationSparse pre = new IncomingChoiceRelationSparse(model);
 
 		parent.getLog().println("done (" + watch.elapsedSeconds() + " seconds)");
 
@@ -134,10 +147,13 @@ public class PredecessorRelation
 	/**
 	 * Computes the set Pre*(target) via a DFS, i.e., all states that
 	 * are in {@code target} or can reach {@code target} via one or more transitions
-	 * from states contained in {@code remain}.
+	 * from states contained in {@code remain} and via the enabled choices in {@code enabledChoices}.
 	 * <br/>
 	 * If the parameter {@code remain} is {@code null}, then
 	 * {@code remain} is considered to include all states in the model.
+	 * <br/>
+	 * If the parameter {@code enabledChoices} is {@code null}, then
+	 * {@code enabledChoices} is considered to include all choices in the model.
 	 * <br/>
 	 * If the parameter {@code absorbing} is not {@code null},
 	 * then the states in {@code absorbing} are considered to be absorbing,
@@ -148,9 +164,10 @@ public class PredecessorRelation
 	 * @param target The set of target states
 	 * @param absorbing (optional) set of states that should be considered to be absorbing,
 	 *               i.e., their outgoing edges are ignored, {@code null} = no states
+	 * @param enabledChoices a mask providing information which choices are considered to be enabled
 	 * @return the set of states Pre*(target)
 	 */
-	public BitSet calculatePreStar(BitSet remain, BitSet target, BitSet absorbing)
+	public BitSet calculatePreStar(BitSet remain, BitSet target, BitSet absorbing, ChoicesMask enabledChoices)
 	{
 		int cardinality = target.cardinality();
 		// all target states are in Pre*
@@ -170,8 +187,14 @@ public class PredecessorRelation
 			done.set(s);
 
 			// for each predecessor in the graph
-			for (OfInt pre = getPreIterator(s); pre.hasNext();) {
-				int p = pre.nextInt();
+			for (Choice choice : getIncomingChoices(s)) {
+				// check that choice is actually enabled
+				if (enabledChoices != null &&
+				    !enabledChoices.isEnabled(choice.getState(), choice.getChoice())) {
+					continue;
+				}
+
+				int p = choice.getState();
 				if (absorbing != null && absorbing.get(p)) {
 					// predecessor is absorbing, thus the edge is considered to not exist
 					continue;

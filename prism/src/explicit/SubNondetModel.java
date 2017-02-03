@@ -530,7 +530,7 @@ public class SubNondetModel implements NondetModel
 			return predecessorRelation;
 		}
 
-		PredecessorRelation pre = PredecessorRelation.forModel(parent, this);
+		PredecessorRelation pre = PredecessorRelationSparse.forModel(parent, this);
 
 		if (storeIfNew) {
 			predecessorRelation = pre;

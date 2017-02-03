@@ -33,6 +33,7 @@ import java.util.Map.Entry;
 
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
+import prism.PrismComponent;
 
 /**
  * Interface for classes that provide (read) access to an explicit-state MDP.
@@ -271,4 +272,7 @@ public interface MDP extends NondetModel
 	 * @param dest Vector to write result to.
 	 */
 	public void mvMultRight(int[] states, int[] strat, double[] source, double[] dest);
+
+	@Override
+	public IncomingChoiceRelationSparseCombined getPredecessorRelation(PrismComponent parent, boolean storeIfNew);
 }

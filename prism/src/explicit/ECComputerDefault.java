@@ -38,6 +38,7 @@ import java.util.Stack;
 
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import prism.PrismComponent;
 import prism.PrismException;
 
@@ -237,7 +238,8 @@ public class ECComputerDefault extends ECComputer
 			if (act.isEmpty()) {
 				states.clear(i);
 
-				for (int j : pre.getPre(i)) {
+				for (OfInt it = pre.getPreIterator(i); it.hasNext();) {
+					int j = it.nextInt();
 					if (states.get(j))
 						toCheck.add(j);
 				}
@@ -256,7 +258,9 @@ public class ECComputerDefault extends ECComputer
 				states.clear(i);
 				actions.remove(i);
 
-				for (int j : pre.getPre(i)) {
+				for (OfInt it = pre.getPreIterator(i); it.hasNext();) {
+					int j = it.nextInt();
+//				for (int j : pre.getPre(i)) {
 					if (states.get(j))
 						toCheck.add(j);
 				}

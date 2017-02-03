@@ -33,6 +33,7 @@ import java.util.Vector;
 
 import automata.LTL2NBA;
 import jltl2dstar.NBA;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
 import parser.ast.Expression;
@@ -356,7 +357,8 @@ public class NonProbModelChecker extends StateModelChecker
 			// if there are no remaining successors into T, i.e, if count[s]==0
 
 			// For all predecessors s of t....
-			for (int s : pre.getPre(t)) {
+			for (OfInt it = pre.getPreIterator(t); it.hasNext();) {
+				int s = it.nextInt();
 				// ... ignore if we have already proven that it does not satisfy E[ a R b ]
 				if (!T.get(s)) continue;
 
@@ -431,8 +433,8 @@ public class NonProbModelChecker extends StateModelChecker
 			// if there are no remaining successors into T, i.e, if count[s]==0
 
 			// For all predecessors s of t....
-
-			for (int s : pre.getPre(t)) {
+			for (OfInt it = pre.getPreIterator(t); it.hasNext();) {
+				int s = it.nextInt();
 				// ... ignore if we have already proven that it does not satisfy E[ a R b ]
 				if (!T.get(s)) continue;
 

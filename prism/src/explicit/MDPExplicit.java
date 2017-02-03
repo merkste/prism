@@ -37,6 +37,7 @@ import java.util.TreeMap;
 
 import common.iterable.IterableStateSet;
 import prism.ModelType;
+import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLog;
 import prism.PrismUtils;
@@ -295,5 +296,20 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 	public Model constructInducedModel(MDStrategy strat)
 	{
 		return new DTMCFromMDPAndMDStrategy(this, strat);
+	}
+
+	@Override
+	public IncomingChoiceRelationSparseCombined getPredecessorRelation(PrismComponent parent, boolean storeIfNew)
+	{
+		if (predecessorRelation != null) {
+			return (IncomingChoiceRelationSparseCombined) predecessorRelation;
+		}
+
+		IncomingChoiceRelationSparseCombined pre = IncomingChoiceRelationSparseCombined.forModel(parent, this);
+
+		if (storeIfNew) {
+			predecessorRelation = pre;
+		}
+		return pre;
 	}
 }

@@ -16,14 +16,17 @@ import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import prism.ModelType;
+import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLog;
 import prism.PrismUtils;
 import strat.MDStrategy;
 import explicit.DTMCFromMDPAndMDStrategy;
 import explicit.Distribution;
+import explicit.IncomingChoiceRelationSparseCombined;
 import explicit.MDP;
 import explicit.Model;
+import explicit.PredecessorRelation;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 
@@ -175,6 +178,21 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 		s += "Choices:     " + getNumChoices() + "\n";
 		s += "Max/avg:     " + getMaxNumChoices() + "/" + PrismUtils.formatDouble2dp(((double) getNumChoices()) / numStates) + "\n";
 		return s;
+	}
+
+	@Override
+	public IncomingChoiceRelationSparseCombined getPredecessorRelation(PrismComponent parent, boolean storeIfNew)
+	{
+		if (predecessorRelation != null) {
+			return (IncomingChoiceRelationSparseCombined) predecessorRelation;
+		}
+
+		final PredecessorRelation pre = IncomingChoiceRelationSparseCombined.forModel(parent, this);
+
+		if (storeIfNew) {
+			predecessorRelation = pre;
+		}
+		return (IncomingChoiceRelationSparseCombined) pre;
 	}
 
 	@Override

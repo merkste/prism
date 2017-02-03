@@ -1,29 +1,3 @@
-//==============================================================================
-//	
-//	Copyright (c) 2016-
-//	Authors:
-//	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
-//	
-//------------------------------------------------------------------------------
-//	
-//	This file is part of PRISM.
-//	
-//	PRISM is free software; you can redistribute it and/or modify
-//	it under the terms of the GNU General Public License as published by
-//	the Free Software Foundation; either version 2 of the License, or
-//	(at your option) any later version.
-//	
-//	PRISM is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU General Public License for more details.
-//	
-//	You should have received a copy of the GNU General Public License
-//	along with PRISM; if not, write to the Free Software Foundation,
-//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//	
-//==============================================================================
-
 package explicit;
 
 import java.util.ArrayDeque;
@@ -32,9 +6,15 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.function.IntPredicate;
+import java.util.function.ToIntFunction;
 
 import common.StopWatch;
+import common.iterable.EmptyIterable;
+import common.iterable.FunctionalIterable;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.IterableBitSet;
+import explicit.IncomingChoiceRelation.Choice;
 import prism.PrismComponent;
 
 /**
@@ -48,78 +28,12 @@ import prism.PrismComponent;
  * Note: Naturally, if the NondetModel changes, the predecessor relation
  * has to be recomputed to remain accurate.
  */
-public class IncomingChoiceRelation
+public class IncomingChoiceRelationCombined extends PredecessorRelation
 {
-	/** An outgoing choice from a state, i.e., the source state and the choice index */
-	public static final class Choice
-	{
-		/** the source state*/
-		protected final int state;
-		/** the choice index */
-		protected final int choice;
-
-		/** Constructor */
-		public Choice(int state, int choice)
-		{
-			this.state = state;
-			this.choice = choice;
-		}
-
-		/** The source state of this choice */
-		public int getState()
-		{
-			return state;
-		}
-
-		/** The choice index of this choice */
-		public int getChoice()
-		{
-			return choice;
-		}
-		
-		@Override
-		public String toString()
-		{
-			return "(" + state + "," + choice + ")";
-		}
-
-		@Override
-		public int hashCode()
-		{
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + choice;
-			result = prime * result + state;
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj)
-		{
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Choice other = (Choice) obj;
-			if (choice != other.choice)
-				return false;
-			if (state != other.state)
-				return false;
-			return true;
-		}
-
-	};
-
-
-
 	/**
 	 * pre[i] provides the list of incoming choices of the state with index i.
 	 */
 	protected ArrayList<Choice>[] pre;
-
-	protected IncomingChoiceRelation() {}
 
 	/**
 	 * Constructor. Computes the predecessor relation for the given model
@@ -128,17 +42,18 @@ public class IncomingChoiceRelation
 	 * @param model the Model
 	 */
 	@SuppressWarnings("unchecked")
-	public IncomingChoiceRelation(NondetModel model)
+	public IncomingChoiceRelationCombined(NondetModel model)
 	{
 		int numStates = model.getNumStates();
 
 		pre = new ArrayList[numStates];
 
-		for (int s = 0; s < numStates; s++) {
-			for (int c = 0, numChoices = model.getNumChoices(s); c < numChoices; c++) {
-				Choice choice = new Choice(s, c);
+		// compute choices
+		for (int state = 0; state < numStates; state++) {
+			for (int choice = 0, numChoices = model.getNumChoices(state); choice < numChoices; choice++) {
+				Choice newChoice = new Choice(state, choice);
 
-				for (Iterator<Integer> it = model.getSuccessorsIterator(s, c); it.hasNext();) {
+				for (Iterator<Integer> it = model.getSuccessorsIterator(state, choice); it.hasNext();) {
 					int successor = it.next();
 
 					// Add the current choice (s,c) to pre[successor].
@@ -146,7 +61,7 @@ public class IncomingChoiceRelation
 					if (choices == null) {
 						pre[successor] = choices = new ArrayList<Choice>(5);
 					}
-					choices.add(choice);
+					choices.add(newChoice);
 				}
 			}
 		}
@@ -161,11 +76,27 @@ public class IncomingChoiceRelation
 	}
 
 	/**
-	 * Get an Iterator over the incoming choices of state {@code s}.
+	 * Get an Iterable over the predecessor states of {@code s}.
 	 */
-	public Iterator<Choice> getIncomingChoicesIterator(int s)
+	public IterableInt getPre(int s)
 	{
-		return getIncomingChoices(s).iterator();
+		if (pre[s] == null) {
+			return EmptyIterable.OfInt();
+		}
+
+		IntPredicate sortedDedupe = new IntPredicate() {
+			int last = -1;
+
+			@Override
+			public boolean test(int s) {
+				if (s == last) {
+					return false;
+				}
+				last = s;
+				return true;
+			}
+		};
+		return FunctionalIterable.extend(pre[s]).map((ToIntFunction<Choice>) Choice::getState).filter(sortedDedupe);
 	}
 
 	/**
@@ -176,13 +107,13 @@ public class IncomingChoiceRelation
 	 * @param model the non-deterministic model for which the predecessor relation should be computed
 	 * @returns the incoming choices information
 	 **/
-	public static IncomingChoiceRelation forModel(PrismComponent parent, NondetModel model)
+	public static IncomingChoiceRelationCombined forModel(PrismComponent parent, NondetModel model)
 	{
-		parent.getLog().print("Calculating incoming choices relation for "+model.getModelType().fullName()+"...  ");
+		parent.getLog().print("Calculating incoming choice relation (COMBINED) for "+model.getModelType().fullName()+"...  ");
 		parent.getLog().flush();
 
 		StopWatch watch = new StopWatch().start();
-		IncomingChoiceRelation pre = new IncomingChoiceRelation(model);
+		IncomingChoiceRelationCombined pre = new IncomingChoiceRelationCombined(model);
 
 		parent.getLog().println("done (" + watch.elapsedSeconds() + " seconds)");
 
@@ -214,6 +145,10 @@ public class IncomingChoiceRelation
 	 */
 	public BitSet calculatePreStar(BitSet remain, BitSet target, BitSet absorbing, ChoicesMask enabledChoices)
 	{
+		if (enabledChoices == null) {
+			return calculatePreStar(remain, target, absorbing);
+		}
+
 		int cardinality = target.cardinality();
 		// all target states are in Pre*
 		BitSet result = (BitSet) target.clone();
@@ -234,8 +169,7 @@ public class IncomingChoiceRelation
 			// for each predecessor in the graph
 			for (Choice choice : getIncomingChoices(s)) {
 				// check that choice is actually enabled
-				if (enabledChoices != null &&
-				    !enabledChoices.isEnabled(choice.getState(), choice.getChoice())) {
+				if (!enabledChoices.isEnabled(choice.getState(), choice.getChoice())) {
 					continue;
 				}
 

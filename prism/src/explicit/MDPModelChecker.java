@@ -26,8 +26,10 @@
 
 package explicit;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +52,10 @@ import prism.PrismUtils;
 import strat.MDStrategyArray;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
-import common.BitSetAndQueue;
 import common.BitSetTools;
+import common.iterable.IntIntConsumer;
 import common.iterable.IterableBitSet;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import explicit.conditional.ConditionalMDPModelChecker;
 import explicit.conditional.transformer.mdp.MDPConditionalMinMaxFilterTransformer;
 import explicit.conditional.transformer.mdp.MDPMinMaxFilterTransformer.MDPMinMaxTransformation;
@@ -656,43 +659,45 @@ public class MDPModelChecker extends ProbModelChecker
 	 */
 	public BitSet prob0(MDP mdp, BitSet remain, BitSet target, boolean min, int strat[], PredecessorRelation pre)
 	{
-		int n;
-		BitSet result, unknown;
-		long timer;
+		int numStates = mdp.getNumStates();
 
 		// Start precomputation
-		timer = System.currentTimeMillis();
 		mainLog.println("Starting Prob0 (" + (min ? "min" : "max") + ")...");
+		long timer = System.currentTimeMillis();
 
 		// Special case: no target states -> probability = 0 everywhere
 		if (target.isEmpty()) {
-			result = new BitSet(mdp.getNumStates());
-			result.set(0, mdp.getNumStates());
+			BitSet result = new BitSet(numStates);
+			result.set(0, numStates);
 			return result;
 		}
 
 		// Initialise vectors
-		n = mdp.getNumStates();
 
 		// Determine set of states actually need to perform computation for
-		unknown = BitSetTools.complement(n, target);
-		if (remain != null)
+		BitSet unknown = BitSetTools.complement(numStates, target);
+		if (remain != null) {
 			unknown.and(remain);
+		}
 
+		BitSet result;
 		if (min) {
-			BitSet T = (BitSet) target.clone();
-			BitSet R = (BitSet) target.clone();
+			BitSet T         = (BitSet) target.clone();
+			// STACK, may contain duplicates, but BitSet is considerably slower
+			Deque<Integer> R = new IterableBitSet(target).collect(new ArrayDeque<>(target.cardinality()));
 
 			while (!R.isEmpty()) {
-				int t = R.previousSetBit(R.length());
-				R.clear(t);
+				int r = R.pop();
 
-				for (int s : pre.getPre(t)) {
-					if (!unknown.get(s) || T.get(s)) continue;
+				for (OfInt it = pre.getPreIterator(r); it.hasNext();) {
+					int p = it.nextInt();
+					if (!unknown.get(p) || T.get(p)) {
+						continue;
+					}
 
 					boolean forAllSomeInT = true;
-					for (int choice = 0, choices = mdp.getNumChoices(s); choice < choices; choice++) {
-						boolean someInT = mdp.someSuccessorsInSet(s, choice, T);
+					for (int choice = 0, numChoices = mdp.getNumChoices(p); choice < numChoices; choice++) {
+						boolean someInT = mdp.someSuccessorsInSet(p, choice, T);
 						if (!someInT) {
 							forAllSomeInT = false;
 							break;
@@ -700,20 +705,20 @@ public class MDPModelChecker extends ProbModelChecker
 					}
 
 					if (forAllSomeInT) {
-						T.set(s);
-						R.set(s);
+						T.set(p);
+						R.push(p);
 					}
 				}
 			}
 
 			result = T;
 			// result = S \ T
-			result.flip(0, n);
+			result.flip(0, numStates);
 		} else {
 			// E [ remain U target ]
 			result = pre.calculatePreStar(remain, target, target);
-			// Pmax=0 <=> ! E [ remain U target ]  -> complement
-			result.flip(0, n);
+			// Pmax=0 <=> ! E [ remain U target ]  -> in-place complement
+			result.flip(0, numStates);
 		}
 
 
@@ -727,8 +732,7 @@ public class MDPModelChecker extends ProbModelChecker
 		// We simply pick, for all "no" states, the first choice for which all transitions stay in "no"
 		if (strat != null) {
 			for (int i = result.nextSetBit(0); i >= 0; i = result.nextSetBit(i + 1)) {
-				int numChoices = mdp.getNumChoices(i);
-				for (int k = 0; k < numChoices; k++) {
+				for (int k = 0, numChoices = mdp.getNumChoices(i); k < numChoices; k++) {
 					if (mdp.allSuccessorsInSet(i, k, result)) {
 						strat[i] = k;
 						continue;
@@ -860,18 +864,16 @@ public class MDPModelChecker extends ProbModelChecker
 	 */
 	public BitSet prob1(MDP mdp, BitSet remain, BitSet target, boolean min, int strat[], PredecessorRelation pre)
 	{
-		BitSet result;
-		long timer;
-
 		// Start precomputation
-		timer = System.currentTimeMillis();
 		mainLog.println("Starting Prob1 (" + (min ? "min" : "max") + ")...");
+		long timer = System.currentTimeMillis();
 
 		// Special case: no target states -> probability = 0 everwhere
 		if (target.isEmpty()) {
-			return new BitSet();
+			return new BitSet(0);
 		}
 
+		BitSet result;
 		if (min) {
 			result = prob1a(mdp, remain, target, pre);
 		} else {
@@ -901,30 +903,30 @@ public class MDPModelChecker extends ProbModelChecker
 		// this is an adaption of the Smin=1 algorithm in the Principles of Model Checking book
 		// with added support for constrained reachability (remain U target)
 
-		int n = mdp.getNumStates();
+		int numStates = mdp.getNumStates();
 
 		// construct explicit set of remaining state in case that remain
-		// is given implicitely (null = all states)
+		// is given implicitly (null = all states)
 		if (remain == null) {
-			remain = new BitSet();
-			remain.set(0,n);
+			remain = new BitSet(numStates);
+			remain.set(0,numStates);
 		}
 
 		// Z
-		// = (S \ remain) \ target
+		// = S \ (remain U target)
 		// = the states that satisfy neither
 		// remain nor target, i.e., where we know
 		// a priori that they have probability 0,
 		// as E[ remain U target ] is definitely false
-		BitSet Z = new BitSet();
-		Z.set(0,n);
+		BitSet Z = new BitSet(numStates);
+		Z.set(0,numStates);
 		Z.andNot(remain);
 		Z.andNot(target);
 
 		// mainLog.println("Z = " + Z);
 
 		// The set of states that are not target states
-		BitSet notTarget = BitSetTools.complement(n, target);
+		BitSet notTarget = BitSetTools.complement(numStates, target);
 		// mainLog.println("notTarget = " + notTarget);
 
 		// The set of states that can reach Z without visiting
@@ -944,40 +946,42 @@ public class MDPModelChecker extends ProbModelChecker
 
 		// T = potentially safe states, initializes with
 		// ( S \ B ) \ canReachZ
-		BitSet T = BitSetTools.complement(n, B);
+		BitSet T = BitSetTools.complement(numStates, B);
 		T.andNot(canReachZ);
 
 		// E = unsafe states that have to be removed from T yet
-		BitSetAndQueue E = new BitSetAndQueue(B);
+		// STACK, may contain duplicates, but BitSet is considerably slower
+		Deque<Integer> E = new IterableBitSet(B).collect(new ArrayDeque<>(B.cardinality()));
 		while (!E.isEmpty()) {
-			int t = E.dequeue();
+			int e = E.pop();
 
 			// for removal, look at the predecessors
 			// and remove choices that will lead to B with probability > 0
-			for (int s : pre.getPre(t)) {
+			for (OfInt it = pre.getPreIterator(e); it.hasNext();) {
+				int p = it.nextInt();
 				// predecessor already in B, continue
-				if (B.get(s)) {
+				if (B.get(p)) {
 					continue;
 				}
 
 				// is there a choice that allows to avoid B?
-				boolean existsChoiceAvoidingB = false;
-
-				for (int choice = 0, choices = mdp.getNumChoices(s); choice < choices; choice++) {
-					if (!mdp.someSuccessorsInSet(s, choice, B)) {
-						existsChoiceAvoidingB = true;
+				boolean forAllSomeInB = true;
+				for (int choice = 0, choices = mdp.getNumChoices(p); choice < choices; choice++) {
+					boolean someInB = mdp.someSuccessorsInSet(p, choice, B);
+					if (!someInB) {
+						forAllSomeInB = false;
 						break;
 					}
 				}
 
 				// if there is no such choice, we have to remove s
-				if (!existsChoiceAvoidingB) {
+				if (forAllSomeInB) {
 					// add to queue
-					E.enqueue(s);
+					E.push(p);
 					// add to unsafe states B
-					B.set(s);
+					B.set(p);
 					// remove from safe states T
-					T.clear(s);
+					T.clear(p);
 				}
 			}
 		}
@@ -992,11 +996,13 @@ public class MDPModelChecker extends ProbModelChecker
 		// probability => Pmin<1 ( remain U target )
 		BitSet canReachSpoilerState = pre.calculatePreStar(remainAndNotTarget, spoilerStates, spoilerStates);
 		// mainLog.println("canReachSpoilerState = " + canReachSpoilerState);
-		
+
 		// We are interested in Pmin=1 ( remain U target ),
 		// which we obtain by complementing, yielding the set of states
 		// where there is no way to avoid remain U target
-		BitSet result = BitSetTools.complement(n, canReachSpoilerState);
+		// in-place complement
+		BitSet result = canReachSpoilerState;
+		result.flip(0, numStates);
 		// mainLog.println("result = " + result);
 
 		return result;
@@ -1019,7 +1025,7 @@ public class MDPModelChecker extends ProbModelChecker
 		// This algorithm is an adaption of the Smax=1 algorithm
 		// in the Principles of Model Checking book
 
-		int n = mdp.getNumStates();
+		int numStates = mdp.getNumStates();
 
 		// Which choices remain enabled?
 		ChoicesMask enabledChoices = new ChoicesMask(mdp);
@@ -1027,32 +1033,34 @@ public class MDPModelChecker extends ProbModelChecker
 		// We count the remaining, enabled choices in each
 		// state so we can easily determine when
 		// there are no more enabled choices for a state
-		int[] remainingChoices = new int[n];
-		for (int s = 0; s < n; s++) {
+		int[] remainingChoices = new int[numStates];
+		for (int s = 0; s < numStates; s++) {
 			remainingChoices[s] = mdp.getNumChoices(s);
 		}
 
 		// the set of state that can reach the target, i.e. E[ remain U target ]
 		BitSet canReachTarget = pre.calculatePreStar(remain, target, target);
 		// the set of state that can't reach the target, i.e. !E[ remain U target ]
-		BitSet cantReachTarget = BitSetTools.complement(n, canReachTarget);
+		BitSet canNotReachTarget = BitSetTools.complement(numStates, canReachTarget);
 
 		// in addition to the PredecessorRelation, we need more detailed
 		// information about the incoming choices for each state
-		IncomingChoiceRelation incoming = IncomingChoiceRelation.forModel(this, mdp);
+		IncomingChoiceRelationSparseCombined incoming = (IncomingChoiceRelationSparseCombined) mdp.getPredecessorRelation(this, true);
 
 		// in each iteration step, U is the set of states that need to be
 		// removed in this iteration because they can't reach the target
-		BitSet U = cantReachTarget;
-		
+		BitSet U = canNotReachTarget;
+
 		// unknown is the set of states that can still reach the target,
 		// but might need to be removed later on
 		BitSet unknown = (BitSet) canReachTarget.clone();
 		unknown.andNot(target);
 
 		// unsafe are the states that have been determined to have Pmax<1[ remain U target ]
-		BitSet unsafe = (BitSet) cantReachTarget.clone();
+		BitSet unsafe = (BitSet) canNotReachTarget.clone();
 
+		// STACK, may contain duplicates, but BitSet is considerably slower
+		Deque<Integer> toRemove = new ArrayDeque<>();
 		while (!U.isEmpty()) {
 			// mainLog.println("Iteration " + iterations +": " +U);
 
@@ -1060,41 +1068,36 @@ public class MDPModelChecker extends ProbModelChecker
 			// all states in U (can not reach target anymore)
 			// and other states where we have determined that they
 			// don't have any choices anymore to remain in unknown
-			BitSetAndQueue toRemove = new BitSetAndQueue(U);
+			toRemove.clear();
+			new IterableBitSet(U).collect(toRemove);
 
-			while (!toRemove.isEmpty()) {
-				int t = toRemove.dequeue();
-
-				// for each state t, we consider the incoming choices
-				for (IncomingChoiceRelation.Choice choice : incoming.getIncomingChoices(t)) {
-					// s is the predecessor of t, i.e., P(s,c,t) > 0
-					int s = choice.getState();
-					int c = choice.getChoice();
-
-					if (!enabledChoices.isEnabled(s,c)) {
-						// already disabled
-						continue;
-					}
-
-					if (!unknown.get(s)) {
-						// state already processed
-						continue;
-					}
-
-					// We disable the choice and decrement the corresponding counter for s
-					enabledChoices.disableChoice(s, choice.getChoice());
-					remainingChoices[s]--;
-
-					// there are no more remaining choices, remove s
-					if (remainingChoices[s] == 0) {
-						// s is not in unknown anymore
-						unknown.clear(s);
-						// s has become unsafe
-						unsafe.set(s);
-						// and we have to process the removal of s
-						toRemove.enqueue(s);
+			IntIntConsumer addToPre = new IntIntConsumer()
+			{
+				@Override
+				public void accept(int p, int c)
+				{
+					// Is choice disabled & state not processed yet ?
+					if (enabledChoices.isEnabled(p,c) && unknown.get(p)) {
+						// disable choice and decrement corresponding counter for s
+						enabledChoices.disableChoice(p, c);
+						remainingChoices[p]--;
+						// no more remaining choices, remove s
+						if (remainingChoices[p] == 0) {
+							// s is not in unknown anymore
+							unknown.clear(p);
+							// s has become unsafe
+							unsafe.set(p);
+							// and we have to process the removal of s
+							toRemove.push(p);
+						}
 					}
 				}
+			};
+
+			while (!toRemove.isEmpty()) {
+				int t = toRemove.pop();
+
+				incoming.getIncomingChoicesIterator(t).forEachRemaining(addToPre);
 			}
 
 			// after removal, if may be the case that states in unknown,
@@ -1778,10 +1781,14 @@ public class MDPModelChecker extends ProbModelChecker
 		
 		// Precomputation (not optional)
 		timerProb1 = System.currentTimeMillis();
-		inf = prob1(mdp, null, target, !min, strat);
+		if (preRel && strat==null) {
+			inf = prob1(mdp, null, target, !min, null, mdp.getPredecessorRelation(this, true));
+		} else {
+			inf = prob1(mdp, null, target, !min, strat);
+		}
 		inf.flip(0, n);
 		timerProb1 = System.currentTimeMillis() - timerProb1;
-		
+
 		// Print results of precomputation
 		numTarget = target.cardinality();
 		numInf = inf.cardinality();

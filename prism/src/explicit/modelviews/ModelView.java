@@ -268,7 +268,7 @@ public abstract class ModelView implements Model
 			return predecessorRelation;
 		}
 	
-		final PredecessorRelation pre = PredecessorRelation.forModel(parent, this);
+		final PredecessorRelation pre = PredecessorRelationSparse.forModel(parent, this);
 	
 		if (storeIfNew) {
 			predecessorRelation = pre;
