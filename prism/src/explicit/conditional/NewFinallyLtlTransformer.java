@@ -83,7 +83,7 @@ public interface NewFinallyLtlTransformer<M extends Model, MC extends ProbModelC
 		ExpressionProb transformedObjectiveBounded = new ExpressionProb(transformedObjective.getExpression(), objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
 		ExpressionConditional transformedExpressionBounded = new ExpressionConditional(transformedObjectiveBounded, transformedExpression.getCondition());
 
-		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded, transformation.getFailLabel(), transformation.getBadLabel());
+		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded);
 	}
 
 	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalForm(Reach<M> objectivePath, LabeledDA conditionDA, BitSet statesOfInterest)

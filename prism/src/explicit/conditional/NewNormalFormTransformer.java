@@ -64,7 +64,7 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 	NormalFormTransformation<M> transformNormalForm(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException;
 
-	ModelTransformation<M, ? extends M> transformReset(M model, BitSet resetStates, BitSet statesOfInterest)
+	ResetTransformation<M> transformReset(M model, BitSet resetStates, BitSet statesOfInterest)
 			throws PrismException;
 
 	ModelTransformation<M, ? extends M> transformRestrict(ModelTransformation<M, ? extends M> resetTransformation);
@@ -371,27 +371,16 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 
 
 
-	public class NormalFormTransformation<M extends Model> extends BasicModelExpressionTransformation<M, M>
+	public class NormalFormTransformation<M extends Model> extends GoalFailStopTransformation<M> implements ModelExpressionTransformation<M, M>
 	{
-		protected String failLabel;
-		protected String badLabel;
+		private ExpressionConditional originalExpression;
+		private ExpressionConditional transformedExpression;
 
-		public NormalFormTransformation(ModelTransformation<M, M> transformation, ExpressionConditional expression, ExpressionConditional transformedExpression,
-				String failLabel, String badLabel)
+		public NormalFormTransformation(GoalFailStopTransformation<? extends M> transformation, ExpressionConditional expression, ExpressionConditional transformedExpression)
 		{
-			super(transformation, expression, transformedExpression);
-			this.failLabel = failLabel;
-			this.badLabel  = badLabel;
-		}
-
-		public String getFailLabel()
-		{
-			return failLabel;
-		}
-
-		public String getBadLabel()
-		{
-			return badLabel;
+			super(transformation);
+			this.originalExpression    = expression;
+			this.transformedExpression = transformedExpression;
 		}
 
 		@Override

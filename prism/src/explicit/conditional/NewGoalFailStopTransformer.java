@@ -243,6 +243,15 @@ public interface NewGoalFailStopTransformer<M extends Model>
 			this.badLabel       = badLabel;
 		}
 
+		public GoalFailStopTransformation(GoalFailStopTransformation<? extends M> transformation)
+		{
+			super(transformation);
+			this.goalLabel       = transformation.goalLabel;
+			this.failLabel       = transformation.failLabel;
+			this.stopLabel       = transformation.stopLabel;
+			this.badLabel        = transformation.badLabel;
+		}
+
 		public void checkLabels() {
 			Objects.requireNonNull(this.transformedModel.getLabelStates(this.goalLabel));
 			Objects.requireNonNull(this.transformedModel.getLabelStates(this.failLabel));
