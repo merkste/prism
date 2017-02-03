@@ -13,8 +13,8 @@ import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.iterable.FunctionalIterable;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.IterableBitSet;
-import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import common.iterable.collections.UnionSet;

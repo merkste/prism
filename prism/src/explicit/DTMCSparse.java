@@ -12,7 +12,6 @@ import java.util.function.IntFunction;
 
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
-import common.iterable.MappingIterator;
 import explicit.rewards.MCRewards;
 import prism.Pair;
 import prism.PrismException;

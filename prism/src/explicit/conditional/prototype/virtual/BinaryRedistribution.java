@@ -6,8 +6,10 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.IntFunction;
 
-import common.iterable.IterableArray;
+import common.iterable.ArrayIterator;
 import explicit.DiracDistribution;
+
+
 
 @Deprecated
 public class BinaryRedistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
@@ -40,6 +42,6 @@ public class BinaryRedistribution implements IntFunction<Iterator<Entry<Integer,
 		}
 		final Entry<Integer, Double> transitionA = new SimpleImmutableEntry<>(stateA, probabilityA);
 		final Entry<Integer, Double> transitionB = new SimpleImmutableEntry<>(stateB, 1.0 - probabilityA);
-		return new IterableArray.Of<>(transitionA, transitionB).iterator();
+		return new ArrayIterator.Of<>(transitionA, transitionB);
 	}
 }

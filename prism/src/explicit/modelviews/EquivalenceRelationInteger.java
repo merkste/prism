@@ -7,8 +7,8 @@ import java.util.function.IntPredicate;
 
 import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.IterableBitSet;
-import common.iterable.IterableInt;
 
 public class EquivalenceRelationInteger implements PairPredicateInt
 {

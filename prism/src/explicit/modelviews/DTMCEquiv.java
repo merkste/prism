@@ -44,7 +44,7 @@ public class DTMCEquiv extends DTMCView
 		this.model = model;
 		this.identify = identify;
 		this.normalize = normalize;
-		assert new Interval(model.getNumStates()).allMatch(s -> (identify.getRepresentative(s) == identify.getEquivalenceClass(s).nextSetBit(0)));
+		assert new Interval(model.getNumStates()).allMatch((int s) -> (identify.getRepresentative(s) == identify.getEquivalenceClass(s).nextSetBit(0)));
 		// Expensive if predecessor relation hasn't been computed yet
 		hasTransitionToNonRepresentative = new ReachabilityComputer(model).computePre(identify.getNonRepresentatives());
 	}

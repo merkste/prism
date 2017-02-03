@@ -3,7 +3,7 @@ package explicit.conditional.prototype.virtual;
 import java.util.BitSet;
 
 import common.BitSetTools;
-import common.iterable.MappingIterator;
+import common.iterable.FunctionalIterator;
 import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceType;
 import acceptance.AcceptanceStreett.StreettPair;
@@ -175,7 +175,7 @@ public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker>
 		BitSet bad = getLtlTransformer().findAcceptingStates(productModel, conditionAcceptance.complementToRabin());
 		// reduce number of choices, i.e.
 		// - reset only from r-states of streett acceptance
-		BitSet rStates = BitSetTools.union(new MappingIterator.From<>(conditionAcceptance, StreettPair::getR));
+		BitSet rStates = BitSetTools.union(FunctionalIterator.extend(conditionAcceptance).map(StreettPair::getR));
 		bad.and(rStates);
 		// - do not reset from goal states
 		bad.andNot(objectiveAndConditionGoal);

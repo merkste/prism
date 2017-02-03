@@ -12,11 +12,12 @@ import java.util.Set;
 import java.util.function.IntConsumer;
 
 import common.iterable.FilteringIterable;
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.IterableBitSet;
-import common.iterable.IterableInt;
 import common.iterable.IterableStateSet;
 import explicit.Model;
 import explicit.PredecessorRelation;
+import explicit.PredecessorRelationSparse;
 import explicit.StateValues;
 import parser.State;
 import parser.VarList;
