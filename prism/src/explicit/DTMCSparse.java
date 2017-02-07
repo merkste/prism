@@ -257,6 +257,18 @@ public class DTMCSparse extends DTMCExplicit
 		}
 	}
 
+	public double mvMultRewGS(double vect[], MCRewards mcRewards, BitSet subset, boolean complement, boolean absolute)
+	{
+		double maxDiff = 0.0;
+		for (int s : new IterableStateSet(subset, numStates, complement)) {
+			double d    = mvMultRewJacSingle(s, vect, mcRewards);
+			double diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff     = diff > maxDiff ? diff : maxDiff;
+			vect[s]     = d;
+		}
+		return maxDiff;
+	}
+
 	@Override
 	public double mvMultSingle(final int state, final double[] vect)
 	{
@@ -297,6 +309,29 @@ public class DTMCSparse extends DTMCExplicit
 			final int target = columns[i];
 			final double probability = probabilities[i];
 			d += probability * vect[target];
+		}
+		return d;
+	}
+
+	public double mvMultRewJacSingle(int state, double vect[], MCRewards mcRewards)
+	{
+		double diag = 1.0;
+		double d = mcRewards.getStateReward(state);
+		for (int i=rows[state], stop=rows[state+1]; i < stop; i++) {
+			final int target = columns[i];
+			final double probability = probabilities[i];
+			if (target != state) {
+				d += probability * vect[target];
+			} else {
+				diag -= probability;
+			}
+		}
+		if (diag > 0) {
+			d /= diag;
+		}
+		// Catch special case of probability 1 self-loop (Jacobi does it wrong)
+		if (rows[state] - rows[state+1] == 1 && rows[state] == state) {
+			d = Double.POSITIVE_INFINITY;
 		}
 		return d;
 	}

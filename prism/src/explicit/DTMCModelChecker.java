@@ -394,6 +394,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		case POWER:
 			res = computeReachRewardsValIter(dtmc, mcRewards, new BitSet(), inf, null, null);
 			break;
+		case GAUSS_SEIDEL:
+			if (dtmc instanceof DTMCSparse) {
+				res = computeReachRewardsGaussSeidel((DTMCSparse) dtmc, mcRewards, new BitSet(), inf, null, null);
+				break;
+			}
 		default:
 			throw new PrismException("Unknown linear equation solution method " + linEqMethod.fullName());
 		}
@@ -1229,7 +1234,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		LinEqMethod linEqMethod = this.linEqMethod;
 
 		// Switch to a supported method, if necessary
-		if (!(linEqMethod == LinEqMethod.POWER)) {
+		if (!(linEqMethod == LinEqMethod.POWER || (linEqMethod == LinEqMethod.GAUSS_SEIDEL && dtmc instanceof DTMCSparse))) {
 			linEqMethod = LinEqMethod.POWER;
 			mainLog.printWarning("Switching to linear equation solution method \"" + linEqMethod.fullName() + "\"");
 		}
@@ -1257,7 +1262,12 @@ public class DTMCModelChecker extends ProbModelChecker
 
 		// Precomputation (not optional)
 		timerProb1 = System.currentTimeMillis();
-		inf = prob1(dtmc, null, target);
+		if (preRel) {
+			PredecessorRelation pre = dtmc.getPredecessorRelation(this, true);
+			inf = prob1(dtmc, null, target, pre);
+		} else {
+			inf = prob1(dtmc, null, target);
+		}
 		inf.flip(0, n);
 		timerProb1 = System.currentTimeMillis() - timerProb1;
 
@@ -1271,6 +1281,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		case POWER:
 			res = computeReachRewardsValIter(dtmc, mcRewards, target, inf, init, known);
 			break;
+		case GAUSS_SEIDEL:
+			if (dtmc instanceof DTMCSparse) {
+				res = computeReachRewardsGaussSeidel((DTMCSparse) dtmc, mcRewards, target, inf, init, known);
+				break;
+			}
 		default:
 			throw new PrismException("Unknown linear equation solution method " + linEqMethod.fullName());
 		}
@@ -1359,6 +1374,90 @@ public class DTMCModelChecker extends ProbModelChecker
 		// Finished value iteration
 		timer = System.currentTimeMillis() - timer;
 		mainLog.print("Value iteration");
+		mainLog.println(" took " + iters + " iterations and " + timer / 1000.0 + " seconds.");
+
+		// Non-convergence is an error (usually)
+		if (!done && errorOnNonConverge) {
+			String msg = "Iterative method did not converge within " + iters + " iterations.";
+			msg += "\nConsider using a different numerical method or increasing the maximum number of iterations";
+			throw new PrismException(msg);
+		}
+
+		// Return results
+		res = new ModelCheckerResult();
+		res.soln = soln;
+		res.numIters = iters;
+		res.timeTaken = timer / 1000.0;
+		return res;
+	}
+
+	/**
+	 * Compute expected reachability rewards using value iteration.
+	 * @param dtmc The DTMC
+	 * @param mcRewards The rewards
+	 * @param target Target states
+	 * @param inf States for which reward is infinite
+	 * @param init Optionally, an initial solution vector (will be overwritten)
+	 * @param known Optionally, a set of states for which the exact answer is known
+	 * Note: if 'known' is specified (i.e. is non-null, 'init' must also be given and is used for the exact values.
+	 */
+	protected ModelCheckerResult computeReachRewardsGaussSeidel(DTMCSparse dtmc, MCRewards mcRewards, BitSet target, BitSet inf, double init[], BitSet known)
+			throws PrismException
+	{
+		ModelCheckerResult res;
+		BitSet unknown;
+		int i, n, iters;
+		double soln[], maxDiff;
+		boolean done;
+		long timer;
+
+		// Start value iteration
+		timer = System.currentTimeMillis();
+		mainLog.println("Starting Gauss-Seidel...");
+
+		// Store num states
+		n = dtmc.getNumStates();
+
+		// Create solution vector
+		soln = (init == null) ? new double[n] : init;
+
+		// Initialise solution vector. Use (where available) the following in order of preference:
+		// (1) exact answer, if already known; (2) 0.0/infinity if in target/inf; (3) passed in initial value; (4) 0.0
+		if (init != null) {
+			if (known != null) {
+				for (i = 0; i < n; i++)
+					soln[i] = known.get(i) ? init[i] : target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : init[i];
+			} else {
+				for (i = 0; i < n; i++)
+					soln[i] = target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : init[i];
+			}
+		} else {
+			for (i = 0; i < n; i++)
+				soln[i] = target.get(i) ? 0.0 : inf.get(i) ? Double.POSITIVE_INFINITY : 0.0;
+		}
+
+		// Determine set of states actually need to compute values for
+		unknown = new BitSet(n);
+		unknown.set(0, n);
+		unknown.andNot(target);
+		unknown.andNot(inf);
+		if (known != null)
+			unknown.andNot(known);
+
+		// Start iterations
+		iters = 0;
+		done = false;
+		while (!done && iters < maxIters) {
+			iters++;
+			// Matrix-vector multiply
+			maxDiff = dtmc.mvMultRewGS(soln,  mcRewards, unknown, false, termCrit == TermCrit.ABSOLUTE);
+			// Check termination
+			done = maxDiff < termCritParam;
+		}
+
+		// Finished Gauss-Seidel
+		timer = System.currentTimeMillis() - timer;
+		mainLog.print("Gauss-Seidel");
 		mainLog.println(" took " + iters + " iterations and " + timer / 1000.0 + " seconds.");
 
 		// Non-convergence is an error (usually)
