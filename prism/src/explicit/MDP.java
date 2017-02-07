@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import common.iterable.IterableStateSet;
 import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 import prism.PrismComponent;
@@ -117,6 +118,8 @@ public interface MDP extends NondetModel
 	 */
 	public void mvMultMinMax(double vect[], boolean min, double result[], BitSet subset, boolean complement, int strat[]);
 
+	public void mvMultMinMax(double vect[], boolean min, double result[], IterableStateSet subset, int strat[]);
+
 	/**
 	 * Do a single row of matrix-vector multiplication followed by min/max,
 	 * i.e. return min/max_k { sum_j P_k(s,j)*vect[j] }
@@ -162,6 +165,8 @@ public interface MDP extends NondetModel
 	 */
 	public double mvMultGSMinMax(double vect[], boolean min, BitSet subset, boolean complement, boolean absolute, int strat[]);
 
+	public double mvMultGSMinMax(double vect[], boolean min, IterableStateSet subset, boolean absolute, int strat[]);
+
 	/**
 	 * Do a single row of Jacobi-style matrix-vector multiplication followed by min/max.
 	 * i.e. return min/max_k { (sum_{j!=s} P_k(s,j)*vect[j]) / 1-P_k(s,s) }
@@ -195,6 +200,8 @@ public interface MDP extends NondetModel
 	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
 	 */
 	public void mvMultRewMinMax(double vect[], MDPRewards mdpRewards, boolean min, double result[], BitSet subset, boolean complement, int strat[]);
+
+	public void mvMultRewMinMax(double vect[], MDPRewards mdpRewards, boolean min, double result[], IterableStateSet subset, int strat[]);
 
 	/**
 	 * Do a single row of matrix-vector multiplication and sum of rewards followed by min/max.
@@ -235,6 +242,8 @@ public interface MDP extends NondetModel
 	 * @param strat Storage for (memoryless) strategy choice indices (ignored if null)
 	 */
 	public double mvMultRewGSMinMax(double vect[], MDPRewards mdpRewards, boolean min, BitSet subset, boolean complement, boolean absolute, int strat[]);
+
+	public double mvMultRewGSMinMax(double vect[], MDPRewards mdpRewards, boolean min, IterableStateSet subset, boolean absolute, int strat[]);
 
 	/**
 	 * Do a single row of Jacobi-style matrix-vector multiplication and sum of rewards followed by min/max.

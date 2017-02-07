@@ -33,6 +33,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 
 import common.iterable.IterableStateSet;
@@ -241,6 +242,16 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 	}
 
 	@Override
+	public void mvMultMinMax(double vect[], boolean min, double result[], IterableStateSet subset, int strat[])
+	{
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s     = states.nextInt();
+			result[s] = mvMultMinMaxSingle(s, vect, min, strat);
+		}
+	}
+
+
+	@Override
 	public double mvMultGSMinMax(double vect[], boolean min, BitSet subset, boolean complement, boolean absolute, int strat[])
 	{
 		double d, diff, maxDiff = 0.0;
@@ -263,9 +274,42 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 	}
 
 	@Override
+	public double mvMultGSMinMax(double vect[], boolean min, IterableStateSet subset, boolean absolute, int strat[])
+	{
+		double maxDiff = 0.0;
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s    = states.nextInt();
+			double d = mvMultJacMinMaxSingle(s, vect, min, strat);
+			double diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[s] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultJacMinMaxSingle(s, vect, min, strat);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
+
+	@Override
 	public void mvMultRewMinMax(double vect[], MDPRewards mdpRewards, boolean min, double result[], BitSet subset, boolean complement, int strat[])
 	{
 		for (int s : new IterableStateSet(subset, numStates, complement)) {
+			result[s] = mvMultRewMinMaxSingle(s, vect, mdpRewards, min, strat);
+		}
+	}
+
+	@Override
+	public void mvMultRewMinMax(double vect[], MDPRewards mdpRewards, boolean min, double result[], IterableStateSet subset, int strat[])
+	{
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s     = states.nextInt();
 			result[s] = mvMultRewMinMaxSingle(s, vect, mdpRewards, min, strat);
 		}
 	}
@@ -291,6 +335,30 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 		}*/
 		return maxDiff;
 	}
+
+	@Override
+	public double mvMultRewGSMinMax(double vect[], MDPRewards mdpRewards, boolean min, IterableStateSet subset, boolean absolute, int strat[])
+	{
+		double d, diff, maxDiff = 0.0;
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s = states.nextInt();
+			d = mvMultRewJacMinMaxSingle(s, vect, mdpRewards, min, strat);
+			diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[s] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultRewJacMinMaxSingle(s, vect, mdpRewards, min);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
 
 	@Override
 	public Model constructInducedModel(MDStrategy strat)

@@ -55,6 +55,7 @@ import acceptance.AcceptanceType;
 import common.BitSetTools;
 import common.iterable.IntIntConsumer;
 import common.iterable.IterableBitSet;
+import common.iterable.IterableStateSet;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import explicit.conditional.ConditionalMDPModelChecker;
 import explicit.conditional.transformer.mdp.MDPConditionalMinMaxFilterTransformer;
@@ -1183,6 +1184,7 @@ public class MDPModelChecker extends ProbModelChecker
 		unknown.andNot(no);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -1190,7 +1192,7 @@ public class MDPModelChecker extends ProbModelChecker
 		while (!done && iters < maxIters) {
 			iters++;
 			// Matrix-vector multiply and min/max ops
-			mdp.mvMultMinMax(soln, min, soln2, unknown, false, strat);
+			mdp.mvMultMinMax(soln, min, soln2, subset, strat);
 			// Check termination
 			done = PrismUtils.doublesAreClose(soln, soln2, termCritParam, termCrit == TermCrit.ABSOLUTE);
 			// Swap vectors for next iter
@@ -1274,6 +1276,7 @@ public class MDPModelChecker extends ProbModelChecker
 		unknown.andNot(no);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -1281,7 +1284,7 @@ public class MDPModelChecker extends ProbModelChecker
 		while (!done && iters < maxIters) {
 			iters++;
 			// Matrix-vector multiply
-			maxDiff = mdp.mvMultGSMinMax(soln, min, unknown, false, termCrit == TermCrit.ABSOLUTE, strat);
+			maxDiff = mdp.mvMultGSMinMax(soln, min, subset, termCrit == TermCrit.ABSOLUTE, strat);
 			// Check termination
 			done = maxDiff < termCritParam;
 		}
@@ -1913,6 +1916,7 @@ public class MDPModelChecker extends ProbModelChecker
 		unknown.andNot(inf);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -1921,7 +1925,7 @@ public class MDPModelChecker extends ProbModelChecker
 			//mainLog.println(soln);
 			iters++;
 			// Matrix-vector multiply and min/max ops
-			mdp.mvMultRewMinMax(soln, mdpRewards, min, soln2, unknown, false, strat);
+			mdp.mvMultRewMinMax(soln, mdpRewards, min, soln2, subset, strat);
 			// Check termination
 			done = PrismUtils.doublesAreClose(soln, soln2, termCritParam, termCrit == TermCrit.ABSOLUTE);
 			// Swap vectors for next iter
@@ -2005,6 +2009,7 @@ public class MDPModelChecker extends ProbModelChecker
 		unknown.andNot(inf);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -2013,7 +2018,7 @@ public class MDPModelChecker extends ProbModelChecker
 			//mainLog.println(soln);
 			iters++;
 			// Matrix-vector multiply and min/max ops
-			maxDiff = mdp.mvMultRewGSMinMax(soln, mdpRewards, min, unknown, false, termCrit == TermCrit.ABSOLUTE, strat);
+			maxDiff = mdp.mvMultRewGSMinMax(soln, mdpRewards, min, subset, termCrit == TermCrit.ABSOLUTE, strat);
 			// Check termination
 			done = maxDiff < termCritParam;
 		}

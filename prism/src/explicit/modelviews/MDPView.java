@@ -415,6 +415,15 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	}
 
 	@Override
+	public void mvMultMinMax(final double[] vect, final boolean min, final double[] result, final IterableStateSet subset, final int[] strat)
+	{
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			final int state = states.nextInt();
+			result[state] = mvMultMinMaxSingle(state, vect, min, strat);
+		}
+	}
+
+	@Override
 	public double mvMultMinMaxSingle(final int state, final double[] vect, final boolean min, final int[] strat)
 	{
 		int stratCh = -1;
@@ -518,6 +527,31 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	}
 
 	@Override
+	public double mvMultGSMinMax(final double[] vect, final boolean min, IterableStateSet subset, final boolean absolute,
+			final int[] strat)
+	{
+		double maxDiff = 0.0;
+
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			final int state = states.nextInt();
+			final double d = mvMultJacMinMaxSingle(state, vect, min, strat);
+			final double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[state] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultJacMinMaxSingle(s, vect, min, strat);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
+	@Override
 	public double mvMultJacMinMaxSingle(final int state, final double[] vect, final boolean min, final int[] strat)
 	{
 		int stratCh = -1;
@@ -596,6 +630,16 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	}
 
 	@Override
+	public void mvMultRewMinMax(final double[] vect, final MDPRewards mdpRewards, final boolean min, final double[] result, final IterableStateSet subset,
+			final int[] strat)
+	{
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			final int state = states.nextInt();
+			result[state] = mvMultRewMinMaxSingle(state, vect, mdpRewards, min, strat);
+		}
+	}
+
+	@Override
 	public double mvMultRewMinMaxSingle(final int state, final double[] vect, final MDPRewards mdpRewards, final boolean min, final int[] strat)
 	{
 		int stratCh = -1;
@@ -660,6 +704,31 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 		double maxDiff = 0.0;
 
 		for (OfInt states = new IterableStateSet(subset, getNumStates(), complement).iterator(); states.hasNext();) {
+			final int state = states.nextInt();
+			final double d = mvMultRewJacMinMaxSingle(state, vect, mdpRewards, min, strat);
+			double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[state] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultRewJacMinMaxSingle(s, vect, mdpRewards, min);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
+	@Override
+	public double mvMultRewGSMinMax(final double[] vect, final MDPRewards mdpRewards, final boolean min, final IterableStateSet subset,
+			final boolean absolute, final int[] strat)
+	{
+		double maxDiff = 0.0;
+
+		for (OfInt states = subset.iterator(); states.hasNext();) {
 			final int state = states.nextInt();
 			final double d = mvMultRewJacMinMaxSingle(state, vect, mdpRewards, min, strat);
 			double diff = absolute ? (Math.abs(d - vect[state])) : (Math.abs(d - vect[state]) / d);
