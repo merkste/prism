@@ -29,6 +29,7 @@ package explicit;
 import java.util.*;
 import java.util.Map.Entry;
 
+import common.iterable.IterableStateSet;
 import prism.Pair;
 import explicit.rewards.MCRewards;
 
@@ -105,6 +106,8 @@ public interface DTMC extends Model
 	 * @return The maximum difference between old/new elements of {@code vect}
 	 */
 	public double mvMultGS(double vect[], BitSet subset, boolean complement, boolean absolute);
+
+	public double mvMultGS(double vect[], IterableStateSet subset, boolean absolute);
 
 	/**
 	 * Do a single row of Jacobi-style matrix-vector multiplication for

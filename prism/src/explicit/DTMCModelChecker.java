@@ -48,6 +48,7 @@ import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
 import common.iterable.IterableBitSet;
+import common.iterable.IterableStateSet;
 import explicit.conditional.ConditionalDTMCModelChecker;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
@@ -1060,6 +1061,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		unknown.andNot(no);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -1067,7 +1069,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		while (!done && iters < maxIters) {
 			iters++;
 			// Matrix-vector multiply
-			maxDiff = dtmc.mvMultGS(soln, unknown, false, termCrit == TermCrit.ABSOLUTE);
+			maxDiff = dtmc.mvMultGS(soln, subset, termCrit == TermCrit.ABSOLUTE);
 			// Check termination
 			done = maxDiff < termCritParam;
 		}
@@ -1443,6 +1445,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		unknown.andNot(inf);
 		if (known != null)
 			unknown.andNot(known);
+		IterableStateSet subset = new IterableStateSet(unknown, n);
 
 		// Start iterations
 		iters = 0;
@@ -1450,7 +1453,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		while (!done && iters < maxIters) {
 			iters++;
 			// Matrix-vector multiply
-			maxDiff = dtmc.mvMultRewGS(soln,  mcRewards, unknown, false, termCrit == TermCrit.ABSOLUTE);
+			maxDiff = dtmc.mvMultRewGS(soln,  mcRewards, subset, termCrit == TermCrit.ABSOLUTE);
 			// Check termination
 			done = maxDiff < termCritParam;
 		}

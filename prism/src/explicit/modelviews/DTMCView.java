@@ -263,6 +263,29 @@ public abstract class DTMCView extends ModelView implements DTMC, Cloneable
 	}
 
 	@Override
+	public double mvMultGS(double vect[], IterableStateSet subset, boolean absolute)
+	{
+		double maxDiff = 0.0;
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s = states.nextInt();
+			double d = mvMultJacSingle(s, vect);
+			double diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[s] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultJacSingle(s, vect);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
+	@Override
 	public double mvMultJacSingle(final int state, final double[] vect)
 	{
 		double diag = 1.0;

@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 
 import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
@@ -159,6 +160,29 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 	{
 		double d, diff, maxDiff = 0.0;
 		for (int s : new IterableStateSet(subset, numStates, complement)) {
+			d = mvMultJacSingle(s, vect);
+			diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff = diff > maxDiff ? diff : maxDiff;
+			vect[s] = d;
+		}
+		// Use this code instead for backwards Gauss-Seidel
+		/*for (s = numStates - 1; s >= 0; s--) {
+			if (subset.get(s)) {
+				d = mvMultJacSingle(s, vect);
+				diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+				maxDiff = diff > maxDiff ? diff : maxDiff;
+				vect[s] = d;
+			}
+		}*/
+		return maxDiff;
+	}
+
+	@Override
+	public double mvMultGS(double vect[], IterableStateSet subset, boolean absolute)
+	{
+		double d, diff, maxDiff = 0.0;
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s = states.nextInt();
 			d = mvMultJacSingle(s, vect);
 			diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
 			maxDiff = diff > maxDiff ? diff : maxDiff;

@@ -269,6 +269,20 @@ public class DTMCSparse extends DTMCExplicit
 		return maxDiff;
 	}
 
+	public double mvMultRewGS(double vect[], MCRewards mcRewards, IterableStateSet subset, boolean absolute)
+	{
+		double maxDiff = 0.0;
+		for (OfInt states = subset.iterator(); states.hasNext();) {
+			int s       = states.nextInt();
+			double d    = mvMultRewJacSingle(s, vect, mcRewards);
+			double diff = absolute ? (Math.abs(d - vect[s])) : (Math.abs(d - vect[s]) / d);
+			maxDiff     = diff > maxDiff ? diff : maxDiff;
+			vect[s]     = d;
+		}
+		return maxDiff;
+	}
+
+
 	@Override
 	public double mvMultSingle(final int state, final double[] vect)
 	{
