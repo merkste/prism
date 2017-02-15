@@ -31,6 +31,8 @@ import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
+import java.util.function.IntFunction;
 
 import common.BitSetTools;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
@@ -67,7 +69,8 @@ public class ReachabilityComputer
 		if (model.hasStoredPredecessorRelation()) {
 			OfInt states = new IterableBitSet(S).iterator();
 			PredecessorRelation predecessorRelation = model.getPredecessorRelation(null, false);
-			OfInt pre    = states.flatMapToInt(predecessorRelation::getPreIterator);
+			// superfluous (IntFunction<PrimitiveIterator.OfInt>) required to circumvent strange build bug
+			OfInt pre    = states.flatMapToInt((IntFunction<PrimitiveIterator.OfInt>) predecessorRelation::getPreIterator);
 			predecessors = BitSetTools.asBitSet(pre);
 		} else {
 			predecessors = new BitSet(S.size());
