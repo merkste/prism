@@ -2951,6 +2951,20 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			return modelCheckPTA(propertiesFile, prop.getExpression(), definedPFConstants);
 		}
 
+		// For Storm based
+		if (getSettings().getBoolean(PrismSettings.PRISM_STORM_ENABLED)) {
+			Expression expr = prop.getExpression().deepCopy();
+
+			if (currentDefinedMFConstants != null && currentDefinedMFConstants.getNumValues() > 0) {
+				expr = (Expression)expr.evaluatePartially(currentDefinedMFConstants, null);
+			}
+			if (definedPFConstants != null && definedPFConstants.getNumValues() > 0) {
+				expr = (Expression)expr.evaluatePartially(definedPFConstants, null);
+			}
+
+			StormWrapper storm = new StormWrapper(this);
+			return storm.check(expr, getPRISMModel(), propertiesFile);
+		}
 		// For exact model checking
 		if (settings.getBoolean(PrismSettings.PRISM_EXACT_ENABLED)) {
 			return modelCheckExact(propertiesFile, prop);

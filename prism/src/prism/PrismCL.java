@@ -354,7 +354,23 @@ public class PrismCL implements PrismModelListener
 							}
 							// Parametric model checking
 							else if (param) {
-								res = prism.modelCheckParametric(propertiesFile, propertiesToCheck.get(j), paramNames, paramLowerBounds, paramUpperBounds);
+								if (!prism.getSettings().getBoolean(PrismSettings.PRISM_STORM_ENABLED)) {
+									// use internal param engine
+									res = prism.modelCheckParametric(propertiesFile, propertiesToCheck.get(j), paramNames, paramLowerBounds, paramUpperBounds);
+								} else {
+									// use Storm based parametric checking
+									Expression expr = propertiesToCheck.get(j).getExpression().deepCopy();
+
+									if (definedMFConstants != null && definedMFConstants.getNumValues() > 0) {
+										expr = (Expression)expr.evaluatePartially(definedMFConstants, null);
+									}
+									if (definedPFConstants != null && definedPFConstants.getNumValues() > 0) {
+										expr = (Expression)expr.evaluatePartially(definedPFConstants, null);
+									}
+
+									StormWrapper storm = new StormWrapper(prism);
+									res = storm.checkParametric(expr, prism.getPRISMModel(), propertiesFile, paramNames, paramLowerBounds, paramUpperBounds);
+								}
 							}
 							// Approximate (simulation-based) model checking
 							else if (simulate) {
@@ -446,7 +462,18 @@ public class PrismCL implements PrismModelListener
 			// Explicitly request a build if necessary
 			if (propertiesToCheck.size() == 0 && !steadystate && !dotransient && !simpath && !nobuild && prism.modelCanBeBuilt() && !prism.modelIsBuilt()) {
 				try {
-					prism.buildModel();
+					// For Storm based
+					if (prism.getSettings().getBoolean(PrismSettings.PRISM_STORM_ENABLED)) {
+						long time = System.currentTimeMillis();
+
+						StormWrapper storm = new StormWrapper(prism);
+						storm.build(prism.getPRISMModel());
+
+						time = System.currentTimeMillis() - time;
+						mainLog.println("\nTime for model construction: " + time / 1000.0 + " seconds.");
+					} else {
+						prism.buildModel();
+					}
 				} catch (PrismException e) {
 					error(e.getMessage());
 				}

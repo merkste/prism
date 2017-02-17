@@ -113,6 +113,7 @@ public class PrismSettings implements Observer
 	public static final String PRISM_EC_METHOD						= "prism.ecMethod";
 	public static final String PRISM_SYMM_RED_PARAMS					= "prism.symmRedParams";
 	public static final	String PRISM_EXACT_ENABLED					= "prism.exact.enabled";
+	public static final	String PRISM_STORM_ENABLED						= "prism.storm.enabled";
 	public static final String PRISM_PTA_METHOD					= "prism.ptaMethod";
 	public static final String PRISM_TRANSIENT_METHOD				= "prism.transientMethod";
 	public static final String PRISM_AR_OPTIONS					= "prism.arOptions";
@@ -120,6 +121,11 @@ public class PrismSettings implements Observer
 	public static final String PRISM_NO_DA_SIMPLIFY				= "prism.noDaSimplify";
 	public static final String PRISM_EXPORT_ADV					= "prism.exportAdv";
 	public static final String PRISM_EXPORT_ADV_FILENAME			= "prism.exportAdvFilename";
+	
+	public static final	String PRISM_STORM_PATH						= "prism.storm.path";
+	public static final	String PRISM_STORM_OPTIONS					= "prism.storm.options";
+	public static final	String PRISM_STORM_VERBOSE					= "prism.storm.verbose";
+	public static final	String PRISM_STORM_DEBUG					= "prism.storm.debug";
 	
 	public static final	String PRISM_MULTI_MAX_POINTS				= "prism.multiMaxIters";
 	public static final	String PRISM_PARETO_EPSILON					= "prism.paretoEpsilon";
@@ -251,7 +257,8 @@ public class PrismSettings implements Observer
 																			"Which engine (hybrid, sparse, MTBDD, explicit) should be used for model checking." },
 			{ BOOLEAN_TYPE,		PRISM_EXACT_ENABLED,					"Do exact model checking",			"4.2.1",			false,															"",
 																			"Perform exact model checking." },
-																			
+			{ BOOLEAN_TYPE,		PRISM_STORM_ENABLED,						"Do model checking via Storm",			"4.3.1",			new Boolean(false),															"",
+																			"Model checking via Storm." },
 			{ CHOICE_TYPE,		PRISM_PTA_METHOD,						"PTA model checking method",			"3.3",			"Stochastic games",																	"Digital clocks,Stochastic games,Backwards reachability",																
 																			"Which method to use for model checking of PTAs." },
 			{ CHOICE_TYPE,		PRISM_TRANSIENT_METHOD,					"Transient probability computation method",	"3.3",		"Uniformisation",															"Uniformisation,Fast adaptive uniformisation",																
@@ -271,6 +278,16 @@ public class PrismSettings implements Observer
 																			"Epsilon value to use for checking termination of iterative numerical methods." },
 			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			10000,															"0,",																						
 																			"Maximum number of iterations to perform if iterative methods do not converge." },
+			// STORM OPTIONS:
+			{ STRING_TYPE,		PRISM_STORM_PATH,						"Path to the Storm executable",			"4.3.1",			"",															"",
+																			"Path to the Storm executable." },
+			{ STRING_TYPE,		PRISM_STORM_OPTIONS,					"Additional options for Storm",			"4.3.1",			"",															"",
+																			"Additional options for Storm." },
+			{ BOOLEAN_TYPE,		PRISM_STORM_VERBOSE,					"Verbose output of the Storm execution",			"4.3.1",			new Boolean(false),															"",
+																			"Verbose output of the Storm execution." },
+			{ BOOLEAN_TYPE,		PRISM_STORM_DEBUG,						"Storm invocation debugging",			"4.3.1",			new Boolean(false),															"",
+																			"Increase verbosity for Storm invocation debugging." },
+
 			// MODEL CHECKING OPTIONS:
 			{ BOOLEAN_TYPE,		PRISM_PRECOMPUTATION,					"Use precomputation",					"2.1",			true,															"",																							
 																			"Whether to use model checking precomputation algorithms (Prob0, Prob1, etc.), where optional." },
@@ -978,6 +995,36 @@ public class PrismSettings implements Observer
 		// Exact model checking
 		else if (sw.equals("exact")) {
 			set(PRISM_EXACT_ENABLED, true);
+		}
+		// Storm model checking
+		else if (sw.equals("storm")) {
+			set(PRISM_STORM_ENABLED, true);
+		}
+		else if (sw.equals("stormverbose")) {
+			set(PRISM_STORM_VERBOSE, true);
+		}
+		else if (sw.equals("stormdebug")) {
+			set(PRISM_STORM_DEBUG, true);
+		}
+		else if (sw.equals("stormopt")) {
+			String opt = getString(PRISM_STORM_OPTIONS);
+			if (!options.isEmpty()) {
+				opt += " ";
+			}
+			if (i < args.length - 1) {
+				s = args[++i];
+				opt += s;
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+			set(PRISM_STORM_OPTIONS, opt);
+		}
+		else if (sw.equals("stormpath")) {
+			if (i < args.length - 1) {
+				set(PRISM_STORM_PATH, args[++i]);
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
 		}
 		// PTA model checking methods
 		else if (sw.equals("ptamethod")) {
@@ -1910,6 +1957,13 @@ public class PrismSettings implements Observer
 		mainLog.println("-fauarraythreshold <x> ......... Set threshold when to switch to sparse matrix in FAU [default: 100]");
 		mainLog.println("-fauintervals <x> .............. Set number of intervals to divide time intervals into for FAU [default: 1]");
 		mainLog.println("-fauinitival <x> ............... Set length of additional initial time interval for FAU [default: 1.0]");
+		mainLog.println();
+		mainLog.println("STORM EXTERNAL MODEL CHECKING:");
+		mainLog.println("-storm ......................... Enable Storm model checking");
+		mainLog.println("-stormpath ..................... Path to the Storm executable [default: $STORM_BIN environment variable or ./storm]");
+		mainLog.println("-stormverbose .................. Verbose output for Storm (print all the Storm output)");
+		mainLog.println("-stormopt <x> .................. Add x (space separated command line options) as additional Storm parameters");
+		mainLog.println("-stormdebug .................... Be extra verbose to allow Storm invocation debugging");
 	}
 
 	/**
