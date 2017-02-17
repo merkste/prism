@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import common.StopWatch;
 import param.BigRational;
 import parser.ast.Expression;
 import parser.ast.ExpressionFilter;
@@ -84,7 +85,7 @@ public class StormWrapper extends PrismComponent
 		// environment to include the environment variables of the Nailgun client
 		PrismNG.setupChildProcessEnvironment(builder);
 
-		mainLog.println(">> [Executing Storm]");
+		mainLog.println("\n[Executing Storm]");
 
 		boolean first = true;
 		for (String argument : arguments) {
@@ -101,7 +102,7 @@ public class StormWrapper extends PrismComponent
 		}
 		mainLog.println();
 
-		long time = System.currentTimeMillis();
+		StopWatch watch = new StopWatch().start();
 		Process p = builder.start();
 		p.getInputStream().close();
 
@@ -113,7 +114,7 @@ public class StormWrapper extends PrismComponent
 			} catch (InterruptedException e) {
 			}
 		}
-		time = System.currentTimeMillis() - time;
+		long time = watch.stop();
 
 		boolean error = rv != 0;
 
@@ -293,7 +294,6 @@ public class StormWrapper extends PrismComponent
 		if (prism.getFairness()) {
 			throw new PrismNotSupportedException("Storm does currently not support fairness");
 		}
-
 		String model = prepareModelSource(mf, pf);
 
 		ArrayList<String> output = goStorm(model, translateExpression(expr), false);

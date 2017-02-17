@@ -464,13 +464,7 @@ public class PrismCL implements PrismModelListener
 				try {
 					// For Storm based
 					if (prism.getSettings().getBoolean(PrismSettings.PRISM_STORM_ENABLED)) {
-						long time = System.currentTimeMillis();
-
-						StormWrapper storm = new StormWrapper(prism);
-						storm.build(prism.getPRISMModel());
-
-						time = System.currentTimeMillis() - time;
-						mainLog.println("\nTime for model construction: " + time / 1000.0 + " seconds.");
+						prism.buildModelStorm();
 					} else {
 						prism.buildModel();
 					}

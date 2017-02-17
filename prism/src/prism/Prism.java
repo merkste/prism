@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import common.StopWatch;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
@@ -1919,6 +1920,26 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		mainLog.printSeparator();
 		doBuildModel(false);
+	}
+
+	/**
+	 * Build the currently loaded PRISM model using Storm.
+	 * The build model is not stored.
+	 */
+	public void buildModelStorm() throws PrismException
+	{
+		mainLog.printSeparator();
+
+		if (currentDefinedMFConstants != null && currentDefinedMFConstants.getNumValues() > 0) {
+			mainLog.println();
+			mainLog.println("Model constants: " + currentDefinedMFConstants);
+		}
+
+		StopWatch watch = new StopWatch(mainLog).start("model construction");
+		new StormWrapper(this).build(getPRISMModel());
+
+		mainLog.println();
+		watch.stop();
 	}
 
 	/**
