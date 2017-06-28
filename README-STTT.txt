@@ -1,14 +1,19 @@
 This README provides details for the implementation presented in the
+the article
 
 "Advances in Probabilistic Model Checking with PRISM:
  Variable Reordering, Quantiles and Weak Deterministic Buechi
  Automata"
 
-submission to the special TACAS'16 issue of STTT.
+ http://dx.doi.org/10.1007/s10009-017-0456-3
+
+appearing in the TACAS'16 special issue of STTT.
 
 In case of problems / questions, feel free to contact
-klein@tcs.inf.tu-dresden.de (perhaps using a throw-away email account
-to maintain anonymity).
+klein@tcs.inf.tu-dresden.de.
+
+https://wwwtcs.inf.tu-dresden.de/ALGI/PUB/STTT/
+
 
 
 General information
