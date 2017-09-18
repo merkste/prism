@@ -150,7 +150,7 @@ public class DTMCEquiv extends DTMCView
 			if (! hasTransitionToNonRepresentative.get(state)) {
 				return successors;
 			}
-			return FunctionalIterator.extend(successors).map((Integer s) -> identify.getRepresentative(s)).dedupe();
+			return FunctionalIterator.extend(successors).map((Function<Integer,Integer>) s-> identify.getRepresentative(s)).dedupe();
 		}
 		return new IterableBitSet(eqClass).iterator().flatMap((int s) -> mapSuccessorsToRepresentative(s)).dedupe();
 	}
@@ -212,7 +212,7 @@ public class DTMCEquiv extends DTMCView
 		if (! hasTransitionToNonRepresentative.get(state)) {
 			return successors;
 		}
-		return FunctionalIterator.extend(successors).map((Integer s) -> identify.getRepresentative(s));
+		return FunctionalIterator.extend(successors).map((Function<Integer,Integer>) s -> identify.getRepresentative(s));
 	}
 
 	public Iterator<Entry<Integer, Double>> mapTransitionsToRepresentative(int state)
