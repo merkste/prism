@@ -886,7 +886,7 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	protected StateValues checkRewardPathFormula(Expression expr, JDDNode stateRewards, JDDNode transRewards, JDDNode statesOfInterest) throws PrismException
 	{
-		if (Expression.isReach(expr)) {
+		if (Expression.isReachWithStateFormula(expr)) {
 			return checkRewardReach((ExpressionTemporal) expr, stateRewards, transRewards, statesOfInterest);
 		}
 		else if (Expression.isCoSafeLTLSyntactic(expr, true)) {
