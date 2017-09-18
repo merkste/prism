@@ -35,7 +35,7 @@ public class CartesianProduct
 		// recurse
 		FunctionalIterable<Object[]> tuples = CartesianProduct.of(iterables);
 		// elements x tuples
-		return elements.flatMap(element -> tuples.map((Object[] tuple) -> prepend(element, tuple)));
+		return elements.flatMap(element -> tuples.map((Function<Object[],Object[]>) tuple -> prepend(element, tuple)));
 	}
 
 	public static <T> T[] prepend(T element, T[] tuple)
