@@ -26,8 +26,6 @@
 
 package prism;
 
-import java.util.Vector;
-
 import jdd.*;
 import parser.*;
 
@@ -60,5 +58,31 @@ public class StochModel extends ProbModel
 			JDDVars[] vcv, Values cv)
 	{
 		super(tr, s, sr, trr, rsn, arv, acv, mvdd, nm, mn, mrv, mcv, nv, vl, vrv, vcv, cv);
+	}
+
+	@Override
+	protected ProbModel newInstance(JDDNode newTrans, JDDNode newStart, JDDNode[] newStateRewards, JDDNode[] newTransRewards, JDDVars newAllDDRowVars,
+			JDDVars newAllDDColVars, ModelVariablesDD newModelVariables, VarList newVarList, JDDVars[] newVarDDRowVars, JDDVars[] newVarDDColVars)
+	{
+		return new StochModel(
+				// New transition matrix/start state
+				newTrans, newStart,
+				// New reward information
+				newStateRewards,
+				newTransRewards,
+				this.rewardStructNames.clone(),
+				// New list of all row/col vars
+				newAllDDRowVars, newAllDDColVars,
+				// New model variables
+				newModelVariables,
+				// Module info (unchanged)
+				this.getNumModules(),
+				this.getModuleNames(),
+				JDDVars.copyArray(this.getModuleDDRowVars()),
+				JDDVars.copyArray(this.getModuleDDColVars()),
+				// New var info
+				newVarList.getNumVars(), newVarList, newVarDDRowVars, newVarDDColVars,
+				// Constants (no change)
+				this.getConstantValues());
 	}
 }

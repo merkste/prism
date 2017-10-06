@@ -1036,26 +1036,17 @@ public class ProbModel implements Model
 		}
 
 		// Create a new model model object to store the transformed model
-		ProbModel result = new ProbModel(
+		ProbModel result = newInstance(
 				// New transition matrix/start state
 				newTrans, newStart,
 				// New reward information
-				newStateRewards,
-				newTransRewards,
-				this.rewardStructNames.clone(),
+				newStateRewards, newTransRewards,
 				// New list of all row/col vars
 				newAllDDRowVars, newAllDDColVars,
 				// New model variables
 				newModelVariables,
-				// Module info (unchanged)
-				this.getNumModules(),
-				this.getModuleNames(),
-				JDDVars.copyArray(this.getModuleDDRowVars()),
-				JDDVars.copyArray(this.getModuleDDColVars()),
 				// New var info
-				newVarList.getNumVars(), newVarList, newVarDDRowVars, newVarDDColVars,
-				// Constants (no change)
-				this.getConstantValues());
+				newVarList,	newVarDDRowVars, newVarDDColVars);
 
 		// lift labels
 		for (Entry<String, JDDNode> entry : labelsDD.entrySet()) {
@@ -1085,6 +1076,31 @@ public class ProbModel implements Model
 		extraDDRowVars.derefAll();
 		extraDDColVars.derefAll();
 		return result;
+	}
+
+	protected ProbModel newInstance(JDDNode newTrans, JDDNode newStart, JDDNode[] newStateRewards, JDDNode[] newTransRewards, JDDVars newAllDDRowVars,
+			JDDVars newAllDDColVars, ModelVariablesDD newModelVariables, VarList newVarList, JDDVars[] newVarDDRowVars, JDDVars[] newVarDDColVars)
+	{
+		return new ProbModel(
+				// New transition matrix/start state
+				newTrans, newStart,
+				// New reward information
+				newStateRewards,
+				newTransRewards,
+				this.rewardStructNames.clone(),
+				// New list of all row/col vars
+				newAllDDRowVars, newAllDDColVars,
+				// New model variables
+				newModelVariables,
+				// Module info (unchanged)
+				this.getNumModules(),
+				this.getModuleNames(),
+				JDDVars.copyArray(this.getModuleDDRowVars()),
+				JDDVars.copyArray(this.getModuleDDColVars()),
+				// New var info
+				newVarList.getNumVars(), newVarList, newVarDDRowVars, newVarDDColVars,
+				// Constants (no change)
+				this.getConstantValues());
 	}
 
 	/**
