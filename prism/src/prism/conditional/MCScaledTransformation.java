@@ -2,6 +2,7 @@ package prism.conditional;
 
 import jdd.JDD;
 import jdd.JDDNode;
+import jdd.JDDVars;
 import prism.ModelTransformation;
 import prism.Prism;
 import prism.PrismException;
@@ -57,6 +58,9 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		// P'''(s,v) = 0 for P(s, originProb) = 0 and P''(s,v) otherwise
 		final JDDNode newTrans = JDD.Apply(JDD.TIMES, newTransScaled, support.copy());
 
+		assert exitRatesAreEqual(originalModel.getTrans(), newTransScaled, support, originalModel.getAllDDColVars())
+		     : "scaling is expected to preserve the exit rate";
+
 		// start'(s) = statesOfInterest(s) && P(s, originProb) > 0
 		final JDDNode newStart = JDD.And(statesOfInterest, support);
 
@@ -93,6 +97,18 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		scaledModel = originalModel.getTransformed(scalingTransformation);
 		validStates = newStart.copy();
 		scalingTransformation.clear();
+	}
+
+	/**
+	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
+	 */
+	public boolean exitRatesAreEqual(JDDNode originalTrans, JDDNode scaledTrans, JDDNode support, JDDVars colVars)
+	{
+		JDDNode orignalRates = JDD.SumAbstract(JDD.Apply(JDD.TIMES, originalTrans.copy(), support.copy()), colVars);
+		JDDNode scaledRates = JDD.SumAbstract(JDD.Apply(JDD.TIMES, scaledTrans.copy(), support.copy()), colVars);
+		boolean result = JDD.EqualSupNorm(orignalRates, scaledRates, 1e-6);
+		JDD.Deref(orignalRates, scaledRates);
+		return result;
 	}
 
 	@Override

@@ -6,14 +6,17 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.ToDoubleFunction;
 
 import common.functions.Predicate;
 import common.iterable.FunctionalIterator;
 import explicit.BasicModelTransformation;
+import explicit.CTMCSimple;
 import explicit.DTMC;
 import explicit.DTMCSimple;
 import explicit.ModelTransformation;
 import explicit.modelviews.DTMCAlteredDistributions;
+import prism.PrismUtils;
 
 public class McScaledTransformation
 {
@@ -35,12 +38,7 @@ public class McScaledTransformation
 		protected final double[] targetProbs;
 		protected Predicate<Entry<Integer, Double>> toSupport;
 
-		private ScaleDistribution(final DTMC model, final double[] originProbs)
-		{
-			this(model, originProbs, originProbs);
-		}
-
-		private ScaleDistribution(final DTMC model, final double[] originProbs, double[] targetProbs)
+		public ScaleDistribution(final DTMC model, final double[] originProbs, double[] targetProbs)
 		{
 			this.model       = model;
 			this.originProbs = originProbs;
@@ -61,8 +59,30 @@ public class McScaledTransformation
 				return Collections.emptyIterator();
 			}
 
+			assert exitRatesAreEqual(model.getTransitionsIterator(state), scale(state, originProbability))
+			     : "scaling is expected to preserve the exit rate";
+			return scale(state, originProbability);
+		}
+
+		protected boolean exitRatesAreEqual(Iterator<Entry<Integer,Double>> original, Iterator<Entry<Integer,Double>> scaled)
+		{
+			return PrismUtils.doublesAreCloseAbs(exitRate(original), exitRate(scaled), 1e-6);
+		}
+
+		protected FunctionalIterator<Entry<Integer, Double>> scale(final int state, double originProbability)
+		{
 			Function<Entry<Integer, Double>, Entry<Integer, Double>> scale = new ScaleTransition(targetProbs, 1.0 / originProbability);
 			return FunctionalIterator.extend(model.getTransitionsIterator(state)).filter(toSupport).map(scale);
+		}
+
+		protected double exitRate(Iterator<Entry<Integer,Double>> transitions)
+		{
+			return exitRate(FunctionalIterator.extend(transitions));
+		}
+
+		protected double exitRate(FunctionalIterator<Entry<Integer,Double>> transitions)
+		{
+			return transitions.map((ToDoubleFunction<Entry<?, Double>>) Entry::getValue).sum();
 		}
 	}
 
@@ -89,6 +109,7 @@ public class McScaledTransformation
 
 	public static void main(String[] args)
 	{
+		// DTMC
 		DTMCSimple original = new DTMCSimple(4);
 		original.setProbability(0, 1, 0.3);
 		original.setProbability(0, 2, 0.3);
@@ -99,11 +120,30 @@ public class McScaledTransformation
 		original.setProbability(2, 3, 0.2);
 		original.setProbability(3, 3, 1.0);
 
-		System.out.println("Original Model:");
+		System.out.println("Original DTMC:");
 		System.out.println(original);
 
 		ModelTransformation<DTMC, DTMCAlteredDistributions> scaled = McScaledTransformation.transform(original, new double[] {0.7, 0.0, 1.0, 1.0});
-		System.out.println("Scaled Model:");
+		System.out.println("Scaled DTMC:");
+		System.out.println(scaled.getTransformedModel());
+		System.out.println();
+
+		// CTMC
+		original = new CTMCSimple(4);
+		original.setProbability(0, 1, 3);
+		original.setProbability(0, 2, 3);
+		original.setProbability(0, 3, 4);
+		original.setProbability(1, 2, 5);
+		original.setProbability(1, 3, 5);
+		original.setProbability(2, 2, 8);
+		original.setProbability(2, 3, 2);
+		original.setProbability(3, 3, 10);
+
+		System.out.println("Original CTMC:");
+		System.out.println(original);
+
+		scaled = McScaledTransformation.transform(original, new double[] {0.7, 0.0, 1.0, 1.0});
+		System.out.println("Scaled CTMC:");
 		System.out.println(scaled.getTransformedModel());
 	}
 }
