@@ -7,15 +7,11 @@ import explicit.conditional.transformer.MdpTransformerType;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
-import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConditional;
-import parser.ast.ExpressionProb;
-import parser.ast.RelOp;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
 import prism.Prism;
 import prism.PrismException;
-import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
@@ -41,21 +37,6 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 	
 		final NewConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
-		if (transformer == null) {
-			// try quotient as last resort
-			try {
-				Expression quotientExpression = transformForQuotient(expression);
-				if (quotientExpression != null) {
-					prism.getLog().println("Checking quotient expression: "+quotientExpression);
-					return modelChecker.checkExpression(quotientExpression, statesOfInterest.copy());
-				} else {
-					throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
-				}
-			} finally {
-				JDD.Deref(statesOfInterest);
-			}
-		}
-
 		final ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
 		final StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
 
@@ -78,14 +59,6 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		prism.getLog().print("Transformed matrix has ");
 		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
 
-//		try {
-//			transformation.getOriginalModel().exportToFile(Prism.EXPORT_DOT, true, new java.io.File("original.dot"));
-//			transformation.getTransformedModel().exportToFile(Prism.EXPORT_DOT, true, new java.io.File("transformed.dot"));
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-
 		return transformation;
 	}
 
@@ -97,7 +70,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		final Expression transformedExpression;
 		transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
 
-		prism.getLog().println("\nChecking property in transformed model ...");
+		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
 		long timer = System.currentTimeMillis();
 
 		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
@@ -105,57 +78,6 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		final StateValues result = mcTransformed.checkExpression(transformedExpression, JDD.Constant(1));
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
-
-		return result;
-	}
-
-	protected Expression transformForQuotient(ExpressionConditional expr) throws PrismException
-	{
-		if (!(expr.getObjective() instanceof ExpressionProb)) {
-			throw new PrismNotSupportedException("Can not transform expression with quotient method: "+expr);
-		}
-
-		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
-		final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-
-		if (!types.contains(DtmcTransformerType.Quotient)) {
-			return null;
-		}
-
-		ExpressionProb top = (ExpressionProb) expr.getObjective().deepCopy();
-		Expression bound = top.getBound();
-		RelOp relOp = top.getRelOp();
-		if (top.getBound() != null) {
-			// P bowtie bound
-			top.setBound(null);
-			top.setRelOp(RelOp.COMPUTE_VALUES);
-		}
-		ExpressionProb bottom = (ExpressionProb) top.deepCopy();
-		bottom.setExpression(expr.getCondition().deepCopy());
-		top.setExpression(Expression.And(Expression.Parenth(top.getExpression()),
-		                                 Expression.Parenth(bottom.getExpression().deepCopy())));
-		Expression result = new ExpressionBinaryOp(ExpressionBinaryOp.DIVIDE,
-		                                           top, bottom);
-		if (bound != null) {
-			int op = -1;
-			switch (relOp) {
-			case GEQ:
-				op = ExpressionBinaryOp.GE;
-				break;
-			case GT:
-				op = ExpressionBinaryOp.GT;
-				break;
-			case LEQ:
-				op = ExpressionBinaryOp.LE;
-				break;
-			case LT:
-				op = ExpressionBinaryOp.LT;
-				break;
-			default:
-				throw new PrismNotSupportedException("Unsupported comparison operator in "+expr);
-			}
-			result = new ExpressionBinaryOp(op, Expression.Parenth(result), bound.deepCopy());
-		}
 
 		return result;
 	}
@@ -210,9 +132,9 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 				for (DtmcTransformerType type : types) {
 					switch (type) {
-//					case Quotient:
-//						transformer = new MCQuotientTransformer(modelChecker);
-//						break;
+					case Quotient:
+						transformer = new MCQuotientTransformer.CTMC(prism, modelChecker);
+						break;
 					case Until:
 						transformer = new MCUntilTransformer.CTMC(prism, modelChecker);
 						break;
@@ -231,8 +153,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				}
 			}
 
-//			throw new PrismException("Cannot model check " + expression);
-			return null;
+			throw new PrismException("Cannot model check " + expression);
 		}
 	}
 
@@ -286,9 +207,9 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
 				for (DtmcTransformerType type : types) {
 					switch (type) {
-//					case Quotient:
-//						transformer = new MCQuotientTransformer(modelChecker);
-//						break;
+					case Quotient:
+						transformer = new MCQuotientTransformer.DTMC(prism, modelChecker);
+						break;
 					case Until:
 						transformer = new MCUntilTransformer.DTMC(prism, modelChecker);
 						break;
@@ -307,8 +228,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				}
 			}
 
-//			throw new PrismException("Cannot model check " + expression);
-			return null;
+			throw new PrismException("Cannot model check " + expression);
 		}
 	}
 }
