@@ -33,7 +33,6 @@ import hybrid.PrismHybrid;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -50,7 +49,6 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionFunc;
-import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
 import parser.ast.ExpressionReward;
@@ -60,7 +58,6 @@ import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
 import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
-import parser.ast.ExpressionFilter.FilterOperator;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -73,14 +70,11 @@ import acceptance.AcceptanceRabin;
 import acceptance.AcceptanceReachDD;
 import acceptance.AcceptanceType;
 import automata.DA;
-import automata.LTL2DA;
 import dv.DoubleVector;
 import dv.IntegerVector;
 import explicit.MinMax;
-import prism.conditional.ConditionalDTMCModelChecker;
 import prism.conditional.ConditionalMDPModelChecker;
 import prism.conditional.MDPConditionalMinMaxFilterTransformer;
-import prism.conditional.MDPMinMaxFilterTransformer.MDPMinMaxTransformation;
 
 /*
  * Model checker for MDPs
@@ -156,7 +150,8 @@ public class NondetModelChecker extends NonProbModelChecker
 
 	// Model checking functions
 
-	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
+	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	{
 		if (model.getModelType() != ModelType.MDP) {
 			throw new PrismException("Cannot model check model type " + model.getModelType());
 		}
