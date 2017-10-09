@@ -79,6 +79,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 		final JDDNode probs = computeProbs(conditionPath);
 
 		if (JDD.IsContainedIn(statesOfInterest, prob0)) {
+			// FIXME ALG: Deref JDDNodes!
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 

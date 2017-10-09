@@ -92,6 +92,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 			throws UndefinedTransformationException
 	{
 		if (JDD.IsContainedIn(statesOfInterest, conditionUnsatisfied)) {
+			// FIXME ALG: Deref JDDNodes!
 			throw new UndefinedTransformationException("Condition is not satisfiable");
 		}
 		return conditionUnsatisfied;

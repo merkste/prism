@@ -76,6 +76,7 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 		final boolean satisfiable = JDD.AreIntersecting(support, statesOfInterest);
 		JDD.Deref(support);
 		if (! satisfiable) {
+			// FIXME ALG: Deref JDDNodes!
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 
