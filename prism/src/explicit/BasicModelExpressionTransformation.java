@@ -19,9 +19,7 @@ public class BasicModelExpressionTransformation<OM extends Model, TM extends Mod
 
 	public BasicModelExpressionTransformation(final ModelExpressionTransformation<? extends OM, ? extends TM> transformation)
 	{
-		super(transformation);
-		this.originalExpression    = transformation.getOriginalExpression();
-		this.transformedExpression = transformation.getTransformedExpression();
+		this(transformation, transformation.getOriginalExpression(), transformation.getTransformedExpression());
 	}
 
 	@Override
