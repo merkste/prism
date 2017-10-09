@@ -19,6 +19,7 @@ import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
+import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -31,9 +32,9 @@ public class MDPFinallyTransformer extends NewConditionalTransformer.MDP
 {
 	private boolean debug = false;
 	
-	public MDPFinallyTransformer(NondetModelChecker modelChecker)
+	public MDPFinallyTransformer(Prism prism, NondetModelChecker modelChecker)
 	{
-		super(modelChecker);
+		super(prism, modelChecker);
 	}
 
 	@Override
@@ -46,10 +47,16 @@ public class MDPFinallyTransformer extends NewConditionalTransformer.MDP
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
-		if (!super.canHandleObjective(model, expression)) {
+		// can handle probabilites only
+		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;
 		}
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		// can handle maximal probabilities only
+		if (oprel.getMinMax(model.getModelType()).isMin()) {
+			return false;
+		}
 		final Expression normalized = ExpressionInspector.normalizeExpression(objective.getExpression());
 		return ExpressionInspector.isSimpleFinallyFormula(normalized);
 	}

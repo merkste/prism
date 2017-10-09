@@ -11,15 +11,22 @@ import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionProb;
+import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
 import prism.NondetModel;
 import prism.NondetModelChecker;
+import prism.OpRelOpBound;
+import prism.Prism;
 import prism.PrismException;
+import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Reach;
@@ -32,8 +39,22 @@ import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperat
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>, Clearable
+public interface NewNormalFormTransformer<M extends ProbModel, C extends StateModelChecker> extends NewConditionalTransformer<M, C>, Clearable
 {
+	@Override
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
+			throws PrismLangException
+	{
+		// can handle probabilities only
+		if (!(expression.getObjective() instanceof ExpressionProb)) {
+			return false;
+		}
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		// can handle maximal probabilities only
+		return oprel.getMinMax(model.getModelType()).isMax();
+	}
+
 	@Override
 	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
@@ -94,7 +115,14 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 	ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 			throws PrismException;
 
-	GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
+	default GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
+			throws PrismException
+	{
+		GoalFailStopOperator<M> operator = getGoalFailStopOperator(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest);
+		return new GoalFailStopTransformation<M>(model, operator, badStates);
+	}
+
+	public abstract GoalFailStopOperator<M> getGoalFailStopOperator(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
 			throws PrismException;
 
 	// FIXME ALG: Leak. Ensure clear is called after transformation even if an exception occurs
@@ -107,13 +135,13 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 
 
 
-	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<ProbModel, ProbModelChecker>
+	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C> implements NewNormalFormTransformer<M, C>
 	{
-		protected Map<SimplePathProperty<ProbModel>, JDDNode> cache;
+		protected Map<SimplePathProperty<M>, JDDNode> cache;
 
-		public DTMC(ProbModelChecker modelChecker)
+		public MC(Prism prism, C modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 			cache = new HashMap<>();
 		}
 
@@ -123,16 +151,16 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		 * @see NewNormalFormTransformer#transform(ProbModel, ExpressionConditional, JDDNode)
 		 */
 		@Override
-		public ModelExpressionTransformation<ProbModel, ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+		public ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			ModelExpressionTransformation<ProbModel,ProbModel> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			ModelExpressionTransformation<M,M> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
 			clear();
 			return result;
 		}
 
 		@Override
-		public JDDNode checkSatisfiability(Reach<ProbModel> conditionPath, JDDNode statesOfInterest)
+		public JDDNode checkSatisfiability(Reach<M> conditionPath, JDDNode statesOfInterest)
 				throws PrismException
 		{
 			JDDNode conditionFalsifiedStates = computeProb0(conditionPath);
@@ -141,28 +169,28 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public NewMCResetTransformation transformReset(ProbModel model, JDDNode resetStates, JDDNode statesOfInterest)
+		public NewMCResetTransformation<M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMCResetTransformation(model, resetStates, statesOfInterest);
+			return new NewMCResetTransformation<>(model, resetStates, statesOfInterest);
 		}
 
 		@Override
-		public JDDNode computeBadStates(Reach<ProbModel> reach, JDDNode unsatisfiedStates)
+		public JDDNode computeBadStates(Reach<M> reach, JDDNode unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
 			return noStates();
 		}
 
 		@Override
-		public JDDNode computeBadStates(LTLProduct<ProbModel> product, JDDNode unsatisfiedStates)
+		public JDDNode computeBadStates(LTLProduct<M> product, JDDNode unsatisfiedStates)
 		{
 			// DTMCs are purely probabilistic
 			return noStates();
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb1(Reach<ProbModel> pathProb1, Reach<ProbModel> pathProbs)
+		public ProbabilisticRedistribution redistributeProb1(Reach<M> pathProb1, Reach<M> pathProbs)
 				throws PrismException
 		{
 			pathProb1.requireSameModel(pathProbs);
@@ -178,7 +206,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public ProbabilisticRedistribution redistributeProb0(Reach<ProbModel> pathProb0, Reach<ProbModel> pathProbs)
+		public ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
 				throws PrismException
 		{
 			pathProb0.requireSameModel(pathProbs);
@@ -194,14 +222,6 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public GoalFailStopTransformation<ProbModel> transformGoalFailStop(ProbModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
-				throws PrismException
-		{
-			GoalFailStopOperator<ProbModel> operator = new GoalFailStopOperator.DTMC(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
-			return new GoalFailStopTransformation<>(model, operator, badStates);
-		}
-
-		@Override
 		public void clear()
 		{
 			cache.keySet().forEach(SimplePathProperty::clear);
@@ -210,7 +230,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode computeProbs(Finally<ProbModel> eventually)
+		public JDDNode computeProbs(Finally<M> eventually)
 				throws PrismException
 		{
 			if (! cache.containsKey(eventually)) {
@@ -221,7 +241,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public JDDNode computeProbs(Until<ProbModel> until)
+		public JDDNode computeProbs(Until<M> until)
 				throws PrismException
 		{
 			if (! cache.containsKey(until)) {
@@ -234,11 +254,45 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 
 
 
+	public static abstract class CTMC extends MC<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+
+		@Override
+		public GoalFailStopOperator.CTMC getGoalFailStopOperator(StochModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
+				throws PrismException
+		{
+			return new GoalFailStopOperator.CTMC(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
+		}
+	}
+
+
+
+	public static abstract class DTMC extends MC<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	{
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+
+		@Override
+		public GoalFailStopOperator.DTMC getGoalFailStopOperator(ProbModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
+				throws PrismException
+		{
+			return new GoalFailStopOperator.DTMC(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
+		}
+	}
+
+
+
 	public static abstract class MDP extends NewConditionalTransformer.MDP implements NewNormalFormTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(NondetModelChecker modelChecker)
+		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override
@@ -342,11 +396,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, MC extends StateM
 		}
 
 		@Override
-		public GoalFailStopTransformation<NondetModel> transformGoalFailStop(NondetModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode badStates, JDDNode statesOfInterest)
+		public GoalFailStopOperator.MDP getGoalFailStopOperator(NondetModel model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, JDDNode instantGoalStates, JDDNode conditionFalsifiedStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			GoalFailStopOperator<NondetModel> operator = new GoalFailStopOperator.MDP(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
-			return new GoalFailStopTransformation<>(model, operator, badStates);
+			return new GoalFailStopOperator.MDP(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, statesOfInterest, getLog());
 		}
 	}
 

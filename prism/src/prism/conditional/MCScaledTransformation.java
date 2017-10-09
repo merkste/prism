@@ -11,10 +11,10 @@ import prism.ProbModelTransformation;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MCScaledTransformation implements ModelTransformation<ProbModel, ProbModel>
+public class MCScaledTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
-	private ProbModel originalModel;
-	private ProbModel scaledModel;
+	private M originalModel;
+	private M scaledModel;
 	private JDDNode validStates;
 	private Prism prism;
 
@@ -23,7 +23,7 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, statesOfInterest</i> ]
 	 */
-	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode originProbs, final JDDNode statesOfInterest) throws PrismException
+	public MCScaledTransformation(Prism prism, final M originalModel, final JDDNode originProbs, final JDDNode statesOfInterest) throws PrismException
 	{
 		this(prism, originalModel, originProbs, originProbs.copy(), statesOfInterest);
 	}
@@ -31,7 +31,8 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, targetProbs, statesOfInterest</i> ]
 	 */
-	public MCScaledTransformation(Prism prism, final ProbModel originalModel, final JDDNode originProbs, final JDDNode targetProbs, final JDDNode statesOfInterest) throws PrismException
+	@SuppressWarnings("unchecked")
+	public MCScaledTransformation(Prism prism, final M originalModel, final JDDNode originProbs, final JDDNode targetProbs, final JDDNode statesOfInterest) throws PrismException
 	{
 		this.originalModel = originalModel;
 		this.prism = prism;
@@ -94,7 +95,7 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 		};
 
 		// store scale model
-		scaledModel = originalModel.getTransformed(scalingTransformation);
+		scaledModel = (M) originalModel.getTransformed(scalingTransformation);
 		validStates = newStart.copy();
 		scalingTransformation.clear();
 	}
@@ -112,13 +113,13 @@ public class MCScaledTransformation implements ModelTransformation<ProbModel, Pr
 	}
 
 	@Override
-	public ProbModel getOriginalModel()
+	public M getOriginalModel()
 	{
 		return originalModel;
 	}
 
 	@Override
-	public ProbModel getTransformedModel()
+	public M getTransformedModel()
 	{
 		return scaledModel;
 	}

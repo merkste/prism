@@ -21,6 +21,7 @@ import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
+import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -39,8 +40,8 @@ public class MDPLTLTransformer extends NewConditionalTransformer.MDP
 	boolean debug = false;
 	boolean useNormalFormTransformation = false;
 
-	public MDPLTLTransformer(NondetModelChecker modelChecker) {
-		super(modelChecker);
+	public MDPLTLTransformer(Prism prism, NondetModelChecker modelChecker) {
+		super(prism, modelChecker);
 	}
 
 	@Override
@@ -52,10 +53,16 @@ public class MDPLTLTransformer extends NewConditionalTransformer.MDP
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
-		if (!super.canHandleObjective(model, expression)) {
+		// can handle probabilites only
+		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
+		// can handle maximal probabilities only
+		if (oprel.getMinMax(model.getModelType()).isMin()) {
+			return false;
+		}
 		return getLtlTransformer().canHandle(model, objective.getExpression());
 	}
 

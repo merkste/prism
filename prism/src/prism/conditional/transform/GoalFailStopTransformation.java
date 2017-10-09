@@ -17,6 +17,7 @@ import prism.PrismLog;
 import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
+import prism.StochModel;
 
 public class GoalFailStopTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
@@ -614,7 +615,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 
 
 
-		public static class DTMC extends ProbModelTransformation implements GoalFailStopOperator<ProbModel>
+		public static class MC<M extends ProbModel> extends ProbModelTransformation implements GoalFailStopOperator<M>
 		{
 			protected PrismLog log;
 
@@ -630,7 +631,7 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			/**
 			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, and statesOfInterest</i> ]
 			 */
-			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+			public MC(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
 					throws PrismException
 			{
 				super(model);
@@ -649,10 +650,11 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 				this.statesOfInterest  = statesOfInterest;
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
-			public ProbModel transform(ProbModel model) throws PrismException
+			public M transform(M model) throws PrismException
 			{
-				return model.getTransformed(this);
+				return (M) model.getTransformed(this);
 			}
 
 			@Override
@@ -661,10 +663,11 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 				return log;
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
-			public ProbModel getOriginalModel()
+			public M getOriginalModel()
 			{
-				return originalModel;
+				return (M) originalModel;
 			}
 
 			@Override
@@ -774,6 +777,33 @@ public class GoalFailStopTransformation<M extends ProbModel> implements ModelTra
 			}
 		}
 
+
+
+		public static class CTMC extends MC<StochModel>
+		{
+			/**
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, and statesOfInterest</i> ]
+			 */
+			public CTMC(StochModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
+			{
+				super(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, log);
+			}
+		}
+
+
+
+		public static class DTMC extends MC<ProbModel>
+		{
+			/**
+			 * [ REFS: <i>none</i>, DEREFS: (on clear) <i>goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, and statesOfInterest</i> ]
+			 */
+			public DTMC(ProbModel model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, JDDNode instantGoalStates, JDDNode instantFailStates, JDDNode statesOfInterest, PrismLog log)
+					throws PrismException
+			{
+				super(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates, statesOfInterest, log);
+			}
+		}
 
 
 		public static class MDP extends NondetModelTransformation implements GoalFailStopOperator<NondetModel>

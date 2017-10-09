@@ -30,20 +30,21 @@ import prism.conditional.prototype.MDPLTLTransformer;
 
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel> {
 	
-	protected NondetModelChecker mc;
+	protected NondetModelChecker modelChecker;
 
-	public ConditionalMDPModelChecker(NondetModelChecker mc, Prism prism)
+	public ConditionalMDPModelChecker(NondetModelChecker modelChecker, Prism prism)
 	{
 		super(prism);
-		this.mc = mc;
+		this.modelChecker = modelChecker;
 	}
-	
+
+	@Override
 	public StateValues checkExpression(final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		assert expression.getObjective() instanceof ExpressionProb;
 
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel = objective.getRelopBoundInfo(mc.getConstantValues());
+		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
 		}
@@ -86,13 +87,13 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		}
 	}
 
-	private StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest) throws PrismLangException, PrismException
+	protected StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest) throws PrismLangException, PrismException
 	{
 		// P>x [prop] <=>	Pmin=?[prop]	> x
 		//					1-Pmax=?[!prop]	> x
 		//					Pmax=?[!prop]	< 1-x
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel       = objective.getRelopBoundInfo(mc.getConstantValues());
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMin(): "Pmin expected: " + expression;
 
 		final Expression inverseExpression;
@@ -107,16 +108,16 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		}
 		// Debug output
 		prism.getLog().println("Transform Pmin conditional expression to "+inverseExpression);
-		return mc.checkExpression(inverseExpression, statesOfInterest);
+		return modelChecker.checkExpression(inverseExpression, statesOfInterest);
 	}
 
-	private ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformModel(final NewConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	protected ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformModel(final NewConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 		long timer = System.currentTimeMillis();
 		ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("Time for model transformation: " + timer / 1000.0 + " seconds.");
+		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
 		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
 		prism.getLog().print("Transformed model has ");
 		prism.getLog().println(transformation.getTransformedModel().infoString());
@@ -125,7 +126,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return transformation;
 	}
 
-	private NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
+	protected NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
 	{
 		PrismSettings settings = prism.getSettings();
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
@@ -139,10 +140,10 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 				NewConditionalTransformer.MDP transformer;
 				switch (type) {
 				case FinallyFinally:
-					transformer = new MDPFinallyTransformer(mc);
+					transformer = new MDPFinallyTransformer(prism, modelChecker);
 					break;
 				case LtlLtl:
-					transformer = new MDPLTLTransformer(mc);
+					transformer = new MDPLTLTransformer(prism, modelChecker);
 					break;
 				default:
 					continue;
@@ -156,16 +157,16 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 				NewConditionalTransformer.MDP transformer;
 				switch (type) {
 				case FinallyFinally:
-					transformer = new NewFinallyUntilTransformer.MDP(mc);
+					transformer = new NewFinallyUntilTransformer.MDP(prism, modelChecker);
 					break;
 				case LtlFinally:
-					transformer = new NewLtlUntilTransformer.MDP(mc);
+					transformer = new NewLtlUntilTransformer.MDP(prism, modelChecker);
 					break;
 				case FinallyLtl:
-					transformer = new NewFinallyLtlTransformer.MDP(mc);
+					transformer = new NewFinallyLtlTransformer.MDP(prism, modelChecker);
 					break;
 				case LtlLtl:
-					transformer = new NewLtlLtlTransformer.MDP(mc);
+					transformer = new NewLtlLtlTransformer.MDP(prism, modelChecker);
 					break;
 				default:
 					continue;
@@ -179,7 +180,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return null;
 	}
 
-	private StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation) throws PrismException
+	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation) throws PrismException
 	{
 		final NondetModel transformedModel = transformation.getTransformedModel();
 		final Expression transformedExpression = transformation.getTransformedExpression();
@@ -187,7 +188,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		prism.getLog().println("\nChecking reachability ("+transformedExpression+") in transformed model ...");
 		long timer = System.currentTimeMillis();
 
-		ModelChecker mcTransformed = mc.createModelChecker(transformedModel);
+		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
 		
 		final StateValues resultProduct = mcTransformed.checkExpression(transformedExpression, transformation.getTransformedStatesOfInterest());
 		timer = System.currentTimeMillis() - timer;

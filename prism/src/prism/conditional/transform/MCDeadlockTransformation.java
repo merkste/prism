@@ -9,21 +9,22 @@ import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
 
-public class MCDeadlockTransformation implements ModelTransformation<ProbModel, ProbModel>
+public class MCDeadlockTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
-	private ProbModel originalModel;
-	private ProbModel transformedModel;
+	private M originalModel;
+	private M transformedModel;
 	private DeadlockOperator operator;
 
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public MCDeadlockTransformation(ProbModel model, JDDNode deadlockStates, JDDNode statesOfInterest)
+	@SuppressWarnings("unchecked")
+	public MCDeadlockTransformation(M model, JDDNode deadlockStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		originalModel    = model;
 		operator         = new DeadlockOperator(model, deadlockStates, statesOfInterest);
-		transformedModel = originalModel.getTransformed(operator);
+		transformedModel = (M) originalModel.getTransformed(operator);
 	}
 
 	/**
@@ -35,13 +36,13 @@ public class MCDeadlockTransformation implements ModelTransformation<ProbModel, 
 	}
 
 	@Override
-	public ProbModel getOriginalModel()
+	public M getOriginalModel()
 	{
 		return originalModel;
 	}
 
 	@Override
-	public ProbModel getTransformedModel()
+	public M getTransformedModel()
 	{
 		return transformedModel;
 	}

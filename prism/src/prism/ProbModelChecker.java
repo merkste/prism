@@ -60,7 +60,7 @@ import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
 import sparse.PrismSparse;
 import dv.DoubleVector;
-import prism.conditional.ConditionalDTMCModelChecker;
+import prism.conditional.ConditionalMCModelChecker;
 
 /*
  * Model checker for DTMCs.
@@ -447,28 +447,10 @@ public class ProbModelChecker extends NonProbModelChecker
 	}
 	
 	// Model checking functions
-	
-	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException {
-		switch (model.getModelType()) {
-		case DTMC:
-//			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)
-//			    && (expression.getObjective() instanceof ExpressionProb)) {
-//				prism.getLog().println("\nConverting DTMC to MDP");
-//				long buildTime = System.currentTimeMillis();
-//				NondetModel mdp = NondetModel.fromProbModel(model);
-//				buildTime = System.currentTimeMillis() - buildTime;
-//				prism.getLog().println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-//				ExpressionProb objective = (ExpressionProb) expression.getObjective();
-//				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
-//				NondetModelChecker mc = new NondetModelChecker(prism, mdp, getPropertiesFile());
-//				return mc.checkExpression(new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
-//			}
-		case CTMC:
-			// treat a CTMC as DTMC
-			return new ConditionalDTMCModelChecker(this, prism).checkExpression((ProbModel) model, expression, statesOfInterest);
-		default:
-			throw new PrismException("Cannot model check model type " + model.getModelType());
-		}
+
+	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	{
+		return new ConditionalMCModelChecker.DTMC(prism, this).checkExpression((ProbModel) model, expression, statesOfInterest);
 	}
 
 	// Contents of a P operator

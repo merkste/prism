@@ -21,6 +21,8 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
@@ -29,10 +31,11 @@ import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
 
-public class MCUntilTransformer extends MCConditionalTransformer
+public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
 {
-	public MCUntilTransformer(ProbModelChecker modelChecker, Prism prism) {
-		super(modelChecker, prism);
+	public MCUntilTransformer(Prism prism, C modelChecker)
+	{
+		super(prism, modelChecker);
 	}
 
 	@Override
@@ -43,6 +46,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		return ExpressionInspector.isUnboundedSimpleUntilFormula(until);
 	}
 
+	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
@@ -50,18 +54,18 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+	public ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
-		Expression condition            = expression.getCondition();
-		Reach<ProbModel> conditionReach = (Reach<ProbModel>) computeSimplePathProperty(model, condition);
-		Until<ProbModel> conditionPath  = conditionReach.asUntil();
+		Expression condition    = expression.getCondition();
+		Reach<M> conditionReach = (Reach<M>) computeSimplePathProperty(model, condition);
+		Until<M> conditionPath  = conditionReach.asUntil();
 		conditionReach.clear();
-		ModelTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
+		ModelTransformation<M, ? extends M> transformation = transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
 		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 
-	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Until<ProbModel> conditionPath, final JDDNode statesOfInterest,
+	protected ModelTransformation<M, ? extends M> transformModel(final M model, final Until<M> conditionPath, final JDDNode statesOfInterest,
 			final boolean deadlock) throws PrismException
 	{
 //>>> Debug: print states of interest
@@ -83,13 +87,13 @@ public class MCUntilTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), probs.copy());
 //		new StateValuesMTBDD(probs.copy(), model).print(prism.getLog());
 
-		ModelTransformation<ProbModel, ProbModel> pivotTransformation;
+		ModelTransformation<M, M> pivotTransformation;
 		JDDNode liftedProbs;
 		if (deadlock) {
 			// pivots from remain and goal
 			JDDNode pivots = getPivots(model, conditionPath);
 			// deadlock in pivots
-			pivotTransformation = new MCDeadlockTransformation(model, pivots, statesOfInterest);
+			pivotTransformation = new MCDeadlockTransformation<>(model, pivots, statesOfInterest);
 			JDD.Deref(pivots);
 			// lift probs
 			liftedProbs = probs.copy();
@@ -97,9 +101,9 @@ public class MCUntilTransformer extends MCConditionalTransformer
 			// pivots from prob1
 			JDDNode pivots = prob1;
 			// switch mode in pivots
-			pivotTransformation = new MCPivotTransformation(model, pivots, statesOfInterest, true);
+			pivotTransformation = new MCPivotTransformation<>(model, pivots, statesOfInterest, true);
 			// lift probs
-			liftedProbs = JDD.Apply(JDD.MAX, probs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
+			liftedProbs = JDD.Apply(JDD.MAX, probs.copy(), ((MCPivotTransformation<M>) pivotTransformation).getAfter());
 		}
 
 //>>> Debug: print pivot states
@@ -115,11 +119,11 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		conditionPath.clear();
 		JDD.Deref(prob0, prob1, probs);
 
-		ProbModel pivotModel          = pivotTransformation.getTransformedModel();
+		M pivotModel                  = pivotTransformation.getTransformedModel();
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
 		liftedProbs                   = JDD.Times(liftedProbs, pivotModel.getReach().copy());
 
-		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
+		MCScaledTransformation<M> scaledTransformation = new MCScaledTransformation<>(prism, pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
 
 //>>> Debug: print transformed states of interest
 //		prism.getLog().println("Transformed states of interest:");
@@ -145,7 +149,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
 	 */
-	public JDDNode getPivots(final ProbModel model, final Until<ProbModel> until)
+	protected JDDNode getPivots(final M model, final Until<M> until)
 	{
 		if (! until.isNegated()) {
 			// pivots = goal
@@ -210,5 +214,25 @@ public class MCUntilTransformer extends MCConditionalTransformer
 		final ModelChecker mc = modelChecker.createModelChecker(model);
 		final StateValues stateValues = mc.checkExpression(expression, statesOfInterest);
 		return stateValues.convertToStateValuesMTBDD().getJDDNode();
+	}
+
+
+
+	public static class CTMC extends MCUntilTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+	}
+
+
+
+	public static class DTMC extends MCUntilTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	{
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
 	}
 }

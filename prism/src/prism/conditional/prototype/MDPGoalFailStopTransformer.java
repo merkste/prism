@@ -16,6 +16,7 @@ import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.NondetModelTransformation;
 import prism.OpRelOpBound;
+import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismLog;
@@ -32,9 +33,9 @@ public class MDPGoalFailStopTransformer extends NewConditionalTransformer.MDP
 
 
 
-	public MDPGoalFailStopTransformer(NondetModelChecker modelChecker)
+	public MDPGoalFailStopTransformer(Prism prism, NondetModelChecker modelChecker)
 	{
-		super(modelChecker);
+		super(prism, modelChecker);
 	}
 
 	@Override

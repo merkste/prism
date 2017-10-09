@@ -9,14 +9,13 @@ import jdd.JDDVars;
 import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
-import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.ModelType;
 import prism.NondetModel;
 import prism.NondetModelChecker;
-import prism.OpRelOpBound;
+import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismLog;
@@ -25,6 +24,8 @@ import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.conditional.SimplePathProperty.Finally;
 import prism.conditional.SimplePathProperty.Globally;
 import prism.conditional.SimplePathProperty.Next;
@@ -36,7 +37,7 @@ import prism.conditional.SimplePathProperty.WeakUntil;
 import prism.conditional.transform.LTLProductTransformer;
 import prism.PrismComponent;
 
-public interface NewConditionalTransformer<M extends ProbModel, MC extends StateModelChecker>
+public interface NewConditionalTransformer<M extends ProbModel, C extends StateModelChecker>
 {
 	public static final JDDNode ALL_STATES = null;
 
@@ -63,18 +64,8 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 	boolean canHandleModelType(Model model);
 
-	default boolean canHandleObjective(Model model, ExpressionConditional expression)
-			throws PrismLangException
-	{
-		// can handle probabilities only
-		if (!(expression.getObjective() instanceof ExpressionProb)) {
-			return false;
-		}
-		ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		OpRelOpBound oprel       = objective.getRelopBoundInfo(getModelChecker().getConstantValues());
-		// can handle maximal probabilities only
-		return oprel.getMinMax(model.getModelType()).isMax();
-	}
+	boolean canHandleObjective(Model model, ExpressionConditional expression)
+			throws PrismLangException;
 
 	boolean canHandleCondition(Model model,ExpressionConditional expression)
 			throws PrismLangException;
@@ -93,9 +84,9 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 	PrismLog getLog();
 
-	MC getModelChecker();
+	C getModelChecker();
 
-	MC getModelChecker(M model) throws PrismException;
+	C getModelChecker(M model) throws PrismException;
 
 	LTLProductTransformer<M> getLtlTransformer();
 
@@ -117,7 +108,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			temporal = (ExpressionTemporal) trimmed;
 		}
 
-		MC mc                     = getModelChecker(model);
+		C mc                     = getModelChecker(model);
 		TemporalOperator operator = TemporalOperator.fromConstant(temporal.getOperator());
 		JDDNode goal, remain, stop;
 		switch (operator) {
@@ -165,29 +156,33 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 
 
-	public static abstract class Basic<M extends ProbModel, MC extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
+	public static abstract class Basic<M extends ProbModel, C extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, C>
 	{
-		protected MC modelChecker;
+		protected Prism prism;
+		protected C modelChecker;
 		protected LTLProductTransformer<M> ltlTransformer;
 
-		public Basic(MC modelChecker) {
+		public Basic(Prism prism, C modelChecker) {
 			super(modelChecker);
+			Objects.requireNonNull(prism);
+			Objects.requireNonNull(modelChecker);
+			this.prism        = prism;
 			this.modelChecker = modelChecker;
 		}
 
 		@Override
-		public MC getModelChecker()
+		public C getModelChecker()
 		{
 			return modelChecker;
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public MC getModelChecker(M model)
+		public C getModelChecker(M model)
 				throws PrismException
 		{
 			// Create fresh model checker for model
-			return (MC) getModelChecker().createModelChecker(model);
+			return (C) getModelChecker().createModelChecker(model);
 		}
 
 		@Override
@@ -217,20 +212,14 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 
 
-	public static abstract class DTMC extends Basic<ProbModel, ProbModelChecker>
+	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends Basic<M, C>
 	{
-		public DTMC(ProbModelChecker modelChecker)
+		public MC(Prism prism, C modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
-		@Override
-		public boolean canHandleModelType(Model model)
-		{
-			return (model.getModelType() == ModelType.DTMC) && (model instanceof ProbModel);
-		}
-
-		public JDDNode computeProb0(ProbModel model, boolean negated, JDDNode remain, JDDNode goal)
+		public JDDNode computeProb0(M model, boolean negated, JDDNode remain, JDDNode goal)
 		{
 			if (negated) {
 				return computeProb1(model, false, remain, goal);
@@ -246,7 +235,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return PrismMTBDD.Prob0(trans01, reach, rowVars, colVars, remain, goal);
 		}
 
-		public JDDNode computeProb1(ProbModel model, boolean negated, JDDNode remain, JDDNode goal)
+		public JDDNode computeProb1(M model, boolean negated, JDDNode remain, JDDNode goal)
 		{
 			if (negated) {
 				return computeProb0(model, false, remain, goal);
@@ -258,7 +247,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return prob1;
 		}
 
-		public JDDNode computeProb1(ProbModel model, JDDNode remain, JDDNode goal, JDDNode prob0)
+		public JDDNode computeProb1(M model, JDDNode remain, JDDNode goal, JDDNode prob0)
 		{
 			Objects.requireNonNull(goal);
 			Objects.requireNonNull(prob0);
@@ -272,7 +261,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return PrismMTBDD.Prob1(trans01, reach, rowVars, colVars, remain, goal, prob0);
 		}
 
-		public JDDNode computeNextProbs(ProbModel model, boolean negated, JDDNode goal)
+		public JDDNode computeNextProbs(M model, boolean negated, JDDNode goal)
 				throws PrismException
 		{
 			Objects.requireNonNull(goal);
@@ -283,7 +272,7 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return probabilities.convertToStateValuesMTBDD().getJDDNode();
 		}
 
-		public JDDNode computeUntilProbs(ProbModel model, boolean negated, JDDNode remain, JDDNode goal)
+		public JDDNode computeUntilProbs(M model, boolean negated, JDDNode remain, JDDNode goal)
 				throws PrismException
 		{
 			// FIXME ALG: consider precomputation
@@ -298,112 +287,112 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 			return probabilities.convertToStateValuesMTBDD().getJDDNode();
 		}
 
-		public JDDNode computeProb0(Reach<ProbModel> reach)
+		public JDDNode computeProb0(Reach<M> reach)
 				throws PrismException
 		{
 			if (reach instanceof Finally) {
-				return computeProb0((Finally<ProbModel>) reach);
+				return computeProb0((Finally<M>) reach);
 			}
 			if (reach instanceof Globally) {
-				Finally<ProbModel> eventually = ((Globally<ProbModel>)reach).asFinally();
-				JDDNode result                = computeProb0(eventually);
+				Finally<M> eventually = ((Globally<M>)reach).asFinally();
+				JDDNode result        = computeProb0(eventually);
 				eventually.clear();
 				return result;
 			}
 			if (reach instanceof Until) {
-				return computeProb0((Until<ProbModel>) reach);
+				return computeProb0((Until<M>) reach);
 			}
-			Until<ProbModel> until = reach.asUntil();
-			JDDNode result         = computeProb0(until);
+			Until<M> until = reach.asUntil();
+			JDDNode result = computeProb0(until);
 			until.clear();
 			return result;
 		}
 
-		public JDDNode computeProb0(Finally<ProbModel> eventually)
+		public JDDNode computeProb0(Finally<M> eventually)
 				throws PrismException
 		{
 			return computeProb0(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 		}
 
-		public JDDNode computeProb0(Until<ProbModel> until)
+		public JDDNode computeProb0(Until<M> until)
 				throws PrismException
 		{
 			return computeProb0(until.getModel(), until.isNegated(),until.getRemain(), until.getGoal());
 		}
 
-		public JDDNode computeProb1(Reach<ProbModel> reach)
+		public JDDNode computeProb1(Reach<M> reach)
 				throws PrismException
 		{
 			if (reach instanceof Finally) {
-				return computeProb1((Finally<ProbModel>) reach);
+				return computeProb1((Finally<M>) reach);
 			}
 			if (reach instanceof Globally) {
-				Finally<ProbModel> eventually = ((Globally<ProbModel>)reach).asFinally();
+				Finally<M> eventually = ((Globally<M>)reach).asFinally();
 				JDDNode result                = computeProb1(eventually);
 				eventually.clear();
 				return result;
 			}
 			if (reach instanceof Until) {
-				return computeProb1((Until<ProbModel>) reach);
+				return computeProb1((Until<M>) reach);
 			}
-			Until<ProbModel> until = reach.asUntil();
-			JDDNode result         = computeProb1(until);
+			Until<M> until = reach.asUntil();
+			JDDNode result = computeProb1(until);
 			until.clear();
 			return result;
 		}
 
-		public JDDNode computeProb1(Finally<ProbModel> eventually)
+		public JDDNode computeProb1(Finally<M> eventually)
 				throws PrismException
 		{
 			return computeProb1(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 		}
 
-		public JDDNode computeProb1(Until<ProbModel> until)
+		public JDDNode computeProb1(Until<M> until)
 				throws PrismException
 		{
 			return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public JDDNode computeProbs(SimplePathProperty<ProbModel> path)
+		public JDDNode computeProbs(SimplePathProperty<M> path)
 				throws PrismException
 		{
 			if (path instanceof Finally) {
-				return computeProbs((Finally<ProbModel>) path);
+				return computeProbs((Finally<M>) path);
 			}
 			if (path instanceof Globally) {
-				Finally<ProbModel> eventually = ((Globally<ProbModel>)path).asFinally();
-				JDDNode result                = computeProbs(eventually);
+				Finally<M> eventually = ((Globally<M>)path).asFinally();
+				JDDNode result        = computeProbs(eventually);
 				eventually.clear();
 				return result;
 			}
 			if (path instanceof Next) {
-				return computeProbs((Next<ProbModel>)path);
+				return computeProbs((Next<M>)path);
 			}
 			if (path instanceof Until) {
-				return computeProbs((Until<ProbModel>) path);
+				return computeProbs((Until<M>) path);
 			}
 			if (path instanceof Reach) {
-				Until<ProbModel> until = ((Reach<ProbModel>)path).asUntil();
-				JDDNode result         = computeProbs(until);
+				Until<M> until = ((Reach<M>)path).asUntil();
+				JDDNode result = computeProbs(until);
 				until.clear();
 				return result;
 			}
 			throw new PrismException("Unsupported simple path property " + path);
 		}
 
-		public JDDNode computeProbs(Finally<ProbModel> eventually)
+		public JDDNode computeProbs(Finally<M> eventually)
 				throws PrismException
 		{
 			return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 		}
 
-		public JDDNode computeProbs(Next<ProbModel> next)
+		public JDDNode computeProbs(Next<M> next)
 				throws PrismException
 		{
 			return computeNextProbs(next.getModel(), next.isNegated(), next.getGoal());
 		}
 
-		public JDDNode computeProbs(Until<ProbModel> until)
+		public JDDNode computeProbs(Until<M> until)
 				throws PrismException
 		{
 			return computeUntilProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
@@ -412,11 +401,33 @@ public interface NewConditionalTransformer<M extends ProbModel, MC extends State
 
 
 
+	public interface CTMC extends NewConditionalTransformer<StochModel, StochModelChecker>
+	{
+		@Override
+		default boolean canHandleModelType(Model model)
+		{
+			return (model.getModelType() == ModelType.CTMC) && (model instanceof StochModel);
+		}
+	}
+
+
+
+	public interface DTMC extends NewConditionalTransformer<ProbModel, ProbModelChecker>
+	{
+		@Override
+		default boolean canHandleModelType(Model model)
+		{
+			return (model.getModelType() == ModelType.DTMC) && (model instanceof ProbModel) && !(model instanceof StochModel);
+		}
+	}
+
+
+
 	public static abstract class MDP extends Basic<NondetModel, NondetModelChecker>
 	{
-		public MDP(NondetModelChecker modelChecker)
+		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override

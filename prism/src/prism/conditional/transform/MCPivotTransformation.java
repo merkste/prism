@@ -9,21 +9,21 @@ import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
 
-public class MCPivotTransformation implements ModelTransformation<ProbModel, ProbModel>
+public class MCPivotTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
 	/** Flag for "produce BDD for the row variables" */
 	private final static boolean ROW = true;
 	/** Flag for "produce BDD for the column variables" */
 	private final static boolean COL = false;
 
-	private ProbModel originalModel;
-	private ProbModel transformedModel;
+	private M originalModel;
+	private M transformedModel;
 	private UnionOperator operator;
 
 	/**
 	 * [ REFS: <i>pivotStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public MCPivotTransformation(ProbModel model, JDDNode pivotStates, JDDNode statesOfInterest)
+	public MCPivotTransformation(M model, JDDNode pivotStates, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		this(model, pivotStates, statesOfInterest, false);
@@ -31,12 +31,13 @@ public class MCPivotTransformation implements ModelTransformation<ProbModel, Pro
 	/**
 	 * [ REFS: <i>pivotStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public MCPivotTransformation(ProbModel model, JDDNode pivotStates, JDDNode statesOfInterest, boolean startInPivotStates)
+	@SuppressWarnings("unchecked")
+	public MCPivotTransformation(M model, JDDNode pivotStates, JDDNode statesOfInterest, boolean startInPivotStates)
 			throws PrismException
 	{
 		originalModel    = model;
 		operator         = new UnionOperator(model, pivotStates, statesOfInterest);
-		transformedModel = originalModel.getTransformed(operator);
+		transformedModel = (M) originalModel.getTransformed(operator);
 	}
 
 	/**
@@ -64,13 +65,13 @@ public class MCPivotTransformation implements ModelTransformation<ProbModel, Pro
 	}
 
 	@Override
-	public ProbModel getOriginalModel()
+	public M getOriginalModel()
 	{
 		return originalModel;
 	}
 
 	@Override
-	public ProbModel getTransformedModel()
+	public M getTransformedModel()
 	{
 		return transformedModel;
 	}

@@ -34,7 +34,7 @@ import mtbdd.*;
 import sparse.*;
 import hybrid.*;
 import parser.ast.*;
-import parser.type.*;
+import prism.conditional.ConditionalMCModelChecker;
 
 /*
  * Model checker for CTMCs.
@@ -71,6 +71,12 @@ public class StochModelChecker extends ProbModelChecker
 	public ProbModelChecker createNewModelChecker(Prism prism, Model m, PropertiesFile pf) throws PrismException
 	{
 		return new StochModelChecker(prism, m, pf);
+	}
+
+	@Override
+	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	{
+		return new ConditionalMCModelChecker.CTMC(prism, this).checkExpression((StochModel) model, expression, statesOfInterest);
 	}
 
 	// -----------------------------------------------------------------------------------

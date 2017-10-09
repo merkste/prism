@@ -14,12 +14,15 @@ import parser.ast.ExpressionTemporal;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
+import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
 import prism.conditional.SimplePathProperty.Finally;
@@ -30,7 +33,7 @@ import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 
 
 // FIXME ALG: add comment
-public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewNormalFormTransformer<M, MC>
+public interface NewLtlLtlTransformer<M extends ProbModel, C extends StateModelChecker> extends NewNormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: DMTC=all, MDP=REACH, STREETT
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
@@ -96,7 +99,7 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		Finally<M> objectivePathProduct = new Finally<>(productModel, acceptStates);
 		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
 
-		NewFinallyLtlTransformer<M, MC> finallyLtlTransformer = getFinallyLtlTransformer();
+		NewFinallyLtlTransformer<M, C> finallyLtlTransformer = getFinallyLtlTransformer();
 		getLog().println("\nDelegating to " + finallyLtlTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
 		conditionDA.clear();
@@ -119,7 +122,7 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		JDDNode statesOfInterestProduct = product.getTransformedStatesOfInterest();
 
 		// 2) Normal-Form Transformation
-		NewLtlUntilTransformer<M,MC> ltlUntilTransformer = getLtlUntilTransformer();
+		NewLtlUntilTransformer<M,C> ltlUntilTransformer = getLtlUntilTransformer();
 		getLog().println("\nDelegating to " + ltlUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
 		objectiveDA.clear();
@@ -131,17 +134,47 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		return new Pair<>(transformation, transformedExpression);
 	}
 
-	NewLtlUntilTransformer<M, MC> getLtlUntilTransformer();
+	NewLtlUntilTransformer<M, C> getLtlUntilTransformer();
 
-	NewFinallyLtlTransformer<M, MC> getFinallyLtlTransformer();
+	NewFinallyLtlTransformer<M, C> getFinallyLtlTransformer();
+
+
+
+	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlLtlTransformer<StochModel, StochModelChecker>
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+
+		@Override
+		public Pair<GoalFailStopTransformation<StochModel>, ExpressionConditional> transformNormalForm(StochModel model, LabeledDA objectiveDA, LabeledDA conditionDA, JDDNode statesOfInterest)
+				throws PrismException
+		{
+			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
+			return transformNormalFormReachCondition(model, objectiveDA, conditionDA, statesOfInterest);
+		}
+
+		@Override
+		public NewLtlUntilTransformer.CTMC getLtlUntilTransformer()
+		{
+			return new NewLtlUntilTransformer.CTMC(prism, getModelChecker());
+		}
+
+		@Override
+		public NewFinallyLtlTransformer.CTMC getFinallyLtlTransformer()
+		{
+			return new NewFinallyLtlTransformer.CTMC(prism, getModelChecker());
+		}
+	}
 
 
 
 	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewLtlLtlTransformer<ProbModel, ProbModelChecker>
 	{
-		public DTMC(ProbModelChecker modelChecker)
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override
@@ -155,13 +188,13 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		@Override
 		public NewLtlUntilTransformer.DTMC getLtlUntilTransformer()
 		{
-			return new NewLtlUntilTransformer.DTMC(getModelChecker());
+			return new NewLtlUntilTransformer.DTMC(prism, getModelChecker());
 		}
 
 		@Override
 		public NewFinallyLtlTransformer.DTMC getFinallyLtlTransformer()
 		{
-			return new NewFinallyLtlTransformer.DTMC(getModelChecker());
+			return new NewFinallyLtlTransformer.DTMC(prism, getModelChecker());
 		}
 	}
 
@@ -169,9 +202,9 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 
 	public static class MDP extends NewNormalFormTransformer.MDP implements NewLtlLtlTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(NondetModelChecker modelChecker)
+		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override
@@ -296,13 +329,13 @@ public interface NewLtlLtlTransformer<M extends ProbModel, MC extends StateModel
 		@Override
 		public NewLtlUntilTransformer.MDP getLtlUntilTransformer()
 		{
-			return new NewLtlUntilTransformer.MDP(getModelChecker());
+			return new NewLtlUntilTransformer.MDP(prism, getModelChecker());
 		}
 
 		@Override
 		public NewFinallyLtlTransformer.MDP getFinallyLtlTransformer()
 		{
-			return new NewFinallyLtlTransformer.MDP(getModelChecker());
+			return new NewFinallyLtlTransformer.MDP(prism, getModelChecker());
 		}
 	}
 }

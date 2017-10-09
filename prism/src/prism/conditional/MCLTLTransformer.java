@@ -17,13 +17,16 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 
 // FIXME ALG: support PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE
-public class MCLTLTransformer extends MCConditionalTransformer {
-
-	public MCLTLTransformer(ProbModelChecker modelChecker, Prism prism) {
-		super(modelChecker, prism);
+public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
+{
+	public MCLTLTransformer(Prism prism, C modelChecker)
+	{
+		super(prism, modelChecker);
 	}
 
 	@Override
@@ -40,8 +43,8 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 	}
 
 	@Override
-	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(
-			ProbModel model,
+	public ModelExpressionTransformation<M, ? extends M> transform(
+			M model,
 			ExpressionConditional expression,
 			JDDNode statesOfInterest)
 			throws PrismException {
@@ -54,7 +57,7 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 		};
 
 		LTLModelChecker ltlMC = new LTLModelChecker(prism);
-		LTLModelChecker.LTLProduct<ProbModel> ltlProduct = ltlMC.constructProductMC(modelChecker, model, expression.getCondition(), statesOfInterest.copy(), allowedAcceptance);
+		LTLModelChecker.LTLProduct<M> ltlProduct = ltlMC.constructProductMC(modelChecker, model, expression.getCondition(), statesOfInterest.copy(), allowedAcceptance);
 
 		JDDNode accepting = getLtlTransformer().findAcceptingStates(ltlProduct);
 		prism.getLog().println("\nComputing reachability probabilities...");
@@ -76,10 +79,36 @@ public class MCLTLTransformer extends MCConditionalTransformer {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
 
-		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, ltlProduct.getTransformedModel(), probReachGoal, statesOfInterest.copy());
+		MCScaledTransformation<M> scaledTransformation = new MCScaledTransformation<>(prism, ltlProduct.getTransformedModel(), probReachGoal, statesOfInterest.copy());
 
 		JDD.Deref(statesOfInterest);
-		ModelTransformationNested<ProbModel, ProbModel, ProbModel> transformation = new ModelTransformationNested<ProbModel, ProbModel, ProbModel>(ltlProduct, scaledTransformation);
+		ModelTransformationNested<M, M, M> transformation = new ModelTransformationNested<M, M, M>(ltlProduct, scaledTransformation);
 		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
+	}
+
+
+
+	public static class CTMC extends MCLTLTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+
+		@Override
+		public boolean canHandle(Model model, ExpressionConditional expression)
+		{
+			return false;
+		}
+	}
+
+
+
+	public static class DTMC extends MCLTLTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	{
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
 	}
 }

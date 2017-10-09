@@ -13,12 +13,15 @@ import prism.Model;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
+import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateModelChecker;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.conditional.SimplePathProperty.Globally;
 import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.transform.GoalFailStopTransformation;
@@ -27,7 +30,7 @@ import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedis
 
 
 // FIXME ALG: add comment
-public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends StateModelChecker> extends NewNormalFormTransformer<M, MC>
+public interface NewFinallyUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NewNormalFormTransformer<M, C>
 {
 	@Override
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
@@ -135,11 +138,38 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 
 
 
+	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewFinallyUntilTransformer<StochModel, StochModelChecker>
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+
+		@Override
+		public JDDNode computeInstantGoalStates(Reach<StochModel> objectivePath, JDDNode objectiveSatisfiedStates, JDDNode objectiveFalsifiedStates, Reach<StochModel> conditionPath, JDDNode conditionSatisfiedStates, JDDNode conditionFalsifiedStates)
+				throws PrismException
+		{
+			objectivePath.requireSameModel(conditionPath);
+
+			return JDD.And(objectiveSatisfiedStates.copy(), conditionSatisfiedStates.copy());
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0Objective(Reach<StochModel> objectivePath, Reach<StochModel> conditionPath)
+				throws PrismException
+		{
+			// Always normalize
+			return redistributeProb0(objectivePath, conditionPath);
+		}
+	}
+
+
+
 	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyUntilTransformer<ProbModel, ProbModelChecker>
 	{
-		public DTMC(ProbModelChecker modelChecker)
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override
@@ -164,9 +194,9 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, MC extends Stat
 
 	public static class MDP extends NewNormalFormTransformer.MDP implements NewFinallyUntilTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(NondetModelChecker modelChecker)
+		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
-			super(modelChecker);
+			super(prism, modelChecker);
 		}
 
 		@Override

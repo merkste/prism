@@ -21,16 +21,18 @@ import prism.PrismLangException;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.StochModel;
+import prism.StochModelChecker;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
 
-public class MCNextTransformer extends MCConditionalTransformer
+public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
 {
-	public MCNextTransformer(ProbModelChecker modelChecker, Prism prism)
+	public MCNextTransformer(Prism prism, C modelChecker)
 	{
-		super(modelChecker, prism);
+		super(prism, modelChecker);
 	}
 
 	@Override
@@ -70,15 +72,15 @@ public class MCNextTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public ModelExpressionTransformation<ProbModel, ? extends ProbModel> transform(ProbModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+	public ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
-		ModelTransformation<ProbModel, ? extends ProbModel> transformation = transformModel(model, condition, statesOfInterest);
+		ModelTransformation<M, ? extends M> transformation = transformModel(model, condition, statesOfInterest);
 		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
 	}
 
-	protected ModelTransformation<ProbModel, ? extends ProbModel> transformModel(final ProbModel model, final Expression condition, final JDDNode statesOfInterest)
+	protected ModelTransformation<M, ? extends M> transformModel(final M model, final Expression condition, final JDDNode statesOfInterest)
 			throws PrismException
 	{
 //>>> Debug: print states of interest
@@ -111,7 +113,7 @@ public class MCNextTransformer extends MCConditionalTransformer
 		JDDNode pivots = getPivotStates(model, goal, negated);
 		JDD.Deref(goal);
 		// switch mode in pivots
-		ModelTransformation<ProbModel, ProbModel> pivotTransformation = new MCPivotTransformation(model, pivots, statesOfInterest, false);
+		ModelTransformation<M, M> pivotTransformation = new MCPivotTransformation<>(model, pivots, statesOfInterest, false);
 
 //>>> Debug: print pivot states
 //		prism.getLog().println("Pivot states:");
@@ -120,8 +122,8 @@ public class MCNextTransformer extends MCConditionalTransformer
 
 		JDD.Deref(pivots);
 		// lift probs
-		JDDNode liftedOriginProbs = JDD.Apply(JDD.MAX, originProbs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
-		JDDNode liftedTargetProbs = JDD.Apply(JDD.MAX, targetProbs.copy(), ((MCPivotTransformation) pivotTransformation).getAfter());
+		JDDNode liftedOriginProbs = JDD.Apply(JDD.MAX, originProbs.copy(), ((MCPivotTransformation<M>) pivotTransformation).getAfter());
+		JDDNode liftedTargetProbs = JDD.Apply(JDD.MAX, targetProbs.copy(), ((MCPivotTransformation<M>) pivotTransformation).getAfter());
 		JDD.Deref(originProbs, targetProbs);
 
 //>>> Debug: print lifted probabilities
@@ -132,11 +134,11 @@ public class MCNextTransformer extends MCConditionalTransformer
 //		JDD.PrintMinterms(prism.getLog(), liftedTargetProbs.copy());
 //		new StateValuesMTBDD(liftedTargetProbs.copy(), pivotModel).print(prism.getLog());
 
-		ProbModel pivotModel = pivotTransformation.getTransformedModel();
+		M pivotModel = pivotTransformation.getTransformedModel();
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
 		liftedOriginProbs = JDD.Times(liftedOriginProbs, pivotModel.getReach().copy());
 
-		MCScaledTransformation scaledTransformation = new MCScaledTransformation(prism, pivotModel, liftedOriginProbs.copy(), liftedTargetProbs.copy(), pivotStatesOfInterest.copy());
+		MCScaledTransformation<M> scaledTransformation = new MCScaledTransformation<>(prism, pivotModel, liftedOriginProbs.copy(), liftedTargetProbs.copy(), pivotStatesOfInterest.copy());
 
 //>>> Debug: print transformed states of interest
 //		prism.getLog().println("Transformed states of interest:");
@@ -243,5 +245,25 @@ public class MCNextTransformer extends MCConditionalTransformer
 			probabilities.subtractFromOne();
 		}
 		return probabilities.convertToStateValuesMTBDD().getJDDNode();
+	}
+
+
+
+	public static class CTMC extends MCNextTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	{
+		public CTMC(Prism prism, StochModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
+	}
+
+
+
+	public static class DTMC extends MCNextTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	{
+		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		{
+			super(prism, modelChecker);
+		}
 	}
 }
