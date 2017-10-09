@@ -2,80 +2,100 @@ package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
 
-import common.iterable.Support;
 import parser.ast.Expression;
+import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
-import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismNotSupportedException;
 import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
 import explicit.Model;
-import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.ModelTransformation;
 
 // FIXME ALG: add comment
 public class MCQuotientTransformer extends MCConditionalTransformer
 {
-	public MCQuotientTransformer(final DTMCModelChecker mc)
+	public MCQuotientTransformer(DTMCModelChecker modelChecker)
 	{
-		super(mc);
+		super(modelChecker);
 	}
 
 	@Override
-	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
+	public boolean canHandleObjective(Model model, ExpressionConditional expression)
+			throws PrismLangException
 	{
-		// FIXME ALG: Should check whether formula can be turned into ExpressionProb
-		return LTLModelChecker.isSupportedLTLFormula(ModelType.DTMC, expression.getCondition());
-	}
-
-	@Override
-	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
-	{
-		// only prob formulae without bounds
+		// only prob formulae
 		if (!(expression.getObjective() instanceof ExpressionProb)) {
 			return false;
 		}
-		return ((ExpressionProb) expression.getObjective()).getRelOp() == RelOp.COMPUTE_VALUES;
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), objective.getExpression());
 	}
 
 	@Override
-	public ConditionalQuotientTransformation transform(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public boolean canHandleCondition(Model model, ExpressionConditional expression)
+			throws PrismLangException
+	{
+		// FIXME ALG: Should check whether formula can be turned into ExpressionProb
+		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression.getCondition());
+	}
+
+	@Override
+	public BasicModelExpressionTransformation<explicit.DTMC, explicit.DTMC> transform(explicit.DTMC model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
-		final double[] probabilities = computeProbability(model, expression.getCondition());
-		final BitSet support = new Support(probabilities).asBitSet();
-		support.and(statesOfInterest);
-		if (support.isEmpty()) {
-			throw new UndefinedTransformationException("condition is not satisfiable");
-		}
-		final BasicModelExpressionTransformation<explicit.DTMC, ? extends explicit.DTMC> transformation = super.transform(model, expression, support);
-		return new ConditionalQuotientTransformation(transformation, probabilities);
+		ModelTransformation<explicit.DTMC,explicit.DTMC> modelTransformation = transformModel(model, expression, statesOfInterest);
+		Expression transformedExpression             = transformExpression(expression);
+		return new BasicModelExpressionTransformation<explicit.DTMC, explicit.DTMC>(modelTransformation, expression, transformedExpression);
 	}
 
 	@Override
-	protected BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	protected BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(explicit.DTMC model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
 		return new BasicModelTransformation<explicit.DTMC, explicit.DTMC>(model, model, statesOfInterest);
 	}
 
 	@Override
-	protected ExpressionProb transformExpression(final ExpressionConditional expression)
+	protected Expression transformExpression(ExpressionConditional expression)
+			throws PrismNotSupportedException
 	{
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-		final Expression condition = expression.getCondition();
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		Expression condition     = expression.getCondition();
+		
+		// apply definition of conditional probability
+		String computeValues           = RelOp.COMPUTE_VALUES.toString();
+		ExpressionBinaryOp conjunction = Expression.And(Expression.Parenth(objective.getExpression().deepCopy()), Expression.Parenth(condition.deepCopy()));
+		Expression numerator           = new ExpressionProb(conjunction, computeValues, null);
+		Expression denominator         = new ExpressionProb(condition.deepCopy(), computeValues, null);
+		ExpressionBinaryOp fraction    = Expression.Divide(numerator, denominator);
 
-		return new ExpressionProb(Expression.And(objective.getExpression(), condition), RelOp.COMPUTE_VALUES.toString(), null);
+		// translate bounds if necessary
+		if (objective.getBound() == null) {
+			return fraction;
+		}
+		int binOp = convertToBinaryOp(objective.getRelOp());
+		return new ExpressionBinaryOp(binOp, Expression.Parenth(fraction), objective.getBound().deepCopy());
 	}
 
-	protected double[] computeProbability(final explicit.DTMC model, final Expression pathFormula) throws PrismException
+	protected int convertToBinaryOp(RelOp relop) throws PrismNotSupportedException
 	{
-		final ExpressionProb expression = new ExpressionProb(pathFormula, "=", null);
-
-		return getModelChecker(model).checkExpression(model, expression, null).getDoubleArray();
+		switch (relop) {
+		case GT:
+			return ExpressionBinaryOp.GT;
+		case GEQ:
+			return ExpressionBinaryOp.GE;
+		case LT:
+			return ExpressionBinaryOp.LT;
+		case LEQ:
+			return ExpressionBinaryOp.LE;
+		default:
+			throw new PrismNotSupportedException("Unsupported comparison operator: " + relop);
+		}
 	}
 }

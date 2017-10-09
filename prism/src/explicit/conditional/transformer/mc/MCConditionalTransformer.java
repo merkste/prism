@@ -32,6 +32,7 @@ public abstract class MCConditionalTransformer extends NewConditionalTransformer
 	}
 
 	protected Expression transformExpression(final ExpressionConditional expression)
+		throws PrismException
 	{
 		return expression.getObjective();
 	}
