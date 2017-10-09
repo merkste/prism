@@ -1,9 +1,8 @@
 package prism.conditional;
 
-import explicit.MinMax;
-
 import java.util.SortedSet;
 
+import explicit.MinMax;
 import explicit.conditional.transformer.MdpTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
@@ -185,7 +184,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		final NondetModel transformedModel = transformation.getTransformedModel();
 		final Expression transformedExpression = transformation.getTransformedExpression();
 
-		prism.getLog().println("\nChecking reachability ("+transformedExpression+") in transformed model ...");
+		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
 		long timer = System.currentTimeMillis();
 
 		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);

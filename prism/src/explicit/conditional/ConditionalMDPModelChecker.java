@@ -152,7 +152,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		Expression transformedExpression   = transformation.getTransformedExpression();
 		BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 
-		mainLog.println("\nChecking property in transformed model ...");
+		mainLog.println("\nChecking transformed property in transformed model: " + transformedExpression);
 		long timer     = System.currentTimeMillis();
 		StateValues sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
 		timer          = System.currentTimeMillis() - timer;
