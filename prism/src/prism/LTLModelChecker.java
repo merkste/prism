@@ -284,7 +284,7 @@ public class LTLModelChecker extends PrismComponent
 	 * @param daDDColVarsCopy (Optionally) empty JDDVars object to obtain copy of DD col vars for DA
 	 * @param statesOfInterest the states in the model that serve as the starting point for the DA product
 	 */
-	public ProbModel constructProductMC(DA<BitSet, ? extends AcceptanceOmega> da, ProbModel model, Vector<JDDNode> labelDDs, JDDVars daDDRowVarsCopy, JDDVars daDDColVarsCopy,
+	public <M extends ProbModel> M constructProductMC(DA<BitSet, ? extends AcceptanceOmega> da, M model, Vector<JDDNode> labelDDs, JDDVars daDDRowVarsCopy, JDDVars daDDColVarsCopy,
 	                                    JDDNode statesOfInterest) throws PrismException
 	{
 		// Existing model - dds, vars, etc.
@@ -385,26 +385,18 @@ public class LTLModelChecker extends PrismComponent
 		}
 
 		// Create a new model model object to store the product model
-		ProbModel modelProd = new ProbModel(
-		// New transition matrix/start state
+		M modelProd = newInstance(
+				model,
+				// New transition matrix/start state
 				newTrans, newStart,
 				// lifted rewards info
-				newStateRewards,
-				newTransRewards,
-				model.rewardStructNames.clone(),
+				newStateRewards, newTransRewards,
 				// New list of all row/col vars
 				newAllDDRowVars, newAllDDColVars,
 				// New model variables
 				newModelVariables,
-				// Module info (unchanged)
-				model.getNumModules(),
-				model.getModuleNames(),
-				JDDVars.copyArray(model.getModuleDDRowVars()),
-				JDDVars.copyArray(model.getModuleDDColVars()),
 				// New var info
-				model.getNumVars() + 1, newVarList, newVarDDRowVars, newVarDDColVars,
-				// Constants (no change)
-				model.getConstantValues());
+				newVarList, newVarDDRowVars, newVarDDColVars);
 
 		// Do reachability/etc. for the new model
 		modelProd.doReachability();
@@ -428,33 +420,84 @@ public class LTLModelChecker extends PrismComponent
 		return modelProd;
 	}
 
-	
-	public LTLProduct<ProbModel> constructProductMC(ProbModelChecker mc, ProbModel model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException
+	@SuppressWarnings("unchecked")
+	protected <M extends ProbModel> M newInstance(M model, JDDNode newTrans, JDDNode newStart, JDDNode[] newStateRewards, JDDNode[] newTransRewards,
+			JDDVars newAllDDRowVars, JDDVars newAllDDColVars, ModelVariablesDD newModelVariables, VarList newVarList, JDDVars[] newVarDDRowVars,
+			JDDVars[] newVarDDColVars)
 	{
+		if (model instanceof StochModel) {
+			return (M) new StochModel(
+					// New transition matrix/start state
+					newTrans, newStart,
+					// lifted rewards info
+					newStateRewards,
+					newTransRewards,
+					model.rewardStructNames.clone(),
+					// New list of all row/col vars
+					newAllDDRowVars, newAllDDColVars,
+					// New model variables
+					newModelVariables,
+					// Module info (unchanged)
+					model.getNumModules(),
+					model.getModuleNames(),
+					JDDVars.copyArray(model.getModuleDDRowVars()),
+					JDDVars.copyArray(model.getModuleDDColVars()),
+					// New var info
+					model.getNumVars() + 1, newVarList, newVarDDRowVars, newVarDDColVars,
+					// Constants (no change)
+					model.getConstantValues());
+		}
+		return (M) new ProbModel(
+				// New transition matrix/start state
+				newTrans, newStart,
+				// lifted rewards info
+				newStateRewards,
+				newTransRewards,
+				model.rewardStructNames.clone(),
+				// New list of all row/col vars
+				newAllDDRowVars, newAllDDColVars,
+				// New model variables
+				newModelVariables,
+				// Module info (unchanged)
+				model.getNumModules(),
+				model.getModuleNames(),
+				JDDVars.copyArray(model.getModuleDDRowVars()),
+				JDDVars.copyArray(model.getModuleDDColVars()),
+				// New var info
+				model.getNumVars() + 1, newVarList, newVarDDRowVars, newVarDDColVars,
+				// Constants (no change)
+				model.getConstantValues());
+	}
+
+	
+	public <M extends ProbModel, C extends ProbModelChecker> LTLProduct<M> constructProductMC(C mc, M model, Expression expr, JDDNode statesOfInterest, AcceptanceType... allowedAcceptance) throws PrismException
+	{
+		assert !(model instanceof StochModel) || (mc instanceof StochModelChecker);
+
 		Vector<JDDNode> labelDDs = new Vector<JDDNode>();
 		DA<BitSet, ? extends AcceptanceOmega> da = constructDAForLTLFormula(mc, model, expr, labelDDs, allowedAcceptance);
 		mainLog.println("\nConstructing MC-"+da.getAutomataType()+" product...");
-		LTLProduct<ProbModel> product = constructProductMC(model, da, labelDDs, statesOfInterest);
+		LTLProduct<M> product = constructProductMC(model, da, labelDDs, statesOfInterest);
 		mainLog.println();
 		product.getProductModel().printTransInfo(mainLog, false);
 		return product;
 	}
 
-	public LTLProduct<ProbModel> constructProductMC(ProbModel model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs,
+	public <M extends ProbModel> LTLProduct<M> constructProductMC(M model, DA<BitSet, ? extends AcceptanceOmega> da, Vector<JDDNode> labelDDs,
 			JDDNode statesOfInterest) throws PrismException
 	{
 		// Build product of Markov chain and automaton
 		// (note: might be a CTMC - StochModelChecker extends this class)
 		JDDVars daDDRowVars = new JDDVars();
 		JDDVars daDDColVars = new JDDVars();
-		ProbModel modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
+		M modelProduct = constructProductMC(da, model, labelDDs, daDDRowVars, daDDColVars, statesOfInterest);
 		AcceptanceOmegaDD acceptance = da.getAcceptance().toAcceptanceDD(daDDRowVars);
 		daDDColVars.derefAll();
 		for (int i = 0; i < labelDDs.size(); i++) {
 			JDD.Deref(labelDDs.get(i));
 		}
 
-		return new LTLProduct<ProbModel>(modelProduct, model, acceptance, modelProduct.getStart().copy(), daDDRowVars);
+		return new LTLProduct<M>(modelProduct, model, acceptance, modelProduct.getStart().copy(), daDDRowVars);
 	}
 
 	/**
@@ -497,7 +540,7 @@ public class LTLModelChecker extends PrismComponent
 		// DA stuff
 		JDDVars daDDRowVars, daDDColVars;
 		// Misc
-		int i, j, n;
+		int i, n;
 		boolean before;
 
 		// Get details of old model (no copy, does not need to be cleaned up)
