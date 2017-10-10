@@ -22,6 +22,7 @@ import prism.ProbModelChecker;
 import prism.StateValues;
 import prism.StochModel;
 import prism.StochModelChecker;
+import prism.conditional.NewConditionalTransformer.MC;
 
 public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends ConditionalModelChecker<M>
 {
@@ -62,7 +63,38 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		return transformation;
 	}
 
-	protected abstract NewConditionalTransformer.MC<M,C> selectModelTransformer(final M model, final ExpressionConditional expression) throws PrismException;
+	protected NewConditionalTransformer.MC<M, C> selectModelTransformer(M model, ExpressionConditional expression) throws PrismException
+	{
+		PrismSettings settings = prism.getSettings();
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
+			throw new PrismException("There is no symbolic TACAS'14 prototype");
+		}
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
+			throw new PrismException("There is no symbolic prototype for the scale method in MCs");
+		}
+
+		NewConditionalTransformer.MC<M, C> transformer;
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
+			String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
+			SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
+			for (MdpTransformerType type : types) {
+				transformer = getResetTransformer(type);
+				if (transformer != null && transformer.canHandle(model, expression)) {
+					return transformer;
+				}
+			}
+		} else {
+			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
+			SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
+			for (DtmcTransformerType type : types) {
+				transformer = getScaleTransformer(type);
+				if (transformer != null && transformer.canHandle(model, expression)) {
+					return transformer;
+				}
+			}
+		}
+		throw new PrismException("Cannot model check " + expression);
+	}
 
 	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation, final ExpressionConditional expression) throws PrismException
 	{
@@ -81,6 +113,10 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 
 		return result;
 	}
+
+	protected abstract MC<M, C> getScaleTransformer(DtmcTransformerType type);
+
+	protected abstract MC<M, C> getResetTransformer(MdpTransformerType type);
 
 
 
@@ -151,68 +187,37 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected NewConditionalTransformer.MC<StochModel, StochModelChecker> selectModelTransformer(final StochModel model, final ExpressionConditional expression) throws PrismException
+		protected NewConditionalTransformer.MC<StochModel, StochModelChecker> getResetTransformer(MdpTransformerType type)
 		{
-			PrismSettings settings = prism.getSettings();
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-				throw new PrismException("There is no symbolic TACAS'14 prototype");
+			switch (type) {
+			case FinallyFinally:
+				return new NewFinallyUntilTransformer.CTMC(prism, modelChecker);
+			case LtlFinally:
+				return new NewLtlUntilTransformer.CTMC(prism, modelChecker);
+			case FinallyLtl:
+				return new NewFinallyLtlTransformer.CTMC(prism, modelChecker);
+			case LtlLtl:
+				return new NewLtlLtlTransformer.CTMC(prism, modelChecker);
+			default:
+				return null;
 			}
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-				throw new PrismException("There is no symbolic prototype for the scale method in MCs");
-			}
+		}
 
-			NewConditionalTransformer.MC<StochModel, StochModelChecker> transformer;
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-				final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-				final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-				for (MdpTransformerType type : types) {
-					switch (type) {
-					case FinallyFinally:
-						transformer = new NewFinallyUntilTransformer.CTMC(prism, modelChecker);
-						break;
-					case LtlFinally:
-						transformer = new NewLtlUntilTransformer.CTMC(prism, modelChecker);
-						break;
-					case FinallyLtl:
-						transformer = new NewFinallyLtlTransformer.CTMC(prism, modelChecker);
-						break;
-					case LtlLtl:
-						transformer = new NewLtlLtlTransformer.CTMC(prism, modelChecker);
-						break;
-					default:
-						continue;
-					}
-					if (transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
-			} else {
-				final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
-				final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-				for (DtmcTransformerType type : types) {
-					switch (type) {
-					case Quotient:
-						transformer = new MCQuotientTransformer.CTMC(prism, modelChecker);
-						break;
-					case Until:
-						transformer = new MCUntilTransformer.CTMC(prism, modelChecker);
-						break;
-					case Next:
-						transformer = new MCNextTransformer.CTMC(prism, modelChecker);
-						break;
-					case Ltl:
-						transformer = new MCLTLTransformer.CTMC(prism, modelChecker);
-						break;
-					default:
-						continue;
-					}
-					if (transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
+		@Override
+		protected MC<StochModel, StochModelChecker> getScaleTransformer(DtmcTransformerType type)
+		{
+			switch (type) {
+			case Quotient:
+				return new MCQuotientTransformer.CTMC(prism, modelChecker);
+			case Until:
+				return new MCUntilTransformer.CTMC(prism, modelChecker);
+			case Next:
+				return new MCNextTransformer.CTMC(prism, modelChecker);
+			case Ltl:
+				return new MCLTLTransformer.CTMC(prism, modelChecker);
+			default:
+				return null;
 			}
-
-			throw new PrismException("Cannot model check " + expression);
 		}
 	}
 
@@ -226,68 +231,37 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected NewConditionalTransformer.MC<ProbModel, ProbModelChecker> selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
+		protected MC<ProbModel, ProbModelChecker> getResetTransformer(MdpTransformerType type)
 		{
-			PrismSettings settings = prism.getSettings();
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-				throw new PrismException("There is no symbolic TACAS'14 prototype");
+			switch (type) {
+			case FinallyFinally:
+				return new NewFinallyUntilTransformer.DTMC(prism, modelChecker);
+			case LtlFinally:
+				return new NewLtlUntilTransformer.DTMC(prism, modelChecker);
+			case FinallyLtl:
+				return new NewFinallyLtlTransformer.DTMC(prism, modelChecker);
+			case LtlLtl:
+				return new NewLtlLtlTransformer.DTMC(prism, modelChecker);
+			default:
+				return null;
 			}
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-				throw new PrismException("There is no symbolic prototype for the scale method in MCs");
-			}
+		}
 
-			NewConditionalTransformer.MC<ProbModel, ProbModelChecker> transformer;
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-				final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-				final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-				for (MdpTransformerType type : types) {
-					switch (type) {
-					case FinallyFinally:
-						transformer = new NewFinallyUntilTransformer.DTMC(prism, modelChecker);
-						break;
-					case LtlFinally:
-						transformer = new NewLtlUntilTransformer.DTMC(prism, modelChecker);
-						break;
-					case FinallyLtl:
-						transformer = new NewFinallyLtlTransformer.DTMC(prism, modelChecker);
-						break;
-					case LtlLtl:
-						transformer = new NewLtlLtlTransformer.DTMC(prism, modelChecker);
-						break;
-					default:
-						continue;
-					}
-					if (transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
-			} else {
-				final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
-				final SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-				for (DtmcTransformerType type : types) {
-					switch (type) {
-					case Quotient:
-						transformer = new MCQuotientTransformer.DTMC(prism, modelChecker);
-						break;
-					case Until:
-						transformer = new MCUntilTransformer.DTMC(prism, modelChecker);
-						break;
-					case Next:
-						transformer = new MCNextTransformer.DTMC(prism, modelChecker);
-						break;
-					case Ltl:
-						transformer = new MCLTLTransformer.DTMC(prism, modelChecker);
-						break;
-					default:
-						continue;
-					}
-					if (transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
+		@Override
+		protected NewConditionalTransformer.MC<ProbModel, ProbModelChecker> getScaleTransformer(DtmcTransformerType type)
+		{
+			switch (type) {
+			case Quotient:
+				return new MCQuotientTransformer.DTMC(prism, modelChecker);
+			case Until:
+				return new MCUntilTransformer.DTMC(prism, modelChecker);
+			case Next:
+				return new MCNextTransformer.DTMC(prism, modelChecker);
+			case Ltl:
+				return new MCLTLTransformer.DTMC(prism, modelChecker);
+			default:
+				return null;
 			}
-
-			throw new PrismException("Cannot model check " + expression);
 		}
 	}
 }
