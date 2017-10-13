@@ -323,17 +323,17 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return new MappingIterator.FromInt<>(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfDouble map(IntToDoubleFunction function)
+		default FunctionalPrimitiveIterator.OfDouble map(IntToDoubleFunction function)
 		{
 			return new MappingIterator.FromIntToDouble(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfInt map(IntUnaryOperator function)
+		default FunctionalPrimitiveIterator.OfInt map(IntUnaryOperator function)
 		{
 			return new MappingIterator.FromIntToInt(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfLong map(IntToLongFunction function)
+		default FunctionalPrimitiveIterator.OfLong map(IntToLongFunction function)
 		{
 			return new MappingIterator.FromIntToLong(unwrap(), function);
 		}
