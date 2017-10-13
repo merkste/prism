@@ -19,7 +19,6 @@ import parser.Values;
 import parser.VarList;
 import prism.PrismException;
 
-// FIXME ALG: consider to inherit from DTMCView and to implement DTMCProxy@J8
 public class DTMCAdditionalStates extends DTMCView
 {
 	protected DTMC model;
