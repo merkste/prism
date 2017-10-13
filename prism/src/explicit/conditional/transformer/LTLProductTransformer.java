@@ -12,6 +12,8 @@ import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import automata.DA;
 import common.BitSetTools;
+import explicit.CTMC;
+import explicit.CTMCModelChecker;
 import explicit.DTMC;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker;
@@ -105,6 +107,8 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		final LTLProduct<M> product;
 		if (model instanceof MDP) {
 			product = (LTLProduct<M>) ltlModelChecker.constructProductModel(automaton, (MDP)model, labels, statesOfInterest);
+		} else if (model instanceof CTMC) {
+			product = (LTLProduct<M>) ltlModelChecker.constructProductModel(automaton, (CTMC)model, labels, statesOfInterest);
 		} else if (model instanceof DTMC) {
 			product = (LTLProduct<M>) ltlModelChecker.constructProductModel(automaton, (DTMC)model, labels, statesOfInterest);
 		} else {
@@ -142,6 +146,9 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		if (productModel instanceof MDP) {
 			return ltlModelChecker.findAcceptingECStates((MDP) productModel, acceptance, remain);
 		}
+		if (productModel instanceof CTMC) {
+			return ltlModelChecker.findAcceptingBSCCs((CTMC) productModel, acceptance, remain);
+		}
 		if (productModel instanceof DTMC) {
 			return ltlModelChecker.findAcceptingBSCCs((DTMC) productModel, acceptance, remain);
 		}
@@ -163,6 +170,13 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 			BitSet nonAcceptingStates = BitSetTools.complement(productModel.getNumStates(), acceptingStates);
 			PredecessorRelation pre   = productModel.getPredecessorRelation(mc, true);
 			return mc.prob0((MDP) productModel, ALL_STATES, nonAcceptingStates, true, null, pre);
+		}
+		if (productModel instanceof CTMC) {
+			// Prob1 (G accepting) = Prob1 (!F !accepting) = Prob0 (F !accepting)
+			CTMCModelChecker mc       = (CTMCModelChecker) getModelChecker(productModel);
+			BitSet nonAcceptingStates = BitSetTools.complement(productModel.getNumStates(), acceptingStates);
+			PredecessorRelation pre   = productModel.getPredecessorRelation(mc, true);
+			return mc.prob0((CTMC) productModel, ALL_STATES, nonAcceptingStates, pre);
 		}
 		if (productModel instanceof DTMC) {
 			// Prob1 (G accepting) = Prob1 (!F !accepting) = Prob0 (F !accepting)
