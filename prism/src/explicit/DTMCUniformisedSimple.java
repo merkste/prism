@@ -30,6 +30,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.Map.Entry;
 
 import parser.State;
@@ -59,6 +60,11 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 	{
 		this.ctmc = ctmc;
 		this.numStates = ctmc.getNumStates();
+		this.deadlocks = new TreeSet<Integer>();
+		for (String label : ctmc.getLabels()) {
+			labels.put(label, ctmc.getLabelStates(label));
+		}
+		// TODO: should we copy other stuff across too?
 		this.q = q;
 		numExtraTransitions = 0;
 		for (int i = 0; i < numStates; i++) {

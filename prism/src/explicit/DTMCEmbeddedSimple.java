@@ -61,6 +61,10 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		this.ctmc = ctmc;
 		this.numStates = ctmc.getNumStates();
+		this.deadlocks = new TreeSet<Integer>();
+		for (String label : ctmc.getLabels()) {
+			labels.put(label, ctmc.getLabelStates(label));
+		}
 		// TODO: should we copy other stuff across too?
 		exitRates = new double[numStates];
 		numExtraTransitions = 0;
