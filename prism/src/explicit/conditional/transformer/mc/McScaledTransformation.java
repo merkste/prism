@@ -11,18 +11,31 @@ import java.util.function.ToDoubleFunction;
 import common.functions.Predicate;
 import common.iterable.FunctionalIterator;
 import explicit.BasicModelTransformation;
+import explicit.CTMC;
 import explicit.CTMCSimple;
 import explicit.DTMC;
 import explicit.DTMCSimple;
 import explicit.ModelTransformation;
+import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAlteredDistributions;
 import prism.PrismUtils;
 
 public class McScaledTransformation
 {
+	public static BasicModelTransformation<CTMC,CTMCAlteredDistributions> transform(CTMC model, double[] originProbs)
+	{
+		return transform(model, originProbs, originProbs);
+	}
+
 	public static BasicModelTransformation<DTMC,DTMCAlteredDistributions> transform(DTMC model, double[] originProbs)
 	{
 		return transform(model, originProbs, originProbs);
+	}
+
+	public static BasicModelTransformation<CTMC,CTMCAlteredDistributions> transform(CTMC model, double[] originProbs, double[] targetProbs)
+	{
+		ScaleDistribution scaleDistribution = new ScaleDistribution(model, originProbs, targetProbs);
+		return new BasicModelTransformation<>(model, new CTMCAlteredDistributions(model, scaleDistribution));
 	}
 
 	public static BasicModelTransformation<DTMC,DTMCAlteredDistributions> transform(DTMC model, double[] originProbs, double[] targetProbs)
@@ -30,6 +43,7 @@ public class McScaledTransformation
 		ScaleDistribution scaleDistribution = new ScaleDistribution(model, originProbs, targetProbs);
 		return new BasicModelTransformation<>(model, new DTMCAlteredDistributions(model, scaleDistribution));
 	}
+
 
 	public static class ScaleDistribution implements IntFunction<Iterator<Entry<Integer, Double>>>
 	{
@@ -110,40 +124,40 @@ public class McScaledTransformation
 	public static void main(String[] args)
 	{
 		// DTMC
-		DTMCSimple original = new DTMCSimple(4);
-		original.setProbability(0, 1, 0.3);
-		original.setProbability(0, 2, 0.3);
-		original.setProbability(0, 3, 0.4);
-		original.setProbability(1, 2, 0.5);
-		original.setProbability(1, 3, 0.5);
-		original.setProbability(2, 2, 0.8);
-		original.setProbability(2, 3, 0.2);
-		original.setProbability(3, 3, 1.0);
+		DTMCSimple dtmc = new DTMCSimple(4);
+		dtmc.setProbability(0, 1, 0.3);
+		dtmc.setProbability(0, 2, 0.3);
+		dtmc.setProbability(0, 3, 0.4);
+		dtmc.setProbability(1, 2, 0.5);
+		dtmc.setProbability(1, 3, 0.5);
+		dtmc.setProbability(2, 2, 0.8);
+		dtmc.setProbability(2, 3, 0.2);
+		dtmc.setProbability(3, 3, 1.0);
 
 		System.out.println("Original DTMC:");
-		System.out.println(original);
+		System.out.println(dtmc);
 
-		ModelTransformation<DTMC, DTMCAlteredDistributions> scaled = McScaledTransformation.transform(original, new double[] {0.7, 0.0, 1.0, 1.0});
+		ModelTransformation<DTMC, DTMCAlteredDistributions> scaledDtmc = McScaledTransformation.transform(dtmc, new double[] {0.7, 0.0, 1.0, 1.0});
 		System.out.println("Scaled DTMC:");
-		System.out.println(scaled.getTransformedModel());
+		System.out.println(scaledDtmc.getTransformedModel());
 		System.out.println();
 
 		// CTMC
-		original = new CTMCSimple(4);
-		original.setProbability(0, 1, 3);
-		original.setProbability(0, 2, 3);
-		original.setProbability(0, 3, 4);
-		original.setProbability(1, 2, 5);
-		original.setProbability(1, 3, 5);
-		original.setProbability(2, 2, 8);
-		original.setProbability(2, 3, 2);
-		original.setProbability(3, 3, 10);
+		CTMCSimple ctmc = new CTMCSimple(4);
+		ctmc.setProbability(0, 1, 3);
+		ctmc.setProbability(0, 2, 3);
+		ctmc.setProbability(0, 3, 4);
+		ctmc.setProbability(1, 2, 5);
+		ctmc.setProbability(1, 3, 5);
+		ctmc.setProbability(2, 2, 8);
+		ctmc.setProbability(2, 3, 2);
+		ctmc.setProbability(3, 3, 10);
 
 		System.out.println("Original CTMC:");
-		System.out.println(original);
+		System.out.println(ctmc);
 
-		scaled = McScaledTransformation.transform(original, new double[] {0.7, 0.0, 1.0, 1.0});
+		ModelTransformation<CTMC, CTMCAlteredDistributions> scaledCtmc = McScaledTransformation.transform(ctmc, new double[] {0.7, 0.0, 1.0, 1.0});
 		System.out.println("Scaled CTMC:");
-		System.out.println(scaled.getTransformedModel());
+		System.out.println(scaledCtmc.getTransformedModel());
 	}
 }

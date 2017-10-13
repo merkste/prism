@@ -21,7 +21,7 @@ import prism.PrismException;
 import prism.PrismLangException;
 
 @Deprecated
-public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
+public interface FinallyUntilTransformer<M extends Model, C extends ProbModelChecker> extends ResetConditionalTransformer<M, C>
 {
 	@Override
 	default boolean canHandleCondition(Model model, ExpressionConditional expression)
@@ -126,6 +126,7 @@ public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelCh
 
 
 
+	@Deprecated
 	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
@@ -142,6 +143,7 @@ public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelCh
 
 
 
+	@Deprecated
 	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)

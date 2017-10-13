@@ -25,7 +25,7 @@ import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import explicit.conditional.transformer.UndefinedTransformationException;
 
 @Deprecated
-public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
+public interface LtlLtlTransformer<M extends Model, C extends ProbModelChecker> extends ResetConditionalTransformer<M, C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
 
@@ -83,7 +83,7 @@ public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker>
 			BitSet transformedStatesOfInterest = objectiveProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
-			FinallyLtlTransformer<M, MC> ltlConditionTransformer = getLtlConditionTransformer();
+			FinallyLtlTransformer<M, C> ltlConditionTransformer = getLtlConditionTransformer();
 			getLog().println("\nDetected acceptance REACH for objective, delegating to " + ltlConditionTransformer.getName());
 			transformation = ltlConditionTransformer.transform(objectiveModel, objectiveGoal, conditionDA.liftToProduct(objectiveProduct), transformedStatesOfInterest);
 		} else if (conditionAcceptanceType  == AcceptanceType.REACH) {
@@ -95,7 +95,7 @@ public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker>
 			BitSet transformedStatesOfInterest = conditionProduct.getTransformedStatesOfInterest();
 
 			// 2) Bad States Transformation
-			LtlUntilTransformer<M, MC> ltlObjectiveTransformer = getLtlObjectiveTransformer();
+			LtlUntilTransformer<M, C> ltlObjectiveTransformer = getLtlObjectiveTransformer();
 			getLog().println("Detected acceptance REACH for condition, delegating to " + ltlObjectiveTransformer.getName());
 			transformation = ltlObjectiveTransformer.transform(conditionModel, objectiveDA.liftToProduct(conditionProduct), null, conditionGoal, false, transformedStatesOfInterest);
 		} else {
@@ -182,12 +182,13 @@ public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker>
 		return bad;
 	}
 
-	LtlUntilTransformer<M, MC> getLtlObjectiveTransformer();
+	LtlUntilTransformer<M, C> getLtlObjectiveTransformer();
 
-	FinallyLtlTransformer<M, MC> getLtlConditionTransformer();
+	FinallyLtlTransformer<M, C> getLtlConditionTransformer();
 
 
 
+	@Deprecated
 	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlLtlTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
@@ -210,6 +211,7 @@ public interface LtlLtlTransformer<M extends Model, MC extends ProbModelChecker>
 
 
 
+	@Deprecated
 	public static class MDP extends ResetConditionalTransformer.MDP implements LtlLtlTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)

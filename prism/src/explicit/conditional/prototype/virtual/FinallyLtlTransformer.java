@@ -28,7 +28,7 @@ import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 
 @Deprecated
-public interface FinallyLtlTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
+public interface FinallyLtlTransformer<M extends Model, C extends ProbModelChecker> extends ResetConditionalTransformer<M, C>
 {
 	static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
 
@@ -84,7 +84,7 @@ public interface FinallyLtlTransformer<M extends Model, MC extends ProbModelChec
 		switch (product.getAcceptance().getType()) {
 		case REACH:
 			M conditionModel = product.getProductModel();
-			FinallyUntilTransformer<M, MC> finallyTransformer = getFinallyFinallyTransformer();
+			FinallyUntilTransformer<M, C> finallyTransformer = getFinallyFinallyTransformer();
 			getLog().println("\nDetected acceptance REACH for condition, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(conditionModel, objectiveGoalLifted, null, conditionGoal, false, transformedStatesOfInterest);
 			break;
@@ -162,12 +162,13 @@ public interface FinallyLtlTransformer<M extends Model, MC extends ProbModelChec
 		return bad;
 	}
 
-	FinallyUntilTransformer<M, MC> getFinallyFinallyTransformer();
+	FinallyUntilTransformer<M, C> getFinallyFinallyTransformer();
 
 	GoalFailTransformer<M> getNormalFormTransformer();
 
 
 
+	@Deprecated
 	public static class DTMC extends ResetConditionalTransformer.DTMC implements FinallyLtlTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
@@ -191,6 +192,7 @@ public interface FinallyLtlTransformer<M extends Model, MC extends ProbModelChec
 
 
 
+	@Deprecated
 	public static class MDP extends ResetConditionalTransformer.MDP implements FinallyLtlTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)

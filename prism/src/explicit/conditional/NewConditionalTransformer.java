@@ -3,6 +3,7 @@ package explicit.conditional;
 import java.util.BitSet;
 import java.util.Objects;
 
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
 import explicit.Model;
@@ -18,6 +19,7 @@ import explicit.conditional.SimplePathProperty.Release;
 import explicit.conditional.SimplePathProperty.TemporalOperator;
 import explicit.conditional.SimplePathProperty.Until;
 import explicit.conditional.SimplePathProperty.WeakUntil;
+import explicit.conditional.checker.McModelChecker;
 import explicit.conditional.transformer.LTLProductTransformer;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -27,9 +29,10 @@ import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismLog;
+import prism.PrismSettings;
 import prism.PrismComponent;
 
-public interface NewConditionalTransformer<M extends Model, MC extends StateModelChecker>
+public interface NewConditionalTransformer<M extends Model, C extends StateModelChecker>
 {
 	public static final BitSet ALL_STATES = null;
 	public static final BitSet NO_STATES  = new BitSet(0);
@@ -87,11 +90,13 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 
 	PrismLog getLog();
 
-	MC getModelChecker();
+	C getModelChecker();
 
-	MC getModelChecker(M model) throws PrismException;
+	C getModelChecker(M model) throws PrismException;
 
 	LTLProductTransformer<M> getLtlTransformer();
+	
+	PrismSettings getSettings();
 
 	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
 			throws PrismException
@@ -111,7 +116,7 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 			temporal = (ExpressionTemporal) trimmed;
 		}
 
-		MC mc                     = getModelChecker(model);
+		C mc                      = getModelChecker(model);
 		TemporalOperator operator = TemporalOperator.fromConstant(temporal.getOperator());
 		BitSet goal, remain, stop;
 		switch (operator) {
@@ -143,29 +148,30 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 
 
 
-	public static abstract class Basic<M extends Model, MC extends ProbModelChecker> extends PrismComponent implements NewConditionalTransformer<M, MC>
+	public static abstract class Basic<M extends Model, C extends ProbModelChecker> extends PrismComponent implements NewConditionalTransformer<M, C>
 	{
-		protected MC modelChecker;
+		protected C modelChecker;
 		protected LTLProductTransformer<M> ltlTransformer;
 
-		public Basic(MC modelChecker) {
+		public Basic(C modelChecker)
+		{
 			super(modelChecker);
-			this.modelChecker = modelChecker;
+			this.modelChecker  = modelChecker;
 		}
 
 		@Override
-		public MC getModelChecker()
+		public C getModelChecker()
 		{
 			return modelChecker;
 		}
 
 		@Override
-		public MC getModelChecker(M model)
+		public C getModelChecker(M model)
 				throws PrismException
 		{
 			// Create fresh model checker for model
 			@SuppressWarnings("unchecked")
-			MC mc = (MC) MC.createModelChecker(model.getModelType(), this);
+			C mc = (C) C.createModelChecker(model.getModelType(), this);
 			mc.inheritSettings(getModelChecker());
 			return mc;
 		}
@@ -177,6 +183,12 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
 			}
 			return ltlTransformer;
+		}
+
+		@Override
+		public PrismSettings getSettings()
+		{
+			return settings;
 		}
 
 		/**
@@ -197,148 +209,45 @@ public interface NewConditionalTransformer<M extends Model, MC extends StateMode
 
 
 
-	public static abstract class DTMC extends Basic<explicit.DTMC, DTMCModelChecker>
+	public interface MC<M extends explicit.DTMC, C extends ProbModelChecker> extends NewConditionalTransformer<M,C>// extends Basic<M, C>
 	{
-		public DTMC(DTMCModelChecker modelChecker)
+		McModelChecker<M,C> getMcModelChecker();
+	}
+
+
+
+	public interface CTMC extends MC<explicit.CTMC, CTMCModelChecker>
+	{
+		@Override
+		default boolean canHandleModelType(Model model)
 		{
-			super(modelChecker);
+			return model instanceof explicit.CTMC;
 		}
 
 		@Override
-		public boolean canHandleModelType(Model model)
+		default McModelChecker<explicit.CTMC, CTMCModelChecker> getMcModelChecker()
+		{
+			return new McModelChecker.CTMC(getModelChecker());
+		}
+	}
+
+
+
+	public interface DTMC extends MC<explicit.DTMC, DTMCModelChecker>
+	{
+		@Override
+		default boolean canHandleModelType(Model model)
 		{
 			return model instanceof explicit.DTMC;
 		}
 
-		public BitSet computeProb0(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
-				throws PrismException
+		@Override
+		default McModelChecker<explicit.DTMC, DTMCModelChecker> getMcModelChecker()
 		{
-			if (negated) {
-				return computeProb1(model, false, remain, goal);
-			}
-			Objects.requireNonNull(goal);
-			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return getModelChecker(model).prob0(model, remain, goal, pre);
-		}
-
-		public BitSet computeProb1(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
-				throws PrismException
-		{
-			if (negated) {
-				return computeProb0(model, false, remain, goal);
-			}
-			Objects.requireNonNull(goal);
-			PredecessorRelation pre = model.getPredecessorRelation(this, true);
-			return getModelChecker(model).prob1(model, remain, goal, pre);
-		}
-
-		public double[] computeNextProbs(explicit.DTMC model, boolean negated, BitSet goal)
-				throws PrismException
-		{
-			Objects.requireNonNull(goal);
-			double[] probabilities = getModelChecker(model).computeNextProbs(model, goal).soln;
-			if (negated) {
-				return subtractFromOne(probabilities);
-			}
-			return probabilities;
-		}
-
-		public double[] computeUntilProbs(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
-				throws PrismException
-		{
-			// FIXME ALG: consider precomputation
-			Objects.requireNonNull(goal);
-			double[] probabilities = getModelChecker(model).computeUntilProbs(model, remain, goal).soln;
-			if (negated) {
-				return subtractFromOne(probabilities);
-			}
-			return probabilities;
-		}
-
-		public BitSet computeProb0(Reach<explicit.DTMC> reach)
-				throws PrismException
-		{
-			if (reach instanceof Finally) {
-				return computeProb0((Finally<explicit.DTMC>) reach);
-			}
-			if (reach instanceof Globally) {
-				return computeProb0(((Globally<explicit.DTMC>)reach).asFinally());
-			}
-			return computeProb0(reach.asUntil());
-		}
-
-		public BitSet computeProb0(Finally<explicit.DTMC> eventually)
-				throws PrismException
-		{
-			return computeProb0(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
-		}
-
-		public BitSet computeProb0(Until<explicit.DTMC> until)
-				throws PrismException
-		{
-			return computeProb0(until.getModel(), until.isNegated(),until.getRemain(), until.getGoal());
-		}
-
-		public BitSet computeProb1(Reach<explicit.DTMC> reach)
-				throws PrismException
-		{
-			if (reach instanceof Finally) {
-				return computeProb1((Finally<explicit.DTMC>) reach);
-			}
-			if (reach instanceof Globally) {
-				return computeProb1(((Globally<explicit.DTMC>)reach).asFinally());
-			}
-			return computeProb1(reach.asUntil());
-		}
-
-		public BitSet computeProb1(Finally<explicit.DTMC> eventually)
-				throws PrismException
-		{
-			return computeProb1(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
-		}
-
-		public BitSet computeProb1(Until<explicit.DTMC> until)
-				throws PrismException
-		{
-			return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
-		}
-
-		public double[] computeProbs(SimplePathProperty<explicit.DTMC> path)
-				throws PrismException
-		{
-			if (path instanceof Finally) {
-				return computeProbs((Finally<explicit.DTMC>) path);
-			}
-			if (path instanceof Globally) {
-				return computeProbs(((Globally<explicit.DTMC>)path).asFinally());
-			}
-			if (path instanceof Next) {
-				return computeProbs((Next<explicit.DTMC>)path);
-			}
-			if (path instanceof Reach) {
-				return computeProbs(((Reach<explicit.DTMC>)path).asUntil());
-			}
-			throw new PrismException("Unsupported simple path property " + path);
-		}
-
-		public double[] computeProbs(Finally<explicit.DTMC> eventually)
-				throws PrismException
-		{
-			return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
-		}
-
-		public double[] computeProbs(Next<explicit.DTMC> next)
-				throws PrismException
-		{
-			return computeNextProbs(next.getModel(), next.isNegated(), next.getGoal());
-		}
-
-		public double[] computeProbs(Until<explicit.DTMC> until)
-				throws PrismException
-		{
-			return computeUntilProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
+			return new McModelChecker.DTMC(getModelChecker());
 		}
 	}
+
 
 
 

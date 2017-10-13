@@ -29,6 +29,9 @@ package explicit;
 import java.io.File;
 import java.util.*;
 
+import explicit.Model;
+import explicit.StateValues;
+import explicit.conditional.ConditionalMCModelChecker;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 import explicit.rewards.StateRewardsArray;
@@ -50,6 +53,12 @@ public class CTMCModelChecker extends ProbModelChecker
 	}
 	
 	// Model checking functions
+
+	@Override
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
+	{
+		return new ConditionalMCModelChecker.CTMC(this).checkExpression((CTMC) model, expression, statesOfInterest);
+	}
 
 	@Override
 	protected StateValues checkProbPathFormulaLTL(Model model, Expression expr, boolean qual, MinMax minMax, BitSet statesOfInterest) throws PrismException
@@ -933,6 +942,42 @@ public class CTMCModelChecker extends ProbModelChecker
 		mainLog.println("Building embedded DTMC...");
 		DTMC dtmcEmb = ((CTMC)model).getImplicitEmbeddedDTMC();
 		return createDTMCModelChecker().computeExistsRelease(dtmcEmb, A, B);
+	}
+
+	/**
+	 * Prob0 precomputation algorithm (using predecessor relation),
+	 * i.e. determine the states of a DTMC which, with probability 0,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param dtmc The CTMC
+	 * @param remain Remain in these states (optional: {@code null} means "all states")
+	 * @param target Target states
+	 * @param pre The predecessor relation
+	 * @throws PrismException 
+	 */
+	public BitSet prob0(CTMC ctmc, BitSet remain, BitSet target, PredecessorRelation pre) throws PrismException
+	{
+		// Construct embedded DTMC and do computation on that
+		mainLog.println("Building embedded DTMC...");
+		DTMC dtmcEmb = ctmc.getImplicitEmbeddedDTMC();
+		return createDTMCModelChecker().prob0(dtmcEmb, remain, target, pre);
+	}
+
+	/**
+	 * Prob1 precomputation algorithm (using predecessor relation),
+	 * i.e. determine the states of a DTMC which, with probability 1,
+	 * reach a state in {@code target}, while remaining in those in {@code remain}.
+	 * @param dtmc The CTMC
+	 * @param remain Remain in these states (optional: null means "all")
+	 * @param target Target states
+	 * @param pre The predecessor relation
+	 * @throws PrismException 
+	 */
+	public BitSet prob1(CTMC ctmc, BitSet remain, BitSet target, PredecessorRelation pre) throws PrismException
+	{
+		// Construct embedded DTMC and do computation on that
+		mainLog.println("Building embedded DTMC...");
+		DTMC dtmcEmb = ctmc.getImplicitEmbeddedDTMC();
+		return createDTMCModelChecker().prob1(dtmcEmb, remain, target, pre);
 	}
 
 	/**

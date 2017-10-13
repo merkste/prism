@@ -26,7 +26,7 @@ import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 
 @Deprecated
-public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecker> extends ResetConditionalTransformer<M, MC>
+public interface LtlUntilTransformer<M extends Model, C extends ProbModelChecker> extends ResetConditionalTransformer<M, C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
 
@@ -89,7 +89,7 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 		case REACH:
 			M objectiveModel = product.getTransformedModel();
 			objectiveGoal = getLtlTransformer().findAcceptingStates(product);
-			FinallyUntilTransformer<M, MC> finallyTransformer = getFinallyFinallyTransformer();
+			FinallyUntilTransformer<M, C> finallyTransformer = getFinallyFinallyTransformer();
 			getLog().println("\nDetected acceptance REACH for objective, delegating to " + finallyTransformer.getName());
 			transformation = finallyTransformer.transform(objectiveModel, objectiveGoal, conditionRemainLifted, conditionGoalLifted, conditionNegated, transformedStatesOfInterest);
 			break;
@@ -169,12 +169,13 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 		}
 	}
 
-	FinallyUntilTransformer<M, MC> getFinallyFinallyTransformer();
+	FinallyUntilTransformer<M, C> getFinallyFinallyTransformer();
 
 	GoalStopTransformer<M> getNormalFormTransformer();
 
 
 
+	@Deprecated
 	public static class DTMC extends ResetConditionalTransformer.DTMC implements LtlUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
@@ -197,6 +198,7 @@ public interface LtlUntilTransformer<M extends Model, MC extends ProbModelChecke
 
 
 
+	@Deprecated
 	public static class MDP extends ResetConditionalTransformer.MDP implements LtlUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)

@@ -3,6 +3,7 @@ package explicit.conditional;
 import java.util.BitSet;
 
 import common.BitSetTools;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.MDPModelChecker;
 import explicit.MinMax;
@@ -129,6 +130,33 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 
 	BitSet computeInstantGoalStates(Reach<M> objectivePath, BitSet objectiveSatisfiedStates, BitSet objectiveFalsifiedStates, Reach<M> conditionPath, BitSet conditionSatisfiedStates, BitSet conditionFalsifiedStates)
 			throws PrismException;
+
+
+
+	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewFinallyUntilTransformer<explicit.CTMC, CTMCModelChecker>
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public BitSet computeInstantGoalStates(Reach<explicit.CTMC> objectivePath, BitSet objectiveSatisfiedStates, BitSet objectiveFalsifiedStates, Reach<explicit.CTMC> conditionPath, BitSet conditionSatisfiedStates, BitSet conditionFalsifiedStates)
+				throws PrismException
+		{
+			objectivePath.requireSameModel(conditionPath);
+
+			return BitSetTools.intersect(objectiveSatisfiedStates, conditionSatisfiedStates);
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0Objective(Reach<explicit.CTMC> objectivePath, Reach<explicit.CTMC> conditionPath)
+				throws PrismException
+		{
+			// Always normalize
+			return redistributeProb0(objectivePath, conditionPath);
+		}
+	}
 
 
 

@@ -22,6 +22,7 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.mc.MCConditionalTransformer;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
@@ -30,7 +31,7 @@ import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
 
 @Deprecated
-public class MCUntilTransformer extends MCConditionalTransformer
+public class MCUntilTransformer extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCConditionalTransformer.DTMC
 {
 	public static final boolean DONT_NORMALIZE = false;
 	public static final boolean RESTRICT       = true;
@@ -58,7 +59,7 @@ public class MCUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	protected ModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	public ModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		return transformModelOld(model, expression, statesOfInterest);

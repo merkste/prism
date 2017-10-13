@@ -548,9 +548,10 @@ public class ProbModelChecker extends NonProbModelChecker
 	/**
 	 * Model check a conditional expression and return the values for all states.
 	 */
-	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expr, BitSet statesOfInterest) throws PrismException {
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expr, BitSet statesOfInterest) throws PrismException
+	{
 		// functionality is provided by derived model checkers
-		throw new PrismException("Missing support for conditional expressions.");
+		throw new PrismNotSupportedException("Missing support for conditional expressions.");
 	}
 
 	/**

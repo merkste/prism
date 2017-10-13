@@ -13,17 +13,17 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import prism.PrismException;
 import explicit.BasicModelTransformation;
-import explicit.CTMC;
 import explicit.CTMCSimple;
 import explicit.DTMCModelChecker;
 import explicit.DTMCSimple;
 import explicit.Model;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.mc.MCConditionalTransformer;
 
 @Deprecated
-public abstract class MCTwoModeTransformer extends MCConditionalTransformer
+public abstract class MCTwoModeTransformer extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCConditionalTransformer.DTMC
 {
 	protected Integer[] mappingToModeOne;
 	protected Integer[] mappingToModeTwo;
@@ -65,7 +65,7 @@ public abstract class MCTwoModeTransformer extends MCConditionalTransformer
 
 	protected BasicModelTransformation<explicit.DTMC, explicit.DTMC> transformModel(final double[] probabilities, final BitSet target) throws PrismException
 	{
-		transformedModel = (originalModel instanceof CTMC) ? new CTMCSimple() : new DTMCSimple();
+		transformedModel = (originalModel instanceof explicit.CTMC) ? new CTMCSimple() : new DTMCSimple();
 		transformStates(probabilities, target);
 		transformTransitions(probabilities);
 		transformedModel.setConstantValues(originalModel.getConstantValues());

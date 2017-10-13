@@ -49,7 +49,7 @@ import acceptance.AcceptanceType;
 import common.BitSetTools;
 import common.iterable.IterableBitSet;
 import common.iterable.IterableStateSet;
-import explicit.conditional.ConditionalDTMCModelChecker;
+import explicit.conditional.ConditionalMCModelChecker;
 import explicit.rewards.MCRewards;
 import explicit.rewards.Rewards;
 
@@ -69,28 +69,9 @@ public class DTMCModelChecker extends ProbModelChecker
 	// Model checking functions
 
 	@Override
-	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException {
-		switch (model.getModelType()) {
-		case DTMC:
-//			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)
-//			    && (expression.getObjective() instanceof ExpressionProb)) {
-//				mainLog.println("\nConverting DTMC to MDPSparse");
-//				long buildTime = System.currentTimeMillis();
-//				MDP mdp = new MDPSparse(new MDPFromDTMC((DTMC) model));
-//				buildTime = System.currentTimeMillis() - buildTime;
-//				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-//				ExpressionProb objective = (ExpressionProb) expression.getObjective();
-//				ExpressionProb objectiveMax = new ExpressionProb(objective.getExpression(), MinMax.max(), objective.getRelOp().toString(), objective.getBound());
-//				StateModelChecker mc = createModelChecker(ModelType.MDP, this);
-//				mc.setModulesFileAndPropertiesFile(modulesFile, propertiesFile);
-//				return mc.checkExpression(mdp, new ExpressionConditional(objectiveMax, expression.getCondition()), statesOfInterest);
-//			}
-		case CTMC:
-			// treat a CTMC as DTMC
-			return new ConditionalDTMCModelChecker(this).checkExpression((DTMC) model, expression, statesOfInterest);
-		default:
-			throw new PrismException("Cannot model check model type " + model.getModelType());
-		}
+	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
+	{
+		return new ConditionalMCModelChecker.DTMC(this).checkExpression((DTMC) model, expression, statesOfInterest);
 	}
 
 	@Override

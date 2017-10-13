@@ -16,6 +16,8 @@ import explicit.BasicModelTransformation;
 import explicit.DiracDistribution;
 import explicit.Model;
 import explicit.ModelTransformation;
+import explicit.modelviews.CTMCAdditionalStates;
+import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAdditionalStates;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.MDPAdditionalChoices;
@@ -97,6 +99,25 @@ public interface NewGoalFailStopTransformer<M extends Model>
 	M addTrapStates(M model, int numTrapStates);
 
 	M normalizeStates(M model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, BitSet instantGoalStates, BitSet instantFailStates);
+
+
+
+	public static class CTMC implements NewGoalFailStopTransformer<explicit.CTMC>
+	{
+
+		@Override
+		public CTMCAdditionalStates addTrapStates(explicit.CTMC model, int numTrapStates)
+		{
+			return new CTMCAdditionalStates(model, numTrapStates);
+		}
+
+		@Override
+		public CTMCAlteredDistributions normalizeStates(explicit.CTMC model, ProbabilisticRedistribution goalFail, ProbabilisticRedistribution goalStop, ProbabilisticRedistribution stopFail, BitSet instantGoalStates, BitSet instantFailStates)
+		{
+			IntFunction<Iterator<Entry<Integer, Double>>> getTransitions = getTransitions(model, goalFail, goalStop, stopFail, instantGoalStates, instantFailStates);
+			return new CTMCAlteredDistributions(model, getTransitions);
+		}
+	}
 
 
 

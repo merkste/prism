@@ -12,6 +12,7 @@ import common.functions.primitive.MappingInt;
 import explicit.BasicModelTransformation;
 import explicit.DiracDistribution;
 import explicit.Model;
+import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.MDPAdditionalChoices;
 import prism.PrismComponent;
@@ -56,6 +57,22 @@ public interface ResetTransformer<M extends Model>
 		int numStates = (statesOfInterest == null) ? model.getNumStates() : statesOfInterest.cardinality();
 		if(numStates != 1) {
 			throw new PrismException(SINGLE_STATE_OF_INTEREST);
+		}
+	}
+
+
+
+	public static class CTMC extends PrismComponent implements ResetTransformer<explicit.CTMC>
+	{
+		public CTMC(PrismComponent parent) {
+			super(parent);
+		}
+
+		@Override
+		public explicit.CTMC addResetTransitions(explicit.CTMC model, IntPredicate states, Object action, int target)
+		{
+			MappingInt<Iterator<Entry<Integer, Double>>> transitions = getResetTransitions(states, target);
+			return new CTMCAlteredDistributions(model, transitions);
 		}
 	}
 

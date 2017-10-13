@@ -6,6 +6,7 @@ import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceStreett.StreettPair;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.MDPModelChecker;
@@ -29,7 +30,7 @@ import prism.PrismSettings;
 
 
 // FIXME ALG: add comment
-public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelChecker> extends NewNormalFormTransformer<M, MC>
+public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecker> extends NewNormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: DMTC=all, MDP=REACH, STREETT
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
@@ -95,7 +96,7 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		Finally<M> objectivePathProduct = new Finally<>(productModel, acceptStates);
 		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
-		NewFinallyLtlTransformer<M, MC> finallyLtlTransformer             = getFinallyLtlTransformer();
+		NewFinallyLtlTransformer<M, C> finallyLtlTransformer             = getFinallyLtlTransformer();
 		getLog().println("\nDelegating to " + finallyLtlTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
 		finallyLtlTransformer.clear();
@@ -118,7 +119,7 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
 		// 2) Normal-Form Transformation
-		NewLtlUntilTransformer<M,MC> ltlUntilTransformer                  = getLtlUntilTransformer();
+		NewLtlUntilTransformer<M,C> ltlUntilTransformer                  = getLtlUntilTransformer();
 		getLog().println("\nDelegating to " + ltlUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
 		ltlUntilTransformer.clear();
@@ -130,9 +131,39 @@ public interface NewLtlLtlTransformer<M extends Model, MC extends ProbModelCheck
 		return new Pair<>(transformation, transformedExpression);
 	}
 
-	NewLtlUntilTransformer<M, MC> getLtlUntilTransformer();
+	NewLtlUntilTransformer<M, C> getLtlUntilTransformer();
 
-	NewFinallyLtlTransformer<M, MC> getFinallyLtlTransformer();
+	NewFinallyLtlTransformer<M, C> getFinallyLtlTransformer();
+
+
+
+	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlLtlTransformer<explicit.CTMC, CTMCModelChecker>
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public Pair<GoalFailStopTransformation<explicit.CTMC>, ExpressionConditional> transformNormalForm(explicit.CTMC model, LabeledDA objectiveDA, LabeledDA conditionDA, BitSet statesOfInterest)
+				throws PrismException
+		{
+			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
+			return transformNormalFormReachCondition(model, objectiveDA, conditionDA, statesOfInterest);
+		}
+
+		@Override
+		public NewLtlUntilTransformer.CTMC getLtlUntilTransformer()
+		{
+			return new NewLtlUntilTransformer.CTMC(getModelChecker());
+		}
+
+		@Override
+		public NewFinallyLtlTransformer.CTMC getFinallyLtlTransformer()
+		{
+			return new NewFinallyLtlTransformer.CTMC(getModelChecker());
+		}
+	}
 
 
 

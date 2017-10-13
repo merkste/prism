@@ -13,16 +13,17 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.mc.MCConditionalTransformer;
 
 @Deprecated
-public class MCLTLTransformer extends MCConditionalTransformer
+public class MCLTLTransformer extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCConditionalTransformer.DTMC
 {
 	protected LTLProductTransformer<explicit.DTMC> ltlTransformer;
 	protected MCUntilTransformer untilTransformer;
 
-	public MCLTLTransformer(final DTMCModelChecker modelChecker) throws PrismException
+	public MCLTLTransformer(final DTMCModelChecker modelChecker)
 	{
 		super(modelChecker);
 		ltlTransformer = new LTLProductTransformer<>(modelChecker);

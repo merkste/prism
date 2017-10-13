@@ -4,6 +4,7 @@ import java.util.BitSet;
 
 import acceptance.AcceptanceType;
 import common.BitSetTools;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.MDPModelChecker;
@@ -29,7 +30,7 @@ import prism.PrismSettings;
 
 
 // FIXME ALG: add comment
-public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChecker> extends NewNormalFormTransformer<M, MC>
+public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChecker> extends NewNormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: all
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
@@ -114,14 +115,38 @@ public interface NewLtlUntilTransformer<M extends Model, MC extends ProbModelChe
 		Finally<M> objectivePath = new Finally<M>(productModel, acceptStates);
 
 		// FIXME ALG: reuse computation of conditionSatisfied?
-		NewFinallyUntilTransformer<M, MC> finallyUntilTransformer         = getFinallyUntilTransformer();
+		NewFinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
 		finallyUntilTransformer.clear();
 		return result;
 	}
 
-	NewFinallyUntilTransformer<M, MC> getFinallyUntilTransformer();
+	NewFinallyUntilTransformer<M, C> getFinallyUntilTransformer();
+
+
+
+	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlUntilTransformer<explicit.CTMC, CTMCModelChecker>
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public Pair<GoalFailStopTransformation<explicit.CTMC>, ExpressionConditional> transformNormalForm(LTLProduct<explicit.CTMC> product, Reach<explicit.CTMC> conditionPath)
+				throws PrismException
+		{
+			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
+			return transformNormalFormReach(product, conditionPath);
+		}
+
+		@Override
+		public NewFinallyUntilTransformer.CTMC getFinallyUntilTransformer()
+		{
+			return new NewFinallyUntilTransformer.CTMC(getModelChecker());
+		}
+	}
 
 
 

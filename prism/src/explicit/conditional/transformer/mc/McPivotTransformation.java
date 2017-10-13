@@ -10,15 +10,26 @@ import java.util.function.IntFunction;
 import common.BitSetTools;
 import common.iterable.FunctionalIterator;
 import explicit.BasicModelTransformation;
+import explicit.CTMC;
 import explicit.DTMC;
 import explicit.DTMCSimple;
 import explicit.ModelTransformation;
 import explicit.ReachabilityComputer;
+import explicit.modelviews.CTMCAlteredDistributions;
+import explicit.modelviews.CTMCDisjointUnion;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 
 public class McPivotTransformation
 {
+	public static BasicModelTransformation<CTMC, CTMCAlteredDistributions> transform(final CTMC model, final BitSet pivotStates)
+	{
+		CTMCDisjointUnion union = new CTMCDisjointUnion(model, model);
+		BitSet prePivotStates   = new ReachabilityComputer(model).computePre(pivotStates);
+		Pivot pivot             = new Pivot(union, pivotStates, prePivotStates);
+		return new BasicModelTransformation<>(model, new CTMCAlteredDistributions(union, pivot));
+	}
+
 	public static BasicModelTransformation<DTMC, DTMCAlteredDistributions> transform(final DTMC model, final BitSet pivotStates)
 	{
 		DTMCDisjointUnion union = new DTMCDisjointUnion(model, model);
@@ -33,12 +44,20 @@ public class McPivotTransformation
 		protected final BitSet prePivotStates;
 		protected final Redirect redirect;
 
+		public Pivot(final CTMCDisjointUnion model, final BitSet pivotStates, final BitSet prePivotStates)
+		{
+			this.model          = model;
+			this.prePivotStates = prePivotStates;
+			this.redirect       = new Redirect(pivotStates, model.offset);
+		}
+
 		public Pivot(final DTMCDisjointUnion model, final BitSet pivotStates, final BitSet prePivotStates)
 		{
 			this.model          = model;
 			this.prePivotStates = prePivotStates;
 			this.redirect       = new Redirect(pivotStates, model.offset);
 		}
+
 		@Override
 		public Iterator<Entry<Integer, Double>> apply(final int state)
 		{

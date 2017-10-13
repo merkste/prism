@@ -5,12 +5,17 @@ import java.util.function.IntFunction;
 
 import common.BitSetTools;
 import explicit.BasicModelTransformation;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
+import explicit.ProbModelChecker;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.modelviews.CTMCAlteredDistributions;
+import explicit.modelviews.CTMCRestricted;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.Restriction;
@@ -22,15 +27,10 @@ import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
 
-public class NewMcUntilTransformer extends MCConditionalTransformer
+public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
 {
-	public NewMcUntilTransformer(final DTMCModelChecker modelChecker)
-	{
-		super(modelChecker);
-	}
-
 	@Override
-	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
+	default boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final Expression until = ExpressionInspector.removeNegation(condition);
@@ -38,14 +38,14 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 	}
 
 	@Override
-	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
+	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// FIXME ALG: steady state computation
 		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
 	}
 
 	@Override
-	protected ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	default ModelTransformation<M, ? extends M> transformModel(final M model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		boolean deadlock     = !requiresSecondMode(expression);
@@ -56,23 +56,23 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 		BitSet goal      = getGoalStates(model, until);
 		boolean negated  = Expression.isNot(until);
 
-		BitSet prob0                       = computeProb0(model, negated, remain, goal);
+		BitSet prob0                       = getMcModelChecker().computeProb0(model, negated, remain, goal);
 		BitSet support                     = BitSetTools.complement(model.getNumStates(), prob0);
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(statesOfInterest, support);
 		if (transformedStatesOfInterest.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		BitSet prob1                       = computeProb1(model, negated, remain, goal);
-		double[] probs                     = computeUntilProbs(model, negated, remain, goal, prob0, prob1);
+		BitSet prob1                       = getMcModelChecker().computeProb1(model, negated, remain, goal);
+		double[] probs                     = getMcModelChecker().computeUntilProbs(model, negated, remain, goal, prob0, prob1);
 
 		ReachabilityComputer reachability = new ReachabilityComputer(model);
 		BitSet pivotStates, restrict;
-		BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted;
+		BasicModelTransformation<M, ? extends M> pivoted;
 		if (deadlock) {
 			// Transform pivot states to traps
-			pivotStates                            = getPivotStates(model, remain, goal, negated);
-			DTMCAlteredDistributions deadlockModel = DTMCAlteredDistributions.trapStates(model, pivotStates);
-			pivoted                                = new BasicModelTransformation<>(model, deadlockModel, transformedStatesOfInterest);
+			pivotStates     = getPivotStates(model, remain, goal, negated);
+			M deadlockModel = deadlock(model, pivotStates);
+			pivoted         = new BasicModelTransformation<>(model, deadlockModel, transformedStatesOfInterest);
 
 			// Compute reachable states
 			BitSet restrictPrePivot  = reachability.computeSuccStar(statesOfInterest, BitSetTools.minus(support, pivotStates));
@@ -80,10 +80,10 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 			restrict                 = BitSetTools.union(restrictPrePivot, restrictAndPivot);
 		} else {
 			// Switch in pivot states to copy of model
-			pivotStates     = prob1;
-			pivoted         = McPivotTransformation.transform(model, pivotStates);
-			explicit.DTMC pivotModel = pivoted.getTransformedModel();
-			int offset      = model.getNumStates();
+			pivotStates  = prob1;
+			pivoted      = pivot(model, pivotStates);
+			M pivotModel = pivoted.getTransformedModel();
+			int offset   = model.getNumStates();
 
 			// Adapt states of interest
 			BitSet statesOfInterestAndPivot = BitSetTools.intersect(transformedStatesOfInterest, pivotStates);
@@ -103,23 +103,23 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 		assert BitSetTools.isSubset(pivotStates, prob1) : "Pivot states must have probability 1";
 
 		// Scale probabilities
-		BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled = McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+		BasicModelTransformation<M, ? extends M> scaled = scale(pivoted, probs);
 		scaled.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Restrict to reachable states
-		BasicModelTransformation<explicit.DTMC, DTMCRestricted> restricted  = DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		BasicModelTransformation<M, ? extends M> restricted  = restrict(scaled, restrict);
 		restricted.setTransformedStatesOfInterest(restricted.mapToTransformedModel(transformedStatesOfInterest));
 
 		return restricted.compose(scaled).compose(pivoted);
 	}
 
-	protected BitSet getRemainStates(final explicit.DTMC model, final Expression expression) throws PrismException
+	default BitSet getRemainStates(final M model, final Expression expression) throws PrismException
 	{
 		ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return getModelChecker(model).checkExpression(model, until.getOperand1(), null).getBitSet();
 	}
 
-	protected BitSet getPivotStates(final explicit.DTMC model, final BitSet remain, final BitSet goal, final boolean negated)
+	default BitSet getPivotStates(final M model, final BitSet remain, final BitSet goal, final boolean negated)
 	{
 		if (! negated) {
 			return goal;
@@ -135,13 +135,13 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 		return terminals;
 	}
 
-	protected BitSet getGoalStates(final explicit.DTMC model, final Expression expression) throws PrismException
+	default BitSet getGoalStates(final M model, final Expression expression) throws PrismException
 	{
 		ExpressionTemporal until = (ExpressionTemporal) ExpressionInspector.removeNegation(expression);
 		return getModelChecker(model).checkExpression(model, until.getOperand2(), null).getBitSet();
 	}
 
-	protected boolean requiresSecondMode(final ExpressionConditional expression)
+	default boolean requiresSecondMode(final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
 		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(condition)) {
@@ -172,5 +172,81 @@ public class NewMcUntilTransformer extends MCConditionalTransformer
 			} catch (PrismLangException e) {}
 		}
 		return true;
+	}
+
+	M deadlock(M model, BitSet pivotStates);
+
+	BasicModelTransformation<M, ? extends M> pivot(M model, BitSet pivotStates);
+
+	BasicModelTransformation<M, ? extends M> scale(BasicModelTransformation<M, ? extends M> pivoted, double[] probs);
+
+	BasicModelTransformation<M, ? extends M> restrict(BasicModelTransformation<M, ? extends M> scaled, BitSet restrict);
+
+	
+
+	public class CTMC extends NewConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements NewMcUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public explicit.CTMC deadlock(explicit.CTMC model, BitSet pivotStates)
+		{
+			return CTMCAlteredDistributions.trapStates(model, pivotStates);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> pivot(explicit.CTMC model, BitSet pivotStates)
+		{
+			return McPivotTransformation.transform(model, pivotStates);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> pivoted, double[] probs)
+		{
+			return McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
+		{
+			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		}
+	}
+
+
+
+	public class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements NewMcUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	{
+		public DTMC(DTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public explicit.DTMC deadlock(explicit.DTMC model, BitSet pivotStates)
+		{
+			return DTMCAlteredDistributions.trapStates(model, pivotStates);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> pivot(explicit.DTMC model, BitSet pivotStates)
+		{
+			return McPivotTransformation.transform(model, pivotStates);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted, double[] probs)
+		{
+			return McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
+		{
+			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		}
 	}
 }

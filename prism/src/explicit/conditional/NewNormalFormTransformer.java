@@ -1,14 +1,13 @@
 package explicit.conditional;
 
 import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Map;
 
 import acceptance.AcceptanceOmega;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
 import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.MDPModelChecker;
@@ -16,24 +15,25 @@ import explicit.Model;
 import explicit.ModelExpressionTransformation;
 import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
+import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
 import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
-import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.SimplePathProperty.Until;
+import explicit.conditional.checker.CachedMcModelChecker;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
+import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.modelviews.CTMCRestricted;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.MDPRestricted;
 import jdd.Clearable;
-import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.PrismException;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends Model, MC extends StateModelChecker> extends NewConditionalTransformer<M, MC>, Clearable
+public interface NewNormalFormTransformer<M extends Model, C extends StateModelChecker> extends NewConditionalTransformer<M, C>, Clearable
 {
 	@Override
 	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
@@ -111,15 +111,22 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 
 
 
-
-	public static abstract class DTMC extends NewConditionalTransformer.DTMC implements NewNormalFormTransformer<explicit.DTMC, DTMCModelChecker>
+	public static abstract class MC<M extends explicit.DTMC, C extends ProbModelChecker> extends NewConditionalTransformer.Basic<M, C> implements NewConditionalTransformer.MC<M,C>, NewNormalFormTransformer<M, C>
 	{
-		protected Map<SimplePathProperty<explicit.DTMC>, double[]> cache;
+		protected CachedMcModelChecker<M,C> mcModelChecker;
 
-		public DTMC(DTMCModelChecker modelChecker)
+		public MC(C modelChecker)
 		{
 			super(modelChecker);
-			cache = new HashMap<>();
+			mcModelChecker = createCachedMcModelChecker();
+		}
+
+		protected abstract CachedMcModelChecker<M, C> createCachedMcModelChecker();
+
+		@Override
+		public CachedMcModelChecker<M, C> getMcModelChecker()
+		{
+			return mcModelChecker;
 		}
 
 		/**
@@ -128,22 +135,139 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		 * @see NewNormalFormTransformer#transform(Model, ExpressionConditional, BitSet)
 		 */
 		@Override
-		public ModelExpressionTransformation<explicit.DTMC, explicit.DTMC> transform(explicit.DTMC model, ExpressionConditional expression, BitSet statesOfInterest)
+		public ModelExpressionTransformation<M,M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 				throws PrismException
 		{
-			ModelExpressionTransformation<explicit.DTMC, explicit.DTMC> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			ModelExpressionTransformation<M,M> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
 			clear();
 			return result;
 		}
 
 		@Override
-		public BitSet checkSatisfiability(Reach<explicit.DTMC> conditionPath, BitSet statesOfInterest)
+		public BitSet checkSatisfiability(Reach<M> conditionPath, BitSet statesOfInterest)
 				throws PrismException
 		{
-			BitSet conditionFalsifiedStates = computeProb0(conditionPath);
+			BitSet conditionFalsifiedStates = getMcModelChecker().computeProb0(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
+
+		@Override
+		public BitSet computeBadStates(Reach<M> reach, BitSet unsatisfiedStates)
+		{
+			// DTMCs are purely probabilistic
+			return NO_STATES;
+		}
+
+		@Override
+		public BitSet computeBadStates(LTLProduct<M> product, BitSet unsatisfiedStates)
+		{
+			// DTMCs are purely probabilistic
+			return NO_STATES;
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb1(Reach<M> pathProb1, Reach<M> pathProbs)
+				throws PrismException
+		{
+			pathProb1.requireSameModel(pathProbs);
+
+			BitSet states = getMcModelChecker().computeProb1(pathProb1);
+			double[] probabilities;
+			if (states.isEmpty()) {
+				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
+				probabilities = new double[0];
+			} else {
+				probabilities = getMcModelChecker().computeProbs(pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		@Override
+		public ProbabilisticRedistribution redistributeProb0(Reach<M> pathProb0, Reach<M> pathProbs)
+				throws PrismException
+		{
+			pathProb0.requireSameModel(pathProbs);
+
+			BitSet states = getMcModelChecker().computeProb0(pathProb0);
+			double[] probabilities;
+			if (states.isEmpty()) {
+				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
+				probabilities = new double[0];
+			} else {
+				probabilities = getMcModelChecker().computeProbs(pathProbs);
+			}
+			return new ProbabilisticRedistribution(states, probabilities);
+		}
+
+		@Override
+		public GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
+				throws PrismException
+		{
+			NewGoalFailStopTransformer<M> transformer = getGoalFailStopTransformer();
+			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
+		}
+
+		protected abstract NewGoalFailStopTransformer<M> getGoalFailStopTransformer();
+
+		@Override
+		public void clear()
+		{
+			mcModelChecker.clear();
+		}
+	}
+
+
+
+	public static abstract class CTMC extends MC<explicit.CTMC, CTMCModelChecker> implements NewConditionalTransformer.CTMC
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public CachedMcModelChecker.CTMC createCachedMcModelChecker()
+		{
+			return new CachedMcModelChecker.CTMC(getModelChecker());
+		}
+
+
+		@Override
+		public ResetTransformation<explicit.CTMC> transformReset(explicit.CTMC model, BitSet resetStates, BitSet statesOfInterest)
+				throws PrismException
+		{
+			return new ResetTransformer.CTMC(this).transformModel(model, resetStates, statesOfInterest);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> transformRestrict(ModelTransformation<explicit.CTMC, ? extends explicit.CTMC> resetTransformation)
+		{
+			return CTMCRestricted.transform(resetTransformation.getTransformedModel(), resetTransformation.getTransformedStatesOfInterest());
+		}
+
+		@Override
+		protected NewGoalFailStopTransformer<explicit.CTMC> getGoalFailStopTransformer()
+		{
+			return new NewGoalFailStopTransformer.CTMC();
+		}
+	}
+
+
+
+	public static abstract class DTMC extends MC<explicit.DTMC,DTMCModelChecker> implements NewConditionalTransformer.DTMC
+	{
+		public DTMC(DTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public CachedMcModelChecker.DTMC createCachedMcModelChecker()
+		{
+			return new CachedMcModelChecker.DTMC(getModelChecker());
+		}
+
 
 		@Override
 		public ResetTransformation<explicit.DTMC> transformReset(explicit.DTMC model, BitSet resetStates, BitSet statesOfInterest)
@@ -159,86 +283,9 @@ public interface NewNormalFormTransformer<M extends Model, MC extends StateModel
 		}
 
 		@Override
-		public BitSet computeBadStates(Reach<explicit.DTMC> reach, BitSet unsatisfiedStates)
+		protected NewGoalFailStopTransformer<explicit.DTMC> getGoalFailStopTransformer()
 		{
-			// DTMCs are purely probabilistic
-			return NO_STATES;
-		}
-
-		@Override
-		public BitSet computeBadStates(LTLProduct<explicit.DTMC> product, BitSet unsatisfiedStates)
-		{
-			// DTMCs are purely probabilistic
-			return NO_STATES;
-		}
-
-		@Override
-		public ProbabilisticRedistribution redistributeProb1(Reach<explicit.DTMC> pathProb1, Reach<explicit.DTMC> pathProbs)
-				throws PrismException
-		{
-			pathProb1.requireSameModel(pathProbs);
-
-			BitSet states = computeProb1(pathProb1);
-			double[] probabilities;
-			if (states.isEmpty()) {
-				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
-				probabilities = new double[0];
-			} else {
-				probabilities = computeProbs(pathProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
-		}
-
-		@Override
-		public ProbabilisticRedistribution redistributeProb0(Reach<explicit.DTMC> pathProb0, Reach<explicit.DTMC> pathProbs)
-				throws PrismException
-		{
-			pathProb0.requireSameModel(pathProbs);
-
-			BitSet states = computeProb0(pathProb0);
-			double[] probabilities;
-			if (states.isEmpty()) {
-				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
-				probabilities = new double[0];
-			} else {
-				probabilities = computeProbs(pathProbs);
-			}
-			return new ProbabilisticRedistribution(states, probabilities);
-		}
-
-		@Override
-		public GoalFailStopTransformation<explicit.DTMC> transformGoalFailStop(explicit.DTMC model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
-				throws PrismException
-		{
-			NewGoalFailStopTransformer<explicit.DTMC> transformer = new NewGoalFailStopTransformer.DTMC();
-			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
-		}
-
-		public void clear()
-		{
-			cache.clear();
-		}
-
-		@Override
-		public double[] computeProbs(Finally<explicit.DTMC> eventually)
-				throws PrismException
-		{
-			if (! cache.containsKey(eventually)) {
-				double[] probabilities = super.computeProbs(eventually);
-				cache.put(eventually, probabilities);
-			}
-			return cache.get(eventually);
-		}
-
-		@Override
-		public double[] computeProbs(Until<explicit.DTMC> until)
-				throws PrismException
-		{
-			if (! cache.containsKey(until)) {
-				double[] probabilities = super.computeProbs(until);
-				cache.put(until, probabilities);
-			}
-			return cache.get(until);
+			return new NewGoalFailStopTransformer.DTMC();
 		}
 	}
 

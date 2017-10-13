@@ -26,7 +26,7 @@ public class ConditionalLTLTransformer extends PrismComponent
 	private final LTLProductTransformer<DTMC> ltlTransformer;
 	private final ConditionalReachabilityTransformer reachabilityTransformer;
 
-	public ConditionalLTLTransformer(final DTMCModelChecker modelChecker) throws PrismException
+	public ConditionalLTLTransformer(final DTMCModelChecker modelChecker)
 	{
 		super(modelChecker);
 		ltlTransformer = new LTLProductTransformer<DTMC>(modelChecker);

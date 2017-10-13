@@ -8,13 +8,20 @@ import common.BitSetTools;
 import common.iterable.IterableArray;
 import common.iterable.IterableBitSet;
 import explicit.BasicModelTransformation;
+import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.Model;
 import explicit.ModelTransformation;
+import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
+import explicit.modelviews.CTMCAlteredDistributions;
+import explicit.modelviews.CTMCEquiv;
+import explicit.modelviews.CTMCRestricted;
+import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCEquiv;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
@@ -25,54 +32,52 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
-public class NewMcLtlTransformer extends MCConditionalTransformer
+public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = AcceptanceType.allTypes();
 
-	protected final LTLProductTransformer<explicit.DTMC> ltlTransformer;
-
-	public NewMcLtlTransformer(final DTMCModelChecker modelChecker) throws PrismException
+	default LTLProductTransformer<M> getLtlTransformer()
 	{
-		super(modelChecker);
-		ltlTransformer = new LTLProductTransformer<explicit.DTMC>(modelChecker);
+		return new LTLProductTransformer<M>(getModelChecker());
 	}
 
 	@Override
-	public boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
+	default boolean canHandleCondition(final Model model, final ExpressionConditional expression) throws PrismLangException
 	{
-		return ltlTransformer.canHandle(model, expression.getCondition());
+		return getLtlTransformer().canHandle(model, expression.getCondition());
 	}
 
 	@Override
-	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
+	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// cannot handle steady state computation yet
 		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));
 	}
 
 	@Override
-	protected ModelTransformation<explicit.DTMC, ? extends explicit.DTMC> transformModel(final explicit.DTMC model, final ExpressionConditional expression, final BitSet statesOfInterest)
+	default ModelTransformation<M, ? extends M> transformModel(final M model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismException
 	{
 		Expression condition = expression.getCondition();
 
 		// Build product model
-		LTLProduct<explicit.DTMC> product = ltlTransformer.transform(model, condition, statesOfInterest, ACCEPTANCE_TYPES);
-		explicit.DTMC productModel        = product.getProductModel();
-		BitSet goal              = ltlTransformer.findAcceptingStates(product);
+		LTLProductTransformer<M> ltlTransformer = getLtlTransformer();
+		LTLProduct<M> product = ltlTransformer.transform(model, condition, statesOfInterest, ACCEPTANCE_TYPES);
+		M productModel        = product.getProductModel();
+		BitSet goal           = ltlTransformer.findAcceptingStates(product);
 
-		BitSet prob0                       = computeProb0(productModel, false, null, goal);
+		BitSet prob0                       = getMcModelChecker().computeProb0(productModel, false, null, goal);
 		BitSet support                     = BitSetTools.complement(productModel.getNumStates(), prob0);
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(product.getTransformedStatesOfInterest(), support);
 		if (transformedStatesOfInterest.isEmpty()) {
 			throw new UndefinedTransformationException("condition is not satisfiable");
 		}
-		BitSet prob1                       = computeProb1(productModel, false, null, goal);
-		double[] probs                     = computeUntilProbs(productModel, false, null, goal, prob0, prob1);
+		BitSet prob1                       = getMcModelChecker().computeProb1(productModel, false, null, goal);
+		double[] probs                     = getMcModelChecker().computeUntilProbs(productModel, false, null, goal, prob0, prob1);
 
 		BitSet restrict;
-		BasicModelTransformation<explicit.DTMC,? extends explicit.DTMC> scaled;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE)) {
+		BasicModelTransformation<M,? extends M> scaled;
+		if (getSettings().getBoolean(PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE)) {
 			// Compute equivalence relation and adapt probs
 			EquivalenceRelationInteger equivalence = computeEquivalence(product, prob1);
 			for (int state : new IterableBitSet(equivalence.getNonRepresentatives())) {
@@ -88,25 +93,25 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 			restrict = BitSetTools.minus(support, equivalence.getNonRepresentatives());
 
 			// Scale probabilities and build quotient DTMC
-			scaled = McScaledTransformation.transform(productModel, probs);
-			scaled = DTMCEquiv.transform(scaled.getTransformedModel(), equivalence, false).compose(scaled);
+			scaled = scale(productModel, probs);
+			scaled = quotient(scaled, equivalence).compose(scaled);
 		} else {
 			// Compute reachable states
 			restrict = support;
 
 			// Scale probabilities
-			scaled = McScaledTransformation.transform(productModel, probs);
+			scaled = scale(productModel, probs);
 		}
 		scaled.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Restrict to reachable states
-		BasicModelTransformation<explicit.DTMC, DTMCRestricted> restricted = DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		BasicModelTransformation<M, ? extends M> restricted = restrict(scaled, restrict);
 		restricted.setTransformedStatesOfInterest(restricted.mapToTransformedModel(transformedStatesOfInterest));
 
 		return restricted.compose(scaled).compose(product);
 	}
 
-	public EquivalenceRelationInteger computeEquivalence(LTLProduct<explicit.DTMC> product, BitSet states)
+	default EquivalenceRelationInteger computeEquivalence(LTLProduct<M> product, BitSet states)
 	{
 		// (s,a) ~ (t,b) iff (s == t) && states(s,a) && states(t,b)
 		Object[] equivalenceClasses = new Object[product.getOriginalModel().getNumStates()];
@@ -125,5 +130,67 @@ public class NewMcLtlTransformer extends MCConditionalTransformer
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Iterable<BitSet> classes = (Iterable) new IterableArray.Of<>(equivalenceClasses).filter(set -> (set instanceof BitSet));
 		return new EquivalenceRelationInteger(classes);
+	}
+
+	BasicModelTransformation<M, ? extends M> scale(M productModel, double[] probs);
+
+	BasicModelTransformation<M, ? extends M> quotient(BasicModelTransformation<M, ? extends M> scaled, EquivalenceRelationInteger equivalence);
+
+	BasicModelTransformation<M, ? extends M> restrict(BasicModelTransformation<M, ? extends M> scaled, BitSet restrict);
+
+
+
+	public class CTMC extends NewConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements NewMcLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	{
+		public CTMC(CTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(explicit.CTMC productModel, double[] probs)
+		{
+			return McScaledTransformation.transform(productModel, probs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
+		{
+			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> quotient(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, EquivalenceRelationInteger equivalence)
+		{
+			return CTMCEquiv.transform(scaled.getTransformedModel(), equivalence, false);
+		}
+	}
+
+
+
+	public class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements NewMcLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	{
+		public DTMC(DTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(explicit.DTMC productModel, double[] probs)
+		{
+			return McScaledTransformation.transform(productModel, probs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
+		{
+			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> quotient(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, EquivalenceRelationInteger equivalence)
+		{
+			return DTMCEquiv.transform(scaled.getTransformedModel(), equivalence, false);
+		}
 	}
 }

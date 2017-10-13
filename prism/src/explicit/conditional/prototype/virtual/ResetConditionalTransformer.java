@@ -106,18 +106,13 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 
 
 
-	public static abstract class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements ResetConditionalTransformer<explicit.DTMC, DTMCModelChecker>
+	@Deprecated
+	public static abstract class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements ResetConditionalTransformer<explicit.DTMC, DTMCModelChecker>, NewConditionalTransformer.DTMC
 	{
 
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public boolean canHandleModelType(Model model)
-		{
-			return model instanceof explicit.DTMC;
 		}
 
 		@Override
@@ -173,6 +168,7 @@ public interface ResetConditionalTransformer<M extends Model, MC extends ProbMod
 
 
 
+	@Deprecated
 	public static abstract class MDP extends NewConditionalTransformer.Basic<explicit.MDP, MDPModelChecker> implements ResetConditionalTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
