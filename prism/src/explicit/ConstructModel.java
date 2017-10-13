@@ -334,7 +334,12 @@ public class ConstructModel extends PrismComponent
 				}
 				break;
 			case CTMC:
-				model = sort ? new CTMCSimple(ctmc, permut) : (CTMCSimple) ctmc;
+				if (buildSparse) {
+					mainLog.println("Building DTMCSparse...");
+					model = sort ? new CTMCSparse(ctmc, permut) : new CTMCSparse(ctmc);
+				} else {
+					model = sort ? new CTMCSimple(ctmc, permut) : (DTMCSimple) ctmc;
+				}
 				break;
 			case MDP:
 				if (buildSparse) {

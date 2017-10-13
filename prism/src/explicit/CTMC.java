@@ -28,6 +28,8 @@ package explicit;
 
 import java.util.BitSet;
 
+import prism.PrismException;
+
 /**
  * Interface for classes that provide (read) access to an explicit-state CTMC.
  */
@@ -84,13 +86,14 @@ public interface CTMC extends DTMC
 	/**
 	 * Build (a new) embedded DTMC for this CTMC.
 	 */
-	public DTMCSimple buildEmbeddedDTMC();
+	public DTMC buildEmbeddedDTMC();
 
 	/**
 	 * Convert this CTMC into a uniformised CTMC.
 	 * @param q Uniformisation rate
+	 * @throws PrismException
 	 */
-	public void uniformise(double q);
+	public void uniformise(double q) throws PrismException;
 
 	/**
 	 * Build the uniformised DTMC for this CTMC, in implicit form

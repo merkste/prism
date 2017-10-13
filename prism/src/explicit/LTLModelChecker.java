@@ -419,6 +419,12 @@ public class LTLModelChecker extends PrismComponent
 		// Create a (simple, mutable) model of the appropriate type
 		ModelSimple prodModel = null;
 		switch (modelType) {
+		case CTMC: {
+			CTMCSimple ctmcProd = new CTMCSimple();
+			ctmcProd.setVarList(newVarList);
+			prodModel = ctmcProd;
+			break;
+		}
 		case DTMC: {
 			DTMCSimple dtmcProd = new DTMCSimple();
 			dtmcProd.setVarList(newVarList);
@@ -501,6 +507,7 @@ public class LTLModelChecker extends PrismComponent
 			for (int j = 0; j < numChoices; j++) {
 				Iterator<Map.Entry<Integer, Double>> iter;
 				switch (modelType) {
+				case CTMC:
 				case DTMC:
 					iter = ((DTMC) model).getTransitionsIterator(s_1);
 					break;
@@ -548,6 +555,7 @@ public class LTLModelChecker extends PrismComponent
 						}
 					}
 					switch (modelType) {
+					case CTMC:
 					case DTMC:
 						((DTMCSimple) prodModel).setProbability(map[s_1 * daSize + q_1], map[s_2 * daSize + q_2], prob);
 						break;
@@ -588,6 +596,10 @@ public class LTLModelChecker extends PrismComponent
 
 		final M productModel;
 		switch (modelType) {
+		case CTMC:
+			mainLog.println("Converting product model to CTMCSparse");
+			productModel = (M) new CTMCSparse((CTMCSimple) prodModel);
+			break;
 		case DTMC:
 			mainLog.println("Converting product model to DTMCSparse");
 			productModel = (M) new DTMCSparse((DTMCSimple) prodModel);

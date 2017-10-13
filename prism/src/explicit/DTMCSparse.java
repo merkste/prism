@@ -10,6 +10,7 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
+import common.iterable.ArrayIterator;
 import common.iterable.Interval;
 import common.iterable.IterableStateSet;
 import explicit.rewards.MCRewards;
@@ -22,11 +23,11 @@ public class DTMCSparse extends DTMCExplicit
 	// Sparse matrix storing transition function (Steps)
 	/** Indices into probabilities/columns giving the start of the transitions for each state (distribution);
 	 * array is of size numStates+1 and last entry is always equal to getNumTransitions() */
-	private int rows[];
+	protected int rows[];
 	/** Column (destination) indices for each transition (array of size numTransitions) */
-	private int columns[];
+	protected int columns[];
 	/** Probabilities for each transition (array of size numTransitions) */
-	private double probabilities[];
+	protected double probabilities[];
 
 	public DTMCSparse(final DTMC dtmc) {
 		initialise(dtmc.getNumStates());
@@ -116,7 +117,7 @@ public class DTMCSparse extends DTMCExplicit
 	@Override
 	public OfInt getSuccessorsIterator(final int state)
 	{
-		return Arrays.stream(columns, rows[state], rows[state+1]).iterator();
+		return new ArrayIterator.OfInt(columns, rows[state], rows[state+1]);
 	}
 
 	@Override
