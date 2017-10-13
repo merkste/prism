@@ -46,7 +46,7 @@ import explicit.rewards.MCRewards;
 public class DTMCUniformisedSimple extends DTMCExplicit
 {
 	// Parent CTMC
-	protected CTMCSimple ctmc;
+	protected CTMC ctmc;
 	// Uniformisation rate
 	protected double q;
 	// Number of extra transitions added (just for stats)
@@ -55,14 +55,27 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 	/**
 	 * Constructor: create from CTMC and uniformisation rate q.
 	 */
-	public DTMCUniformisedSimple(CTMCSimple ctmc, double q)
+	public DTMCUniformisedSimple(CTMC ctmc, double q)
 	{
 		this.ctmc = ctmc;
 		this.numStates = ctmc.getNumStates();
 		this.q = q;
 		numExtraTransitions = 0;
 		for (int i = 0; i < numStates; i++) {
-			if (ctmc.getTransitions(i).get(i) == 0 && ctmc.getTransitions(i).sumAllBut(i) < q) {
+			final int s = i;
+			double rate_i = 0, sum_i = 0;
+			for(Entry<Integer,Double> e : (Iterable<Entry<Integer, Double>>) () -> ctmc.getTransitionsIterator(s)) {
+				double r = e.getValue();
+				if (e.getKey() == i && r != 0) {
+					// 1) check trans.get(i) == 0
+					rate_i = r;
+					break;
+				} else {
+					// 2) sum all but i
+					sum_i += r;
+				}
+			}
+			if (rate_i == 0 && sum_i < q) {
 				numExtraTransitions++;
 			}
 		}
@@ -228,9 +241,8 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 	{
 		int k;
 		double sum, d, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		sum = d = 0.0;
 		for (Map.Entry<Integer, Double> e : distr) {
 			k = (Integer) e.getKey();
@@ -254,9 +266,8 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 	{
 		int k;
 		double sum, d, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		sum = d = 0.0;
 		for (Map.Entry<Integer, Double> e : distr) {
 			k = (Integer) e.getKey();
@@ -284,7 +295,6 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 	{
 		int i, j;
 		double prob, sum;
-		Distribution distr;
 		
 		// Initialise result to 0
 		for (j = 0; j < numStates; j++) {
@@ -292,7 +302,8 @@ public class DTMCUniformisedSimple extends DTMCExplicit
 		}
 		// Go through matrix elements (by row)
 		for (i = 0; i < numStates; i++) {
-			distr = ctmc.getTransitions(i);
+			final int s = i;
+			Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 			sum = 0.0;
 			for (Map.Entry<Integer, Double> e : distr) {
 				j = (Integer) e.getKey();

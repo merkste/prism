@@ -68,7 +68,7 @@ public class CTMCSimple extends DTMCSimple implements CTMC
 	/**
 	 * Copy constructor.
 	 */
-	public CTMCSimple(CTMCSimple ctmc)
+	public CTMCSimple(CTMC ctmc)
 	{
 		super(ctmc);
 	}

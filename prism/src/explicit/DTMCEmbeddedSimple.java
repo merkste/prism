@@ -28,7 +28,9 @@ package explicit;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.ToDoubleFunction;
 
+import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
 import explicit.rewards.MCRewards;
 import parser.State;
@@ -46,7 +48,7 @@ import prism.PrismNotSupportedException;
 public class DTMCEmbeddedSimple extends DTMCExplicit
 {
 	// Parent CTMC
-	protected CTMCSimple ctmc;
+	protected CTMC ctmc;
 	// Exit rates vector
 	protected double exitRates[];
 	// Number of extra transitions added (just for stats)
@@ -55,7 +57,7 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	/**
 	 * Constructor: create from CTMC.
 	 */
-	public DTMCEmbeddedSimple(CTMCSimple ctmc)
+	public DTMCEmbeddedSimple(CTMC ctmc)
 	{
 		this.ctmc = ctmc;
 		this.numStates = ctmc.getNumStates();
@@ -63,7 +65,9 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 		exitRates = new double[numStates];
 		numExtraTransitions = 0;
 		for (int i = 0; i < numStates; i++) {
-			exitRates[i] = ctmc.getTransitions(i).sum();
+			final int s = i;
+			FunctionalIterator<Entry<Integer, Double>> distr = FunctionalIterator.extend(() -> ctmc.getTransitionsIterator(s));
+			exitRates[i] = distr.map((ToDoubleFunction<Entry<?,Double>>) Entry::getValue).sum();
 			if (exitRates[i] == 0)
 				numExtraTransitions++;
 		}
@@ -300,9 +304,8 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		int k;
 		double d, er, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		d = 0.0;
 		er = exitRates[s];
 		// Exit rate 0: prob 1 self-loop
@@ -327,9 +330,8 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		int k;
 		double diag, d, er, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		diag = d = 0.0;
 		er = exitRates[s];
 		// Exit rate 0: prob 1 self-loop
@@ -361,9 +363,8 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		int k;
 		double d, er, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		er = exitRates[s];
 		d = 0;
 		// Exit rate 0: prob 1 self-loop
@@ -389,9 +390,8 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		int k;
 		double diag, d, er, prob;
-		Distribution distr;
 
-		distr = ctmc.getTransitions(s);
+		Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 		diag = d = 0.0;
 		er = exitRates[s];
 		// Exit rate 0: prob 1 self-loop
@@ -425,7 +425,6 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		int i, j;
 		double prob, er;
-		Distribution distr;
 		
 		// Initialise result to 0
 		for (j = 0; j < numStates; j++) {
@@ -433,7 +432,8 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 		}
 		// Go through matrix elements (by row)
 		for (i = 0; i < numStates; i++) {
-			distr = ctmc.getTransitions(i);
+			final int s = i;
+			Iterable<Entry<Integer, Double>> distr = () -> ctmc.getTransitionsIterator(s);
 			er = exitRates[i];
 			// Exit rate 0: prob 1 self-loop
 			if (er == 0) {
