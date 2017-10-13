@@ -67,10 +67,10 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 	{
 		PrismSettings settings = prism.getSettings();
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-			throw new PrismException("There is no symbolic TACAS'14 prototype");
+			throw new PrismNotSupportedException("There is no symbolic TACAS'14 prototype");
 		}
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			throw new PrismException("There is no symbolic prototype for the scale method in MCs");
+			throw new PrismNotSupportedException("There is no symbolic prototype for the scale method in MCs");
 		}
 
 		NewConditionalTransformer.MC<M, C> transformer;
