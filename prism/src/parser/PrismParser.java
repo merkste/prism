@@ -2705,7 +2705,7 @@ public class PrismParser implements PrismParserConstants {
                         filter = (ExpressionFilter) objective;
                         objective = filter.getOperand();
                 }
-                ExpressionConditional exprCond = new ExpressionConditional(objective, condition);
+                ExpressionConditional exprCond = new ExpressionConditional((ExpressionQuant) objective, condition);
                 // set position
                 exprCond.setBeginLine(objective.getBeginLine());
                 exprCond.setBeginColumn(objective.getBeginColumn());

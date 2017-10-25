@@ -10,6 +10,7 @@ import jdd.JDDNode;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
+import parser.ast.ExpressionQuant;
 import parser.ast.RelOp;
 import parser.type.Type;
 import parser.type.TypeBool;
@@ -30,8 +31,9 @@ import prism.StateValuesMTBDD;
 import prism.conditional.prototype.MDPFinallyTransformer;
 import prism.conditional.prototype.MDPLTLTransformer;
 
-public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel> {
-	
+//FIXME ALG: add comment
+public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel>
+{	
 	protected NondetModelChecker modelChecker;
 
 	public ConditionalMDPModelChecker(NondetModelChecker modelChecker, Prism prism)
@@ -43,9 +45,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	@Override
 	public StateValues checkExpression(final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		assert expression.getObjective() instanceof ExpressionProb;
+		ExpressionQuant objective = expression.getObjective();
+		if (! (objective instanceof ExpressionProb)) {
+			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + expression.getClass().getSimpleName());
+		}
 
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
@@ -70,7 +74,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			final NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
 			if (transformer == null) {
 				JDD.Deref(statesOfInterest);
-				throw new PrismNotSupportedException("Cannot model check conditional expression " + expression + " (with the current settings)");
+				throw new PrismNotSupportedException("Cannot model check " + expression);
 			}
 			final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
 			final StateValues resultTransformed = checkExpressionTransformedModel(transformation);
@@ -95,7 +99,8 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return result;
 	}
 
-	protected StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest) throws PrismLangException, PrismException
+	protected StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest)
+			throws PrismLangException, PrismException
 	{
 		// P>x [prop] <=> Pmin=?[prop]    > x
 		//                1-Pmax=?[!prop] > x

@@ -6,6 +6,7 @@ import java.util.SortedSet;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
+import parser.ast.ExpressionQuant;
 import parser.ast.RelOp;
 import parser.type.Type;
 import parser.type.TypeBool;
@@ -13,6 +14,7 @@ import parser.type.TypeDouble;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
+import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import explicit.BasicModelExpressionTransformation;
 import explicit.BasicModelTransformation;
@@ -46,9 +48,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 	@Override
 	public StateValues checkExpression(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		assert expression.getObjective() instanceof ExpressionProb;
+		ExpressionQuant objective = expression.getObjective();
+		if (! (objective instanceof ExpressionProb)) {
+			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + expression.getClass().getSimpleName());
+		}
 
-		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
@@ -235,6 +239,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 			}
 		}
 
-		throw new PrismException("Cannot model check " + expression);
+		throw new PrismNotSupportedException("Cannot model check " + expression);
 	}
 }

@@ -13,17 +13,17 @@ import prism.PrismLangException;
  */
 public class ExpressionConditional extends Expression {
 
-	private Expression objective;
+	private ExpressionQuant objective;
 	private Expression condition;
 
-	public ExpressionConditional(final Expression objective, final Expression condition) {
+	public ExpressionConditional(final ExpressionQuant objective, final Expression condition) {
 		assert (objective != null) && (condition != null)
 				: "objective and condition must not be null";;
 		this.objective = objective;
 		this.condition = condition;
 	}
 
-	public Expression getObjective() {
+	public ExpressionQuant getObjective() {
 		return objective;
 	}
 
@@ -64,8 +64,8 @@ public class ExpressionConditional extends Expression {
 	 */
 	@Override
 	public ExpressionConditional deepCopy() {
-		final Expression objectiveCopy = (objective == null) ? null : objective.deepCopy();
-		final Expression conditionCopy = (condition == null) ? null : condition.deepCopy();
+		final ExpressionQuant objectiveCopy = (objective == null) ? null : (ExpressionQuant) objective.deepCopy();
+		final Expression conditionCopy      = (condition == null) ? null : condition.deepCopy();
 		final ExpressionConditional copy = new ExpressionConditional(objectiveCopy, conditionCopy);
 		copy.setPosition(this);
 		copy.setType(type);
