@@ -11,6 +11,9 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
+import parser.type.Type;
+import parser.type.TypeBool;
+import parser.type.TypeDouble;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
@@ -62,6 +65,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			throw new PrismException("Currently, only a single state of interest is supported for MDP conditionals, got "+n);
 		}
 
+		StateValues result;
 		try {
 			final NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
 			if (transformer == null) {
@@ -71,21 +75,24 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
 			final StateValues resultTransformed = checkExpressionTransformedModel(transformation);
 
-			final StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
+			result = transformation.projectToOriginalModel(resultTransformed);
 			transformation.clear();
 
-			return resultOriginal;
+			return result;
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
-			ExpressionProb expr = (ExpressionProb) expression.getObjective();
-			if (expr.getProb() != null) {
+			Type type = expression.getObjective().getType();
+			if (type instanceof TypeBool) {
 				// P with bound -> false
-				return new StateValuesMTBDD(JDD.Constant(0.0), model);	
-			} else {
+				result = new StateValuesMTBDD(JDD.Constant(0.0), model);
+			} else if (type instanceof TypeDouble) {
 				// =? -> not a number
-				return new StateValuesMTBDD(JDD.Constant(Double.NaN), model);
+				result = new StateValuesMTBDD(JDD.Constant(Double.NaN), model);
+			} else {
+				throw new PrismException("Unexpected result type of conditional expression: " + type);
 			}
 		}
+		return result;
 	}
 
 	protected StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest) throws PrismLangException, PrismException

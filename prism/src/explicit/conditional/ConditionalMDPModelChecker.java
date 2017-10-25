@@ -7,6 +7,8 @@ import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
+import parser.type.Type;
+import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import prism.OpRelOpBound;
 import prism.PrismException;
@@ -67,7 +69,17 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 			final StateValues resultTransformedModel = checkExpressionTransformedModel(transformation, statesOfInterest);
 			result = transformation.projectToOriginalModel(resultTransformedModel);
 		} catch (UndefinedTransformationException e) {
-			result = new StateValues(TypeDouble.getInstance(), Double.NaN, model);
+			// the condition is unsatisfiable for the state of interest
+			Type type = expression.getObjective().getType();
+			if (type instanceof TypeBool) {
+				// P with bound -> false
+				result = new StateValues(TypeBool.getInstance(), false, model);
+			} else if (type instanceof TypeDouble) {
+				// =? -> not a number
+				result = new StateValues(TypeDouble.getInstance(), Double.NaN, model);
+			} else {
+				throw new PrismException("Unexpected result type of conditional expression: " + type);
+			}
 		}
 		return result;
 	}
