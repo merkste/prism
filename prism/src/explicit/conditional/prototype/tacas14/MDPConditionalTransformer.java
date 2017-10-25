@@ -92,13 +92,17 @@ public abstract class MDPConditionalTransformer extends NewConditionalTransforme
 			throws PrismException
 	{
 		ConditionalReachabilitiyTransformation<explicit.MDP,explicit.MDP> transformation = transformReachability(model, expression, statesOfInterest);
-		// construct expression Pmax=? [ F "goal" ]
-		BitSet goalStates                 = transformation.getGoalStates();
-		String goalString                 = transformation.getTransformedModel().addUniqueLabel("goal", goalStates);
-		ExpressionTemporal finallyGoal    = Expression.Finally(new ExpressionLabel(goalString));
-		ExpressionProb probMaxFinallyGoal = new ExpressionProb(finallyGoal, MinMax.max(), "=", null);
+
+		// Construct expression F "goal"
+		BitSet goalStates              = transformation.getGoalStates();
+		String goalString              = transformation.getTransformedModel().addUniqueLabel("goal", goalStates);
+		ExpressionTemporal finallyGoal = Expression.Finally(new ExpressionLabel(goalString));
+		// Inherit P operator and bounds
+		ExpressionProb objective       = (ExpressionProb) expression.getObjective();
+		ExpressionProb probFinallyGoal = new ExpressionProb(finallyGoal, MinMax.max(), objective.getRelOp().toString(), objective.getBound());
+
 		// wrap in new transformation
-		return new BasicModelExpressionTransformation<>(transformation, expression, probMaxFinallyGoal);
+		return new BasicModelExpressionTransformation<>(transformation, expression, probFinallyGoal);
 	}
 
 	public abstract ConditionalReachabilitiyTransformation<explicit.MDP, explicit.MDP> transformReachability(explicit.MDP model, ExpressionConditional expression, BitSet statesOfInterest)

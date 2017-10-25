@@ -47,28 +47,19 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		assert expression.getObjective() instanceof ExpressionProb;
 
 		final ExpressionProb objective = (ExpressionProb) expression.getObjective();
-
 		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		if (oprel.getMinMax(model.getModelType()).isMin()) {
 			return checkExpressionMin(model, expression, statesOfInterest);
 		}
-		StateValues result = checkExpressionMax(model, expression, statesOfInterest);
-
-		if (objective.getProb() != null) {
-			// compare against bound
-			final double bound = objective.getProb().evaluateDouble(modelChecker.getConstantValues());
-			if (bound < 0 || bound > 1) {
-				throw new PrismException("Invalid probability bound " + bound + " in P operator");
-			}
-			final BitSet bits = result.getBitSetFromInterval(objective.getRelOp(), bound);
-			result.clear();
-			result = StateValues.createFromBitSet(bits, model);
-		}
-		return result;
+		return checkExpressionMax(model, expression, statesOfInterest);
 	}
 
 	private StateValues checkExpressionMax(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
+		ExpressionProb objective = (ExpressionProb) expression.getObjective();
+		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
+		assert oprel.getMinMax(model.getModelType()).isMax() : "Pmax expected: " + expression;
+
 		NewConditionalTransformer<MDP, MDPModelChecker> transformer = selectModelTransformer(model, expression);
 		StateValues result;
 		try {
@@ -84,9 +75,9 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 	private StateValues checkExpressionMin(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest)
 			throws PrismLangException, PrismException
 	{
-		// P>x [prop] <=>	Pmin=?[prop]	> x
-		//					1-Pmax=?[!prop]	> x
-		//					Pmax=?[!prop]	< 1-x
+		// P>x [prop] <=> Pmin=?[prop]    > x
+		//                1-Pmax=?[!prop] > x
+		//                Pmax=?[!prop]   < 1-x
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
 		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMin() : "Pmin expected: " + expression;
@@ -98,7 +89,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		} else {
 			RelOp inverseRelop              = oprel.getRelOp().negate(true); // negate but keep strictness
 			Expression inverseProb          = Expression.Minus(Expression.Literal(1), objective.getProb());
-			ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), inverseRelop.toString(), inverseProb);
+			ExpressionProb inverseObjective = new ExpressionProb(Expression.Not(objective.getExpression()), MinMax.max(), inverseRelop.toString(), inverseProb);
 			inverseExpression = new ExpressionConditional(inverseObjective, expression.getCondition());
 		}
 		// Debug output
