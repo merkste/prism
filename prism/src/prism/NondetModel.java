@@ -28,6 +28,9 @@ package prism;
 
 import java.io.*;
 import java.util.Vector;
+
+import common.SafeCast;
+
 import java.util.Map.Entry;
 
 import jdd.*;
@@ -169,6 +172,29 @@ public class NondetModel extends ProbModel
 			return false;
 		
 		return true;
+	}
+
+	/**
+	 * Returns the maximum number of choices in the MDP.
+	 * Throws a PrismException if the maximum number is > than INT_MAX.
+	 */
+	public int getMaxNumChoices() throws PrismException
+	{
+		JDDNode n = null;
+		try {
+			n = JDD.ThereExists(getTrans01().copy(), getAllDDColVars());
+			n = JDD.SumAbstract(n, getAllDDNondetVars());
+			n = JDD.MaxAbstract(n, getAllDDRowVars());
+
+			if (!n.isConstant()) {
+				throw new PrismException("Implementation error");
+			}
+
+			return SafeCast.toInt(n.getValue());
+		} finally {
+			if (n != null)
+				JDD.Deref(n);
+		}
 	}
 	
 	// set methods for things not set up in constructor
@@ -354,8 +380,12 @@ public class NondetModel extends ProbModel
 
 		log.print("States:      " + getNumStatesString() + " (" + getNumStartStatesString() + " initial)" + "\n");
 		log.print("Transitions: " + getNumTransitionsString() + "\n");
-		log.print("Choices:     " + getNumChoicesString() + "\n");
-
+		log.print("Choices:     " + getNumChoicesString());
+		try {
+			log.print(" (max: " + getMaxNumChoices() + ")");
+		} catch (PrismException e) {
+		}
+		log.println();
 		log.println();
 
 		log.print(getTransName() + ": " + JDD.GetInfoString(trans, getNumDDVarsInTrans()));
@@ -483,7 +513,7 @@ public class NondetModel extends ProbModel
 		allDDSchedVars.derefAll();
 		allDDChoiceVars.derefAll();
 		allDDNondetVars.derefAll();
-		JDD.Deref(nondetMask);
+		if (nondetMask != null) JDD.Deref(nondetMask);
 		if (transInd != null)
 			JDD.Deref(transInd);
 		if (transSynch != null)
@@ -824,6 +854,77 @@ public class NondetModel extends ProbModel
 		if (result.getDeadlockStates().size() > 0) {
 			// Assuming original model has no deadlocks, neither should the transformed model
 			throw new PrismException("Transformed model product has deadlock states");
+		}
+
+		return result;
+	}
+
+	public ProbModel toDTMC(PrismLog log) throws PrismNotSupportedException
+	{
+		boolean oneChoicePerState = false;
+		try {
+			if (getMaxNumChoices() != 1) {
+				log.printWarning("Converting MDP with more than 1 choice per state to DTMC, using uniform resolution of non-deterministic choices");
+			} else {
+				oneChoicePerState = true;
+			}
+		} catch (PrismException e) {}
+
+		JDDNode dtmcTrans = JDD.SumAbstract(this.getTrans().copy(), getAllDDNondetVars());
+
+		if (!oneChoicePerState) {
+			// divide each row by row sum
+			JDDNode tmp = JDD.SumAbstract(dtmcTrans.copy(), getAllDDColVars());
+			dtmcTrans = JDD.Apply(JDD.DIVIDE, dtmcTrans, tmp);
+		}
+
+		// Build transformed reward information
+		JDDNode newStateRewards[] = new JDDNode[stateRewards.length];
+		for (int i=0; i < stateRewards.length; i++) {
+			newStateRewards[i] = stateRewards[i].copy();
+		}
+		JDDNode newTransRewards[] = new JDDNode[transRewards.length];
+		boolean warned = false;
+		for (int i=0; i < transRewards.length; i++) {
+			newTransRewards[i] = JDD.ZERO.copy();
+			if (!transRewards[i].equals(JDD.ZERO) && !warned) {
+				log.printWarning("While converting from MDP to DTMC, dropping transition rewards...");
+				warned = true;
+			}
+		}
+
+		ProbModel result = new ProbModel(dtmcTrans,
+										 this.getStart().copy(),
+										 newStateRewards,
+										 newTransRewards,
+										 this.rewardStructNames.clone(),
+										 getAllDDRowVars().copy(),
+										 getAllDDColVars().copy(),
+										 modelVariables.copy(),
+										 // Module info (unchanged)
+										 this.getNumModules(),
+										 this.getModuleNames(),
+										 JDDVars.copyArray(this.getModuleDDRowVars()),
+										 JDDVars.copyArray(this.getModuleDDColVars()),
+										 // var info (unchanged)
+										 varList.getNumVars(),
+										 (VarList)varList.clone(),
+										 JDDVars.copyArray(this.getVarDDRowVars()),
+										 JDDVars.copyArray(this.getVarDDColVars()),
+										 // Constants (no change)
+										 this.getConstantValues());
+
+		// lift labels
+		for (Entry<String, JDDNode> entry : labelsDD.entrySet()) {
+			result.labelsDD.put(entry.getKey(), entry.getValue().copy());
+		}
+
+		if (getReach() != null) {
+			// If we have reachable state space, copy unchanged
+			result.setReach(getReach().copy());
+			result.filterReachableStates();
+
+			result.findDeadlocks(false);
 		}
 
 		return result;

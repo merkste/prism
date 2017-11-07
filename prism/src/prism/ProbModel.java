@@ -1248,7 +1248,8 @@ public class ProbModel implements Model
 		JDD.PrintMinterms(log, trans01.copy(), "trans01");
 		JDD.PrintMinterms(log, start.copy(), "start");
 		JDD.PrintMinterms(log, reach.copy(), "reach");
-		JDD.PrintMinterms(log, transActions.copy(), "transActions");
+		if (transActions != null)
+			JDD.PrintMinterms(log, transActions.copy(), "transActions");
 		log.println("allDDRowVars = " + allDDRowVars);
 		log.println("allDDColVars = " + allDDColVars);
 	}
