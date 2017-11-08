@@ -44,6 +44,17 @@ public interface StateValues extends StateVector
 	StateValuesMTBDD convertToStateValuesMTBDD();
 
 	/**
+	 * Switch the underlying model of this StateValues object.
+	 * The new model has to be compatible with the old one,
+	 * i.e., it has to have the same row variables and reachable states.
+	 * <br>
+	 * Note that his is <b>not</b> checked, so be careful when
+	 * using this method.
+	 * @param newModel the new model
+	 */
+	void switchModel(Model newModel);
+
+	/**
 	 * Set the elements of this vector by reading them in from a file.
 	 */
 	void readFromFile(File file) throws PrismException;
