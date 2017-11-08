@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import common.StopWatch;
+import explicit.modelviews.DTMCFromMDP;
 import parser.ast.Expression;
 import parser.ast.ModulesFile;
 import parser.ast.PropertiesFile;
@@ -259,8 +261,8 @@ public class PrismExplicit extends PrismComponent
 		StateValues probs = null;
 		PrismLog tmpLog;
 		
-		if (!(model.getModelType() == ModelType.CTMC || model.getModelType() == ModelType.DTMC))
-			throw new PrismNotSupportedException("Steady-state probabilities only computed for DTMCs/CTMCs");
+		if (!(model.getModelType() == ModelType.CTMC || model.getModelType() == ModelType.DTMC || (model.getModelType() == ModelType.MDP && ((MDP) model).getMaxNumChoices() <= 1)))
+			throw new PrismNotSupportedException("Steady-state probabilities only computed for DTMCs/CTMCs and single-choice MDPs");
 		
 		// no specific states format for MRMC
 		if (exportType == Prism.EXPORT_MRMC) exportType = Prism.EXPORT_PLAIN;
@@ -307,16 +309,39 @@ public class PrismExplicit extends PrismComponent
 	 */
 	public StateValues computeSteadyStateProbabilities(Model model) throws PrismException
 	{
+		return computeSteadyStateProbabilities(model, null);
+	}
+
+	/**
+	 * Compute steady-state probabilities (for a DTMC or CTMC).
+	 * Optionally (if non-null), read in the initial probability distribution from a file.
+	 * Start from initial state or a uniform distribution over multiple initial states.
+	 */
+	public StateValues computeSteadyStateProbabilities(Model model, File fileIn) throws PrismException
+	{
+		DTMCModelChecker mc;
 		StateValues probs;
-		if (model.getModelType() == ModelType.DTMC) {
-			DTMCModelChecker mcDTMC = new DTMCModelChecker(this);
-			probs = mcDTMC.doSteadyState((DTMC) model);
-		}
-		else if (model.getModelType() == ModelType.CTMC) {
-			throw new PrismNotSupportedException("Not implemented yet"); // TODO
-		}
-		else {
-			throw new PrismNotSupportedException("Steady-state probabilities only computed for DTMCs/CTMCs");
+		switch (model.getModelType()) {
+		case CTMC:
+			// FIXME ALG: implement computation of steady-states for CMTCs
+			throw new PrismNotSupportedException("Steady-state computation for CMTCs not implemented yet");
+		case DTMC:
+			mc    = new DTMCModelChecker(this);
+			probs = mc.doSteadyState((DTMC) model, fileIn);
+			break;
+		case MDP:
+			if (((MDP) model).getMaxNumChoices() > 1) {
+				throw new PrismNotSupportedException("Steady-state probabilities are undefined for MDPs");
+			}
+			mainLog.println("\nMDP has at most one choice each state, computing steady-state probabilities in implicit DTMC");
+			StopWatch watch = new StopWatch(mainLog).start("Converting MDP to DTMCSparse");
+			DTMC dtmc       = new DTMCSparse(new DTMCFromMDP((MDP) model));
+			watch.stop();
+			mc    = new DTMCModelChecker(this);
+			probs = mc.doSteadyState(dtmc, fileIn);
+			break;
+		default:
+			throw new PrismNotSupportedException("Steady-state probabilities are not supported for " + model.getModelType());
 		}
 		return probs;
 	}
