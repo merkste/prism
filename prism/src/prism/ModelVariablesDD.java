@@ -241,7 +241,7 @@ public class ModelVariablesDD
 			throw new PrismException("Not enough extra action variables preallocated, please increase using -ddextraactionvars switch!");
 		}
 
-		int v = extraActionVariables.getNumVars() - n - 1;
+		int v = extraActionVariables.getNumVars() - n;
 		for (int i=0; i < n; i++) {
 			// transfer action var from extraActionVariables to result,
 			// no need to ref again
