@@ -47,7 +47,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 	{
 		ExpressionQuant<?> objective = expression.getObjective();
 		if (! (objective instanceof ExpressionProb)) {
-			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + expression.getClass().getSimpleName());
+			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + objective.getClass().getSimpleName());
 		}
 
 		OpRelOpBound oprel = objective.getRelopBoundInfo(modelChecker.getConstantValues());
