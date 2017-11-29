@@ -10,6 +10,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.OpRelOpBound;
 import prism.PrismException;
+import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import explicit.BasicModelExpressionTransformation;
@@ -341,7 +342,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			buildTime = System.currentTimeMillis() - buildTime;
 			mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
 			// build transformation
-			BasicModelTransformation<explicit.CTMC, explicit.CTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
+			BasicModelTransformation<explicit.CTMC, explicit.CTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse, transformation.getTransformedStatesOfInterest());
 			sparseTransformation = sparseTransformation.compose(transformation);
 			// attach transformed expression
 			Expression originalExpression    = transformation.getOriginalExpression();
@@ -454,7 +455,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			buildTime = System.currentTimeMillis() - buildTime;
 			mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
 			// build transformation
-			BasicModelTransformation<explicit.DTMC, explicit.DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
+			BasicModelTransformation<explicit.DTMC, explicit.DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse, transformation.getTransformedStatesOfInterest());
 			sparseTransformation = sparseTransformation.compose(transformation);
 			// attach transformed expression
 			Expression originalExpression    = transformation.getOriginalExpression();
