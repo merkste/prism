@@ -1,6 +1,7 @@
 package explicit.conditional.transformer.mc;
 
 import java.util.BitSet;
+import java.util.Objects;
 import java.util.function.IntFunction;
 
 import common.BitSetTools;
@@ -21,8 +22,6 @@ import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.Restriction;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
-import parser.ast.ExpressionProb;
-import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -69,6 +68,8 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 		BitSet pivotStates, restrict;
 		BasicModelTransformation<M, ? extends M> pivoted;
 		if (deadlock) {
+			// FIXME ALG: If we introduce a new label for state formulas of the objective's and condition's path formulas
+			//            we can even handle path formulas containing non-propositional state formulas.
 			// Transform pivot states to traps
 			pivotStates     = getPivotStates(model, remain, goal, negated);
 			M deadlockModel = deadlock(model, pivotStates);
@@ -82,6 +83,7 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 			// Switch in pivot states to copy of model
 			pivotStates  = prob1;
 			pivoted      = pivot(model, pivotStates);
+
 			M pivotModel = pivoted.getTransformedModel();
 			int offset   = model.getNumStates();
 
@@ -143,6 +145,13 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 
 	default boolean requiresSecondMode(final ExpressionConditional expression)
 	{
+		final Expression objective = expression.getObjective().getExpression();
+		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(objective)) {
+			// can optimize non-negated unbounded simple until objectives only
+			return true;
+		}
+		final ExpressionTemporal objectivePath = (ExpressionTemporal) objective;
+
 		final Expression condition = ExpressionInspector.trimUnaryOperations(expression.getCondition());
 		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(condition)) {
 			// can optimize non-negated unbounded simple until conditions only
@@ -150,27 +159,30 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 		}
 		final ExpressionTemporal conditionPath = (ExpressionTemporal) condition;
 
-		final Expression objective = expression.getObjective();
-		final Expression objectiveSubExpr;
-		if (ExpressionInspector.isReachablilityReward(objective)) {
-			objectiveSubExpr = ((ExpressionReward) objective).getExpression();
-		} else if (objective instanceof ExpressionProb) {
-			objectiveSubExpr = ((ExpressionProb) objective).getExpression();
-			if (! ExpressionInspector.isUnboundedSimpleUntilFormula(objectiveSubExpr)) {
+		Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(objectivePath.getOperand2());
+		Objects.requireNonNull(objectiveGoal);
+		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionPath.getOperand2());
+		Objects.requireNonNull(conditionGoal);
+
+		// FIXME ALG: If we use state sets instead of formulas, we can determine whether
+		//            objectiveGoal is a subset of conditionGoal
+		try {
+			if (!objectiveGoal.syntacticallyEquals(conditionGoal)) {
+				// objective and condition goals must be the same
 				return true;
 			}
-		} else {
+		} catch (PrismLangException e) {
 			return true;
 		}
-		final ExpressionTemporal objectivePath = (ExpressionTemporal) objectiveSubExpr;
 
-		Expression conditionGoal = ExpressionInspector.trimUnaryOperations(conditionPath.getOperand2());
-		Expression objectiveGoal = ExpressionInspector.trimUnaryOperations(objectivePath.getOperand2());
-		if (conditionGoal != null && objectiveGoal != null) {
-			try {
-				return !objectiveGoal.syntacticallyEquals(conditionGoal);
-			} catch (PrismLangException e) {}
+		if (objectiveGoal.isProposition() && conditionGoal.isProposition()) {
+			Expression objectiveRemain = objectivePath.getOperand1();
+			if (objectiveRemain == null || objectiveRemain.isProposition()) {
+				Expression conditionRemain = conditionPath.getOperand1();
+				return conditionRemain == null || conditionRemain.isProposition();
+			}
 		}
+
 		return true;
 	}
 
