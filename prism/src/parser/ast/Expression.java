@@ -165,6 +165,21 @@ public abstract class Expression extends ASTElement
 		return converter.convert(this);
 	}
 
+	protected Object evaluateMemoized(EvaluateContext ec) throws PrismLangException
+	{
+		Object result;
+		if (ec instanceof EvaluateContextStateCached) {
+			EvaluateContextStateCached ecCached = (EvaluateContextStateCached) ec; 
+			result = ecCached.fetchResult(this);
+			if (result == null) {
+				result = ecCached.storeResult(this, evaluate(ec));
+			}
+		} else {
+			result = evaluate(ec);
+		}
+		return result;
+	}
+
 	/**
 	 * Evaluate this expression, using no constant or variable values.
 	 * Note: assumes that type checking has been done already.
@@ -201,7 +216,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public Object evaluate(State state) throws PrismLangException
 	{
-		return evaluate(new EvaluateContextState(state));
+		return evaluate(new EvaluateContextStateCached(state));
 	}
 
 	/**
@@ -212,7 +227,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public Object evaluate(Values constantValues, State state) throws PrismLangException
 	{
-		return evaluate(new EvaluateContextState(constantValues, state));
+		return evaluate(new EvaluateContextStateCached(constantValues, state));
 	}
 
 	/**
@@ -246,7 +261,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt(EvaluateContext ec) throws PrismLangException
 	{
-		Object o = evaluate(ec);
+		Object o = evaluateMemoized(ec);
 		if (o instanceof Integer) {
 			return ((Integer) o).intValue();
 		}
@@ -296,7 +311,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt(State state) throws PrismLangException
 	{
-		return evaluateInt(new EvaluateContextState(state));
+		return evaluateInt(new EvaluateContextStateCached(state));
 	}
 
 	/**
@@ -308,7 +323,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt(Values constantValues, State state) throws PrismLangException
 	{
-		return evaluateInt(new EvaluateContextState(constantValues, state));
+		return evaluateInt(new EvaluateContextStateCached(constantValues, state));
 	}
 
 	/**
@@ -344,15 +359,15 @@ public abstract class Expression extends ASTElement
 	 */
 	public double evaluateDouble(EvaluateContext ec) throws PrismLangException
 	{
-		Object o = evaluate(ec);
-		if (o instanceof Integer) {
-			return ((Integer) o).intValue();
+		Object result = evaluateMemoized(ec);
+		if (result instanceof Integer) {
+			return ((Integer) result).intValue();
 		}
-		if (o instanceof Double) {
-			return ((Double) o).doubleValue();
+		if (result instanceof Double) {
+			return ((Double) result).doubleValue();
 		}
-		if (o instanceof Boolean) {
-			return ((Boolean) o).booleanValue() ? 1.0 : 0.0;
+		if (result instanceof Boolean) {
+			return ((Boolean) result).booleanValue() ? 1.0 : 0.0;
 		}
 		throw new PrismLangException("Cannot evaluate to a double", this);
 	}
@@ -397,7 +412,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public double evaluateDouble(State state) throws PrismLangException
 	{
-		return evaluateDouble(new EvaluateContextState(state));
+		return evaluateDouble(new EvaluateContextStateCached(state));
 	}
 
 	/**
@@ -409,7 +424,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public double evaluateDouble(Values constantValues, State state) throws PrismLangException
 	{
-		return evaluateDouble(new EvaluateContextState(constantValues, state));
+		return evaluateDouble(new EvaluateContextStateCached(constantValues, state));
 	}
 
 	/**
@@ -445,11 +460,11 @@ public abstract class Expression extends ASTElement
 	 */
 	public boolean evaluateBoolean(EvaluateContext ec) throws PrismLangException
 	{
-		Object o = evaluate(ec);
-		if (!(o instanceof Boolean)) {
+		Object result = evaluateMemoized(ec);
+		if (!(result instanceof Boolean)) {
 			throw new PrismLangException("Cannot evaluate to a boolean", this);
 		}
-		return ((Boolean) o).booleanValue();
+		return ((Boolean) result).booleanValue();
 	}
 
 	/**
@@ -492,7 +507,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public boolean evaluateBoolean(State state) throws PrismLangException
 	{
-		return evaluateBoolean(new EvaluateContextState(state));
+		return evaluateBoolean(new EvaluateContextStateCached(state));
 	}
 
 	/**
@@ -504,7 +519,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public boolean evaluateBoolean(Values constantValues, State state) throws PrismLangException
 	{
-		return evaluateBoolean(new EvaluateContextState(constantValues, state));
+		return evaluateBoolean(new EvaluateContextStateCached(constantValues, state));
 	}
 
 	/**
