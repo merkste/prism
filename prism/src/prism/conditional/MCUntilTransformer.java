@@ -49,8 +49,8 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// FIXME ALG: steady state computation
-		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override

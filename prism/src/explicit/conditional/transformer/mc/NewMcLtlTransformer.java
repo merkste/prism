@@ -14,7 +14,6 @@ import explicit.LTLModelChecker.LTLProduct;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
-import explicit.conditional.ExpressionInspector;
 import explicit.conditional.NewConditionalTransformer;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -50,8 +49,8 @@ public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModel
 	@Override
 	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// cannot handle steady state computation yet
-		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override

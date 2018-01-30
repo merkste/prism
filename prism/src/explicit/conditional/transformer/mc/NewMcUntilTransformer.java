@@ -22,7 +22,6 @@ import explicit.modelviews.Restriction;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
-import parser.ast.ExpressionQuant;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
@@ -41,8 +40,8 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 	@Override
 	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// FIXME ALG: steady state computation
-		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override

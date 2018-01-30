@@ -49,18 +49,14 @@ public interface NewMcNextTransformer<M extends explicit.DTMC,C extends ProbMode
 			// can handle unbounded conditions only
 			return false;
 		}
-		if (ExpressionInspector.isSteadyStateReward(expression.getObjective())) {
-			// cannot handle steady state computation yet
-			return false;
-		}
 		return true;
 	}
 
 	@Override
 	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// cannot handle steady state computation yet
-		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override

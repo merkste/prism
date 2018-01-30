@@ -57,18 +57,14 @@ public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModel
 			// can handle unbounded conditions only
 			return false;
 		}
-		if (ExpressionInspector.isSteadyStateReward(expression.getObjective())) {
-			// cannot handle steady state computation yet
-			return false;
-		}
 		return true;
 	}
 
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// FIXME ALG: steady state computation
-		return !ExpressionInspector.isSteadyStateReward(expression.getObjective());
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override

@@ -3,7 +3,6 @@ package prism.conditional;
 import jdd.JDD;
 import jdd.JDDNode;
 import acceptance.AcceptanceType;
-import explicit.conditional.ExpressionInspector;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import parser.ast.ExpressionConditional;
 import prism.LTLModelChecker;
@@ -38,8 +37,8 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 	@Override
 	public boolean canHandleObjective(Model model, ExpressionConditional expression) throws PrismLangException
 	{
-		// cannot handle steady state computation yet
-		return !(ExpressionInspector.isSteadyStateReward(expression.getObjective()));
+		// Can handle all ExpressionQuant: P, R and S
+		return true;
 	}
 
 	@Override
