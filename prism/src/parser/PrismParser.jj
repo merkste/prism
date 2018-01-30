@@ -483,6 +483,7 @@ TOKEN :
 	// (PrismSyntaxHighlighter relies on this fact)
 |	< NOT:			"!" >
 |	< AND:			"&" >
+|   < COND:         "||" >
 |	< OR:			"|" >
 |	< IMPLIES:		"=>" >
 |	< IFF:			"<=>" >
@@ -1597,7 +1598,7 @@ Expression ExpressionParenth(boolean prop, boolean pathprop) :
 //-----------------------------------------------------------------------------------
 
 // (Property) expression: conditional property
-
+// @Deprecated: Use conditional operator || inside P, R, S expressions 
 Expression ExpressionConditional(boolean prop, boolean pathprop) :
 {
 	Expression objective;
@@ -1607,9 +1608,9 @@ Expression ExpressionConditional(boolean prop, boolean pathprop) :
 	// This production is only allowed in expressions if the "prop" parameter is true
 	{ if (!prop) throw generateParseException(); }
 	(
-		objective = ExpressionReward(prop, pathprop)
-	|
 		objective = ExpressionProb(prop, pathprop)
+	|
+		objective = ExpressionReward(prop, pathprop)
 	|
 		objective = ExpressionSS(prop, pathprop)
 	)
@@ -1622,6 +1623,9 @@ Expression ExpressionConditional(boolean prop, boolean pathprop) :
 			// separate objective and old-style filter
 			filter = (ExpressionFilter) objective;
 			objective = filter.getOperand();
+		}
+		if (! (objective instanceof ExpressionQuant)) {
+			throw new ParseException("Expected " + ExpressionQuant.class.getSimpleName());
 		}
 		ExpressionConditional exprCond = new ExpressionConditional((ExpressionQuant) objective, condition);
 		// set position
@@ -1649,8 +1653,10 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	MinMax minMax = null;
 	Expression prob = null;
 	Expression expr;
+	Expression condition = null;
 	Filter filter = null;
-	ExpressionProb ret = new ExpressionProb();
+	Expression ret = null;
+	ExpressionProb exprProb = new ExpressionProb();
 	Token begin = null;
 	boolean isBool;
 }
@@ -1672,26 +1678,32 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	)
 	// Path formula, optional filter
 	<LBRACKET>
-	expr = PathSpecification(prop)
-	(filter = Filter())?
+		expr = PathSpecification(prop)
+		(filter = Filter())?
+		(<COND> condition = Expression(prop, true))?
 	<RBRACKET>
 	{
-		ret.setModifier(modifier == null ? null : modifier.getName());
-		ret.setRelOp(relOp);
-		ret.setMinMax(minMax);
-		ret.setProb(prob);
-		ret.setExpression(expr);
-		ret.setFilter(filter);
-		ret.setPosition(begin, getToken(0));
+		exprProb.setModifier(modifier == null ? null : modifier.getName());
+		exprProb.setRelOp(relOp);
+		exprProb.setMinMax(minMax);
+		exprProb.setProb(prob);
+		exprProb.setExpression(expr);
+		exprProb.setFilter(filter);
+		exprProb.setPosition(begin, getToken(0));
+		if (condition != null) {
+			ret = new ExpressionConditional((ExpressionQuant) exprProb, condition);
+		} else {
+			ret = exprProb;
+		}
 		// Filter is actually dealt with by wrapping this expression in
 		// an (invisible) ExpressionFilter expression
 		if (filter != null) {
 			String filterOp = isBool ? "&" : filter.getFilterOpString();
 			ExpressionFilter ef = new ExpressionFilter(filterOp, ret, filter.getExpression());
 			ef.setInvisible(true);
-			return ef;
+			ret = ef;
 		}
-		else return ret;
+		return ret;
 	}
 }
 
@@ -1779,8 +1791,10 @@ Expression ExpressionSS(boolean prop, boolean pathprop) :
 	String relOp = null;
 	Expression prob = null;
 	Expression expr;
+	Expression condition = null;
 	Filter filter = null;
-	ExpressionSS ret = new ExpressionSS();
+	Expression ret = null;
+	ExpressionSS exprSS = new ExpressionSS();
 	Token begin;
 	boolean isBool;
 }
@@ -1794,23 +1808,32 @@ Expression ExpressionSS(boolean prop, boolean pathprop) :
 		( <EQ> <QMARK> { relOp = "="; isBool = false; } )
 	)
 	// Expression, optional filter
-	<LBRACKET> expr = Expression(prop, pathprop) (filter = Filter())? <RBRACKET>
+	<LBRACKET>
+		expr = Expression(prop, pathprop)
+		(filter = Filter())?
+		(<COND> condition = Expression(prop, true))?
+	<RBRACKET>
 	{
-		ret.setModifier(modifier == null ? null : modifier.getName());
-		ret.setRelOp(relOp);
-		ret.setProb(prob);
-		ret.setExpression(expr);
-		ret.setFilter(filter);
-		ret.setPosition(begin, getToken(0));
+		exprSS.setModifier(modifier == null ? null : modifier.getName());
+		exprSS.setRelOp(relOp);
+		exprSS.setProb(prob);
+		exprSS.setExpression(expr);
+		exprSS.setFilter(filter);
+		exprSS.setPosition(begin, getToken(0));
+		if (condition != null) {
+			ret = new ExpressionConditional((ExpressionQuant) exprSS, condition);
+		} else {
+			ret = exprSS;
+		}
 		// Filter is actually dealt with by wrapping this expression in
 		// an (invisible) ExpressionFilter expression
 		if (filter != null) {
 			String filterOp = isBool ? "&" : filter.getFilterOpString();
 			ExpressionFilter ef = new ExpressionFilter(filterOp, ret, filter.getExpression());
 			ef.setInvisible(true);
-			return ef;
+			ret = ef;
 		}
-		else return ret;
+		return ret;
 	}
 }
 
@@ -1824,8 +1847,10 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	MinMax minMax = null;
 	Expression rew = null;
 	Expression expr;
+	Expression condition = null;
 	Filter filter = null;
-	ExpressionReward ret = new ExpressionReward();
+	Expression ret = null;
+	ExpressionReward exprRew = new ExpressionReward();
 	Token begin;
 	boolean isBool;
 }
@@ -1836,7 +1861,7 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	(
 	  ( begin = <R>
 		( <LPARENTH> modifier = IdentifierExpression() <RPARENTH> )?
-		(RewardSpecification(ret))?
+		(RewardSpecification(exprRew))?
 		((<MIN> {minMax = MinMax.min();}) | (<MAX> {minMax = MinMax.max();}))?
 	  )
 	  // These two are dupes of above but allow space to be omitted
@@ -1848,24 +1873,33 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	   |( <EQ> <QMARK> { relOp = "="; isBool = false; } )
 	)
 	// Path formula, optional filter
-	<LBRACKET> expr = ExpressionRewardContents(prop, pathprop) (filter = Filter())? <RBRACKET>
+	<LBRACKET>
+		expr = ExpressionRewardContents(prop, pathprop)
+		(filter = Filter())?
+		(<COND> condition = Expression(prop, true))?
+	<RBRACKET>
 	{
-		ret.setModifier(modifier == null ? null : modifier.getName());
-		ret.setMinMax(minMax);
-		ret.setRelOp(relOp);
-		ret.setReward(rew);
-		ret.setExpression(expr);
-		ret.setFilter(filter);
-		ret.setPosition(begin, getToken(0));
+		exprRew.setModifier(modifier == null ? null : modifier.getName());
+		exprRew.setMinMax(minMax);
+		exprRew.setRelOp(relOp);
+		exprRew.setReward(rew);
+		exprRew.setExpression(expr);
+		exprRew.setFilter(filter);
+		exprRew.setPosition(begin, getToken(0));
+		if (condition != null) {
+			ret = new ExpressionConditional((ExpressionQuant) exprRew, condition);
+		} else {
+			ret = exprRew;
+		}
 		// Filter is actually dealt with by wrapping this expression in
 		// an (invisible) ExpressionFilter expression
 		if (filter != null) {
 			String filterOp = isBool ? "&" : filter.getFilterOpString();
 			ExpressionFilter ef = new ExpressionFilter(filterOp, ret, filter.getExpression());
 			ef.setInvisible(true);
-			return ef;
+			ret = ef;
 		}
-		else return ret;
+		return ret;
 	}
 }
 
