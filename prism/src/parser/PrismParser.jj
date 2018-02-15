@@ -453,6 +453,7 @@ TOKEN :
 |	< I:				"I" >
 |	< INT:				"int" >
 |	< LABEL:			"label" >
+|	< L:					"L" >
 |	< MAX:				"max" >
 |	< MDP:				"mdp" >
 |	< MIN:				"min" >
@@ -1464,6 +1465,8 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) :
 	| 
 		ret = ExpressionProb(prop, pathprop)
 	|
+		ret = ExpressionLongRun(prop, pathprop)
+	|
 		ret = ExpressionSS(prop, pathprop)
 	|
 		ret = ExpressionReward(prop, pathprop)
@@ -1780,6 +1783,46 @@ Filter Filter() :
 		| <MAX> { filter.setMaxRequested(true); } )
 	<RBRACE> )*
 	{ filter.setPosition(begin, getToken(0)); return filter; }
+}
+
+Expression ExpressionLongRun(boolean prop, boolean pathprop) :
+{
+	Expression expression;
+	Expression states;
+	Token begin;
+	int r;
+	String relOp;
+	Expression bound;
+}
+{
+	// This production is only allowed in expressions if the "prop" parameter is true
+	{ if (!prop) throw generateParseException(); }
+	begin = <L>
+	(
+		( r = LtGt() bound = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; } )
+	|
+		( <EQ> <QMARK> { relOp = "="; bound = null;} )
+	)
+	<LBRACKET>
+	(
+		expression = ExpressionProb(prop, pathprop)
+	|
+		expression = ExpressionReward(prop, pathprop)
+	|
+		expression = ExpressionSS(prop, pathprop)
+	)
+	<COMMA>
+		states = Expression(prop, false)
+	<RBRACKET>
+	{
+		if (! (expression instanceof ExpressionQuant)) {
+			throw new ParseException("Expected " + ExpressionQuant.class.getSimpleName());
+		}
+		ExpressionLongRun exprLongRun = new ExpressionLongRun((ExpressionQuant) expression, states, relOp, bound);
+		// set position
+		exprLongRun.setPosition(begin, getToken(0));
+		return exprLongRun;
+	}
 }
 
 // (Property) expression: steady-state operator S

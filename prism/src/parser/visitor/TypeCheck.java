@@ -523,6 +523,24 @@ public class TypeCheck extends ASTTraverse
 		e.setType(e.getReward() == null ? TypeDouble.getInstance() : TypeBool.getInstance());
 	}
 
+	public void visitPost(ExpressionLongRun e) throws PrismLangException
+	{
+		// Check probability bound
+		if (e.getBound() != null && !TypeDouble.getInstance().canAssign(e.getBound().getType())) {
+			throw new PrismLangException("Type error: L operator probability bound is not a double", e.getBound());
+		}
+		// Check expression
+		if (e.getExpression().getType() instanceof TypeBool) {
+			throw new PrismLangException("Type error: Expression of L operator is a Boolean-valued expression", e.getExpression());
+		}
+		// Check states
+		if (!(e.getStates().getType() instanceof TypeBool)) {
+			throw new PrismLangException("Type error: States of L operator is not a Boolean-valued expression", e.getExpression());
+		}
+		// Set type
+		e.setType(e.getBound() == null ? TypeDouble.getInstance() : TypeBool.getInstance());
+	}
+
 	public void visitPost(ExpressionSS e) throws PrismLangException
 	{
 		// Check probability bound

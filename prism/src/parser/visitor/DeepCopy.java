@@ -401,6 +401,12 @@ public class DeepCopy extends DAGVisitor
 	}
 
 	@Override
+	public ExpressionLongRun visitNow(ExpressionLongRun e) throws PrismLangException
+	{
+		return e.clone().deepCopy(this);
+	}
+
+	@Override
 	public ExpressionSS visitNow(ExpressionSS e) throws PrismLangException
 	{
 		return e.clone().deepCopy(this);

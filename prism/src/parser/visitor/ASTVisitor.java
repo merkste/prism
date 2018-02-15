@@ -78,6 +78,7 @@ public interface ASTVisitor
 	public Object visit(ExpressionConditional e) throws PrismLangException;
 	public Object visit(ExpressionProb e) throws PrismLangException;
 	public Object visit(ExpressionReward e) throws PrismLangException;
+	public Object visit(ExpressionLongRun e) throws PrismLangException;
 	public Object visit(ExpressionSS e) throws PrismLangException;
 	public Object visit(ExpressionExists e) throws PrismLangException;
 	public Object visit(ExpressionForAll e) throws PrismLangException;

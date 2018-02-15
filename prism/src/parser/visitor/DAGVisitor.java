@@ -348,6 +348,12 @@ public abstract class DAGVisitor implements ASTVisitor
 	}
 
 	@Override
+	public Object visit(ExpressionLongRun e) throws PrismLangException
+	{
+		return isVisited(e) ? getStored(e) : store(e, visitNow(e));
+	}
+
+	@Override
 	public Object visit(ExpressionSS e) throws PrismLangException
 	{
 		return isVisited(e) ? getStored(e) : store(e, visitNow(e));
@@ -508,6 +514,8 @@ public abstract class DAGVisitor implements ASTVisitor
 	public abstract Object visitNow(ExpressionProb e) throws PrismLangException;
 
 	public abstract Object visitNow(ExpressionReward e) throws PrismLangException;
+
+	public abstract Object visitNow(ExpressionLongRun e) throws PrismLangException;
 
 	public abstract Object visitNow(ExpressionSS e) throws PrismLangException;
 

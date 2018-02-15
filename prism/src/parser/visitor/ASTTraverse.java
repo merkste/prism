@@ -560,6 +560,18 @@ public class ASTTraverse extends DAGVisitor
 	}
 	public void visitPost(ExpressionReward e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionLongRun e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visitNow(ExpressionLongRun e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getBound() != null) e.getBound().accept(this);
+		if (e.getExpression() != null) e.getExpression().accept(this);
+		if (e.getStates() != null) e.getStates().accept(this);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionLongRun e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionSS e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visitNow(ExpressionSS e) throws PrismLangException
 	{
