@@ -764,7 +764,7 @@ public class NondetModelChecker extends NonProbModelChecker
 	 * @param pathFormulas Where to store the path formulas (for P operators; null for R operators)
 	 * @param origPosition The position (starting from 0) at which this operand occured in the call of multi(...)
 	 */
-	protected void extractInfoFromMultiObjectiveOperand(ExpressionQuant exprQuant, OpsAndBoundsList opsAndBounds, List<JDDNode> transRewardsList,
+	protected void extractInfoFromMultiObjectiveOperand(ExpressionQuant<?> exprQuant, OpsAndBoundsList opsAndBounds, List<JDDNode> transRewardsList,
 			List<Expression> pathFormulas, int origPosition) throws PrismException
 	{
 		ExpressionProb exprProb = null;

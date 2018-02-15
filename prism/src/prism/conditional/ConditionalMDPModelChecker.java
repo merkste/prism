@@ -45,7 +45,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	@Override
 	public StateValues checkExpression(final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		ExpressionQuant objective = expression.getObjective();
+		ExpressionQuant<?> objective = expression.getObjective();
 		if (! (objective instanceof ExpressionProb)) {
 			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + expression.getClass().getSimpleName());
 		}

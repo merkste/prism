@@ -536,8 +536,8 @@ public class ASTTraverseModify implements ASTVisitor
 	public Object visit(ExpressionConditional e) throws PrismLangException
 	{
 		visitPre(e);
-		if (e.getObjective() != null) e.getObjective().accept(this);
-		if (e.getCondition() != null) e.getCondition().accept(this);
+		if (e.getObjective() != null) e.setObjective((ExpressionQuant<?>)e.getObjective().accept(this));
+		if (e.getCondition() != null) e.setCondition((Expression)e.getCondition().accept(this));
 		visitPost(e);
 		return e;
 	}

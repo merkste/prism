@@ -48,7 +48,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 	@Override
 	public StateValues checkExpression(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
-		ExpressionQuant objective = expression.getObjective();
+		ExpressionQuant<?> objective = expression.getObjective();
 		if (! (objective instanceof ExpressionProb)) {
 			throw new PrismNotSupportedException("Can only model check conditional probabilities in MDPs, not " + expression.getClass().getSimpleName());
 		}

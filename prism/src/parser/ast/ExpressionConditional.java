@@ -3,99 +3,118 @@
  */
 package parser.ast;
 
-import parser.EvaluateContext;
+import java.util.Objects;
+
+import explicit.MinMax;
+import parser.Values;
 import parser.visitor.ASTVisitor;
+import prism.OpRelOpBound;
+import prism.PrismException;
 import prism.PrismLangException;
 
 /**
  * @author Steffen
- *
  */
-public class ExpressionConditional extends Expression {
+public class ExpressionConditional extends ExpressionQuant<ExpressionQuant<?>>
+{
+	protected Expression condition;
 
-	private ExpressionQuant objective;
-	private Expression condition;
-
-	public ExpressionConditional(final ExpressionQuant objective, final Expression condition) {
-		assert (objective != null) && (condition != null)
-				: "objective and condition must not be null";;
-		this.objective = objective;
+	public ExpressionConditional(ExpressionQuant<?> objective, Expression condition)
+	{
+		Objects.requireNonNull(objective);
+		Objects.requireNonNull(condition);
+		this.expression = objective;
 		this.condition = condition;
 	}
 
-	public ExpressionQuant getObjective() {
-		return objective;
+	public ExpressionQuant<?> getObjective()
+	{
+		return expression;
 	}
 
-	public Expression getCondition() {
+	public void setObjective(ExpressionQuant<?> objective)
+	{
+		setExpression(objective);
+	}
+
+	public Expression getCondition()
+	{
 		return condition;
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.Expression#isConstant()
-	 */
-	@Override
-	public boolean isConstant() {
-		return false;
+	public void setCondition(Expression condition)
+	{
+		Objects.requireNonNull(condition);
+		this.condition = condition;
 	}
 
-	public boolean isQuantitative() {
-		return (objective == null) ? false : Expression.isQuantitative(objective);
+	// Methods to be overridden
+
+	@Override
+	public MinMax getMinMax()
+	{
+		return expression.getMinMax();
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.Expression#evaluate(parser.EvaluateContext)
-	 */
 	@Override
-	public Object evaluate(final EvaluateContext ec) throws PrismLangException {
-		throw new PrismLangException("Cannot evaluate a conditional expression without a model");
+	public RelOp getRelOp()
+	{
+		return expression.getRelOp();
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.Expression#returnsSingleValue()
-	 */
 	@Override
-	public boolean returnsSingleValue() {
-		return false;
+	public Expression getBound()
+	{
+		return expression.getBound();
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.Expression#deepCopy()
-	 */
 	@Override
-	public ExpressionConditional deepCopy() {
-		final ExpressionQuant objectiveCopy = (objective == null) ? null : (ExpressionQuant) objective.deepCopy();
-		final Expression conditionCopy      = (condition == null) ? null : condition.deepCopy();
-		final ExpressionConditional copy = new ExpressionConditional(objectiveCopy, conditionCopy);
+	public OpRelOpBound getRelopBoundInfo(Values constantValues) throws PrismException
+	{
+		return expression.getRelopBoundInfo(constantValues);
+	}
+
+	@Override
+	public boolean isMatchingElement(ASTElement other)
+	{
+		return other instanceof ExpressionConditional;
+	}
+
+	@Override
+	public ExpressionConditional deepCopy()
+	{
+		ExpressionQuant<?> objectiveCopy = expression.deepCopy();
+		Expression conditionCopy   = condition.deepCopy();
+		ExpressionConditional copy = new ExpressionConditional(objectiveCopy, conditionCopy);
+
 		copy.setPosition(this);
 		copy.setType(type);
+
 		return copy;
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.ASTElement#accept(parser.visitor.ASTVisitor)
-	 */
 	@Override
-	public Object accept(final ASTVisitor v) throws PrismLangException {
+	public Object accept(final ASTVisitor v) throws PrismLangException
+	{
 		return v.visit(this);
 	}
 
-	/* (non-Javadoc)
-	 * @see parser.ast.ASTElement#toString()
-	 */
 	@Override
-	public String toString() {
-		return objective + "[ " + condition + " ]";
+	protected String operatorToString()
+	{
+		return expression.operatorToString();
 	}
 
 	@Override
-	public boolean isProposition() {
-		return false;
+	protected String boundsToString()
+	{
+		return expression.boundsToString();
 	}
 
 	@Override
-	public boolean isMatchingElement(ASTElement other) {
-		return other instanceof ExpressionConditional;
+	protected String bodyToString()
+	{
+		return expression.bodyToString() + " || " + condition.toString();
 	}
 
 	/* (non-Javadoc)
@@ -106,8 +125,8 @@ public class ExpressionConditional extends Expression {
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((condition == null) ? 0 : condition.hashCode());
-		result = prime * result + ((objective == null) ? 0 : objective.hashCode());
+		result = prime * result + ((condition == null)  ? 0 : condition.hashCode());
+		result = prime * result + ((expression == null) ? 0 : expression.hashCode());
 		return result;
 	}
 
@@ -134,11 +153,11 @@ public class ExpressionConditional extends Expression {
 		} else if (!condition.equals(other.condition)) {
 			return false;
 		}
-		if (objective == null) {
-			if (other.objective != null) {
+		if (expression == null) {
+			if (other.expression != null) {
 				return false;
 			}
-		} else if (!objective.equals(other.objective)) {
+		} else if (!expression.equals(other.expression)) {
 			return false;
 		}
 		return true;

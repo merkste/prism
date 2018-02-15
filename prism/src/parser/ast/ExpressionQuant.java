@@ -1,41 +1,17 @@
-//==============================================================================
-//	
-//	Copyright (c) 2002-
-//	Authors:
-//	* Dave Parker <david.parker@comlab.ox.ac.uk> (University of Oxford, formerly University of Birmingham)
-//	
-//------------------------------------------------------------------------------
-//	
-//	This file is part of PRISM.
-//	
-//	PRISM is free software; you can redistribute it and/or modify
-//	it under the terms of the GNU General Public License as published by
-//	the Free Software Foundation; either version 2 of the License, or
-//	(at your option) any later version.
-//	
-//	PRISM is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU General Public License for more details.
-//	
-//	You should have received a copy of the GNU General Public License
-//	along with PRISM; if not, write to the Free Software Foundation,
-//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//	
-//==============================================================================
-
 package parser.ast;
 
 import explicit.MinMax;
+import parser.EvaluateContext;
 import parser.Values;
 import prism.OpRelOpBound;
 import prism.PrismException;
+import prism.PrismLangException;
 
 /**
  * Abstract class for representing "quantitative" operators (P,R,S),
  * i.e., a superclass of ExpressionProb, ExpressionReward, ExpressionSS.
  */
-public abstract class ExpressionQuant extends Expression
+public abstract class ExpressionQuant<E extends Expression> extends Expression
 {
 	/** Optional "modifier" to specify variants of the P/R/S operator */
 	protected String modifier = null;
@@ -46,7 +22,7 @@ public abstract class ExpressionQuant extends Expression
 	/** The attached (probability/reward) bound, as an expression (e.g. "p" in "P&lt;p"). Null if absent (e.g. "P=?"). */
 	protected Expression bound = null;
 	/** The main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true]. */
-	protected Expression expression = null;
+	protected E expression = null;
 	/** Optional "old-style" filter. This is just for display purposes since
 	  *  the parser creates an (invisible) new-style filter around this expression. */
 	protected Filter filter = null;
@@ -64,18 +40,6 @@ public abstract class ExpressionQuant extends Expression
 	public void setMinMax(MinMax minMax)
 	{
 		this.minMax = minMax;
-	}
-	
-	/** Set the attached min/max operator */
-	public void setMinMax(String minMaxString) throws PrismException
-	{
-		if (minMaxString.equals("min")) {
-			minMax = MinMax.min();
-		} else if (minMaxString.equals("max")) {
-			minMax = MinMax.max();
-		} else {
-			throw new PrismException("Min/Max has to be either min or max");
-		}
 	}
 
 	/**
@@ -107,7 +71,7 @@ public abstract class ExpressionQuant extends Expression
 	/**
 	 * Set the main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true].
 	 */
-	public void setExpression(Expression expression)
+	public void setExpression(E expression)
 	{
 		this.expression = expression;
 	}
@@ -164,7 +128,7 @@ public abstract class ExpressionQuant extends Expression
 	/**
 	 * Get the main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true].
 	 */
-	public Expression getExpression()
+	public E getExpression()
 	{
 		return expression;
 	}
@@ -187,8 +151,62 @@ public abstract class ExpressionQuant extends Expression
 		return filter;
 	}
 
+	// Test methods
+
+	@Override
+	public boolean isConstant()
+	{
+		return false;
+	}
+
+	@Override
+	public boolean isProposition()
+	{
+		return false;
+	}
+
+	public boolean isQuantitative()
+	{
+		return getBound() == null;
+	}
+
+	@Override
+	public boolean returnsSingleValue()
+	{
+		return false;
+	}
+
+	// Methods required for Expression:
+
+	@Override
+	public Object evaluate(final EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Cannot evaluate a quantiative expression without a model");
+	}
+
+	// Methods required for ASTElement:
+
+	@Override
+	public abstract ExpressionQuant<E> deepCopy();
+
 	// Standard methods
-	
+
+	@Override
+	public String toString()
+	{
+		return operatorToString() + boundsToString() + " [ " + bodyToString() + " ]";
+	}
+
+	protected abstract String operatorToString();
+
+	protected String boundsToString()
+	{
+		String bounds = getBound() == null ? "?" : getBound().toString();
+		return getRelOp() + bounds;
+	}
+
+	protected abstract String bodyToString();
+
 	@Override
 	public int hashCode()
 	{
@@ -211,7 +229,7 @@ public abstract class ExpressionQuant extends Expression
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ExpressionQuant other = (ExpressionQuant) obj;
+		ExpressionQuant<?> other = (ExpressionQuant<?>) obj;
 		if (bound == null) {
 			if (other.bound != null)
 				return false;
