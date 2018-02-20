@@ -297,9 +297,31 @@ public class StateValuesMTBDD implements StateValues
 		}
 	}
 
-	public void times(StateValuesMTBDD mult) {
+	public void times(StateValuesMTBDD mult)
+	{
 		JDD.Ref(mult.values);
 		values = JDD.Apply(JDD.TIMES, values, mult.values);
+	}
+
+	/* (non-Javadoc)
+	 * @see prism.StateValues#divide(prism.StateValues)
+	 */
+	@Override
+	public void divide(StateValues div) throws PrismException
+	{
+		if (div instanceof StateValuesMTBDD) {
+			divide((StateValuesMTBDD)div);
+		} else {
+			StateValuesMTBDD multMTBDD = div.deepCopy().convertToStateValuesMTBDD();
+			divide(multMTBDD);
+			multMTBDD.clear();
+		}
+	}
+
+	public void divide(StateValuesMTBDD div)
+	{
+		JDD.Ref(div.values);
+		values = JDD.Apply(JDD.DIVIDE, values, div.values);
 	}
 
 	@Override

@@ -104,6 +104,11 @@ public interface StateValues extends StateVector
 	 */
 	void times(StateValues mult) throws PrismException;
 
+	/**
+	 * Perform an entrywise division (Hadamard/Schur quotient).
+	 */
+	void divide(StateValues div) throws PrismException;
+
 	public void maxMTBDD(JDDNode vec2);
 
 	/** Clear the stored information. */
