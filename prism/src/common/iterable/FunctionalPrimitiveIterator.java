@@ -114,7 +114,7 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 
 		default boolean allMatch(DoublePredicate predicate)
 		{
-			return anyMatch(predicate.negate());
+			return ! anyMatch(predicate.negate());
 		}
 
 		default boolean anyMatch(DoublePredicate predicate)
@@ -350,7 +350,7 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 
 		default boolean allMatch(IntPredicate predicate)
 		{
-			return anyMatch(predicate.negate());
+			return ! anyMatch(predicate.negate());
 		}
 
 		default boolean anyMatch(IntPredicate predicate)
@@ -604,7 +604,7 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 
 		default boolean allMatch(LongPredicate predicate)
 		{
-			return anyMatch(predicate.negate());
+			return ! anyMatch(predicate.negate());
 		}
 
 		default boolean anyMatch(LongPredicate predicate)

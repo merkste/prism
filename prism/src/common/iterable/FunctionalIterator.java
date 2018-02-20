@@ -418,7 +418,7 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 	default boolean allMatch(Predicate<? super E> predicate)
 	{
-		return anyMatch(predicate.negate());
+		return ! anyMatch(predicate.negate());
 	}
 
 	default boolean anyMatch(Predicate<? super E> predicate)
