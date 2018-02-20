@@ -33,6 +33,7 @@ import java.util.List;
 import parser.ast.Coalition;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionLongRun;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
 import parser.ast.ExpressionSS;
@@ -487,6 +488,10 @@ public class ProbModelChecker extends NonProbModelChecker
 		// R operator
 		else if (expr instanceof ExpressionReward) {
 			res = checkExpressionReward(model, (ExpressionReward) expr, statesOfInterest);
+		}
+		// L operator
+		else if (expr instanceof ExpressionLongRun) {
+			res = checkExpressionLongRun(model, (ExpressionLongRun) expr, statesOfInterest);
 		}
 		// S operator
 		else if (expr instanceof ExpressionSS) {
@@ -1151,6 +1156,20 @@ public class ProbModelChecker extends NonProbModelChecker
 	{
 		// To be overridden by subclasses
 		throw new PrismException("Computation not implemented yet");
+	}
+
+	/**
+	 * Model check relativized long-run, i.e., L operator.
+	 *
+	 * @param dtmc a DTMC
+	 * @param expr a long-run expression
+	 * @param statesOfInterest states for which the expression has to be computed
+	 * @return the relativized long-run value for each state of interest
+	 * @throws PrismException
+	 */
+	public StateValues checkExpressionLongRun(Model model, ExpressionLongRun expr, BitSet statesOfInterest) throws PrismException
+	{
+		throw new PrismNotSupportedException("Explicit engine does not yet handle the L operator for " + model.getModelType() + "s");
 	}
 
 	/**

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import common.IterableBitSet;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import parser.State;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionFunc;
@@ -880,6 +881,48 @@ public class StateValues implements StateVector
 				}
 			} else if (sv.type instanceof TypeDouble) {
 				for (int i = 0; i < size; i++) {
+					valuesD[i] *= sv.valuesD[i];
+				}
+			} else {
+				throw new PrismException("Operator * cannot be applied to Boolean vectors");
+			}
+		} else {
+			throw new PrismException("Operator * cannot be applied to Boolean vectors");
+		}
+	}
+
+	/**
+	 * Modify the vector by applying 'times' with operand {@code sv}.
+	 */
+	public void times(StateValues sv, BitSet filter) throws PrismException
+	{
+		OfInt states = IterableBitSet.getSetBits(filter, size-1).iterator();
+		if (type instanceof TypeInt) {
+			if (sv.type instanceof TypeInt) {
+				while (states.hasNext()) {
+					int i = states.nextInt();
+					valuesI[i] *= sv.valuesI[i];
+				}
+			} else if (sv.type instanceof TypeDouble) {
+				valuesD = new double[size];
+				type = TypeDouble.getInstance();
+				while (states.hasNext()) {
+					int i = states.nextInt();
+					valuesD[i] = valuesI[i] * sv.valuesD[i];
+				}
+				valuesI = null;
+			} else {
+				throw new PrismException("Operator * cannot be applied to Boolean vectors");
+			}
+		} else if (type instanceof TypeDouble) {
+			if (sv.type instanceof TypeInt) {
+				while (states.hasNext()) {
+					int i = states.nextInt();
+					valuesD[i] *= sv.valuesI[i];
+				}
+			} else if (sv.type instanceof TypeDouble) {
+				while (states.hasNext()) {
+					int i = states.nextInt();
 					valuesD[i] *= sv.valuesD[i];
 				}
 			} else {
