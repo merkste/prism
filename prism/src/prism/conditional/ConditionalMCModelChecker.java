@@ -4,6 +4,7 @@ import java.util.SortedSet;
 
 import explicit.conditional.transformer.DtmcTransformerType;
 import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
 import parser.ast.Expression;
@@ -43,7 +44,14 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
 
-		ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		ModelExpressionTransformation<M, ? extends M> transformation;
+		try {
+			transformation = transformModel(transformer, model, expression, statesOfInterest);
+		} catch (UndefinedTransformationException e) {
+			// the condition is unsatisfiable for the state of interest
+			prism.getLog().println("\nTransformation failed: " + e.getMessage());
+			return createUndefinedStateValues(model, expression);
+		}
 		StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
 		StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
 		transformation.clear();

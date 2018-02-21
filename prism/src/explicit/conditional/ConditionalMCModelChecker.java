@@ -30,6 +30,7 @@ import explicit.conditional.prototype.virtual.MCNextTransformer;
 import explicit.conditional.prototype.virtual.MCUntilTransformer;
 import explicit.conditional.transformer.DtmcTransformerType;
 import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mc.MCQuotientTransformer;
 import explicit.conditional.transformer.mc.NewMcLtlTransformer;
 import explicit.conditional.transformer.mc.NewMcNextTransformer;
@@ -55,7 +56,13 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
 
-		ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		ModelExpressionTransformation<M, ? extends M> transformation;
+		try {
+			transformation = transformModel(transformer, model, expression, statesOfInterest);
+		} catch (UndefinedTransformationException e) {
+			mainLog.println("\nTransformation failed: " + e.getMessage());
+			return createUndefinedStateValues(model, expression);
+		}
 		StateValues result = checkExpressionTransformedModel(transformation);
 		return transformation.projectToOriginalModel(result);
 	}

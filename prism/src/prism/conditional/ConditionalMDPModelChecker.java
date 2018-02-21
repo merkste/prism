@@ -12,9 +12,6 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
 import parser.ast.RelOp;
-import parser.type.Type;
-import parser.type.TypeBool;
-import parser.type.TypeDouble;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
@@ -27,7 +24,6 @@ import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.StateValues;
-import prism.StateValuesMTBDD;
 import prism.conditional.prototype.MDPFinallyTransformer;
 import prism.conditional.prototype.MDPLTLTransformer;
 
@@ -76,26 +72,18 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
 
-		StateValues result;
+		ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation;
 		try {
-			ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
-			StateValues resultTransformed = checkExpressionTransformedModel(transformation);
-			result = transformation.projectToOriginalModel(resultTransformed);
-			transformation.clear();
+			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
-			Type type = expression.getObjective().getType();
-			if (type instanceof TypeBool) {
-				// P with bound -> false
-				result = new StateValuesMTBDD(JDD.Constant(0.0), model);
-			} else if (type instanceof TypeDouble) {
-				// =? -> not a number
-				result = new StateValuesMTBDD(JDD.Constant(Double.NaN), model);
-			} else {
-				throw new PrismException("Unexpected result type of conditional expression: " + type);
-			}
+			prism.getLog().println("\nTransformation failed: " + e.getMessage());
+			return createUndefinedStateValues(model, expression);
 		}
-		return result;
+		StateValues resultTransformed = checkExpressionTransformedModel(transformation);
+		StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
+		transformation.clear();
+		return resultOriginal;
 	}
 
 	protected StateValues checkExpressionMin(final NondetModel model, final ExpressionConditional expression, final JDDNode statesOfInterest)
