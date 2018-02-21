@@ -114,10 +114,27 @@ public class LTLProductTransformer<M extends Model> extends PrismComponent
 		} else {
 			throw new PrismException("Unsupported model type " + model.getClass());
 		}
+		transferLabels(product);
 		mainLog.println();
 		mainLog.print(product.getProductModel().infoStringTable());
 		return product;
 	}
+
+	public LTLProduct<M> transferLabels(LTLProduct<M> product)
+	{
+		M originalModel = product.getOriginalModel();
+		M productModel = product.getProductModel();
+		for (String label : originalModel.getLabels()) {
+			if (productModel.hasLabel(label)) {
+				// assume label has already been transfered
+				continue;
+			}
+			BitSet liftedStates = product.liftFromModel(originalModel.getLabelStates(label));
+			productModel.addLabel(label, liftedStates);
+		}
+		return product;
+	}
+
 
 	public BitSet findAcceptingStates(final LTLProduct<M> product)
 			throws PrismException
