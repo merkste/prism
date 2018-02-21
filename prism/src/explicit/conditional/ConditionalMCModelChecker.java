@@ -50,10 +50,13 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 	@Override
 	public StateValues checkExpression(M model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
 	{
-		final NewConditionalTransformer<M, C> transformer = selectModelTransformer(model, expression);
-		final ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		NewConditionalTransformer<M, C> transformer = selectModelTransformer(model, expression);
+		if (transformer == null) {
+			throw new PrismNotSupportedException("Cannot model check " + expression);
+		}
 
-		final StateValues result = checkExpressionTransformedModel(transformation);
+		ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		StateValues result = checkExpressionTransformedModel(transformation);
 		return transformation.projectToOriginalModel(result);
 	}
 
@@ -140,8 +143,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 				}
 			}
 		}
-
-		throw new PrismException("Cannot model check " + expression);
+		return null;
 	}
 
 	public StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation) throws PrismException

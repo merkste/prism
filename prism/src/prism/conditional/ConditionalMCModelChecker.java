@@ -37,13 +37,16 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 	@Override
 	public StateValues checkExpression(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		final NewConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
-		final ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
-		final StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
+		NewConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
+		if (transformer == null) {
+			JDD.Deref(statesOfInterest);
+			throw new PrismNotSupportedException("Cannot model check " + expression);
+		}
 
-		final StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
+		ModelExpressionTransformation<M, ? extends M> transformation = transformModel(transformer, model, expression, statesOfInterest);
+		StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
+		StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
 		transformation.clear();
-
 		return resultOriginal;
 	}
 
@@ -93,7 +96,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				}
 			}
 		}
-		throw new PrismException("Cannot model check " + expression);
+		return null;
 	}
 
 	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation, final ExpressionConditional expression) throws PrismException

@@ -63,26 +63,25 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMax() : "Pmax expected: " + expression;
 
+		// FIXME ALG: code dupes, e.g., in reset transformer types
 		double n = JDD.GetNumMinterms(statesOfInterest, model.getNumDDRowVars());
 		if (n != 1) {
 			JDD.Deref(statesOfInterest);
 			throw new PrismException("Currently, only a single state of interest is supported for MDP conditionals, got "+n);
 		}
 
+		NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
+		if (transformer == null) {
+			JDD.Deref(statesOfInterest);
+			throw new PrismNotSupportedException("Cannot model check " + expression);
+		}
+
 		StateValues result;
 		try {
-			final NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
-			if (transformer == null) {
-				JDD.Deref(statesOfInterest);
-				throw new PrismNotSupportedException("Cannot model check " + expression);
-			}
-			final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
-			final StateValues resultTransformed = checkExpressionTransformedModel(transformation);
-
+			ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformModel(transformer, model, expression, statesOfInterest);
+			StateValues resultTransformed = checkExpressionTransformedModel(transformation);
 			result = transformation.projectToOriginalModel(resultTransformed);
 			transformation.clear();
-
-			return result;
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
 			Type type = expression.getObjective().getType();
@@ -189,7 +188,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 				}
 			}
 		}
-
 		return null;
 	}
 

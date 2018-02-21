@@ -67,10 +67,14 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		assert oprel.getMinMax(model.getModelType()).isMax() : "Pmax expected: " + expression;
 
 		NewConditionalTransformer<MDP, MDPModelChecker> transformer = selectModelTransformer(model, expression);
+		if (transformer == null) {
+			throw new PrismNotSupportedException("Cannot model check " + expression);
+		}
+
 		StateValues result;
 		try {
-			final ModelExpressionTransformation<MDP, ? extends MDP> transformation = transformModel(transformer, model, expression, statesOfInterest);
-			final StateValues resultTransformedModel = checkExpressionTransformedModel(transformation, statesOfInterest);
+			ModelExpressionTransformation<MDP, ? extends MDP> transformation = transformModel(transformer, model, expression, statesOfInterest);
+			StateValues resultTransformedModel = checkExpressionTransformedModel(transformation, statesOfInterest);
 			result = transformation.projectToOriginalModel(resultTransformedModel);
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
@@ -238,7 +242,6 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 				}
 			}
 		}
-
-		throw new PrismNotSupportedException("Cannot model check " + expression);
+		return null;
 	}
 }
