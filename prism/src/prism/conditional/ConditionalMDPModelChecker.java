@@ -195,18 +195,17 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation) throws PrismException
 	{
-		final NondetModel transformedModel = transformation.getTransformedModel();
-		final Expression transformedExpression = transformation.getTransformedExpression();
-
+		NondetModel transformedModel        = transformation.getTransformedModel();
+		Expression transformedExpression    = transformation.getTransformedExpression();
+		JDDNode transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
-		long timer = System.currentTimeMillis();
 
+		long timer = System.currentTimeMillis();
 		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
-		
-		final StateValues resultProduct = mcTransformed.checkExpression(transformedExpression, transformation.getTransformedStatesOfInterest());
+		StateValues result         = mcTransformed.checkExpression(transformedExpression, transformedStatesOfInterest);
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
-		return resultProduct;
+		return result;
 	}
 }

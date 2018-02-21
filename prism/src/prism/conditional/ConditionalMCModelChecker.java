@@ -98,16 +98,14 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 
 	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation, final ExpressionConditional expression) throws PrismException
 	{
-		final ProbModel transformedModel = transformation.getTransformedModel();
-		final Expression transformedExpression;
-		transformedExpression = ((ModelExpressionTransformation<?,?>) transformation).getTransformedExpression();
+		ProbModel transformedModel          = transformation.getTransformedModel();
+		Expression transformedExpression    = transformation.getTransformedExpression();
+		JDDNode transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 
 		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
 		long timer = System.currentTimeMillis();
-
 		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
-
-		final StateValues result = mcTransformed.checkExpression(transformedExpression, JDD.Constant(1));
+		StateValues result         = mcTransformed.checkExpression(transformedExpression, transformedStatesOfInterest);
 		timer = System.currentTimeMillis() - timer;
 		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
