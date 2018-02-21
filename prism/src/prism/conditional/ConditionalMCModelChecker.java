@@ -14,6 +14,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
+import prism.OpRelOpBound;
 import prism.Prism;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
@@ -21,6 +22,7 @@ import prism.PrismSettings;
 import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StateValues;
+import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
 import prism.conditional.NewConditionalTransformer.MC;
@@ -149,34 +151,59 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			if (Expression.containsTemporalTimeBounds(objective.getExpression())) {
 				throw new PrismException("Cannot model check " + expression);
 			}
-			Expression transformed = transformExpression(expression);
 			prism.getLog().println();
 			prism.getLog().println("Condition contains time bounds, trying Bayes' rule.");
-			prism.getLog().println("Checking transformed expression: " + transformed);
-			return modelChecker.checkExpression(transformed, statesOfInterest);
+			return checkExpressionBayes(model, expression, statesOfInterest);
 		}
 
-		protected Expression transformExpression(ExpressionConditional expression)
-				throws PrismNotSupportedException
+		protected StateValues checkExpressionBayes(StochModel model, ExpressionConditional expression, JDDNode statesOfInterest)
+				throws PrismException
 		{
 			ExpressionProb objective = (ExpressionProb) expression.getObjective();
 			Expression condition     = expression.getCondition();
 
 			// Bayes' rule: P(A|B) = P(B|A) * P(A) / P(B)
-			String computeValues        = RelOp.COMPUTE_VALUES.toString();
-			ExpressionProb newObjective = new ExpressionProb(condition.deepCopy(), computeValues, null);
-			Expression newCondition     = objective.getExpression().deepCopy();
-			ExpressionConditional pAB   = new ExpressionConditional(newObjective, newCondition);
-			ExpressionProb pA           = new ExpressionProb(objective.getExpression().deepCopy(), computeValues, null);
-			ExpressionProb pB           = new ExpressionProb(condition.deepCopy(), computeValues, null);
-			ExpressionBinaryOp fraction = Expression.Divide(Expression.Times(pAB, pA), pB);
+			String computeValues           = RelOp.COMPUTE_VALUES.toString();
+			ExpressionProb newObjective    = new ExpressionProb(condition.deepCopy(), computeValues, null);
+			Expression newCondition        = objective.getExpression().deepCopy();
+			ExpressionConditional pAB      = new ExpressionConditional(newObjective, newCondition);
+			ExpressionProb pA              = new ExpressionProb(objective.getExpression().deepCopy(), computeValues, null);
+			ExpressionProb pB              = new ExpressionProb(condition.deepCopy(), computeValues, null);
+			ExpressionBinaryOp transformed = Expression.Divide(Expression.Times(pAB, pA), pB);
 
 			// translate bounds if necessary
-			if (objective.getBound() == null) {
-				return fraction;
+			ModelChecker mc     = modelChecker.createModelChecker(model);
+			OpRelOpBound opInfo = expression.getRelopBoundInfo(mc.getConstantValues());
+			if (!opInfo.isNumeric()) {
+				int binOp = convertToBinaryOp(objective.getRelOp());
+				transformed = new ExpressionBinaryOp(binOp, Expression.Parenth(transformed), objective.getBound().deepCopy());
 			}
-			int binOp = convertToBinaryOp(objective.getRelOp());
-			return new ExpressionBinaryOp(binOp, Expression.Parenth(fraction), objective.getBound().deepCopy());
+
+			prism.getMainLog().println("Checking transformed expression: " + transformed);
+			long timer     = System.currentTimeMillis();
+			// check numerator
+			StateValues result        = mc.checkExpression(pAB, statesOfInterest);
+			StateValuesMTBDD resultA  = mc.checkExpression(pA, statesOfInterest).convertToStateValuesMTBDD();
+			// change NaN to 0 in pAB for each pA==0
+			JDDNode filter = JDD.Not(JDD.Equals(resultA.getJDDNode().copy(), 0.0));
+			result.filter(filter, 0.0);
+			JDD.Deref(filter);
+			result.times(resultA);
+			resultA.clear();
+			// check denominator
+			StateValues resultB  = mc.checkExpression(pB, statesOfInterest);
+			result.divide(resultB);
+			resultB.clear();
+			// check bounds if necessary
+			if (!opInfo.isNumeric()) {
+				JDDNode bits = result.getBDDFromInterval(opInfo.getRelOp(), opInfo.getBound());
+				bits         = JDD.And(bits, model.getReach().copy());
+				result.clear();
+				result = new StateValuesMTBDD(bits, model);
+			}
+			timer          = System.currentTimeMillis() - timer;
+			prism.getMainLog().println("\nTime for model checking transformed expression: " + timer / 1000.0 + " seconds.");
+			return result;
 		}
 
 		protected int convertToBinaryOp(RelOp relop) throws PrismNotSupportedException
