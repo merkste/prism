@@ -636,6 +636,10 @@ public abstract class Expression extends ASTElement
 		return new ExpressionTemporal(ExpressionTemporal.P_X, null, expr);
 	}
 
+	public static ExpressionTemporal Until(Expression remain, Expression goal) {
+		return new ExpressionTemporal(ExpressionTemporal.P_U, remain, goal);
+	}
+
 	// Static testers for convenience
 
 	public static boolean isTrue(Expression expr)

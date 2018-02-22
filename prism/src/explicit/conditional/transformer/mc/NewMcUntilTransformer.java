@@ -39,7 +39,7 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 	@Override
 	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// Can handle all ExpressionQuant: P, R and S
+		// Can handle all ExpressionQuant: P, R, S and L
 		return true;
 	}
 

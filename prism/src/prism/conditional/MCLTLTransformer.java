@@ -37,7 +37,7 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 	@Override
 	public boolean canHandleObjective(Model model, ExpressionConditional expression) throws PrismLangException
 	{
-		// Can handle all ExpressionQuant: P, R and S
+		// Can handle all ExpressionQuant: P, R, S and L
 		return true;
 	}
 

@@ -1173,6 +1173,21 @@ public class ProbModelChecker extends NonProbModelChecker
 	}
 
 	/**
+	 * Model check relativized long-run, i.e., L operator, under a condition.
+	 *
+	 * @param dtmc a DTMC
+	 * @param expr a long-run expression
+	 * @param statesOfInterest states for which the expression has to be computed
+	 * @param condition path event under which the relativized long-run is considered
+	 * @return the relativized long-run value for each state of interest
+	 * @throws PrismException
+	 */
+	public StateValues checkConditionalExpressionLongRun(Model model, ExpressionLongRun expr, Expression condition, BitSet statesOfInterest) throws PrismException
+	{
+		throw new PrismNotSupportedException("Explicit engine does not yet handle the L operator for " + model.getModelType() + "s");
+	}
+
+	/**
 	 * Model check an S operator expression and return the values for all states.
 	 */
 	protected StateValues checkExpressionSteadyState(Model model, ExpressionSS expr) throws PrismException

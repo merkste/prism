@@ -41,10 +41,13 @@ import parser.ast.Declaration;
 import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionLongRun;
+import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.ModelType;
 import parser.type.TypeBool;
+import parser.ast.RelOp;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -1469,8 +1472,59 @@ public class DTMCModelChecker extends ProbModelChecker
 
 	// L operator
 
+	protected class ReachBsccComputer
+	{
+		DTMC model;
+		String bsccName                     = null;
+		String nonBsccName                  = null;
+		ExpressionProb untilBscc            = null;
+		ExpressionConditional condReachBscc = null;
+
+		public ReachBsccComputer(DTMC model, Expression condition)
+		{
+			this.model = model;
+			if (condition != null) {
+				bsccName      = model.addUniqueLabel("current_bscc", new BitSet(0));
+				nonBsccName   = model.addUniqueLabel("non_bscc_states", new BitSet(0));
+				untilBscc     = new ExpressionProb(Expression.Until(new ExpressionLabel(nonBsccName), new ExpressionLabel(bsccName)), RelOp.COMPUTE_VALUES.toString(), null);
+				condReachBscc = new ExpressionConditional(untilBscc, condition);
+			}
+		}
+
+		public ReachBsccComputer clear()
+		{
+			if (bsccName != null) {
+				model.getLabelStates(bsccName).clear();
+				model.getLabelStates(nonBsccName).clear();
+				bsccName      = null;
+				nonBsccName   = null;
+				untilBscc     = null;
+				condReachBscc = null;
+			}
+			return this;
+		}
+
+		public double[] computeUntilProbs(BitSet nonBsccStates, BitSet bsccStates, BitSet statesOfInterest) throws PrismException
+		{
+			if (bsccName == null) {
+				return DTMCModelChecker.this.computeUntilProbs(model, nonBsccStates, bsccStates).soln;
+			}
+			// switch label to current BSCC and compute conditional reach probs
+			model.addLabel(bsccName, bsccStates);
+			model.addLabel(nonBsccName, nonBsccStates);
+			return checkExpressionConditional(model, condReachBscc, statesOfInterest).getDoubleArray();
+		}
+	}
+
 	@Override
 	public StateValues checkExpressionLongRun(Model dtmc, ExpressionLongRun expr, BitSet statesOfInterest) throws PrismException
+	{
+		return checkConditionalExpressionLongRun(dtmc, expr, null, statesOfInterest);
+	}
+
+
+	@Override
+	public StateValues checkConditionalExpressionLongRun(Model dtmc, ExpressionLongRun expr, Expression condition, BitSet statesOfInterest) throws PrismException
 	{
 		BitSet states = checkExpression(dtmc, expr.getStates(), null).getBitSet();
 		assert states != null : "Booolean result expected.";
@@ -1478,10 +1532,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		StateValues values = checkExpression(dtmc, expr.getExpression(), states);
 		assert values.getType() != TypeBool.getInstance() : "Non-Boolean values expected.";
 
-		return computeLongRun((DTMC) dtmc, values, states, statesOfInterest);
+		ReachBsccComputer reachComputer = new ReachBsccComputer((DTMC) dtmc, condition);
+		return computeLongRun((DTMC) dtmc, values, states, reachComputer, statesOfInterest);
 	}
 
-	protected StateValues computeLongRun(DTMC dtmc, StateValues values, BitSet states, BitSet statesOfInterest)
+	protected StateValues computeLongRun(DTMC dtmc, StateValues values, BitSet states, ReachBsccComputer reachComputer, BitSet statesOfInterest)
 			throws PrismException
 	{
 		// Store num states, fix statesOfInterest
@@ -1532,7 +1587,7 @@ public class DTMCModelChecker extends ProbModelChecker
 			double[] reachProbs;
 			if (computeReachProbs) {
 				// if some state-of-interest is not in a BSCC:
-				reachProbs = computeUntilProbs(dtmc, nonBsccStates, bscc).soln;
+				reachProbs = reachComputer.computeUntilProbs(nonBsccStates, bscc, statesOfInterest);
 			} else {
 				// each state-of-interest is in a BSCC
 				BitSet probs = (BitSet) bscc.clone();
@@ -1563,6 +1618,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		}
 		return StateValues.createFromDoubleArray(quotient, dtmc);
 	}
+
 
 	/**
 	 * Compute (forwards) steady-state probabilities

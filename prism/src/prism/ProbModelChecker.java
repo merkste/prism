@@ -48,6 +48,7 @@ import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionFunc;
+import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionLongRun;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionReward;
@@ -55,6 +56,7 @@ import parser.ast.ExpressionSS;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import parser.ast.PropertiesFile;
+import parser.ast.RelOp;
 import parser.ast.TemporalOperatorBound;
 import parser.type.TypeBool;
 import parser.type.TypePathBool;
@@ -287,6 +289,52 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	// L operator
 
+	protected class ReachBsccComputer
+	{
+		ProbModel model;
+		String bsccName                     = null;
+		String nonBsccName                  = null;
+		ExpressionProb untilBscc            = null;
+		ExpressionConditional condReachBscc = null;
+
+		public ReachBsccComputer(ProbModel model, Expression condition)
+		{
+			this.model = model;
+			if (condition != null) {
+				bsccName      = model.addUniqueLabelDD("current_bscc", JDD.Constant(0));
+				nonBsccName   = model.addUniqueLabelDD("non_bscc_states", JDD.Constant(0));
+				untilBscc     = new ExpressionProb(Expression.Until(new ExpressionLabel(nonBsccName), new ExpressionLabel(bsccName)), RelOp.COMPUTE_VALUES.toString(), null);
+				condReachBscc = new ExpressionConditional(untilBscc, condition);
+			}
+		}
+
+		public ReachBsccComputer clear()
+		{
+			if (bsccName != null) {
+				JDD.Deref(model.getLabelDD(bsccName));
+				JDD.Deref(model.getLabelDD(nonBsccName));
+				bsccName      = null;
+				nonBsccName   = null;
+				untilBscc     = null;
+				condReachBscc = null;
+			}
+			return this;
+		}
+
+		public StateValues computeUntilProbs(JDDNode nonBsccStates, JDDNode bsccStates, JDDNode statesOfInterest) throws PrismException
+		{
+			if (bsccName == null) {
+				return ProbModelChecker.this.computeUntilProbs(trans, trans01, nonBsccStates, bsccStates);
+			}
+			// switch label to current BSCC and compute conditional reach probs
+			JDD.Deref(model.getLabelDD(bsccName));
+			JDD.Deref(model.getLabelDD(nonBsccName));
+			model.addLabelDD(bsccName, bsccStates);
+			model.addLabelDD(nonBsccName, nonBsccStates);
+			return checkExpressionConditional(condReachBscc, statesOfInterest);
+		}
+	}
+
 	/**
 	 * Model check relativized long-run, i.e., L operator.
 	 *
@@ -297,18 +345,33 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	public StateValues checkExpressionLongRun(ExpressionLongRun expr, JDDNode statesOfInterest) throws PrismException
 	{
+		return checkConditionalExpressionLongRun(expr, null, statesOfInterest);
+	}
+
+	/**
+	 * Model check relativized long-run, i.e., L operator, under a condition.
+	 *
+	 * @param expr a long-run expression
+	 * @param statesOfInterest states for which the expression has to be computed
+	 * @param condition path event under which the relativized long-run is considered
+	 * @return the relativized long-run value for each state of interest
+	 * @throws PrismException
+	 */
+	public StateValues checkConditionalExpressionLongRun(ExpressionLongRun expr, Expression condition, JDDNode statesOfInterest) throws PrismException
+	{
 		JDDNode states = checkExpression(expr.getStates(), reach.copy()).convertToStateValuesMTBDD().getJDDNode();
 		assert JDD.IsZeroOneMTBDD(states) : "Boolean result expected.";
 
 		StateValues values = checkExpression(expr.getExpression(), states.copy());
 
-		return computeLongRun(values, states, statesOfInterest);
+		ReachBsccComputer reachComputer = new ReachBsccComputer(model, condition);
+		return computeLongRun(values, states, reachComputer, statesOfInterest);
 	}
 
 	/**
 	 * <br>[ REFS: <i>result</i>, DEREFS: values, states, statesOfInterest ]
 	 */
-	protected StateValues computeLongRun(StateValues values, JDDNode states, JDDNode statesOfInterest) throws PrismException
+	protected StateValues computeLongRun(StateValues values, JDDNode states, ReachBsccComputer reachComputer, JDDNode statesOfInterest) throws PrismException
 	{
 		// 1. compute steady-state probabilities
 		SCCComputer sccComputer = prism.getSCCComputer(model);
@@ -342,7 +405,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			StateValues reachProbs;
 			if (computeReachProbs) {
 				// if some state-of-interest is not in a BSCC:
-				reachProbs = computeUntilProbs(trans, trans01, nonBsccStates, bscc);
+				reachProbs = reachComputer.computeUntilProbs(nonBsccStates, bscc, statesOfInterest.copy());
 				reachProbs.filter(statesOfInterest);
 			} else {
 				// each state-of-interest is in a BSCC
@@ -369,6 +432,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		quotient.divide(denominator);
 
 		// clear
+		reachComputer.clear();
 		denominator.clear();
 		steadyStateProbs.clear();
 		weightedValues.clear();

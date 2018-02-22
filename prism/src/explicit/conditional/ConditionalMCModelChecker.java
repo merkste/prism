@@ -6,6 +6,7 @@ import java.util.SortedSet;
 import parser.ast.Expression;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionLongRun;
 import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.OpRelOpBound;
@@ -55,6 +56,11 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 	{
 		NewConditionalTransformer<M, C> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
+			if (expression.getObjective() instanceof ExpressionLongRun) {
+				// try alternative long-run approach
+				ExpressionLongRun longrun = (ExpressionLongRun) expression.getObjective();
+				return modelChecker.checkConditionalExpressionLongRun(model, longrun, expression.getCondition(), statesOfInterest);
+			}
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
 
@@ -201,6 +207,11 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		{
 			if (! Expression.containsTemporalTimeBounds(expression.getCondition())) {
 				return super.checkExpression(model, expression, statesOfInterest);
+			}
+			if (expression.getObjective() instanceof ExpressionLongRun) {
+				// try alternative long-run approach
+				ExpressionLongRun longrun = (ExpressionLongRun) expression.getObjective();
+				return modelChecker.checkConditionalExpressionLongRun(model, longrun, expression.getCondition(), statesOfInterest);
 			}
 			if (!(expression.getObjective() instanceof ExpressionProb)) {
 				throw new PrismException("Cannot model check " + expression);

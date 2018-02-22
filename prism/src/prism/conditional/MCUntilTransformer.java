@@ -47,7 +47,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 	@Override
 	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
-		// Can handle all ExpressionQuant: P, R and S
+		// Can handle all ExpressionQuant: P, R, S and L
 		return true;
 	}
 

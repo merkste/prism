@@ -10,6 +10,7 @@ import jdd.JDDNode;
 import parser.ast.Expression;
 import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConditional;
+import parser.ast.ExpressionLongRun;
 import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.ModelChecker;
@@ -42,6 +43,12 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 	{
 		NewConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
+			if (expression.getObjective() instanceof ExpressionLongRun) {
+				// try alternative long-run approach
+				ProbModelChecker mc       = (ProbModelChecker) modelChecker.createModelChecker(model);
+				ExpressionLongRun longrun = (ExpressionLongRun) expression.getObjective();
+				return mc.checkConditionalExpressionLongRun(longrun, expression.getCondition(), statesOfInterest);
+			}
 			JDD.Deref(statesOfInterest);
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
@@ -143,6 +150,12 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		{
 			if (! Expression.containsTemporalTimeBounds(expression.getCondition())) {
 				return super.checkExpression(model, expression, statesOfInterest);
+			}
+			if (expression.getObjective() instanceof ExpressionLongRun) {
+				// try alternative long-run approach
+				StochModelChecker mc      = (StochModelChecker) modelChecker.createModelChecker(model);
+				ExpressionLongRun longrun = (ExpressionLongRun) expression.getObjective();
+				return mc.checkConditionalExpressionLongRun(longrun, expression.getCondition(), statesOfInterest);
 			}
 			if (!(expression.getObjective() instanceof ExpressionProb)) {
 				throw new PrismException("Cannot model check " + expression);
