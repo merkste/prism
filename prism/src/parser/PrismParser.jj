@@ -432,6 +432,7 @@ TOKEN :
 |	< CLOCK:			"clock" >
 |	< CONST:			"const" >
 |	< CTMC:				"ctmc" >
+|	< CLR:			"clr" >
 |	< C:				"C" >
 |	< DOUBLE:			"double" >
 |	< DTMC:				"dtmc" >
@@ -2142,8 +2143,12 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 	// filter(
 	begin = <FILTER> <LPARENTH>
 	// filter type
-	( <MIN> { op = "min"; } | <MAX> { op = "max"; }
-	| <PLUS> { op = "+"; } | <AND> { op = "&"; } | <OR> { op = "|"; }
+	( <MIN>  { op = "min"; }
+	| <MAX>  { op = "max"; }
+	| <PLUS> { op = "+"; }
+	| <AND>  { op = "&"; }
+	| <OR>   { op = "|"; }
+	| <CLR>  { op = "clr"; }
 	| op = Identifier() )
 	// operator arguments
 	(
@@ -2159,11 +2164,25 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 	// )
 	<RPARENTH>
 	{
-	   expr = new ExpressionFilter(op, expr2, filter);
-	   expr.setPosition(begin, getToken(0));
-	   expr.setOperatorArguments(operatorArguments);
+		// transform legacy filter CLR to AVG of L operator over "init"
+		if (op.equals("clr")) {
+			if (! (expr2 instanceof ExpressionQuant)) {
+				throw new ParseException("Filter clr expects " + ExpressionQuant.class.getSimpleName());
+			}
+			ExpressionQuant quant = (ExpressionQuant) expr2;
+			RelOp relop           = quant.getRelOp();
+			Expression bound      = quant.getBound();
+			quant.setRelOp(RelOp.COMPUTE_VALUES);
+			quant.setBound(null);
+			expr2                 = new ExpressionLongRun(quant, filter, relop, bound);
+			op                    = "avg";
+			filter                = new ExpressionLabel("init");
+		}
+		expr = new ExpressionFilter(op, expr2, filter);
+		expr.setPosition(begin, getToken(0));
+		expr.setOperatorArguments(operatorArguments);
 
-	   return expr;
+		return expr;
 	}
 }
 
