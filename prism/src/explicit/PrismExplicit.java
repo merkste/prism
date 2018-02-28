@@ -343,6 +343,7 @@ public class PrismExplicit extends PrismComponent
 		default:
 			throw new PrismNotSupportedException("Steady-state probabilities are not supported for " + model.getModelType());
 		}
+
 		return probs;
 	}
 

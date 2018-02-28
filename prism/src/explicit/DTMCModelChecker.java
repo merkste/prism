@@ -27,7 +27,6 @@
 package explicit;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -54,6 +53,9 @@ import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
 import prism.PrismUtils;
+import prism.SteadyStateCache;
+import prism.SteadyStateProbs;
+import prism.SteadyStateProbs.SteadyStateProbsExplicit;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
@@ -1546,26 +1548,24 @@ public class DTMCModelChecker extends ProbModelChecker
 			statesOfInterest.flip(0, numStates);
 		}
 
-		// 1. compute steady-state probabilities
-		List<BitSet> bsccs = new ArrayList<>();
-		BitSet nonBsccStates = new BitSet();
-		StateValues steadyStateProbs = StateValues.createFromDoubleArray(new double[numStates], dtmc);
-		BSCCConsumer consumer = new BSCCConsumer(this, dtmc)
-		{
-			double[] probs = steadyStateProbs.getDoubleArray();
-			int i = 0;
-
-			@Override
-			public void notifyNextBSCC(BitSet bscc) throws PrismException
-			{
-				bsccs.add(bscc);
-				mainLog.println("\nComputing steady state probabilities for BSCC " + i);
-				computeSteadyStateProbsForBSCC(dtmc, bscc, probs);
-				i++;
+		// 1. compute steady-state probabilities or fetch from cache
+		SteadyStateProbsExplicit steadyStateProbsBscc;
+		if (SteadyStateCache.getInstance().isEnabled()) {
+			SteadyStateCache cache = SteadyStateCache.getInstance();
+			if (cache.containsSteadyStateProbs(dtmc)) {
+				mainLog.println("\nTaking steady-state probabilities from cache.");
+				steadyStateProbsBscc = cache.getSteadyStateProbs(dtmc);
+			} else {
+				mainLog.println("\nComputing steady-state probabilities.");
+				steadyStateProbsBscc = SteadyStateProbs.computeCompact(this, dtmc);
+				mainLog.println("\nCaching steady-state probabilities.");
+				cache.storeSteadyStateProbs(dtmc, steadyStateProbsBscc, settings);
 			}
-		};
-		SCCComputer.createSCCComputer(this, dtmc, consumer).computeSCCs();
-		nonBsccStates.flip(0, numStates);
+		} else {
+			steadyStateProbsBscc = SteadyStateProbs.computeSimple(this, dtmc);
+		}
+		BitSet nonBsccStates = steadyStateProbsBscc.getNonBsccStates();
+		StateValues steadyStateProbs = StateValues.createFromDoubleArray(steadyStateProbsBscc.getSteadyStateProbabilities(), dtmc);
 
 		// 2. compute weighted sums for each state-of-interest
 		double[] numerator   = new double[numStates];
@@ -1575,7 +1575,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		weightedValues.times(steadyStateProbs, states);
 		// skip reach computation if each state-of-interest is in a bscc
 		boolean computeReachProbs = statesOfInterest.intersects(nonBsccStates);
-		for (BitSet bscc : bsccs) {
+		for (BitSet bscc : steadyStateProbsBscc.getBSCCs()) {
 			// compute intersection of states and current BSCC
 			BitSet statesInBscc = (BitSet) bscc.clone();
 			statesInBscc.and(states);
@@ -1618,7 +1618,6 @@ public class DTMCModelChecker extends ProbModelChecker
 		}
 		return StateValues.createFromDoubleArray(quotient, dtmc);
 	}
-
 
 	/**
 	 * Compute (forwards) steady-state probabilities

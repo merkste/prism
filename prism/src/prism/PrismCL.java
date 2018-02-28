@@ -1766,8 +1766,13 @@ public class PrismCL implements PrismModelListener
 				// reachability options (hidden options)
 				else if (sw.equals("frontier")) {
 					prism.setReachMethod(Prism.REACH_FRONTIER);
-				} else if (sw.equals("bfs")) {
+				}
+				else if (sw.equals("bfs")) {
 					prism.setReachMethod(Prism.REACH_BFS);
+				}
+				// no caching of steady state values (hidden option)
+				else if (sw.equals("cachesteadystates")) {
+					prism.setCacheSteadyStates(true);
 				}
 				// enable bisimulation minimisation before model checking (hidden option)
 				else if (sw.equals("bisim")) {

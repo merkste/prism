@@ -121,7 +121,10 @@ public class PrismSettings implements Observer
 	public static final String PRISM_NO_DA_SIMPLIFY				= "prism.noDaSimplify";
 	public static final String PRISM_EXPORT_ADV					= "prism.exportAdv";
 	public static final String PRISM_EXPORT_ADV_FILENAME			= "prism.exportAdvFilename";
-	
+
+	// STEADY-STATE AND LONG-RUN
+	public static final String PRISM_CACHE_STEADY_STATES			= "prism.cacheSteadyStates";
+
 	public static final	String PRISM_STORM_PATH						= "prism.storm.path";
 	public static final	String PRISM_STORM_OPTIONS					= "prism.storm.options";
 	public static final	String PRISM_STORM_VERBOSE					= "prism.storm.verbose";
@@ -220,6 +223,7 @@ public class PrismSettings implements Observer
 	{
 		"PRISM",
 		"Conditional",
+		"Long-Run",
 		"Simulator",
 		"Model",
 		"Properties",
@@ -229,10 +233,11 @@ public class PrismSettings implements Observer
 	{
 		PropertyConstants.PRISM,
 		PropertyConstants.CONDITIONAL,
+		PropertyConstants.LONGRUN,
 		PropertyConstants.SIMULATOR,
 		PropertyConstants.MODEL,
 		PropertyConstants.PROPERTIES,
-		PropertyConstants.LOG		
+		PropertyConstants.LOG
 	};
 	
 	
@@ -436,6 +441,11 @@ public class PrismSettings implements Observer
 																		"Use the first applicable pattern for the scale method from a list of: " + DtmcTransformerType.getSpecificationHelp()},
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_RESET,			"Set patterns for reset method",	"4.2",			"all",		"",
 																		"Use the first applicable pattern for the scale method from a list of: " + MdpTransformerType.getSpecificationHelp()},
+		},
+		{
+			// STEADY-STATE AND LONG-RUN OPTIONS:
+			{ BOOLEAN_TYPE,		PRISM_CACHE_STEADY_STATES,				"Cache steady-state probabilities",					"4.0.3",		new Boolean(true),														"",
+																			"Compute steady-state probabilities at most once, and store them for further queries." },
 		},
 		{
 			{ INTEGER_TYPE,		SIMULATOR_DEFAULT_NUM_SAMPLES,			"Default number of samples",			"4.0",		1000,			"1,",
@@ -1329,7 +1339,15 @@ public class PrismSettings implements Observer
 		else if (sw.equals("extrareachinfo")) {
 			set(PRISM_EXTRA_REACH_INFO, true);
 		}
-		
+
+		// Cache steady-states on/off
+		else if (sw.equals("cachesteadystates")) {
+			set(PRISM_CACHE_STEADY_STATES, true);
+		}
+		else if (sw.equals("nocachesteadystates")) {
+			set(PRISM_CACHE_STEADY_STATES, false);
+		}
+
 		// SPARSE/HYBRID/MTBDD OPTIONS:
 		
 		// Turn off compact option for sparse matrix storage
@@ -1906,7 +1924,6 @@ public class PrismSettings implements Observer
 		mainLog.println("-reordermaxgrowth <x> .......... Max growth parameter for CUDD reordering (double value x, default 1.2 = 120%");
 		mainLog.println("-explodebits ................... Model file transformation: Convert variables to single bits with views");
 		mainLog.println("-globalizevariables ............ Model file transformation: Make all variables global");
-		
 		mainLog.println();
 		mainLog.println("MULTI-OBJECTIVE MODEL CHECKING:");
 		mainLog.println("-linprog (or -lp) .............. Use linear programming for multi-objective model checking");
@@ -1950,6 +1967,10 @@ public class PrismSettings implements Observer
 		mainLog.println("-resetobjminimize .............. Minimize normal-form model for reset method in MDPs");
 		mainLog.println("-patternsscale ................. Set patterns for scale method: " + DtmcTransformerType.getSpecificationHelp());
 		mainLog.println("-patternsreset ................. Set patterns for reset method: " + MdpTransformerType.getSpecificationHelp());
+		mainLog.println();
+		mainLog.println("STEADY-STATE AND LONG-RUN OPTIONS:");
+		mainLog.println("-cachesteadystates ............. Compute steady-state probabilities at most once, and store them for further queries [default]");
+		mainLog.println("-nocachesteadystates ........... Compute steady-states anew everytime they are needed");
 		mainLog.println();
 		mainLog.println("FAST ADAPTIVE UNIFORMISATION (FAU) OPTIONS:");
 		mainLog.println("-fauepsilon <x> ................ Set probability threshold of birth process in FAU [default: 1e-6]");

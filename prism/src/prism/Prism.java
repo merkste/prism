@@ -303,6 +303,9 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		settings.addSettingsListener(this);
 		// create list of model listeners
 		modelListeners = new ArrayList<PrismModelListener>();
+		// add SteadyStateCache as a listener
+		settings.addSettingsListener(SteadyStateCache.getInstance());
+		SteadyStateCache.getInstance().notifySettings(settings);
 	}
 
 	/**
@@ -511,6 +514,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void setExportAdvFilename(String s) throws PrismException
 	{
 		settings.set(PrismSettings.PRISM_EXPORT_ADV_FILENAME, s);
+	}
+
+	public void setCacheSteadyStates(boolean b) throws PrismException
+	{
+		settings.set(PrismSettings.PRISM_CACHE_STEADY_STATES, b);
 	}
 
 	// Set methods for miscellaneous options
@@ -858,6 +866,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public String getExportAdvFilename()
 	{
 		return settings.getString(PrismSettings.PRISM_EXPORT_ADV_FILENAME);
+	}
+
+	public boolean getCacheSteadyStates()
+	{
+		return settings.getBoolean(PrismSettings.PRISM_CACHE_STEADY_STATES);
 	}
 
 	// Get methods for miscellaneous options
@@ -3481,6 +3494,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		default:
 			throw new PrismNotSupportedException("Steady-state probabilities are not supported for " + model.getModelType());
 		}
+
 		return probs;
 	}
 
@@ -3502,6 +3516,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		} else {
 			throw new PrismException("Steady-state probabilities only computed for DTMCs/CTMCs");
 		}
+
 		return probs;
 	}
 
@@ -3790,6 +3805,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	private void clearBuiltModel()
 	{
 		if (currentModel != null) {
+			// clear SteadyStateCache
+			SteadyStateCache.getInstance().clear();
 			currentModel.clear();
 			currentModel = null;
 		}
