@@ -119,6 +119,11 @@ public class StateValuesVoid implements StateValues
 	}
 
 	@Override
+	public void times(StateValues mult) throws PrismException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public double dotProduct(StateValues sp)
 	{
 		throw new UnsupportedOperationException();

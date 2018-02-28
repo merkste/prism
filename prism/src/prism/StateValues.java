@@ -98,6 +98,12 @@ public interface StateValues extends StateVector
 	 * Apply max operator, i.e. vec[i] = max(vec[i], vec2[i]), where vec2 is an MTBDD
 	 * <br>[ DEREFS: <i>none</i> ]
 	 */
+
+	/**
+	 * Perform an entrywise multiplication (Hadamard/Schur product).
+	 */
+	void times(StateValues mult) throws PrismException;
+
 	public void maxMTBDD(JDDNode vec2);
 
 	/** Clear the stored information. */
