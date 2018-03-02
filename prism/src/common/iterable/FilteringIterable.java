@@ -161,7 +161,7 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 
 	public static class OfDouble extends FilteringIterable<Double, IterableDouble> implements IterableDouble
 	{
-		protected DoublePredicate predicate;
+		protected final DoublePredicate predicate;
 	
 		public OfDouble(IterableDouble iterable, DoublePredicate predicate)
 		{
@@ -180,7 +180,7 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 
 	public static class OfInt extends FilteringIterable<Integer, IterableInt> implements IterableInt
 	{
-		protected IntPredicate predicate;
+		protected final IntPredicate predicate;
 
 		public OfInt(IterableInt iterable, IntPredicate predicate)
 		{
@@ -199,7 +199,7 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 
 	public static class OfLong extends FilteringIterable<Long, IterableLong> implements IterableLong
 	{
-		protected LongPredicate predicate;
+		protected final LongPredicate predicate;
 
 		public OfLong(IterableLong iterable, LongPredicate predicate)
 		{

@@ -71,22 +71,22 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		return new FilteringIterator.Of<>(iterator, set::add);
 	}
 
-	public static FunctionalPrimitiveIterator.OfDouble dedupe(final PrimitiveIterator.OfDouble iterator)
+	public static FunctionalPrimitiveIterator.OfDouble dedupe( PrimitiveIterator.OfDouble iterator)
 	{
-		final Set<Double> set = new HashSet<>();
+	Set<Double> set = new HashSet<>();
 		return new FilteringIterator.OfDouble(iterator, set::add);
 	}
 
-	public static FunctionalPrimitiveIterator.OfInt dedupe(final PrimitiveIterator.OfInt iterator)
+	public static FunctionalPrimitiveIterator.OfInt dedupe(PrimitiveIterator.OfInt iterator)
 	{
 		BitSet bits      = new BitSet();
 		IntPredicate set = (int i) -> {if (bits.get(i)) return false; else bits.set(i); return true;};
 		return new FilteringIterator.OfInt(iterator, set);
 	}
 
-	public static FunctionalPrimitiveIterator.OfLong dedupe(final PrimitiveIterator.OfLong iterator)
+	public static FunctionalPrimitiveIterator.OfLong dedupe(PrimitiveIterator.OfLong iterator)
 	{
-		final Set<Long> set = new HashSet<>();
+		Set<Long> set = new HashSet<>();
 		return new FilteringIterator.OfLong(iterator, (LongPredicate) set::add);
 	}
 
