@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.IntPredicate;
-import java.util.function.ToIntFunction;
 
 import common.StopWatch;
 import common.iterable.EmptyIterable;
@@ -96,7 +95,7 @@ public class IncomingChoiceRelationCombined extends PredecessorRelation
 				return true;
 			}
 		};
-		return FunctionalIterable.extend(pre[s]).map((ToIntFunction<Choice>) Choice::getState).filter(sortedDedupe);
+		return FunctionalIterable.extend(pre[s]).mapToInt(Choice::getState).filter(sortedDedupe);
 	}
 
 	/**

@@ -1,10 +1,8 @@
 package common.iterable;
 
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.IntBinaryOperator;
 
 import common.IteratorTools;
@@ -48,8 +46,7 @@ public abstract class ChainedIterable<E, I extends Iterable<E>> implements Funct
 		@Override
 		public FunctionalIterator<E> iterator()
 		{
-			// superfluous (Function<Interable<E>, Iterator<E>) required to circumvent strange build bug
-			return new ChainedIterator.Of<>(iterables.map((Function<Iterable<E>, Iterator<E>>)Iterable::iterator).iterator());
+			return new ChainedIterator.Of<>(iterables.map(Iterable::iterator).iterator());
 		}
 	}
 

@@ -131,17 +131,17 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return new MappingIterable.From<>(this, function);
 	}
 
-	default IterableInt map(ToIntFunction<? super E> function)
-	{
-		return new MappingIterable.ToInt<>(this, function);
-	}
-
-	default IterableDouble map(ToDoubleFunction<? super E> function)
+	default IterableDouble mapToDouble(ToDoubleFunction<? super E> function)
 	{
 		return new MappingIterable.ToDouble<>(this, function);
 	}
 
-	default IterableLong map(ToLongFunction<? super E> function)
+	default IterableInt mapToInt(ToIntFunction<? super E> function)
+	{
+		return new MappingIterable.ToInt<>(this, function);
+	}
+
+	default IterableLong mapToLong(ToLongFunction<? super E> function)
 	{
 		return new MappingIterable.ToLong<>(this, function);
 	}

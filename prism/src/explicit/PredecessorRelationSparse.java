@@ -106,7 +106,7 @@ public class PredecessorRelationSparse extends PredecessorRelation
 			if (pre[state] == null) {
 				continue;
 			}
-			offset += FunctionalIterator.extend(pre[state]).map(INT_VALUE).collectAndCount(predecessors, offset);
+			offset += FunctionalIterator.extend(pre[state]).mapToInt(INT_VALUE).collectAndCount(predecessors, offset);
 			pre[state] = null;
 		}
 		offsets[numStates] = countPredecessors;

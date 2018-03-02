@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
-import java.util.function.IntUnaryOperator;
-import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.functions.primitive.PairPredicateInt;
@@ -60,7 +58,7 @@ public class MDPEquiv extends MDPView
 				numChoices[representative] = model.getNumChoices(representative);
 			} else {
 				final IterableBitSet eqStates = new IterableBitSet(equivalenceClass);
-				numChoices[representative] = eqStates.map((IntUnaryOperator) model::getNumChoices).sum();
+				numChoices[representative] = eqStates.mapToInt((int s) -> model.getNumChoices(s)).sum();
 				StateChoicePair[] choices = originalChoices[representative] = new StateChoicePair[numChoices[representative]];
 				assert representative == equivalenceClass.nextSetBit(0);
 				int choice = model.getNumChoices(representative);
@@ -207,7 +205,7 @@ public class MDPEquiv extends MDPView
 		}
 		Iterator<Integer> successors = model.getSuccessorsIterator(originalState, originalChoice);
 		if (hasTransitionToNonRepresentative.get(originalState)) {
-			return FunctionalIterator.extend(successors).map((ToIntFunction<Integer>) identify::getRepresentative).dedupe();
+			return FunctionalIterator.extend(successors).mapToInt(identify::getRepresentative).dedupe();
 		}
 		return successors;
 	}

@@ -69,8 +69,7 @@ public class ReachabilityComputer
 		if (model.hasStoredPredecessorRelation()) {
 			OfInt states = new IterableBitSet(S).iterator();
 			PredecessorRelation predecessorRelation = model.getPredecessorRelation(null, false);
-			// superfluous (IntFunction<PrimitiveIterator.OfInt>) required to circumvent strange build bug
-			OfInt pre    = states.flatMapToInt((IntFunction<PrimitiveIterator.OfInt>) predecessorRelation::getPreIterator);
+			OfInt pre    = states.flatMapToInt((int s) -> predecessorRelation.getPreIterator(s));
 			predecessors = BitSetTools.asBitSet(pre);
 		} else {
 			predecessors = new BitSet(S.size());

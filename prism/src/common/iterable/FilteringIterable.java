@@ -9,8 +9,6 @@ import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToLongFunction;
 
 import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
@@ -43,7 +41,7 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 
 	public static IterableDouble dedupe(IterableDouble iterable)
 	{
-		return new DedupedIterable.Of<>(iterable).map((ToDoubleFunction<Double>) Double::doubleValue);
+		return new DedupedIterable.Of<>(iterable).mapToDouble(Double::doubleValue);
 	}
 
 	public static IterableInt dedupe(IterableInt iterable)
@@ -53,7 +51,7 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 
 	public static IterableLong dedupe(IterableLong iterable)
 	{
-		return new DedupedIterable.Of<>(iterable).map((ToLongFunction<Long>) Long::longValue);
+		return new DedupedIterable.Of<>(iterable).mapToLong(Long::longValue);
 	}
 
 	@SuppressWarnings("unchecked")

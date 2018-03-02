@@ -72,7 +72,7 @@ public interface NewMcNextTransformer<M extends explicit.DTMC,C extends ProbMode
 		int numStates = model.getNumStates();
 		final Interval states = new Interval(numStates);
 		double[] originProbs               = getMcModelChecker().computeNextProbs(model, negated, goal);
-		double[] targetProbs               = states.map((int s) -> goal.get(s) ? 1.0 : 0.0).collect(new double[numStates]);
+		double[] targetProbs               = states.mapToDouble((int s) -> goal.get(s) ? 1.0 : 0.0).collect(new double[numStates]);
 		BitSet support                     = BitSetTools.asBitSet(states.filter((int state) -> originProbs[state] > 0.0));
 		BitSet transformedStatesOfInterest = BitSetTools.intersect(statesOfInterest, support);
 		if (transformedStatesOfInterest.isEmpty()) {

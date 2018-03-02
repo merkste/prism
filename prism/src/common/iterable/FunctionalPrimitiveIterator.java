@@ -29,7 +29,6 @@ import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
 
-// FIXME ALG: consider removing specialized methods to make type inference easier
 public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterator<E>, PrimitiveIterator<E, E_CONS>
 {
 	default FunctionalIterator<E> boxed()
@@ -87,17 +86,17 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return new MappingIterator.FromDouble<>(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfDouble map(DoubleUnaryOperator function)
+		default PrimitiveIterator.OfDouble mapToDouble(DoubleUnaryOperator function)
 		{
 			return new MappingIterator.FromDoubleToDouble(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfInt map(DoubleToIntFunction function)
+		default PrimitiveIterator.OfInt mapToInt(DoubleToIntFunction function)
 		{
 			return new MappingIterator.FromDoubleToInt(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfLong map(DoubleToLongFunction function)
+		default PrimitiveIterator.OfLong mapToLong(DoubleToLongFunction function)
 		{
 			return new MappingIterator.FromDoubleToLong(unwrap(), function);
 		}
@@ -323,17 +322,17 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return new MappingIterator.FromInt<>(unwrap(), function);
 		}
 
-		default FunctionalPrimitiveIterator.OfDouble map(IntToDoubleFunction function)
+		default FunctionalPrimitiveIterator.OfDouble mapToDouble(IntToDoubleFunction function)
 		{
 			return new MappingIterator.FromIntToDouble(unwrap(), function);
 		}
 
-		default FunctionalPrimitiveIterator.OfInt map(IntUnaryOperator function)
+		default FunctionalPrimitiveIterator.OfInt mapToInt(IntUnaryOperator function)
 		{
 			return new MappingIterator.FromIntToInt(unwrap(), function);
 		}
 
-		default FunctionalPrimitiveIterator.OfLong map(IntToLongFunction function)
+		default FunctionalPrimitiveIterator.OfLong mapToLong(IntToLongFunction function)
 		{
 			return new MappingIterator.FromIntToLong(unwrap(), function);
 		}
@@ -577,17 +576,17 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return new MappingIterator.FromLong<>(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfDouble map(LongToDoubleFunction function)
+		default PrimitiveIterator.OfDouble mapToDouble(LongToDoubleFunction function)
 		{
 			return new MappingIterator.FromLongToDouble(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfInt map(LongToIntFunction function)
+		default PrimitiveIterator.OfInt mapToInt(LongToIntFunction function)
 		{
 			return new MappingIterator.FromLongToInt(unwrap(), function);
 		}
 
-		default PrimitiveIterator.OfLong map(LongUnaryOperator function)
+		default PrimitiveIterator.OfLong mapToLong(LongUnaryOperator function)
 		{
 			return new MappingIterator.FromLongToLong(unwrap(), function);
 		}

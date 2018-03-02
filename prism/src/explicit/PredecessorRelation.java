@@ -99,7 +99,7 @@ public class PredecessorRelation
 	 */
 	public IterableInt getPre(int s)
 	{
-		return pre[s] == null ? EmptyIterable.OfInt() : FunctionalIterable.extend(pre[s]).map(INT_VALUE);
+		return pre[s] == null ? EmptyIterable.OfInt() : FunctionalIterable.extend(pre[s]).mapToInt(INT_VALUE);
 	}
 
 	/**
@@ -107,7 +107,7 @@ public class PredecessorRelation
 	 */
 	public OfInt getPreIterator(int s)
 	{
-		return pre[s] == null ? EmptyIterator.OfInt() : FunctionalIterator.extend(pre[s]).map(INT_VALUE);
+		return pre[s] == null ? EmptyIterator.OfInt() : FunctionalIterator.extend(pre[s]).mapToInt(INT_VALUE);
 	}
 
 	/**

@@ -26,7 +26,6 @@ import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
 
-//FIXME ALG: consider removing specialized methods to make type inference easier
 public interface FunctionalPrimitiveIterable<E, E_CONS> extends FunctionalIterable<E>
 {
 	@Override
@@ -105,17 +104,17 @@ public interface FunctionalPrimitiveIterable<E, E_CONS> extends FunctionalIterab
 			return new MappingIterable.FromDouble<>(this, function);
 		}
 
-		default IterableDouble map(DoubleUnaryOperator function)
+		default IterableDouble mapToDouble(DoubleUnaryOperator function)
 		{
 			return new MappingIterable.FromDoubleToDouble(this, function);
 		}
 
-		default IterableInt map(DoubleToIntFunction function)
+		default IterableInt mapToInt(DoubleToIntFunction function)
 		{
 			return new MappingIterable.FromDoubleToInt(this, function);
 		}
 
-		default IterableLong map(DoubleToLongFunction function)
+		default IterableLong mapToLong(DoubleToLongFunction function)
 		{
 			return new MappingIterable.FromDoubleToLong(this, function);
 		}
@@ -247,17 +246,17 @@ public interface FunctionalPrimitiveIterable<E, E_CONS> extends FunctionalIterab
 			return new MappingIterable.FromInt<>(this, function);
 		}
 
-		default IterableDouble map(IntToDoubleFunction function)
+		default IterableDouble mapToDouble(IntToDoubleFunction function)
 		{
 			return new MappingIterable.FromIntToDouble(this, function);
 		}
 
-		default IterableInt map(IntUnaryOperator function)
+		default IterableInt mapToInt(IntUnaryOperator function)
 		{
 			return new MappingIterable.FromIntToInt(this, function);
 		}
 
-		default IterableLong map(IntToLongFunction function)
+		default IterableLong mapToLong(IntToLongFunction function)
 		{
 			return new MappingIterable.FromIntToLong(this, function);
 		}
@@ -399,17 +398,17 @@ public interface FunctionalPrimitiveIterable<E, E_CONS> extends FunctionalIterab
 			return new MappingIterable.FromLong<>(this, function);
 		}
 
-		default IterableDouble map(LongToDoubleFunction function)
+		default IterableDouble mapToDouble(LongToDoubleFunction function)
 		{
 			return new MappingIterable.FromLongToDouble(this, function);
 		}
 
-		default IterableInt map(LongToIntFunction function)
+		default IterableInt mapToInt(LongToIntFunction function)
 		{
 			return new MappingIterable.FromLongToInt(this, function);
 		}
 
-		default IterableLong map(LongUnaryOperator function)
+		default IterableLong mapToLong(LongUnaryOperator function)
 		{
 			return new MappingIterable.FromLongToLong(this, function);
 		}

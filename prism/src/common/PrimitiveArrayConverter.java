@@ -2,9 +2,6 @@ package common;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
 
 import common.iterable.FunctionalIterable;
 
@@ -30,7 +27,7 @@ public class PrimitiveArrayConverter
 
 	public static double[] convertToDoubleArray(final Iterable<Double> numbers, final int size)
 	{
-		return FunctionalIterable.extend(numbers).map((ToDoubleFunction<Double>) Double::doubleValue).collect(new double[size]);
+		return FunctionalIterable.extend(numbers).mapToDouble(Double::doubleValue).collect(new double[size]);
 	}
 
 	public static int[] convertToIntegerArray(final Integer[] numbers)
@@ -53,7 +50,7 @@ public class PrimitiveArrayConverter
 
 	public static int[] convertToIntegerArray(final Iterable<Integer> numbers, final int size)
 	{
-		return FunctionalIterable.extend(numbers).map((ToIntFunction<Integer>) Integer::intValue).collect(new int[size]);
+		return FunctionalIterable.extend(numbers).mapToInt(Integer::intValue).collect(new int[size]);
 	}
 
 	public static long[] convertToLongArray(final Long[] numbers)
@@ -76,7 +73,7 @@ public class PrimitiveArrayConverter
 
 	public static long[] convertToLongArray(final Iterable<Long> numbers, final int size)
 	{
-		return FunctionalIterable.extend(numbers).map((ToLongFunction<Long>) Long::longValue).collect(new long[size]);
+		return FunctionalIterable.extend(numbers).mapToLong(Long::longValue).collect(new long[size]);
 	}
 
 }

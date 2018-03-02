@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.ToDoubleFunction;
 
 import common.functions.Predicate;
 import common.iterable.FunctionalIterator;
@@ -96,7 +95,7 @@ public class McScaledTransformation
 
 		protected double exitRate(FunctionalIterator<Entry<Integer,Double>> transitions)
 		{
-			return transitions.map((ToDoubleFunction<Entry<?, Double>>) Entry::getValue).sum();
+			return transitions.mapToDouble(Entry::getValue).sum();
 		}
 	}
 

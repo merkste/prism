@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.function.IntPredicate;
-import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
 import common.iterable.FunctionalIterable;
@@ -115,8 +114,7 @@ public class MDPRestricted extends MDPView
 	public IterableInt getInitialStates()
 	{
 		FunctionalIterable<Integer> initialStates = FunctionalIterable.extend(model.getInitialStates());
-		// superfluous (ToIntFunction<Integer>) required to circumvent strange build bug
-		return initialStates.filter(states::get).map((ToIntFunction<Integer>)this::mapStateToRestrictedModel);
+		return initialStates.filter(states::get).mapToInt(this::mapStateToRestrictedModel);
 	}
 
 	@Override

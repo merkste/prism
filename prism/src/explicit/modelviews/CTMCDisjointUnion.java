@@ -85,7 +85,7 @@ public class CTMCDisjointUnion extends CTMCView
 	{
 		final FunctionalIterable<Integer> initials1 = FunctionalIterable.extend(model1.getInitialStates());
 		final FunctionalIterable<Integer> initials2 = FunctionalIterable.extend(model2.getInitialStates());
-		return initials1.chain(initials2.map(shiftStateUp));
+		return initials1.chain(initials2.mapToInt(shiftStateUp));
 	}
 
 	@Override

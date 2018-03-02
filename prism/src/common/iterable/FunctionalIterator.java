@@ -392,17 +392,17 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new MappingIterator.From<>(unwrap(), function);
 	}
 
-	default FunctionalPrimitiveIterator.OfInt map(ToIntFunction<? super E> function)
-	{
-		return new MappingIterator.ToInt<>(unwrap(), function);
-	}
-
-	default FunctionalPrimitiveIterator.OfDouble map(ToDoubleFunction<? super E> function)
+	default FunctionalPrimitiveIterator.OfDouble mapToDouble(ToDoubleFunction<? super E> function)
 	{
 		return new MappingIterator.ToDouble<>(unwrap(), function);
 	}
 
-	default FunctionalPrimitiveIterator.OfLong map(ToLongFunction<? super E> function)
+	default FunctionalPrimitiveIterator.OfInt mapToInt(ToIntFunction<? super E> function)
+	{
+		return new MappingIterator.ToInt<>(unwrap(), function);
+	}
+
+	default FunctionalPrimitiveIterator.OfLong mapToLong(ToLongFunction<? super E> function)
 	{
 		return new MappingIterator.ToLong<>(unwrap(), function);
 	}

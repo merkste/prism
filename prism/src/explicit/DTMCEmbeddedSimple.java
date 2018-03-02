@@ -28,7 +28,6 @@ package explicit;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.ToDoubleFunction;
 
 import common.iterable.FunctionalIterator;
 import common.iterable.IterableStateSet;
@@ -71,7 +70,7 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 		for (int i = 0; i < numStates; i++) {
 			final int s = i;
 			FunctionalIterator<Entry<Integer, Double>> distr = FunctionalIterator.extend(() -> ctmc.getTransitionsIterator(s));
-			exitRates[i] = distr.map((ToDoubleFunction<Entry<?,Double>>) Entry::getValue).sum();
+			exitRates[i] = distr.mapToDouble(Entry::getValue).sum();
 			if (exitRates[i] == 0)
 				numExtraTransitions++;
 		}

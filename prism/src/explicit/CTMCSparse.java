@@ -28,8 +28,6 @@ package explicit;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.IntToDoubleFunction;
-import java.util.function.ToDoubleFunction;
 
 import common.iterable.ArrayIterator;
 import common.iterable.FunctionalIterable;
@@ -98,14 +96,14 @@ public class CTMCSparse extends DTMCSparse implements CTMC
 	@Override
 	public double getMaxExitRate()
 	{
-		IterableDouble exitRates = new Interval(getNumStates()).map((IntToDoubleFunction) this::getExitRate);
+		IterableDouble exitRates = new Interval(getNumStates()).mapToDouble((int s) -> getExitRate(s));
 		return exitRates.max().orElse(Double.NEGATIVE_INFINITY);
 	}
 	
 	@Override
 	public double getMaxExitRate(BitSet subset)
 	{
-		IterableDouble exitRates = new IterableBitSet(subset).map((IntToDoubleFunction) this::getExitRate);
+		IterableDouble exitRates = new IterableBitSet(subset).mapToDouble((int s) -> getExitRate(s));
 		return exitRates.max().orElse(Double.NEGATIVE_INFINITY);
 	}
 	
@@ -153,7 +151,7 @@ public class CTMCSparse extends DTMCSparse implements CTMC
 		for (int i = 0; i < numStates; i++) {
 			final int s = i;
 			FunctionalIterable<Entry<Integer,Double>> transitions = FunctionalIterable.extend(() -> getTransitionsIterator(s));
-			double d = transitions.map((ToDoubleFunction<Entry<?,Double>>) Entry::getValue).sum();
+			double d = transitions.mapToDouble(Entry::getValue).sum();
 			if (d == 0) {
 				dtmc.setProbability(i, i, 1.0);
 			} else {
@@ -188,7 +186,7 @@ public class CTMCSparse extends DTMCSparse implements CTMC
 		for (int i = 0; i < numStates; i++) {
 			final int s = i;
 			FunctionalIterable<Entry<Integer,Double>> transitions = FunctionalIterable.extend(() -> getTransitionsIterator(s));
-			double d = transitions.map((ToDoubleFunction<Entry<?,Double>>) Entry::getValue).sum();
+			double d = transitions.mapToDouble(Entry::getValue).sum();
 			if (d == 0) {
 				dtmc.setProbability(i, i, 1.0);
 			} else {
