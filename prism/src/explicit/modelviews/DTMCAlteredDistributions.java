@@ -235,7 +235,7 @@ public class DTMCAlteredDistributions extends DTMCView
 				}
 				final FunctionalIterable<Iterator<Entry<Integer, Double>>> transitionIterators =
 						new IterableBitSet(equivalenceClass).map((int s) -> model.getTransitionsIterator(s));
-				return new ChainedIterator.Of<>(transitionIterators.iterator()).dedupe();
+				return new ChainedIterator.Of<>(transitionIterators.iterator()).distinct();
 			}
 		};
 		final DTMC reattached = new DTMCAlteredDistributions(model, reattach);

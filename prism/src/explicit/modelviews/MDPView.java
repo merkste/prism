@@ -205,7 +205,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 			successorIterators[choice] = getSuccessorsIterator(state, choice);
 		}
 
-		return new ChainedIterator.Of<>(successorIterators).dedupe();
+		return new ChainedIterator.Of<>(successorIterators).distinct();
 	}
 
 

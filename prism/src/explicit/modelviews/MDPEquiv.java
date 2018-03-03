@@ -205,7 +205,7 @@ public class MDPEquiv extends MDPView
 		}
 		Iterator<Integer> successors = model.getSuccessorsIterator(originalState, originalChoice);
 		if (hasTransitionToNonRepresentative.get(originalState)) {
-			return FunctionalIterator.extend(successors).mapToInt(identify::getRepresentative).dedupe();
+			return FunctionalIterator.extend(successors).mapToInt(identify::getRepresentative).distinct();
 		}
 		return successors;
 	}

@@ -150,9 +150,9 @@ public class CTMCEquiv extends CTMCView
 			if (! hasTransitionToNonRepresentative.get(state)) {
 				return successors;
 			}
-			return FunctionalIterator.extend(successors).map((Function<Integer,Integer>) s-> identify.getRepresentative(s)).dedupe();
+			return FunctionalIterator.extend(successors).map((Function<Integer,Integer>) s-> identify.getRepresentative(s)).distinct();
 		}
-		return new IterableBitSet(eqClass).iterator().flatMap((int s) -> mapSuccessorsToRepresentative(s)).dedupe();
+		return new IterableBitSet(eqClass).iterator().flatMap((int s) -> mapSuccessorsToRepresentative(s)).distinct();
 	}
 
 

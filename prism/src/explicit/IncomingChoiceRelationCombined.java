@@ -83,19 +83,7 @@ public class IncomingChoiceRelationCombined extends PredecessorRelation
 			return EmptyIterable.OfInt();
 		}
 
-		IntPredicate sortedDedupe = new IntPredicate() {
-			int last = -1;
-
-			@Override
-			public boolean test(int s) {
-				if (s == last) {
-					return false;
-				}
-				last = s;
-				return true;
-			}
-		};
-		return FunctionalIterable.extend(pre[s]).mapToInt(Choice::getState).filter(sortedDedupe);
+		return FunctionalIterable.extend(pre[s]).mapToInt(Choice::getState).dedupe();
 	}
 
 	/**
