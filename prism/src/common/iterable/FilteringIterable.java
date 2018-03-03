@@ -9,6 +9,7 @@ import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
+import common.IterableBitSet;
 import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableLong;

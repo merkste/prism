@@ -12,12 +12,12 @@ import java.util.function.IntPredicate;
 import java.util.function.ToIntFunction;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.functions.Mapping;
 import common.functions.Predicate;
 import common.functions.primitive.MappingInt;
 import common.functions.primitive.PredicateInt;
 import common.iterable.FunctionalIterator;
-import common.iterable.IterableBitSet;
 import common.iterable.Support;
 import prism.PrismComponent;
 import prism.PrismException;

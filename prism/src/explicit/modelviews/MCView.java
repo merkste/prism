@@ -11,8 +11,8 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 import java.util.function.IntFunction;
 
+import common.IterableStateSet;
 import common.iterable.FunctionalIterator;
-import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import explicit.DTMC;
 import explicit.DTMCExplicit;

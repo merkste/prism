@@ -36,7 +36,7 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 
-import common.iterable.IterableStateSet;
+import common.IterableStateSet;
 import common.iterable.MappingIterator;
 import explicit.rewards.MCRewards;
 import prism.ModelType;

@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import common.iterable.IterableStateSet;
+import common.IterableStateSet;
 import prism.PrismException;
 import prism.PrismUtils;
 import explicit.rewards.MCRewards;

@@ -30,7 +30,7 @@ package explicit;
 
 import java.util.BitSet;
 
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import prism.PrismComponent;
 import prism.PrismException;
 

@@ -6,8 +6,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.IterableBitSet;
 import common.iterable.FunctionalPrimitiveIterator;
-import common.iterable.IterableBitSet;
 
 /**
  * Wrapper to connect the Set-interface to instances of the class BitSet.

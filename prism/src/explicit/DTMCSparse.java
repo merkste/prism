@@ -10,10 +10,10 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 
+import common.IterableStateSet;
 import common.iterable.ArrayIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.Interval;
-import common.iterable.IterableStateSet;
 import explicit.rewards.MCRewards;
 import prism.Pair;
 import prism.PrismException;

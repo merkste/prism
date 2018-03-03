@@ -5,8 +5,8 @@ import java.util.PrimitiveIterator.OfInt;
 
 import acceptance.AcceptanceType;
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 import explicit.BasicModelTransformation;
 import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;

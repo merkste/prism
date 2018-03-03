@@ -34,9 +34,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.PrimitiveIterator.OfInt;
+
+import common.IterableStateSet;
+
 import java.util.TreeMap;
 
-import common.iterable.IterableStateSet;
 import prism.ModelType;
 import prism.PrismComponent;
 import prism.PrismException;

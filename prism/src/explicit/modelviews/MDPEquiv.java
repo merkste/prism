@@ -9,11 +9,11 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.FunctionalIterator;
 import common.iterable.Interval;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 import common.iterable.collections.UnionSet;
 import explicit.BasicModelTransformation;
 import explicit.Distribution;

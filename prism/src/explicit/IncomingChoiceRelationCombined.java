@@ -8,11 +8,11 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.IntPredicate;
 
+import common.IterableBitSet;
 import common.StopWatch;
 import common.iterable.EmptyIterable;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.IterableBitSet;
 import explicit.IncomingChoiceRelation.Choice;
 import prism.PrismComponent;
 

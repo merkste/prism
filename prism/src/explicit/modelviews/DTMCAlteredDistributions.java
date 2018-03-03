@@ -12,11 +12,11 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.iterable.ChainedIterator;
 import common.iterable.EmptyIterator;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalIterator;
-import common.iterable.IterableBitSet;
 import common.iterable.MappingIterator;
 import common.iterable.collections.UnionSet;
 import parser.State;

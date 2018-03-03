@@ -35,8 +35,8 @@ import java.util.PrimitiveIterator;
 import java.util.function.IntFunction;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
-import common.iterable.IterableBitSet;
 
 
 /**

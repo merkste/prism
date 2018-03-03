@@ -10,11 +10,11 @@ import java.util.Set;
 import java.util.function.Function;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalIterator;
 import common.iterable.Interval;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 import common.iterable.collections.UnionSet;
 import explicit.BasicModelTransformation;
 import explicit.DTMC;

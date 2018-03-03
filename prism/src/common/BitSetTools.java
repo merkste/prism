@@ -6,7 +6,6 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 
 public class BitSetTools
 {

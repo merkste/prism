@@ -34,8 +34,8 @@ import java.util.Stack;
 import java.util.Vector;
 
 import prism.PrismLog;
-import common.iterable.IterableBitSet;
-import common.iterable.IterableStateSet;
+import common.IterableBitSet;
+import common.IterableStateSet;
 import jltl2ba.APElement;
 import jltl2ba.APSet;
 import jltl2dstar.NBA;

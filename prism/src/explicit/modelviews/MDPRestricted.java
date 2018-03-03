@@ -11,10 +11,10 @@ import java.util.Map.Entry;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
+import common.IterableBitSet;
+import common.IterableStateSet;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.IterableBitSet;
-import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import common.iterable.collections.UnionSet;
 import explicit.BasicModelTransformation;

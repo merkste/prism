@@ -3,7 +3,7 @@ package explicit.conditional.prototype.tacas14;
 import java.util.BitSet;
 
 import common.BitSetTools;
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import explicit.MDPModelChecker;
 import explicit.MDPSimple;
 import explicit.Model;

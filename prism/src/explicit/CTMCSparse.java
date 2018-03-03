@@ -29,11 +29,11 @@ package explicit;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import common.IterableBitSet;
 import common.iterable.ArrayIterator;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.Interval;
-import common.iterable.IterableBitSet;
 
 import java.util.BitSet;
 

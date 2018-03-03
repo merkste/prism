@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.PrimitiveIterator.OfInt;
 
 import common.BitSetTools;
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.PredecessorRelation;

@@ -25,7 +25,7 @@
 //	
 //==============================================================================
 
-package common.iterable;
+package common;
 
 import java.util.BitSet;
 import java.util.Collection;
@@ -36,9 +36,11 @@ import java.util.function.BiFunction;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 
-import common.IteratorTools;
 import common.functions.ObjIntFunction;
+import common.iterable.FunctionalPrimitiveIterable;
+import common.iterable.FunctionalPrimitiveIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 
 /**
  * Convenience class to loop easily over the set/clear bits of a BitSet.

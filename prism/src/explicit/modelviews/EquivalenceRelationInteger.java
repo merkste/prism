@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.functions.primitive.PairPredicateInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.IterableBitSet;
 
 public class EquivalenceRelationInteger implements PairPredicateInt
 {

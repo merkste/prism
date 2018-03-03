@@ -35,7 +35,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.Map.Entry;
 
-import common.iterable.IterableStateSet;
+import common.IterableStateSet;
 import parser.State;
 import prism.PrismException;
 

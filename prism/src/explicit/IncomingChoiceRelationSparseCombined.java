@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 
+import common.IterableBitSet;
 import common.StopWatch;
 import common.functions.ObjIntFunction;
 import common.iterable.ArrayIterator;
@@ -20,7 +21,6 @@ import common.iterable.IntIntConsumer;
 import common.iterable.IntTriOperator;
 import common.iterable.Interval;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 import common.iterable.ObjIntIntFunction;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;

@@ -28,9 +28,11 @@ package explicit;
 
 import java.util.*;
 import java.util.Map.Entry;
+
+import common.IterableStateSet;
+
 import java.io.*;
 
-import common.iterable.IterableStateSet;
 import explicit.rewards.*;
 import prism.PrismException;
 

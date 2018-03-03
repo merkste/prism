@@ -13,7 +13,7 @@ import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceStreett.StreettPair;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import explicit.LTLModelChecker;
 import explicit.LTLModelChecker.LTLProduct;
 import explicit.MDPModelChecker;

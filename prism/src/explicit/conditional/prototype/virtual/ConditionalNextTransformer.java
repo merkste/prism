@@ -10,11 +10,11 @@ import java.util.Map.Entry;
 import java.util.function.IntPredicate;
 
 import common.BitSetTools;
+import common.IterableBitSet;
 import common.functions.Mapping;
 import common.functions.primitive.MappingInt;
 import common.functions.primitive.PredicateInt;
 import common.iterable.FunctionalIterator;
-import common.iterable.IterableBitSet;
 import common.iterable.Support;
 import prism.PrismComponent;
 import prism.PrismException;

@@ -65,7 +65,7 @@ import acceptance.AcceptanceType;
 import automata.DA;
 import automata.LTL2DA;
 import common.BitSetTools;
-import common.iterable.IterableStateSet;
+import common.IterableStateSet;
 
 /**
  * LTL model checking functionality

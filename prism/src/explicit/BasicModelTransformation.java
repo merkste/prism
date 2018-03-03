@@ -3,7 +3,7 @@ package explicit;
 import java.util.BitSet;
 import java.util.function.IntFunction;
 
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;

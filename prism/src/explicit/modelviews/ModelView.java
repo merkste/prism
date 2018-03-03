@@ -11,10 +11,10 @@ import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.function.IntConsumer;
 
+import common.IterableBitSet;
+import common.IterableStateSet;
 import common.iterable.FilteringIterable;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.IterableBitSet;
-import common.iterable.IterableStateSet;
 import explicit.Model;
 import explicit.PredecessorRelation;
 import explicit.PredecessorRelationSparse;

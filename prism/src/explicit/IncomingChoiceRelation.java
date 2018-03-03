@@ -33,8 +33,8 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 
+import common.IterableBitSet;
 import common.StopWatch;
-import common.iterable.IterableBitSet;
 import prism.PrismComponent;
 
 /**

@@ -31,7 +31,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import parser.ast.Expression;
 import prism.PrismComponent;
 import prism.PrismException;

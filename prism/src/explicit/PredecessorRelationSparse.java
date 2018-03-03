@@ -33,13 +33,13 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.ToIntFunction;
 
+import common.IterableBitSet;
 import common.StopWatch;
 import common.iterable.ArrayIterator;
 import common.iterable.FunctionalIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import common.iterable.IterableArray;
-import common.iterable.IterableBitSet;
 import prism.PrismComponent;
 
 /**

@@ -25,11 +25,17 @@
 //	
 //==============================================================================
 
-package common.iterable;
+package common;
 
 import java.util.BitSet;
 import java.util.function.IntPredicate;
 
+import common.iterable.EmptyIterable;
+import common.iterable.FilteringIterable;
+import common.iterable.FunctionalPrimitiveIterable;
+import common.iterable.FunctionalPrimitiveIterator;
+import common.iterable.Interval;
+import common.iterable.FilteringIterable.OfInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 
 /**

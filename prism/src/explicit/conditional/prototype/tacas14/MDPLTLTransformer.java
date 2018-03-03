@@ -6,7 +6,7 @@ import acceptance.AcceptanceStreett;
 import acceptance.AcceptanceType;
 import acceptance.AcceptanceStreett.StreettPair;
 import common.BitSetTools;
-import common.iterable.IterableBitSet;
+import common.IterableBitSet;
 import parser.State;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;

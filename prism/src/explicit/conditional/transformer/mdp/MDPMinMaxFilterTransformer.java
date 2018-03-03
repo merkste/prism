@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import common.BitSetTools;
+import common.IterableStateSet;
 import common.functions.primitive.MappingInt;
-import common.iterable.IterableStateSet;
 import common.iterable.collections.MappingList;
 import explicit.DiracDistribution;
 import explicit.MDP;

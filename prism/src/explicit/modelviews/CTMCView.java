@@ -7,11 +7,11 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 import java.util.function.IntFunction;
 
+import common.IterableBitSet;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.Interval;
-import common.iterable.IterableBitSet;
 import explicit.CTMC;
 import explicit.DTMC;
 import explicit.DTMCEmbeddedSimple;

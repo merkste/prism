@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import common.iterable.IterableBitSet;
-import common.iterable.IterableStateSet;
+import common.IterableBitSet;
+import common.IterableStateSet;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import prism.PrismComponent;
 import prism.PrismException;

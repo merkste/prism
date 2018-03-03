@@ -11,9 +11,9 @@ import java.util.Map.Entry;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.TreeMap;
 
+import common.IterableStateSet;
 import common.iterable.ChainedIterator;
 import common.iterable.FunctionalIterator;
-import common.iterable.IterableStateSet;
 import common.iterable.MappingIterator;
 import prism.ModelType;
 import prism.PrismComponent;

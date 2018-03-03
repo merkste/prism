@@ -38,9 +38,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import common.IterableStateSet;
+
 import java.util.TreeMap;
 
-import common.iterable.IterableStateSet;
 import parser.State;
 import prism.PrismException;
 import prism.PrismUtils;
