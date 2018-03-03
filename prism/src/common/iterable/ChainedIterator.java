@@ -40,6 +40,10 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
+
 /**
  * A helper class implementing an Iterator that chains a sequence of iterators.
  * Returns all the elements of the first iterator, then the elements of the

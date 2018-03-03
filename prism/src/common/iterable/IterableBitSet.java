@@ -37,6 +37,7 @@ import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 
 import common.IteratorTools;
+import common.functions.ObjIntFunction;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 
 /**

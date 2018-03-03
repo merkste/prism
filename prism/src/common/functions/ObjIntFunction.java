@@ -1,4 +1,4 @@
-package common.iterable;
+package common.functions;
 
 import java.util.Objects;
 import java.util.function.Function;

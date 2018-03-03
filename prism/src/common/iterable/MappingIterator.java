@@ -32,6 +32,10 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
+
 // FIXME ALG: check whether inheritance could be improved
 public abstract class MappingIterator<S, E, I extends Iterator<S>> implements FunctionalIterator<E>
 {

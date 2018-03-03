@@ -24,6 +24,10 @@ import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
+
 public abstract class FilteringIterator<E, I extends Iterator<E>> implements FunctionalIterator<E>
 {
 	protected I iterator;

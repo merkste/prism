@@ -21,6 +21,10 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
+
 public interface FunctionalIterator<E> extends Iterator<E>
 {
 	public abstract class FunctionalWrapper<E, I extends Iterator<E>> implements FunctionalIterator<E>
