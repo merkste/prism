@@ -357,6 +357,11 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return FilteringIterator.dedupe(unwrap());
 	}
 
+	default FunctionalIterator<E> dedupeCons()
+	{
+		return FilteringIterator.dedupeCons(unwrap());
+	}
+
 	default FunctionalIterator<E> filter(Predicate<? super E> function)
 	{
 		return new FilteringIterator.Of<>(unwrap(), function);
@@ -380,11 +385,6 @@ public interface FunctionalIterator<E> extends Iterator<E>
 	default <T> FunctionalPrimitiveIterator.OfLong flatMapToLong(Function<? super E, PrimitiveIterator.OfLong> function)
 	{
 		return new ChainedIterator.OfLong(map(function));
-	}
-
-	default FunctionalIterator<E> isNull()
-	{
-		return extend(FilteringIterator.isNull(unwrap()));
 	}
 
 	default <T> FunctionalIterator<T> map(Function<? super E, ? extends T> function)

@@ -15,7 +15,7 @@ import java.util.function.IntConsumer;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongConsumer;
 
-public abstract class ArrayIterator<T> implements FunctionalIterator<T>
+public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 {
 	protected final int toIndex;
 	protected int nextIndex;

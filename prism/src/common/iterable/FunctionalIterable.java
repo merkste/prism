@@ -121,11 +121,6 @@ public interface FunctionalIterable<E> extends Iterable<E>
 		return new ChainedIterable.OfLong(map(function));
 	}
 
-	default Iterable<E> isNull()
-	{
-		return FilteringIterable.isNull(this);
-	}
-
 	default <T> FunctionalIterable<T> map(Function<? super E, ? extends T> function)
 	{
 		return new MappingIterable.From<>(this, function);

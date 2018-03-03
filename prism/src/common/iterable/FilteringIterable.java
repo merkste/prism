@@ -3,7 +3,6 @@ package common.iterable;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -24,18 +23,8 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 		this.iterable = iterable;
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <T> FunctionalIterable<T> dedupe(Iterable<T> iterable)
 	{
-		if (iterable instanceof IterableDouble) {
-			return (FunctionalIterable<T>) dedupe((IterableDouble) iterable);
-		}
-		if (iterable instanceof IterableInt) {
-			return (FunctionalIterable<T>) dedupe((IterableInt) iterable);
-		}
-		if (iterable instanceof IterableLong) {
-			return (FunctionalIterable<T>) dedupe((IterableLong) iterable);
-		}
 		return new DedupedIterable.Of<>(iterable);
 	}
 
@@ -54,17 +43,52 @@ public abstract class FilteringIterable<E, I extends Iterable<E>> implements Fun
 		return new DedupedIterable.Of<>(iterable).mapToLong(Long::longValue);
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> Iterable<T> isNull(Iterable<T> iterable)
+	public static <T> FunctionalIterable<T> dedupeCons(Iterable<T> iterable)
 	{
-		if (iterable instanceof PrimitiveIterator.OfDouble) {
-			return (Iterable<T>) EmptyIterable.OfDouble();
-		} else if (iterable instanceof PrimitiveIterator.OfInt) {
-			return (Iterable<T>) EmptyIterable.OfInt();
-		} else if (iterable instanceof PrimitiveIterator.OfLong) {
-			return(Iterable<T>) EmptyIterable.OfLong();
-		}
-		return new FilteringIterable.Of<>(iterable, Objects::isNull);
+		return new FunctionalIterable<T>()
+		{
+			@Override
+			public FunctionalIterator<T> iterator()
+			{
+				return FilteringIterator.dedupeCons(iterable.iterator());
+			}
+		};
+	}
+
+	public static IterableDouble dedupeCons(IterableDouble iterable)
+	{
+		return new IterableDouble()
+		{
+			@Override
+			public FunctionalPrimitiveIterator.OfDouble iterator()
+			{
+				return FilteringIterator.dedupeCons(iterable.iterator());
+			}
+		};
+	}
+
+	public static IterableInt dedupeCons(IterableInt iterable)
+	{
+		return new IterableInt()
+		{
+			@Override
+			public FunctionalPrimitiveIterator.OfInt iterator()
+			{
+				return FilteringIterator.dedupeCons(iterable.iterator());
+			}
+		};
+	}
+
+	public static IterableLong dedupeCons(IterableLong iterable)
+	{
+		return new IterableLong()
+		{
+			@Override
+			public FunctionalPrimitiveIterator.OfLong iterator()
+			{
+				return FilteringIterator.dedupeCons(iterable.iterator());
+			}
+		};
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })

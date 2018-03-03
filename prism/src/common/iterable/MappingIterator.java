@@ -159,11 +159,11 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 	}
 
-	public static class ToDouble<S> extends MappingIterator<S, Double, Iterator<S>> implements FunctionalPrimitiveIterator.OfDouble
+	public static class ToDouble<E> extends MappingIterator<E, Double, Iterator<E>> implements FunctionalPrimitiveIterator.OfDouble
 	{
-		protected ToDoubleFunction<? super S> function;
+		protected ToDoubleFunction<? super E> function;
 
-		public ToDouble(Iterator<S> iterator, ToDoubleFunction<? super S> function)
+		public ToDouble(Iterator<E> iterator, ToDoubleFunction<? super E> function)
 		{
 			super(iterator);
 			this.function = function;
@@ -245,11 +245,11 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
-	public static class ToInt<S> extends MappingIterator<S, Integer, Iterator<S>> implements FunctionalPrimitiveIterator.OfInt
+	public static class ToInt<E> extends MappingIterator<E, Integer, Iterator<E>> implements FunctionalPrimitiveIterator.OfInt
 	{
-		protected ToIntFunction<? super S> function;
+		protected ToIntFunction<? super E> function;
 
-		public ToInt(Iterator<S> iterator, ToIntFunction<? super S> function)
+		public ToInt(Iterator<E> iterator, ToIntFunction<? super E> function)
 		{
 			super(iterator);
 			this.function = function;
@@ -331,11 +331,11 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
-	public static class ToLong<S> extends MappingIterator<S, Long, Iterator<S>> implements FunctionalPrimitiveIterator.OfLong
+	public static class ToLong<E> extends MappingIterator<E, Long, Iterator<E>> implements FunctionalPrimitiveIterator.OfLong
 	{
-		protected ToLongFunction<? super S> function;
+		protected ToLongFunction<? super E> function;
 
-		public ToLong(Iterator<S> iterator, ToLongFunction<? super S> function)
+		public ToLong(Iterator<E> iterator, ToLongFunction<? super E> function)
 		{
 			super(iterator);
 			this.function = function;

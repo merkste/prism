@@ -55,25 +55,15 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> FunctionalIterator<T> dedupe(Iterator<T> iterator)
+	public static <E> FunctionalIterator<E> dedupe(Iterator<E> iterator)
 	{
-		if (iterator instanceof PrimitiveIterator.OfDouble) {
-			return (FunctionalIterator<T>) dedupe((PrimitiveIterator.OfDouble) iterator);
-		}
-		if (iterator instanceof PrimitiveIterator.OfInt) {
-			return (FunctionalIterator<T>) dedupe((PrimitiveIterator.OfInt) iterator);
-		}
-		if (iterator instanceof PrimitiveIterator.OfLong) {
-			return (FunctionalIterator<T>) dedupe((PrimitiveIterator.OfLong) iterator);
-		}
-		Set<T> set = new HashSet<>();
+		Set<E> set = new HashSet<>();
 		return new FilteringIterator.Of<>(iterator, set::add);
 	}
 
-	public static FunctionalPrimitiveIterator.OfDouble dedupe( PrimitiveIterator.OfDouble iterator)
+	public static FunctionalPrimitiveIterator.OfDouble dedupe(PrimitiveIterator.OfDouble iterator)
 	{
-	Set<Double> set = new HashSet<>();
+		Set<Double> set = new HashSet<>();
 		return new FilteringIterator.OfDouble(iterator, set::add);
 	}
 
@@ -90,20 +80,78 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		return new FilteringIterator.OfLong(iterator, (LongPredicate) set::add);
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <T> Iterator<T> isNull(Iterator<T> iterator)
+	public static <E> FunctionalIterator<E> dedupeCons(Iterator<E> iterator)
 	{
-		if (iterator instanceof PrimitiveIterator.OfDouble) {
-			return (Iterator<T>) EmptyIterator.OfDouble();
-		} else if (iterator instanceof PrimitiveIterator.OfInt) {
-			return (Iterator<T>) EmptyIterator.OfInt();
-		} else if (iterator instanceof PrimitiveIterator.OfLong) {
-			return(Iterator<T>) EmptyIterator.OfLong();
-		}
-		return new FilteringIterator.Of<>(iterator, Objects::isNull);
+		Predicate<E> test = new Predicate<E>()
+		{
+			Object previous = new Object();
+
+			@Override
+			public boolean test(E o)
+			{
+				boolean seen = Objects.equals(previous, o);
+				previous = o;
+				return seen;
+			}
+		};
+		return new FilteringIterator.Of<>(iterator, test);
 	}
 
-	public static <T> Iterator<T> nonNull(Iterator<T> iterator)
+	public static FunctionalPrimitiveIterator.OfDouble dedupeCons(PrimitiveIterator.OfDouble iterator)
+	{
+		DoublePredicate test = new DoublePredicate()
+		{
+			boolean isFirst = true;
+			double previous = 0;
+
+			@Override
+			public boolean test(double d)
+			{
+				boolean seen = !isFirst && previous == d;
+				previous = d;
+				return seen;
+			}
+		};
+		return new FilteringIterator.OfDouble(iterator, test);
+	}
+
+	public static FunctionalPrimitiveIterator.OfInt dedupeCons(PrimitiveIterator.OfInt iterator)
+	{
+		IntPredicate test = new IntPredicate()
+		{
+			boolean isFirst = true;
+			int previous    = 0;
+
+			@Override
+			public boolean test(int d)
+			{
+				boolean seen = !isFirst && previous == d;
+				previous = d;
+				return seen;
+			}
+		};
+		return new FilteringIterator.OfInt(iterator, test);
+	}
+
+	public static FunctionalPrimitiveIterator.OfLong dedupeCons(PrimitiveIterator.OfLong iterator)
+	{
+		LongPredicate test = new LongPredicate()
+		{
+			boolean isFirst = true;
+			long previous   = 0;
+
+			@Override
+			public boolean test(long d)
+			{
+				boolean seen = !isFirst && previous == d;
+				previous = d;
+				return seen;
+			}
+		};
+		return new FilteringIterator.OfLong(iterator, test);
+	}
+
+	public static <E> Iterator<E> nonNull(Iterator<E> iterator)
 	{
 		if (iterator instanceof PrimitiveIterator) {
 			return iterator;

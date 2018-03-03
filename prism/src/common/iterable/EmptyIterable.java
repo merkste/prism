@@ -4,7 +4,7 @@ import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableLong;
 
-public abstract class EmptyIterable<T> implements FunctionalIterable<T>
+public abstract class EmptyIterable<E> implements FunctionalIterable<E>
 {
 	private static final Of<?>    OF        = new Of<>();
 	private static final OfDouble OF_DOUBLE = new OfDouble();
@@ -12,8 +12,8 @@ public abstract class EmptyIterable<T> implements FunctionalIterable<T>
 	private static final OfLong   OF_LONG   = new OfLong();
 
 	@SuppressWarnings("unchecked")
-	public static <T> Of<T> Of() {
-		return (Of<T>) OF;
+	public static <E> Of<E> Of() {
+		return (Of<E>) OF;
 	}
 
 	public static OfDouble OfDouble() {
@@ -28,12 +28,12 @@ public abstract class EmptyIterable<T> implements FunctionalIterable<T>
 		return OF_LONG;
 	}
 
-	public static class Of<T> extends EmptyIterable<T>
+	public static class Of<E> extends EmptyIterable<E>
 	{
 		private Of() {};
 
 		@Override
-		public EmptyIterator.Of<T> iterator()
+		public EmptyIterator.Of<E> iterator()
 		{
 			return EmptyIterator.Of();
 		}

@@ -56,6 +56,12 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return FilteringIterator.dedupe(unwrap());
 		}
 
+		@Override
+		default FunctionalPrimitiveIterator.OfDouble dedupeCons()
+		{
+			return FilteringIterator.dedupeCons(unwrap());
+		}
+
 		default FunctionalPrimitiveIterator.OfDouble filter(DoublePredicate predicate)
 		{
 			return new FilteringIterator.OfDouble(unwrap(), predicate);
@@ -290,6 +296,12 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		default FunctionalPrimitiveIterator.OfInt dedupe()
 		{
 			return FilteringIterator.dedupe(unwrap());
+		}
+
+		@Override
+		default FunctionalPrimitiveIterator.OfInt dedupeCons()
+		{
+			return FilteringIterator.dedupeCons(unwrap());
 		}
 
 		default FunctionalPrimitiveIterator.OfInt filter(IntPredicate predicate)
@@ -544,6 +556,12 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		default FunctionalPrimitiveIterator.OfLong dedupe()
 		{
 			return FilteringIterator.dedupe(unwrap());
+		}
+
+		@Override
+		default FunctionalPrimitiveIterator.OfLong dedupeCons()
+		{
+			return FilteringIterator.dedupeCons(unwrap());
 		}
 
 		default FunctionalPrimitiveIterator.OfLong filter(LongPredicate predicate)

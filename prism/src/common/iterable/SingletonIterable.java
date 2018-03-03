@@ -4,19 +4,19 @@ import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableLong;
 
-public abstract class SingletonIterable<T> implements FunctionalIterable<T>
+public abstract class SingletonIterable<E> implements FunctionalIterable<E>
 {
-	public static class Of<T> extends SingletonIterable<T>
+	public static class Of<E> extends SingletonIterable<E>
 	{
-		final T element;
+		final E element;
 
-		public Of(T theElement)
+		public Of(E theElement)
 		{
 			element = theElement;
 		}
 
 		@Override
-		public FunctionalIterator<T> iterator()
+		public FunctionalIterator<E> iterator()
 		{
 			return new SingletonIterator.Of<>(element);
 		}

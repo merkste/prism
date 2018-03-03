@@ -4,7 +4,7 @@ import common.iterable.FunctionalPrimitiveIterable.IterableDouble;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableLong;
 
-public abstract class IterableArray<T> implements FunctionalIterable<T>
+public abstract class IterableArray<E> implements FunctionalIterable<E>
 {
 	protected final int fromIndex;
 	protected final int toIndex;
@@ -25,25 +25,25 @@ public abstract class IterableArray<T> implements FunctionalIterable<T>
 
 
 
-	public static class Of<T> extends IterableArray<T>
+	public static class Of<E> extends IterableArray<E>
 	{
-		protected final T[] elements;
+		protected final E[] elements;
 
 		@SafeVarargs
-		public Of(T... elements)
+		public Of(E... elements)
 		{
 			super(0, elements.length);
 			this.elements = elements;
 		}
 
-		public Of(T[] elements, int fromIndex, int toIndex)
+		public Of(E[] elements, int fromIndex, int toIndex)
 		{
 			super(fromIndex, toIndex);
 			this.elements = elements;
 		}
 
 		@Override
-		public FunctionalIterator<T> iterator()
+		public FunctionalIterator<E> iterator()
 		{
 			return new ArrayIterator.Of<>(elements, fromIndex, toIndex);
 		}

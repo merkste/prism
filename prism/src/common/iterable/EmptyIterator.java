@@ -2,7 +2,7 @@ package common.iterable;
 
 import java.util.NoSuchElementException;
 
-public abstract class EmptyIterator<T> implements FunctionalIterator<T>
+public abstract class EmptyIterator<E> implements FunctionalIterator<E>
 {
 	private static final Of<?> OF           = new Of<>();
 	private static final OfInt OF_INT       = new OfInt();
@@ -10,8 +10,8 @@ public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 	private static final OfDouble OF_DOUBLE = new OfDouble();
 
 	@SuppressWarnings("unchecked")
-	public static <T> Of<T> Of() {
-		return (Of<T>) OF;
+	public static <E> Of<E> Of() {
+		return (Of<E>) OF;
 	}
 
 	public static OfInt OfInt() {
@@ -34,12 +34,12 @@ public abstract class EmptyIterator<T> implements FunctionalIterator<T>
 
 
 
-	public static class Of<T> extends EmptyIterator<T>
+	public static class Of<E> extends EmptyIterator<E>
 	{
 		private Of() {};
 
 		@Override
-		public T next()
+		public E next()
 		{
 			throw new NoSuchElementException();
 		}
