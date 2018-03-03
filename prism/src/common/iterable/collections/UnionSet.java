@@ -48,7 +48,7 @@ public class UnionSet<T> extends AbstractSet<T>
 	{
 		FunctionalIterator<T> iterable1 = FunctionalIterator.extend(set1);
 		FunctionalIterator<T> iterable2 = FunctionalIterator.extend(set2).filter(notInSet1);
-		return iterable1.chain(iterable2);
+		return iterable1.concat(iterable2);
 	}
 
 	@Override
