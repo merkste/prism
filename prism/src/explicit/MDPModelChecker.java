@@ -55,7 +55,7 @@ import acceptance.AcceptanceType;
 import common.BitSetTools;
 import common.IterableBitSet;
 import common.IterableStateSet;
-import common.iterable.IntIntConsumer;
+import common.functions.primitive.IntIntConsumer;
 import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import explicit.conditional.ConditionalMDPModelChecker;
 import explicit.conditional.transformer.mdp.MDPConditionalMinMaxFilterTransformer;

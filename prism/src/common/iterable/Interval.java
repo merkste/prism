@@ -1,3 +1,29 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.Collection;
@@ -15,9 +41,9 @@ public class Interval implements IterableInt
 {
 	public static class IntervalIterator implements FunctionalPrimitiveIterator.OfInt
 	{
-		final int upperBound;
-		final int step;
-		int next;
+		protected final int upperBound;
+		protected final int step;
+		protected int next;
 
 		public IntervalIterator(int first, int upperBound, int step)
 		{
@@ -87,7 +113,9 @@ public class Interval implements IterableInt
 		@Override
 		public boolean contains(int i)
 		{
-			return (i >= next) && (i < upperBound) && ((i - next) % step) == 0;
+			boolean result = (i >= next) && (i < upperBound) && ((i - next) % step) == 0;
+			next = upperBound;
+			return result;
 		}
 
 		@Override
@@ -96,19 +124,25 @@ public class Interval implements IterableInt
 			if (next >= upperBound) {
 				return 0;
 			}
-			return (upperBound - next - 1) / step + 1;
+			int result = (upperBound - next - 1) / step + 1;
+			next = upperBound;
+			return result;
 		}
 
 		@Override
 		public OptionalInt max()
 		{
-			return (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(upperBound);
+			OptionalInt result = (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(upperBound);
+			next = upperBound;
+			return result;
 		}
 
 		@Override
 		public OptionalInt min()
 		{
-			return (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(next);
+			OptionalInt result = (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(next);
+			next = upperBound;
+			return result;
 		}
 
 		@Override
@@ -156,13 +190,15 @@ public class Interval implements IterableInt
 			// Sn = a + (a+d) + (a+2d) + ... + (a+(n-1)d)
 			// Sn = n(2a+(n-1)d)/2 
 			int count = count();
-			return count * (2*next + (count-1)*step)/2;
+			int result = count * (2*next + (count-1)*step)/2;
+			next = upperBound;
+			return result;
 		}
 	}
 
-	final int lowerBound;
-	final int upperBound;
-	final int step;
+	protected final int lowerBound;
+	protected final int upperBound;
+	protected final int step;
 
 	public Interval(int upperBound)
 	{

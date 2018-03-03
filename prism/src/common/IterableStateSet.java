@@ -32,10 +32,8 @@ import java.util.function.IntPredicate;
 
 import common.iterable.EmptyIterable;
 import common.iterable.FilteringIterable;
-import common.iterable.FunctionalPrimitiveIterable;
 import common.iterable.FunctionalPrimitiveIterator;
 import common.iterable.Interval;
-import common.iterable.FilteringIterable.OfInt;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 
 /**
@@ -45,7 +43,7 @@ import common.iterable.FunctionalPrimitiveIterable.IterableInt;
  */
 public class IterableStateSet implements IterableInt
 {
-	private final IterableInt setOfStates;
+	protected final IterableInt setOfStates;
 
 	/**
 	 * Constructor (iterate over all states 0..numStates-1)

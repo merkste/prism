@@ -37,10 +37,8 @@ import java.util.function.IntBinaryOperator;
 import java.util.function.IntConsumer;
 
 import common.functions.ObjIntFunction;
-import common.iterable.FunctionalPrimitiveIterable;
 import common.iterable.FunctionalPrimitiveIterator;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
-import common.iterable.FunctionalPrimitiveIterator.OfInt;
 
 /**
  * Convenience class to loop easily over the set/clear bits of a BitSet.

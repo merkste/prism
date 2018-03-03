@@ -3,6 +3,7 @@
 //	Copyright (c) 2015-
 //	Authors:
 //	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
 //	
 //------------------------------------------------------------------------------
 //	
@@ -33,11 +34,33 @@ import prism.PrismLog;
 
 /**
  * Stop watch for keeping track of the runtime of some computation,
- * optionally printing the elapsed time to the log.
+ * optionally printing the elapsed time to the log after the computation
+ * has stopped.
+ * <br>
+ * Example usage:
+ * <pre>
+ * StopWatch timer = new StopWatch(log);
+ * timer.start("model checking");
+ * // ... do the actual computation ...
+ * timer.stop();
+ * </pre>
+ * would result in the output
+ * <pre>
+ * Time for model checking 42.00 seconds.
+ * </pre>
+ * <br>
+ * Stopping via
+ * <pre>
+ * timer.stop("result was xyz");
+ * </pre>
+ * results in
+ * <pre>
+ * Time for model checking 42.00 seconds, result was xyz.
+ * </pre>
  */
 public class StopWatch
 {
-	/** The log */
+	/** The (optional) log */
 	protected PrismLog log;
 
 	/** An (optional) task description */
@@ -77,8 +100,8 @@ public class StopWatch
 
 	/**
 	 * Stop the stop watch.
-	 * If a task description and a log was given, output
-	 * elapsed time.
+	 * If a task description and a log was given, output elapsed time.
+	 * @return elapsed time in milliseconds
 	 */
 	public long stop()
 	{
@@ -89,6 +112,9 @@ public class StopWatch
 	 * Stop the stop watch, optionally taking extra text for output.
 	 * If a log and a task description / extra text was given, output
 	 * elapsed time.
+	 * <br>
+	 * Extra text is output as "... xx.yy seconds, extra-text."
+	 * @param extraText extra text to output (optional, ignored if {@code null})
 	 */
 	public long stop(String extraText)
 	{
@@ -98,11 +124,11 @@ public class StopWatch
 			if (taskDescription != null) {
 				log.print("Time for " + taskDescription + ": " + elapsedSeconds() + " seconds");
 				if (extraText != null) {
-					log.print(" " + extraText);
+					log.print(", " + extraText);
 				}
 				log.println(".");
 			} else if (extraText != null) {
-				log.println("Time: " + elapsedSeconds() + " seconds " + extraText + ".");
+				log.println("Time: " + elapsedSeconds() + " seconds, " + extraText + ".");
 			}
 		}
 		return time;
@@ -122,7 +148,7 @@ public class StopWatch
 
 	/**
 	 * Stop the execution time of a task.
-	 * 
+	 *
 	 * @return time in milliseconds
 	 **/
 	public long run(Runnable task)
@@ -132,9 +158,9 @@ public class StopWatch
 
 	/**
 	 * Stop the execution time of a task.
-	 * 
+	 *
 	 * @param taskDescription description or {@code null})
-	 * @param extraText text or {@code null} 
+	 * @param extraText text or {@code null}
 	 * @return time in milliseconds
 	 **/
 	public long run(Runnable task, String taskDescription, String extraText)
@@ -147,7 +173,7 @@ public class StopWatch
 	/**
 	 * Stop the execution time of a task and return the result.
 	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
-	 * 
+	 *
 	 * @return task result
 	 **/
 	public <T> T run(Supplier<T> task)
@@ -158,9 +184,9 @@ public class StopWatch
 	/**
 	 * Stop the execution time of a task and return the result.
 	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
-	 * 
+	 *
 	 * @param taskDescription description or {@code null}
-	 * @param extraText text or {@code null} 
+	 * @param extraText text or {@code null}
 	 * @return task result
 	 **/
 	public <T> T run(Supplier<T> task, String taskDescription, String extraText)
@@ -174,9 +200,9 @@ public class StopWatch
 	/**
 	 * Stop the execution time of a task and return the result.
 	 * Time is available via {@code elapsedMillis()} and {@code elapsedSeconds()}.
-	 * 
+	 *
 	 * @param taskDescription description or {@code null}
-	 * @param resultDescription function that provides a description or {@code null} 
+	 * @param resultDescription function that provides a description or {@code null}
 	 * @return task result
 	 **/
 	public <T> T run(Supplier<T> task, String taskDescription, Function<? super T, String> resultDescription)

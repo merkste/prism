@@ -1,3 +1,30 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.BitSet;
@@ -28,6 +55,10 @@ import common.functions.ObjDoubleFunction;
 import common.functions.ObjIntFunction;
 import common.functions.ObjLongFunction;
 
+/**
+ * Base class for filtering iterators,
+ * static helpers for common filtering task (deduping).
+ */
 public abstract class FilteringIterator<E, I extends Iterator<E>> implements FunctionalIterator<E>
 {
 	protected I iterator;
@@ -59,18 +90,32 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 	}
 
+	/**
+	 * Obtain filtering iterator for the given iterator,
+	 * filtering duplicate elements (via HashSet, requires
+	 * that {@code equals()} and {@code hashCode()} are properly
+	 * implemented).
+	 */
 	public static <E> FunctionalIterator<E> dedupe(Iterator<E> iterator)
 	{
 		Set<E> set = new HashSet<>();
 		return new FilteringIterator.Of<>(iterator, set::add);
 	}
 
+	/**
+	 * Obtain filtering iterator for the given primitive double iterator,
+	 * filtering duplicate elements (via HashSet).
+	 */
 	public static FunctionalPrimitiveIterator.OfDouble dedupe(PrimitiveIterator.OfDouble iterator)
 	{
 		Set<Double> set = new HashSet<>();
 		return new FilteringIterator.OfDouble(iterator, set::add);
 	}
 
+	/**
+	 * Obtain filtering iterator for the given primitive int iterator,
+	 * filtering duplicate elements (via BitSet).
+	 */
 	public static FunctionalPrimitiveIterator.OfInt dedupe(PrimitiveIterator.OfInt iterator)
 	{
 		BitSet bits      = new BitSet();
@@ -78,6 +123,10 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		return new FilteringIterator.OfInt(iterator, set);
 	}
 
+	/**
+	 * Obtain filtering iterator for the given primitive int iterator,
+	 * filtering duplicate elements (via HashSet).
+	 */
 	public static FunctionalPrimitiveIterator.OfLong dedupe(PrimitiveIterator.OfLong iterator)
 	{
 		Set<Long> set = new HashSet<>();
@@ -101,6 +150,10 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		return new FilteringIterator.Of<>(iterator, test);
 	}
 
+	/**
+	 * Obtain filtering iterator for the given primitive long iterator,
+	 * filtering duplicate elements (via HashSet).
+	 */
 	public static FunctionalPrimitiveIterator.OfDouble dedupeCons(PrimitiveIterator.OfDouble iterator)
 	{
 		DoublePredicate test = new DoublePredicate()

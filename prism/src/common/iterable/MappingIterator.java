@@ -1,3 +1,29 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.Iterator;
@@ -36,7 +62,9 @@ import common.functions.ObjDoubleFunction;
 import common.functions.ObjIntFunction;
 import common.functions.ObjLongFunction;
 
-// FIXME ALG: check whether inheritance could be improved
+/**
+ * Helpers for mapping Iterators to another Iterator, performing some mapping on the elements
+ */
 public abstract class MappingIterator<S, E, I extends Iterator<S>> implements FunctionalIterator<E>
 {
 	protected I iterator;
@@ -98,6 +126,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an Iterator<S> to an Iterator<E> using the given mapping function.
+	 */
 	public static class From<S, E> extends MappingIterator<S, E, Iterator<S>>
 	{
 		protected final Function<? super S, ? extends E> function;
@@ -163,6 +194,11 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 	}
 
+
+
+	/**
+	 * Map an Iterator<E> to an FunctionalPrimitiveIterator.OfDouble using the given mapping function.
+	 */
 	public static class ToDouble<E> extends MappingIterator<E, Double, Iterator<E>> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected ToDoubleFunction<? super E> function;
@@ -248,7 +284,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 	}
 
 
-
+	/**
+	 * Map an Iterator<E> to an FunctionalPrimitiveIterator.OfInt using the given mapping function.
+	 */
 	public static class ToInt<E> extends MappingIterator<E, Integer, Iterator<E>> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected ToIntFunction<? super E> function;
@@ -335,6 +373,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an Iterator<E> to an FunctionalPrimitiveIterator.OfLong using the given mapping function.
+	 */
 	public static class ToLong<E> extends MappingIterator<E, Long, Iterator<E>> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected ToLongFunction<? super E> function;
@@ -421,6 +462,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfDouble to an Iterator<E> using the given mapping function.
+	 */
 	public static class FromDouble<E> extends MappingIterator<Double, E, PrimitiveIterator.OfDouble>
 	{
 		protected DoubleFunction<? extends E> function;
@@ -472,6 +516,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfDouble to an FunctionalPrimitiveIterator.OfDouble using the given mapping function.
+	 */
 	public static class FromDoubleToDouble extends MappingIterator<Double, Double, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected DoubleUnaryOperator function;
@@ -558,6 +605,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfDouble to an FunctionalPrimitiveIterator.OfInt using the given mapping function.
+	 */
 	public static class FromDoubleToInt extends MappingIterator<Double, Integer, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected DoubleToIntFunction function;
@@ -644,6 +694,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfDouble to an FunctionalPrimitiveIterator.OfLong using the given mapping function.
+	 */
 	public static class FromDoubleToLong extends MappingIterator<Double, Long, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected DoubleToLongFunction function;
@@ -730,6 +783,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfInt to an Iterator<E> using the given mapping function.
+	 */
 	public static class FromInt<E> extends MappingIterator<Integer, E, PrimitiveIterator.OfInt>
 	{
 		protected IntFunction<? extends E> function;
@@ -781,6 +837,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfInt to an FunctionalPrimitiveIterator.OfDouble using the given mapping function.
+	 */
 	public static class FromIntToDouble extends MappingIterator<Integer, Double, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected IntToDoubleFunction function;
@@ -867,6 +926,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfInt to an FunctionalPrimitiveIterator.OfInt using the given mapping function.
+	 */
 	public static class FromIntToInt extends MappingIterator<Integer, Integer, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected IntUnaryOperator function;
@@ -953,6 +1015,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfInt to an FunctionalPrimitiveIterator.OfLong using the given mapping function.
+	 */
 	public static class FromIntToLong extends MappingIterator<Integer, Long, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected IntToLongFunction function;
@@ -1039,6 +1104,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfLong to an Iterator<E> using the given mapping function.
+	 */
 	public static class FromLong<E> extends MappingIterator<Long, E, PrimitiveIterator.OfLong>
 	{
 		protected LongFunction<? extends E> function;
@@ -1090,6 +1158,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfLong to an FunctionalPrimitiveIterator.OfDouble using the given mapping function.
+	 */
 	public static class FromLongToDouble extends MappingIterator<Long, Double, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		protected LongToDoubleFunction function;
@@ -1176,6 +1247,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfLong to an FunctionalPrimitiveIterator.OfInt using the given mapping function.
+	 */
 	public static class FromLongToInt extends MappingIterator<Long, Integer, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfInt
 	{
 		protected LongToIntFunction function;
@@ -1262,6 +1336,9 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 
 
 
+	/**
+	 * Map an PrimitiveIterator.OfLong to an FunctionalPrimitiveIterator.OfLong using the given mapping function.
+	 */
 	public static class FromLongToLong extends MappingIterator<Long, Long, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfLong
 	{
 		protected LongUnaryOperator function;

@@ -1,3 +1,30 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Marcus Daum <marcus.daum@ivi.fraunhofer.de> (Frauenhofer Institut)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.Collection;
@@ -19,16 +46,33 @@ import common.functions.ObjDoubleFunction;
 import common.functions.ObjIntFunction;
 import common.functions.ObjLongFunction;
 
+/**
+ * Abstract base class of efficient iterators over array slices.
+ * Implementations should release the underlying array after iteration.
+ *
+ * @param <E> type of the array elements
+ */
 public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 {
 	protected final int toIndex;
 	protected int nextIndex;
 
+	/**
+	 * Iterate over all elements in index interval [0, toIndex).
+	 *
+	 * @param toIndex last index, exclusively
+	 */
 	public ArrayIterator(int toIndex)
 	{
 		this(0, toIndex);
 	}
 
+	/**
+	 * Iterate over all elements in index interval [fromIndex, toIndex).
+	 *
+	 * @param fromIndex first index, inclusive
+	 * @param toIndex last index, exclusive
+	 */
 	public ArrayIterator(int fromIndex, int toIndex)
 	{
 		if (fromIndex < 0) {
@@ -73,6 +117,11 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 
 
 
+	/**
+	 * Generic implementation of an iterator over an array slice.
+	 *
+	 * @param <E> type of the array elements
+	 */
 	public static class Of<E> extends ArrayIterator<E>
 	{
 		public static final Object[] EMPTY_OBJECT = new Object[0];
@@ -155,6 +204,9 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 
 
 
+	/**
+	 * Primitive specialisation for {@code double} of an iterator over an array slice.
+	 */
 	public static class OfDouble extends ArrayIterator<Double> implements FunctionalPrimitiveIterator.OfDouble
 	{
 		public static final double[] EMPTY_DOUBLE = new double[0];
@@ -323,6 +375,9 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 
 
 
+	/**
+	 * Primitive specialisation for {@code int} of an iterator over an array slice.
+	 */
 	public static class OfInt extends ArrayIterator<Integer> implements FunctionalPrimitiveIterator.OfInt
 	{
 		public static final int[] EMPTY_INT = new int[0];
@@ -491,6 +546,9 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 
 
 
+	/**
+	 * Primitive specialisation for {@code long} of an iterator over an array slice.
+	 */
 	public static class OfLong extends ArrayIterator<Long> implements FunctionalPrimitiveIterator.OfLong
 	{
 		public static final long[] EMPTY_LONG = new long[0];

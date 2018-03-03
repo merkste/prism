@@ -1,4 +1,4 @@
-package common.iterable;
+package common.functions.primitive;
 
 public interface IntTriOperator
 {

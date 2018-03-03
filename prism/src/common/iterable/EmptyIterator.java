@@ -1,7 +1,38 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Joachim Klein <klein@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.NoSuchElementException;
 
+/**
+ * Base class for empty Iterators,
+ * static helpers for common primitive iterators.
+ */
 public abstract class EmptyIterator<E> implements FunctionalIterator<E>
 {
 	private static final Of<?> OF           = new Of<>();
@@ -10,20 +41,24 @@ public abstract class EmptyIterator<E> implements FunctionalIterator<E>
 	private static final OfDouble OF_DOUBLE = new OfDouble();
 
 	@SuppressWarnings("unchecked")
-	public static <E> Of<E> Of() {
+	public static <E> Of<E> Of()
+	{
 		return (Of<E>) OF;
 	}
 
-	public static OfInt OfInt() {
+	public static OfDouble OfDouble()
+	{
+		return OF_DOUBLE;
+	}
+
+	public static OfInt OfInt()
+	{
 		return OF_INT;
 	}
 
-	public static OfLong OfLong() {
+	public static OfLong OfLong()
+	{
 		return OF_LONG;
-	}
-
-	public static OfDouble OfDouble() {
-		return OF_DOUBLE;
 	}
 
 	@Override

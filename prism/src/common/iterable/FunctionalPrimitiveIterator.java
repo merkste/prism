@@ -1,3 +1,29 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.BitSet;
@@ -147,7 +173,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return collectAndCount(array, 0);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default int collectAndCount(double[] array, int offset)
 		{
 			// avoid redirection in wrappers
@@ -167,7 +192,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return (obj instanceof Double) && contains(((Double) obj).doubleValue());
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default boolean contains(double d)
 		{
 			// avoid redirection in wrappers
@@ -182,7 +206,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		}
 
 		@Override
-		// FIXME ALG: consider override in subclasses
 		default int count()
 		{
 			// do not use reduce to avoid auto-boxing of count variable
@@ -234,7 +257,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalDouble.of(min);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -255,7 +277,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalDouble.of(reduce(nextDouble(), accumulator));
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default double reduce(double identity, DoubleBinaryOperator accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -268,7 +289,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return result;
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default double sum()
 		{
 			// avoid redirection in wrappers
@@ -395,7 +415,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return collectAndCount(array, 0);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default int collectAndCount(int[] array, int offset)
 		{
 			// avoid redirection in wrappers
@@ -428,7 +447,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return (obj instanceof Integer) && contains(((Integer) obj).intValue());
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default boolean contains(int i)
 		{
 			// avoid redirection in wrappers
@@ -443,7 +461,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		}
 
 		@Override
-		// FIXME ALG: consider override in subclasses
 		default int count()
 		{
 			// avoid redirection in wrappers
@@ -494,7 +511,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalInt.of(min);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -515,7 +531,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalInt.of(reduce(nextInt(), accumulator));
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default int reduce(int identity, IntBinaryOperator accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -528,7 +543,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return result;
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default int sum()
 		{
 			// avoid redirection in wrappers
@@ -649,7 +663,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return collectAndCount(array, 0);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default int collectAndCount(long[] array, int offset)
 		{
 			// avoid redirection in wrappers
@@ -669,7 +682,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return (obj instanceof Long) && contains(((Long) obj).longValue());
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default boolean contains(long l)
 		{
 			// avoid redirection in wrappers
@@ -684,7 +696,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 		}
 
 		@Override
-		// FIXME ALG: consider override in subclasses
 		default int count()
 		{
 			// avoid redirection in wrappers
@@ -742,7 +753,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalLong.of(min);
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -763,7 +773,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return OptionalLong.of(reduce(nextLong(), accumulator));
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default long reduce(long identity, LongBinaryOperator accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -776,7 +785,6 @@ public interface FunctionalPrimitiveIterator<E, E_CONS> extends FunctionalIterat
 			return result;
 		}
 
-		// FIXME ALG: consider override in subclasses
 		default long sum()
 		{
 			// avoid redirection in wrappers

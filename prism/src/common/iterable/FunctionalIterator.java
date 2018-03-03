@@ -1,3 +1,29 @@
+//==============================================================================
+//	
+//	Copyright (c) 2016-
+//	Authors:
+//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	
+//------------------------------------------------------------------------------
+//	
+//	This file is part of PRISM.
+//	
+//	PRISM is free software; you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation; either version 2 of the License, or
+//	(at your option) any later version.
+//	
+//	PRISM is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with PRISM; if not, write to the Free Software Foundation,
+//	Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+//	
+//==============================================================================
+
 package common.iterable;
 
 import java.util.Collection;
@@ -286,19 +312,20 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return extend(iterable.iterator());
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <E> FunctionalIterator<E> extend(Iterator<E> iterator)
 	{
 		if (iterator instanceof FunctionalIterator) {
 			return (FunctionalIterator<E>) iterator;
 		}
 		if (iterator instanceof PrimitiveIterator.OfDouble) {
-			return extend(iterator);
+			return (FunctionalIterator<E>) extend((PrimitiveIterator.OfDouble) iterator);
 		}
 		if (iterator instanceof PrimitiveIterator.OfInt) {
-			return extend(iterator);
+			return (FunctionalIterator<E>) extend((PrimitiveIterator.OfInt) iterator);
 		}
 		if (iterator instanceof PrimitiveIterator.OfLong) {
-			return extend(iterator);
+			return (FunctionalIterator<E>) extend((PrimitiveIterator.OfLong) iterator);
 		}
 		return new FunctionalWrapper.Of<>(iterator);
 	}
@@ -465,7 +492,6 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return array;
 	}
 
-	// FIXME ALG: consider override in subclasses
 	default int collectAndCount(Collection<? super E> collection)
 	{
 		// avoid redirection in wrappers
@@ -484,7 +510,6 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return collectAndCount(array, 0);
 	}
 
-	// FIXME ALG: consider override in subclasses
 	default int collectAndCount(E[] array, int offset)
 	{
 		// avoid redirection in wrappers
@@ -502,7 +527,6 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return anyMatch((obj == null) ? Objects::isNull : obj::equals);
 	}
 
-	// FIXME ALG: consider override in subclasses
 	default int count()
 	{
 		// avoid redirection in wrappers
@@ -535,7 +559,6 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return Optional.of(reduce(next(), accumulator));
 	}
 
-	// FIXME ALG: consider override in subclasses
 	default <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
 	{
 		Objects.requireNonNull(accumulator);
