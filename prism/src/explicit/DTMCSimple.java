@@ -383,21 +383,14 @@ public class DTMCSimple extends DTMCExplicit implements ModelSimple
 	@Override
 	public void vmMult(double vect[], double result[])
 	{
-		int i, j;
-		double prob;
-		Distribution distr;
-
 		// Initialise result to 0
-		for (j = 0; j < numStates; j++) {
-			result[j] = 0;
-		}
+		Arrays.fill(result, 0);
 		// Go through matrix elements (by row)
-		for (i = 0; i < numStates; i++) {
-			distr = trans.get(i);
-			for (Map.Entry<Integer, Double> e : distr) {
-				j = (Integer) e.getKey();
-				prob = (Double) e.getValue();
-				result[j] += prob * vect[i];
+		for (int state = 0; state < numStates; state++) {
+			for (Map.Entry<Integer, Double> t : trans.get(state)) {
+				int target  = t.getKey();
+				double prob = t.getValue();
+				result[target] += prob * vect[state];
 			}
 
 		}
