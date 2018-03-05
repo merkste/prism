@@ -1694,6 +1694,7 @@ public class DTMCModelChecker extends ProbModelChecker
 
 		// Finished value iteration
 		watch.stop();
+		mainLog.println("Power method: " + iters + " iterations in " + watch.elapsedSeconds() + " seconds.");
 
 		// Non-convergence is an error (usually)
 		if (!done && errorOnNonConverge) {
