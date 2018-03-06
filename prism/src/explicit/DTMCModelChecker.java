@@ -29,8 +29,11 @@ package explicit;
 import java.io.File;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.PrimitiveIterator.OfInt;
 
 import parser.VarList;
 import parser.ast.Declaration;
@@ -38,6 +41,7 @@ import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionTemporal;
+import prism.ModelType;
 import prism.Prism;
 import prism.PrismComponent;
 import prism.PrismException;
@@ -1653,13 +1657,27 @@ public class DTMCModelChecker extends ProbModelChecker
 	 * No initial distribution is specified since it does not affect the result.
 	 * The result will be stored in the relevant portion of a full vector,
 	 * whose size equals the number of states in the DTMC.
-	 * Optionally, pass in an existing vector to be used for this purpose.
+	 * Optionally, pass in an existing vector to be used for this purpose;
+	 * only the entries of this vector are changed that correspond to the BSCC states.
+	 * <p>
+	 * To ensure convergence, we use the iteration matrix<br/>
+	 * {@code P = (Q * deltaT + I)} where<br/>
+	 * {@code Q} is the generator matrix,
+	 * {@code deltaT} a preconditioning factor and
+	 * {@code I} is the the identity matrix.<br/>
+	 * See <em>William J. Stewart: "Introduction to the Numerical Solution of Markov Chains"</em> p.124 for details.
+	 * </p>
 	 * @param dtmc The DTMC
-	 * @param bscc The BSCC to be analysed
+	 * @param states The BSCC to be analysed
 	 * @param result Storage for result (ignored if null)
 	 */
-	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet bscc, double result[]) throws PrismException
+	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[]) throws PrismException
 	{
+		if (dtmc.getModelType() != ModelType.DTMC) {
+			throw new PrismNotSupportedException("Explicit engine currently does not support steady-state computation for " + dtmc.getModelType());
+		}
+		IterableBitSet bscc = new IterableBitSet(states);
+
 		// Start value iteration
 		mainLog.println("Starting value iteration...");
 		StopWatch watch = new StopWatch(mainLog).start("value iteration");
@@ -1670,22 +1688,65 @@ public class DTMCModelChecker extends ProbModelChecker
 		// Create solution vector(s)
 		// Use the passed in vector, if present
 		double[] soln = result == null ? new double[numStates] : result;
-		double[] soln2 = new double[numStates];
+		double[] diagsQ = new double[numStates];
+		double maxDiagsQ = 0.0;
 
-		// Initialise solution vectors. Equiprobable for BSCC states.
-		double equiprob = 1.0 / bscc.cardinality();
-		for (int i = bscc.nextSetBit(0); i >= 0; i = bscc.nextSetBit(i + 1))
-			soln[i] = soln2[i] = equiprob;
+		// Initialise the solution vector with an equiprobable distribution
+		// over the BSCC states.
+		// Additionally, compute the diagonal entries of the generator matrix Q.
+		// Recall that the entries of the generator matrix are given by
+		//     Q(s,t) = prob(s,t)   for s != t
+		// and Q(s,s) = -sum_{s!=t} prob(s,t),
+		// i.e., diagsQ[s] = -sum_{s!=t} prob(s,t).
+		// Furthermore, compute max |diagsQ[s]|.
+		double equiprob = 1.0 / states.cardinality();
+		for (OfInt iter = bscc.iterator(); iter.hasNext();) {
+			int state = iter.nextInt();
+
+			// Equiprobable for BSCC states.
+			soln[state] = equiprob;
+
+			// Note: diagsQ[state] = 0.0, as it was freshly created
+			// Compute negative exit rate (ignoring a possible self-loop)
+			for (Iterator<Entry<Integer, Double>> transitions = dtmc.getTransitionsIterator(state); transitions.hasNext();) {
+				Entry<Integer, Double> trans = transitions.next();
+				int target = trans.getKey();
+				double prob = trans.getValue();
+				if (state != target) {
+					diagsQ[state] -= prob;
+				}
+			}
+
+			// Note: If there are no outgoing transitions, diagsQ[state] = 0, which is fine
+
+			// Update maximal absolute diagonal entry value of Q
+			// As diagsQ[s] <= 0, Math.abs(diagsQ[s]) = -diagsQ[s]
+			maxDiagsQ = Math.max(maxDiagsQ, -diagsQ[state]);
+		}
+
+		// Compute preconditioning factor deltaT
+		// In William J. Stewart: "Introduction to the Numerical Solution of Markov Chains",
+		// deltaT = 0.99 / maxDiagsQ is proposed;
+		// in the symbolic engines deltaT is computed as 0.99 / max exit[s], i.e., where
+		// the denominator corresponds to the maximal exit rate (where self loops are included).
+		// Currently, use the same deltaT values as in the symbolic engines,
+		// so for DTMCs, as exit[s]=1 for all states, deltaT is 0.99:
+		double deltaT = 0.99;
+		// TODO: Test and switch to deltaT computed as below, should lead to faster convergence.
+		// double deltaT = 0.99 / maxDiagsQ;
+
+		// create copy of the solution vector
+		double[] soln2 = soln.clone();
 
 		// Start iterations
 		int iters = 0;
 		boolean done = false;
 		while (!done && iters < maxIters) {
 			iters++;
-			// Matrix-vector multiply
-			dtmc.vmMult(soln, soln2);
+			// Do vector-matrix multiplication step in (deltaT*Q + I)
+			dtmc.vmMultPowerSteadyState(soln, soln2, diagsQ, deltaT, bscc);
 			// Check termination
-			done = PrismUtils.doublesAreClose(soln, soln2, termCritParam, termCrit == TermCrit.ABSOLUTE);
+			done = PrismUtils.doublesAreClose(soln, soln2, bscc, termCritParam, termCrit == TermCrit.ABSOLUTE);
 			// Swap vectors for next iter
 			double[] tmpsoln = soln;
 			soln = soln2;
@@ -1696,16 +1757,33 @@ public class DTMCModelChecker extends ProbModelChecker
 		watch.stop();
 		mainLog.println("Power method: " + iters + " iterations in " + watch.elapsedSeconds() + " seconds.");
 
+		// normalise solution
+		PrismUtils.normalise(soln, bscc);
+
+		if (result != null && result != soln) {
+			// If result vector was passed in as method argument,
+			// it can be the case that result does not point to the current soln vector (most recent values)
+			// but to the soln2 vector.
+			// In that case, we copy the relevant values from soln to result.
+			for (OfInt iter = bscc.iterator(); iter.hasNext();) {
+				int state = iter.nextInt();
+				result[state] = soln[state];
+			}
+		}
+		// store only one result vector, free temporary vectors
+		result = soln;
+		soln = soln2 = null;
+
 		// Non-convergence is an error (usually)
 		if (!done && errorOnNonConverge) {
-			String msg = "Iterative method did not converge within " + iters + " iterations.";
-			msg += "\nConsider using a different numerical method or increasing the maximum number of iterations";
+			String msg = "Iterative method did not converge within " + iters + " iterations.\n" +
+			             "Consider using a different numerical method or increasing the maximum number of iterations";
 			throw new PrismException(msg);
 		}
 
 		// Return results
 		ModelCheckerResult res = new ModelCheckerResult();
-		res.soln = soln;
+		res.soln = result;
 		res.numIters = iters;
 		res.timeTaken = watch.elapsedSeconds();
 		return res;
