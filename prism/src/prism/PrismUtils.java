@@ -32,8 +32,11 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
+import java.util.PrimitiveIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 
 /**
  * Various general-purpose utility methods in Java
@@ -142,7 +145,31 @@ public class PrismUtils
 	}
 
 	/**
-	 * Format a large integer, represented by a double, as a string. 
+	 * Normalise the given entries in the vector in-place such that that they sum to 1,
+	 * I.e., for all indizes of entries, set<br>
+	 * {@code vector[s] = vector[s] / sum}, where<br>
+	 * {@code sum = sum_{s in entries} (vector[s])<br>
+	 * If {@code sum = 0.0}, all entries are set to {@code NaN}.
+	 * @param vector the vector
+	 * @param entries Iterable over the entries (must not contain duplicates)
+	 * @return the altered vector
+	 */
+	public static double[] normalise(double[] vector, IterableInt entries)
+	{
+		double sum = 0.0;
+		for (PrimitiveIterator.OfInt iter = entries.iterator(); iter.hasNext();) {
+			int state = iter.nextInt();
+			sum += vector[state];
+		}
+		for (PrimitiveIterator.OfInt iter = entries.iterator(); iter.hasNext();) {
+			int state = iter.nextInt();
+			vector[state] /= sum;
+		}
+		return vector;
+	}
+
+	/**
+	 * Format a large integer, represented by a double, as a string. Un
 	 */
 	public static String bigIntToString(double d)
 	{
