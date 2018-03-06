@@ -120,16 +120,50 @@ public class PrismUtils
 	 */
 	public static boolean doublesAreClose(double d1[], double d2[], double epsilon, boolean abs)
 	{
-		int i, n;
-		n = Math.min(d1.length, d2.length);
+		int n = Math.min(d1.length, d2.length);
 		if (abs) {
-			for (i = 0; i < n; i++) {
-				if (!PrismUtils.doublesAreCloseAbs(d1[i], d2[i], epsilon))
+			for (int i = 0; i < n; i++) {
+				if (!doublesAreCloseAbs(d1[i], d2[i], epsilon))
 					return false;
 			}
 		} else {
-			for (i = 0; i < n; i++) {
-				if (!PrismUtils.doublesAreCloseRel(d1[i], d2[i], epsilon))
+			for (int i = 0; i < n; i++) {
+				if (!doublesAreCloseRel(d1[i], d2[i], epsilon))
+					return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * See if, for all the entries given by the {@code indizes}
+	 * iterator, two arrays of doubles are all within epsilon of each other (relative or absolute error).
+	 * <br>
+	 * Considers Inf == Inf and -Inf == -Inf.
+	 */
+	public static boolean doublesAreClose(double d1[], double d2[], IterableInt indizes, double epsilon, boolean abs)
+	{
+		return doublesAreClose(d1, d2, indizes.iterator(), epsilon, abs);
+	}
+
+	/**
+	 * See if, for all the entries given by the {@code indizes}
+	 * iterator, two arrays of doubles are all within epsilon of each other (relative or absolute error).
+	 * <br>
+	 * Considers Inf == Inf and -Inf == -Inf.
+	 */
+	public static boolean doublesAreClose(double d1[], double d2[], PrimitiveIterator.OfInt indizes, double epsilon, boolean abs)
+	{
+		if (abs) {
+			while (indizes.hasNext()) {
+				int i = indizes.nextInt();
+				if (!doublesAreCloseAbs(d1[i], d2[i], epsilon))
+					return false;
+			}
+		} else {
+			while (indizes.hasNext()) {
+				int i = indizes.nextInt();
+				if (!doublesAreCloseRel(d1[i], d2[i], epsilon))
 					return false;
 			}
 		}
