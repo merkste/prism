@@ -222,7 +222,7 @@ public final class ModelBuilder extends PrismComponent
 		modulesFile = (ModulesFile) modulesFile.deepCopy();
 		modulesFile = (ModulesFile) modulesFile.accept(new ASTTraverseModify()
 		{
-			public Object visit(ExpressionConstant e) throws PrismLangException
+			public Object visitNow(ExpressionConstant e) throws PrismLangException
 			{
 				Expression expr = constExprs.get(e.getName());
 				return (expr != null) ? expr.deepCopy() : e;

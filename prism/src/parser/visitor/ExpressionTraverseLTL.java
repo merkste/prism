@@ -51,7 +51,7 @@ import prism.PrismLangException;
  * the top-level LTL operators, i.e., not entering any maximal state subformulas.
  *
  * <br/>
- * Subclasses should not provide visitLTL methods and not override any of the {@code visit()}
+ * Subclasses should not provide visitLTL methods and not override any of the {@code visitNow()}
  * methods of ASTTraverse.
  */
 public abstract class ExpressionTraverseLTL extends ASTTraverse
@@ -63,7 +63,7 @@ public abstract class ExpressionTraverseLTL extends ASTTraverse
 	abstract public void visitLTL(ExpressionUnaryOp e) throws PrismLangException;
 
 	@Override
-	public Object visit(ExpressionBinaryOp e) throws PrismLangException
+	public Object visitNow(ExpressionBinaryOp e) throws PrismLangException
 	{
 		if (e.getType() == TypeBool.getInstance()) {
 			// As type is boolean, this is the root of a maximal state formula;
@@ -71,60 +71,60 @@ public abstract class ExpressionTraverseLTL extends ASTTraverse
 			return null;
 		} else {
 			visitLTL(e);
-			return super.visit(e);
+			return super.visitNow(e);
 		}
 	}
 	@Override
-	public Object visit(ExpressionConstant e) throws PrismLangException
+	public Object visitNow(ExpressionConstant e) throws PrismLangException
 	{
 		// don't visit
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionExists e) throws PrismLangException
+	public Object visitNow(ExpressionExists e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionFilter e) throws PrismLangException
+	public Object visitNow(ExpressionFilter e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionForAll e) throws PrismLangException
+	public Object visitNow(ExpressionForAll e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionFormula e) throws PrismLangException
+	public Object visitNow(ExpressionFormula e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionFunc e) throws PrismLangException
+	public Object visitNow(ExpressionFunc e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionIdent e) throws PrismLangException
+	public Object visitNow(ExpressionIdent e) throws PrismLangException
 	{
 		// don't visit
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionITE e) throws PrismLangException
+	public Object visitNow(ExpressionITE e) throws PrismLangException
 	{
 		if (e.getType() == TypeBool.getInstance()) {
 			// As type is boolean, this is the root of a maximal state formula;
@@ -138,49 +138,49 @@ public abstract class ExpressionTraverseLTL extends ASTTraverse
 	}
 
 	@Override
-	public Object visit(ExpressionLabel e) throws PrismLangException
+	public Object visitNow(ExpressionLabel e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionProb e) throws PrismLangException
+	public Object visitNow(ExpressionProb e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionReward e) throws PrismLangException
+	public Object visitNow(ExpressionReward e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionSS e) throws PrismLangException
+	public Object visitNow(ExpressionSS e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionStrategy e) throws PrismLangException
+	public Object visitNow(ExpressionStrategy e) throws PrismLangException
 	{
 		// don't visit, don't visit children
 		return null;
 	}
 
 	@Override
-	public Object visit(ExpressionTemporal e) throws PrismLangException
+	public Object visitNow(ExpressionTemporal e) throws PrismLangException
 	{
 		visitLTL(e);
-		return super.visit(e);
+		return super.visitNow(e);
 	}
 
 	@Override
-	public Object visit(ExpressionUnaryOp e) throws PrismLangException
+	public Object visitNow(ExpressionUnaryOp e) throws PrismLangException
 	{
 		if (e.getType() == TypeBool.getInstance()) {
 			// As type is boolean, this is the root of a maximal state formula;
@@ -188,12 +188,12 @@ public abstract class ExpressionTraverseLTL extends ASTTraverse
 			return null;
 		} else {
 			visitLTL(e);
-			return super.visit(e);
+			return super.visitNow(e);
 		}
 	}
 
 	@Override
-	public Object visit(ExpressionVar e) throws PrismLangException
+	public Object visitNow(ExpressionVar e) throws PrismLangException
 	{
 		// don't visit
 		return null;

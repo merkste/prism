@@ -70,7 +70,7 @@ public class FindAllViews extends ASTTraverseModify
 		}
 	}
 	
-	public Object visit(ExpressionVar e) throws PrismLangException
+	public Object visitNow(ExpressionVar e) throws PrismLangException
 	{
 		ExpressionViewVar result = getView(e.getName());
 		if (result != null) {
@@ -81,7 +81,7 @@ public class FindAllViews extends ASTTraverseModify
 		return e;
 	}
 
-	public Object visit(ExpressionIdent e) throws PrismLangException
+	public Object visitNow(ExpressionIdent e) throws PrismLangException
 	{
 		ExpressionViewVar result = getView(e.getName());
 		if (result != null) {

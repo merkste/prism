@@ -51,7 +51,7 @@ public class ExpandStepBoundsSyntactically extends ASTTraverseModify
 	}
 
 	@Override
-	public Object visit(ExpressionTemporal e) throws PrismLangException
+	public Object visitNow(ExpressionTemporal e) throws PrismLangException
 	{
 		IntegerBound bounds;
 		Integer lowerBound;
@@ -59,7 +59,7 @@ public class ExpandStepBoundsSyntactically extends ASTTraverseModify
 		Expression result;
 
 		// no bounds, do default visiting
-		if (!e.hasBounds()) return super.visit(e);
+		if (!e.hasBounds()) return super.visitNow(e);
 
 		if (e.getOperator() == ExpressionTemporal.P_R) {
 			// recurse on the negated until form...

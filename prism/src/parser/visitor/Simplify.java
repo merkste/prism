@@ -35,7 +35,7 @@ import prism.PrismLangException;
  */
 public class Simplify extends ASTTraverseModify
 {
-	public Object visit(ExpressionBinaryOp e) throws PrismLangException
+	public Object visitNow(ExpressionBinaryOp e) throws PrismLangException
 	{
 		// Apply recursively
 		e.setOperand1((Expression) (e.getOperand1().accept(this)));
@@ -151,7 +151,7 @@ public class Simplify extends ASTTraverseModify
 		return e;
 	}
 
-	public Object visit(ExpressionUnaryOp e) throws PrismLangException
+	public Object visitNow(ExpressionUnaryOp e) throws PrismLangException
 	{
 		// Apply recursively
 		e.setOperand((Expression) (e.getOperand().accept(this)));
@@ -166,7 +166,27 @@ public class Simplify extends ASTTraverseModify
 		return e;
 	}
 
-	public Object visit(ExpressionFunc e) throws PrismLangException
+	public Object visitNow(ExpressionITE e) throws PrismLangException
+	{
+		// Apply recursively
+		e.setOperand1((Expression) (e.getOperand1().accept(this)));
+		e.setOperand2((Expression) (e.getOperand2().accept(this)));
+		e.setOperand3((Expression) (e.getOperand3().accept(this)));
+
+		// If 'if' operand is true, replace with 'then' part
+		if (Expression.isTrue(e.getOperand1())) {
+			return e.getOperand2();
+		}
+
+		// If 'if' operand is false, replace with 'else' part
+		if (Expression.isFalse(e.getOperand1())) {
+			return e.getOperand3();
+		}
+
+		return e;
+	}
+
+	public Object visitNow(ExpressionFunc e) throws PrismLangException
 	{
 		int i, n;
 		boolean literal;
@@ -190,7 +210,7 @@ public class Simplify extends ASTTraverseModify
 		return e;
 	}
 	
-	public Object visit(ExpressionFormula e) throws PrismLangException
+	public Object visitNow(ExpressionFormula e) throws PrismLangException
 	{
 		// If formula has an attached definition, just replace it with that
 		return e.getDefinition() != null ? e.getDefinition() : e;

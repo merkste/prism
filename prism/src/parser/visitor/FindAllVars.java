@@ -72,7 +72,7 @@ public class FindAllVars extends ASTTraverseModify
 		}
 	}
 	
-	public Object visit(ExpressionIdent e) throws PrismLangException
+	public Object visitNow(ExpressionIdent e) throws PrismLangException
 	{
 		int i;
 		// See if identifier corresponds to a variable
@@ -90,7 +90,7 @@ public class FindAllVars extends ASTTraverseModify
 	}
 
 	// Also re-compute info for ExpressionVar objects in case variable indices have changed
-	public Object visit(ExpressionVar e) throws PrismLangException
+	public Object visitNow(ExpressionVar e) throws PrismLangException
 	{
 		int i;
 		// See if identifier corresponds to a variable

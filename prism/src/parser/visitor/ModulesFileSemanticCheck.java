@@ -98,7 +98,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		}
 	}
 
-	public Object visit(SystemReference e) throws PrismLangException
+	public Object visitNow(SystemReference e) throws PrismLangException
 	{
 		// Make sure referenced system exists
 		if (modulesFile.getSystemDefnByName(e.getName()) == null)
@@ -106,7 +106,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		return null;
 	}
 	
-	public Object visit(FormulaList e) throws PrismLangException
+	public Object visitNow(FormulaList e) throws PrismLangException
 	{
 		// Override - don't need to do any semantic checks on formulas
 		// (they will have been expanded in place, where needed)
@@ -196,7 +196,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		//inModule = e;
 	}
 
-	public Object visit(Module e) throws PrismLangException
+	public Object visitNow(Module e) throws PrismLangException
 	{
 		// Override this so we can keep track of when we are in an invariant
 		visitPre(e);
@@ -227,7 +227,7 @@ public class ModulesFileSemanticCheck extends SemanticCheck
 		//inModule = null;
 	}
 
-	public Object visit(Command e) throws PrismLangException
+	public Object visitNow(Command e) throws PrismLangException
 	{
 		// Override this so we can keep track of when we are in a command
 		visitPre(e);
