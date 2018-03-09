@@ -35,6 +35,7 @@ import simulator.PathFullInfo;
 import userinterface.simulator.SimulationView.*;
 import userinterface.util.GUIGroupedTableModel;
 import parser.ast.*;
+import parser.ast.Module;
 
 public class GUISimulatorPathTableModel extends AbstractTableModel implements GUIGroupedTableModel, Observer
 {

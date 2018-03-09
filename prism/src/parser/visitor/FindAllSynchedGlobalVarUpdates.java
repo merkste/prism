@@ -29,6 +29,7 @@ package parser.visitor;
 import java.util.TreeMap;
 
 import parser.ast.*;
+import parser.ast.Module;
 import prism.PrismLangException;
 
 /**

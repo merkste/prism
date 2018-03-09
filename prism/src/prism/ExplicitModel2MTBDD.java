@@ -31,6 +31,7 @@ import java.util.*;
 import jdd.*;
 import parser.*;
 import parser.ast.*;
+import parser.ast.Module;
 import explicit.*;
 
 /**

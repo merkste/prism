@@ -33,6 +33,7 @@ import common.iterable.CartesianProduct;
 import common.iterable.FunctionalIterable;
 import prism.*;
 import parser.ast.*;
+import parser.ast.Module;
 import parser.type.*;
 
 /**

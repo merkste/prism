@@ -38,6 +38,7 @@ import java.util.Iterator;
 import jdd.*;
 import parser.*;
 import parser.ast.*;
+import parser.ast.Module;;
 
 // class to translate a modules description file into an MTBDD model
 

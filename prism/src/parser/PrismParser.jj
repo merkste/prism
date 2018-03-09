@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import jltl2ba.SimpleLTL;
 import parser.BooleanUtils;
 import parser.ast.*;
+import parser.ast.Module;
 import parser.type.*;
 import prism.ModelInfo;
 import parser.visitor.*;

@@ -30,6 +30,7 @@ import java.util.*;
 
 import parser.*;
 import parser.ast.*;
+import parser.ast.Module;
 import prism.*;
 
 public class Updater extends PrismComponent

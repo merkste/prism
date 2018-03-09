@@ -28,6 +28,7 @@ package parser.visitor;
 
 import parser.ast.*;
 import prism.Pair;
+import parser.ast.Module;
 import prism.PrismLangException;
 
 // Performs a depth-first traversal of an asbtract syntax tree (AST).

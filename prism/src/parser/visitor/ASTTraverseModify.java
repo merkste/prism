@@ -30,6 +30,7 @@ import java.util.List;
 
 import parser.ast.*;
 import prism.Pair;
+import parser.ast.Module;
 import prism.PrismLangException;
 
 // Variant of ASTTraverse.

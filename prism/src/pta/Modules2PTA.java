@@ -33,6 +33,7 @@ import explicit.StateStorage;
 
 import parser.*;
 import parser.ast.*;
+import parser.ast.Module;
 import parser.type.*;
 import parser.visitor.ASTTraverse;
 import prism.*;

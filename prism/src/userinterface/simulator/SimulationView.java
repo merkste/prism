@@ -31,6 +31,7 @@ package userinterface.simulator;
 import java.util.*;
 
 import parser.ast.*;
+import parser.ast.Module;
 import parser.type.Type;
 import prism.PrismSettings;
 import userinterface.simulator.GUIViewDialog.RewardListItem;
