@@ -29,6 +29,7 @@ package parser.ast;
 import explicit.MinMax;
 import parser.Values;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.ModelInfo;
 import prism.OpRelOpBound;
 import prism.PrismException;
@@ -241,21 +242,17 @@ public class ExpressionReward extends ExpressionQuant<Expression>
 	}
 
 	@Override
-	public ExpressionReward deepCopy()
+	public ExpressionReward deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		ExpressionReward expr = new ExpressionReward();
-		expr.setExpression(getExpression() == null ? null : getExpression().deepCopy());
-		expr.setRelOp(getRelOp());
-		expr.setMinMax(minMax == null ? null : minMax.clone() );
-		expr.setBound(getBound() == null ? null : getBound().deepCopy());
-		if (rewardStructIndex != null && rewardStructIndex instanceof Expression) expr.setRewardStructIndex(((Expression)rewardStructIndex).deepCopy());
-		else expr.setRewardStructIndex(rewardStructIndex);
-		if (rewardStructIndexDiv != null && rewardStructIndexDiv instanceof Expression) expr.setRewardStructIndexDiv(((Expression)rewardStructIndexDiv).deepCopy());
-		else expr.setRewardStructIndexDiv(rewardStructIndexDiv);
-		expr.setFilter(getFilter() == null ? null : (Filter)getFilter().deepCopy());
-		expr.setType(type);
-		expr.setPosition(this);
-		return expr;
+		super.deepCopy(copier);
+		if (rewardStructIndex instanceof Expression) {
+			rewardStructIndex = copier.copy((Expression) rewardStructIndex);
+		}
+		if (rewardStructIndexDiv instanceof Expression) {
+			rewardStructIndexDiv = copier.copy((Expression) rewardStructIndexDiv);
+		}
+
+		return this;
 	}
 
 	@Override

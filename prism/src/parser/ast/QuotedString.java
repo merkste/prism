@@ -29,6 +29,7 @@ package parser.ast;
 import java.util.regex.Matcher;
 
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 /**
@@ -88,9 +89,9 @@ public class QuotedString extends ASTElement
 	}
 
 	@Override
-	public QuotedString deepCopy()
+	public QuotedString deepCopy(DeepCopy copier)
 	{
-		return new QuotedString(text, needsEscaping);
+		return this;
 	}
 
 	@Override

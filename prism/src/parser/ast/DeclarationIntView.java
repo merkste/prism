@@ -33,6 +33,7 @@ import java.util.List;
 
 import parser.type.*;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 public class DeclarationIntView extends DeclarationType
@@ -124,20 +125,14 @@ public class DeclarationIntView extends DeclarationType
 		return result;
 	}
 
-	/**
-	 * Perform a deep copy.
-	 */
 	@Override
-	public ASTElement deepCopy()
+	public DeclarationIntView deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		Expression lowCopy = (low == null) ? null : low.deepCopy();
-		Expression highCopy = (high == null) ? null : high.deepCopy();
-		DeclarationIntView ret = new DeclarationIntView(lowCopy, highCopy);
-		for (ExpressionVar bit : bits) {
-			ret.addBit((ExpressionVar) bit.deepCopy());
-		}
-		ret.setPosition(this);
-		return ret;
+		low  = copier.copy(low);
+		high = copier.copy(high);
+		copier.copyAll(bits);
+
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")

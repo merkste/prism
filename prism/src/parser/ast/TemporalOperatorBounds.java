@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -264,13 +265,19 @@ public class TemporalOperatorBounds extends ASTElement {
 		return true;
 	}
 
+
 	@Override
-	public TemporalOperatorBounds deepCopy() {
-		TemporalOperatorBounds result = new TemporalOperatorBounds();
-		for (TemporalOperatorBound bound : bounds) {
-			result.bounds.add(bound.deepCopy());
-		}
-		return result;
+	public TemporalOperatorBounds deepCopy()
+	{
+		return (TemporalOperatorBounds) super.deepCopy();
+	}
+
+	@Override
+	public TemporalOperatorBounds deepCopy(DeepCopy copier) throws PrismLangException
+	{
+		copier.copyAll(bounds);
+
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -8,6 +8,7 @@ import java.util.Objects;
 import explicit.MinMax;
 import parser.Values;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -81,16 +82,12 @@ public class ExpressionConditional extends ExpressionQuant<ExpressionQuant<?>>
 	}
 
 	@Override
-	public ExpressionConditional deepCopy()
+	public ExpressionConditional deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		ExpressionQuant<?> objectiveCopy = expression.deepCopy();
-		Expression conditionCopy   = condition.deepCopy();
-		ExpressionConditional copy = new ExpressionConditional(objectiveCopy, conditionCopy);
+		super.deepCopy(copier);
+		condition = copier.copy(condition);
 
-		copy.setPosition(this);
-		copy.setType(type);
-
-		return copy;
+		return this;
 	}
 
 	@Override

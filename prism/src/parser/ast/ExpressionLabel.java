@@ -114,14 +114,11 @@ public class ExpressionLabel extends Expression
 	{
 		return v.visit(this);
 	}
-	
+
 	@Override
-	public Expression deepCopy()
+	public ExpressionLabel deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		ExpressionLabel expr = new ExpressionLabel(name);
-		expr.setType(type);
-		expr.setPosition(this);
-		return expr;
+		return this;
 	}
 
 	@Override

@@ -28,6 +28,7 @@ package parser.ast;
 
 import parser.type.TypeInt;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 
 /**
@@ -353,22 +354,13 @@ public class TemporalOperatorBound extends ASTElement {
 	}
 
 	@Override
-	public TemporalOperatorBound deepCopy() {
-		TemporalOperatorBound result = new TemporalOperatorBound();
+	public TemporalOperatorBound deepCopy(DeepCopy copier) throws PrismLangException
+	{
+		lBound       = copier.copy(lBound);
+		uBound       = copier.copy(uBound);
+		rewardStruct = copier.copy(rewardStruct);
 
-		if (lBound != null) {
-			result.lBound = lBound.deepCopy();
-		}
-		if (uBound != null) {
-			result.uBound = uBound.deepCopy();
-		}
-		result.lBoundStrict = lBoundStrict;
-		result.uBoundStrict = uBoundStrict;
-		result.equals = equals;
-		result.boundType = boundType;
-		result.rewardStructureIndex = rewardStructureIndex;
-
-		return result;
+		return this;
 	}
 
 	@Override

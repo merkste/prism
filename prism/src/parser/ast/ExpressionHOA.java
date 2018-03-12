@@ -29,6 +29,7 @@ package parser.ast;
 import parser.EvaluateContext;
 import parser.type.TypePathBool;
 import parser.visitor.ASTVisitor;
+import parser.visitor.DeepCopy;
 import prism.PrismLangException;
 import prism.Pair;
 
@@ -98,13 +99,17 @@ public class ExpressionHOA extends Expression
 	}
 
 	@Override
-	public Expression deepCopy()
+	public ExpressionHOA deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		ExpressionHOA result = new ExpressionHOA(automatonFile);
-		for (Pair<String, Expression> rename : getRenames()) {
-			result.addRename(rename.getKey(), rename.getValue().deepCopy());
+		automatonFile = copier.copy(automatonFile);
+		// copy pairs individually to new list
+		ArrayList<Pair<String, Expression>> oldRenames = apRenames;
+		apRenames = new ArrayList<>(apRenames.size());
+		for (Pair<String, Expression> rename : oldRenames) {
+			addRename(rename.getKey(), copier.copy(rename.getValue()));
 		}
-		return result;
+
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")

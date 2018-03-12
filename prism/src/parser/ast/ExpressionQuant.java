@@ -3,6 +3,7 @@ package parser.ast;
 import explicit.MinMax;
 import parser.EvaluateContext;
 import parser.Values;
+import parser.visitor.DeepCopy;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
@@ -187,7 +188,14 @@ public abstract class ExpressionQuant<E extends Expression> extends Expression
 	// Methods required for ASTElement:
 
 	@Override
-	public abstract ExpressionQuant<E> deepCopy();
+	public ExpressionQuant<E> deepCopy(DeepCopy copier) throws PrismLangException
+	{
+		expression = copier.copy(expression);
+		bound      = copier.copy(bound);
+		filter     = copier.copy(filter);
+
+		return this;
+	}
 
 	@Override
 	public ExpressionQuant<E> clone()

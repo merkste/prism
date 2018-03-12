@@ -157,18 +157,13 @@ public class ExpressionViewVar extends Expression
 		return name;
 	}
 
-	/**
-	 * Perform a deep copy.
-	 */
-	public Expression deepCopy()
+	@Override
+	public ExpressionViewVar deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		ExpressionViewVar expr = new ExpressionViewVar(name, type);
-		expr.setLow(low);
-		expr.setPosition(this);
-		for (ExpressionVar bit : bits) {
-			expr.addBit((ExpressionVar) bit.deepCopy());
-		}
-		return expr;
+		low = copier.copy(low);
+		copier.copyAll(bits);
+
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")

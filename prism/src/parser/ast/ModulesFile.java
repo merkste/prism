@@ -1398,72 +1398,64 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return s;
 	}
 
-	/**
-	 * Perform a deep copy.
-	 */
-	@SuppressWarnings("unchecked")
-	public ASTElement deepCopy()
+	@Override
+	public ModulesFile deepCopy(DeepCopy copier) throws PrismLangException
 	{
-		int i, n;
-		ModulesFile ret = new ModulesFile();
-		
-		// Copy ASTElement stuff
-		ret.setPosition(this);
-		// Copy type
-		ret.setModelType(modelType);
-		// Deep copy main components
-		ret.setFormulaList((FormulaList) formulaList.deepCopy());
-		ret.setLabelList((LabelList) labelList.deepCopy());
-		ret.setConstantList((ConstantList) constantList.deepCopy());
-		n = getNumGlobals();
-		for (i = 0; i < n; i++) {
-			ret.addGlobal((Declaration) getGlobal(i).deepCopy());
+		// deep copy main components
+		formulaList  = copier.copy(formulaList);
+		labelList    = copier.copy(labelList);
+		constantList = copier.copy(constantList);
+		initStates   = copier.copy(initStates);
+		copier.copyAll(globals);
+		copier.copyAll(globalViews);
+		copier.copyAll(systemDefns);
+		copier.copyAll(rewardStructs);
+		copier.copyAll(varDecls);
+		copier.copyAll(viewDecls);
+		for (int i = 0, n = getNumModules(); i < n; i++) {
+			// only change modules and ignore other objects (== null)
+			if (getModule(i) != null) {
+				setModule(i, copier.copy(getModule(i)));
+			}
 		}
-		n = getNumGlobalViews();
-		for (i = 0; i < n; i++) {
-			ret.addGlobalView((Declaration) getGlobalView(i).deepCopy());
-		}
-		n = getNumModules();
-		for (i = 0; i < n; i++) {
-			ret.addModule((Module) getModule(i).deepCopy());
-		}
-		n = getNumSystemDefns();
-		for (i = 0; i < n; i++) {
-			ret.addSystemDefn(getSystemDefn(i).deepCopy(), getSystemDefnName(i));
-		}
-		n = getNumRewardStructs();
-		for (i = 0; i < n; i++) {
-			ret.addRewardStruct((RewardStruct) getRewardStruct(i).deepCopy());
-		}
-		if (initStates != null)
-			ret.setInitialStates(initStates.deepCopy());
-		// Copy other (generated) info
-		ret.formulaIdents = (formulaIdents == null) ? null : (Vector<String>)formulaIdents.clone();
-		ret.constantIdents = (constantIdents == null) ? null : (Vector<String>)constantIdents.clone();
-		ret.varIdents = (varIdents == null) ? null : (Vector<String>)varIdents.clone();
-		ret.moduleNames = (moduleNames == null) ? null : moduleNames.clone();
-		ret.synchs = (synchs == null) ? null : (Vector<String>)synchs.clone();
-		if (varDecls != null) {
-			ret.varDecls = new Vector<Declaration>();
-			for (Declaration d : varDecls)
-				ret.varDecls.add((Declaration) d.deepCopy());
-		}
-		ret.varNames = (varNames == null) ? null : (Vector<String>)varNames.clone();
-		ret.varTypes = (varTypes == null) ? null : (Vector<Type>)varTypes.clone();
-		ret.constantValues = (constantValues == null) ? null : new Values(constantValues);
 
-		if (viewDecls != null) {
-			ret.viewDecls = new Vector<Declaration>();
-			for (Declaration d : viewDecls)
-				ret.viewDecls.add((Declaration) d.deepCopy());
-		}
-		ret.viewNames = ((viewNames == null) ? null : (Vector<String>) viewNames.clone());
-		ret.viewTypes = ((viewTypes == null) ? null : (Vector<Type>) viewTypes.clone());
+		return this;
+	}
 
-		// a Path is immutable, no need for deep-copy
-		ret.location = location;
-
-		return ret;
+	@SuppressWarnings("unchecked")
+	@Override
+	public ModulesFile clone()
+	{
+		ModulesFile clone = (ModulesFile) super.clone();
+	
+		// clone main components
+		clone.globals           = (Vector<Declaration>) globals.clone();
+		clone.globalViews       = (Vector<Declaration>) globalViews.clone();
+		clone.modules           = (Vector<Object>) modules.clone();
+		clone.systemDefnNames   = (ArrayList<String>) systemDefnNames.clone();
+		clone.systemDefns       = (ArrayList<SystemDefn>) systemDefns.clone();
+		clone.rewardStructs     = (ArrayList<RewardStruct>) rewardStructs.clone();
+		clone.formulaIdents     = (Vector<String>) formulaIdents.clone();
+		clone.constantIdents    = (Vector<String>) constantIdents.clone();
+		clone.varIdents         = (Vector<String>) varIdents.clone();
+		clone.varDecls          = (Vector<Declaration>) varDecls.clone();
+		clone.varNames          = (Vector<String>) varNames.clone();
+		clone.varTypes          = (Vector<Type>) varTypes.clone();
+		clone.viewDecls         = (Vector<Declaration>) viewDecls.clone();
+		clone.viewNames         = (Vector<String>) viewNames.clone();
+		clone.viewTypes         = (Vector<Type>) viewTypes.clone();
+	
+		// clone other (generated) info
+		if (constantValues != null)
+			clone.constantValues = (Values) constantValues.clone();
+		if (undefinedConstantValues != null)
+			clone.undefinedConstantValues = (Values) undefinedConstantValues.clone();
+		if (moduleNames != null)
+			clone.moduleNames = moduleNames.clone();
+		if (synchs != null)
+			clone.synchs =  (Vector<String>) synchs.clone();
+	
+		return clone;
 	}
 
 	public Vector<Declaration> getViewDeclarations()
@@ -1485,42 +1477,6 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	public Vector<String> getViewNames()
 	{
 		return viewNames;
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public ModulesFile clone()
-	{
-		ModulesFile clone = (ModulesFile) super.clone();
-
-		// clone main components
-		clone.globals           = (Vector<Declaration>) globals.clone();
-		clone.globalViews       = (Vector<Declaration>) globalViews.clone();
-		clone.modules           = (Vector<Object>) modules.clone();
-		clone.systemDefnNames   = (ArrayList<String>) systemDefnNames.clone();
-		clone.systemDefns       = (ArrayList<SystemDefn>) systemDefns.clone();
-		clone.rewardStructs     = (ArrayList<RewardStruct>) rewardStructs.clone();
-		clone.formulaIdents     = (Vector<String>) formulaIdents.clone();
-		clone.constantIdents    = (Vector<String>) constantIdents.clone();
-		clone.varIdents         = (Vector<String>) varIdents.clone();
-		clone.varDecls          = (Vector<Declaration>) varDecls.clone();
-		clone.varNames          = (Vector<String>) varNames.clone();
-		clone.varTypes          = (Vector<Type>) varTypes.clone();
-		clone.viewDecls         = (Vector<Declaration>) viewDecls.clone();
-		clone.viewNames         = (Vector<String>) viewNames.clone();
-		clone.viewTypes         = (Vector<Type>) viewTypes.clone();
-
-		// clone other (generated) info
-		if (constantValues != null)
-			clone.constantValues = (Values) constantValues.clone();
-		if (undefinedConstantValues != null)
-			clone.undefinedConstantValues = (Values) undefinedConstantValues.clone();
-		if (moduleNames != null)
-			clone.moduleNames = moduleNames.clone();
-		if (synchs != null)
-			clone.synchs =  (Vector<String>) synchs.clone();
-
-		return clone;
 	}
 }
 
