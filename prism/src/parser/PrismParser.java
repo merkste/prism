@@ -951,7 +951,7 @@ public class PrismParser implements PrismParserConstants {
         Expression low = null, high = null;
         DeclarationType declType, subtype;
         Token begin = null;
-        List<ExpressionVar> viewBitVars = null;
+        ArrayList<ExpressionVar> viewBitVars = null;
         String bitVar = null;
             begin = getToken(1);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -3554,7 +3554,7 @@ public class PrismParser implements PrismParserConstants {
         ExpressionFilter expr = null;
         String op = null;
         QuotedString qs = null;
-        List<QuotedString> operatorArguments = null;
+        ArrayList<QuotedString> operatorArguments = null;
         Expression filter = null;
         Expression expr2 = null;
         Token begin = null;

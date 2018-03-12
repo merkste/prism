@@ -47,7 +47,7 @@ import prism.PrismLangException;
  */
 public class TemporalOperatorBounds extends ASTElement {
 	/** The list (conjunction) of TemporalOperatorBound */
-	public List<TemporalOperatorBound> bounds = new ArrayList<TemporalOperatorBound>();
+	public ArrayList<TemporalOperatorBound> bounds = new ArrayList<TemporalOperatorBound>();
 
 	/** Get the list of bounds */
 	public List<TemporalOperatorBound> getBounds()
@@ -271,6 +271,17 @@ public class TemporalOperatorBounds extends ASTElement {
 			result.bounds.add(bound.deepCopy());
 		}
 		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public TemporalOperatorBounds clone()
+	{
+		TemporalOperatorBounds clone = (TemporalOperatorBounds) super.clone();
+
+		clone.bounds = (ArrayList<TemporalOperatorBound>) bounds.clone();
+
+		return clone;
 	}
 
 	public static List<List<TemporalOperatorBound>> groupBoundsDiscreteTime(List<TemporalOperatorBound> bounds) throws PrismException {

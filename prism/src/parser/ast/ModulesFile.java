@@ -1487,6 +1487,41 @@ public class ModulesFile extends ASTElement implements ModelInfo
 		return viewNames;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public ModulesFile clone()
+	{
+		ModulesFile clone = (ModulesFile) super.clone();
+
+		// clone main components
+		clone.globals           = (Vector<Declaration>) globals.clone();
+		clone.globalViews       = (Vector<Declaration>) globalViews.clone();
+		clone.modules           = (Vector<Object>) modules.clone();
+		clone.systemDefnNames   = (ArrayList<String>) systemDefnNames.clone();
+		clone.systemDefns       = (ArrayList<SystemDefn>) systemDefns.clone();
+		clone.rewardStructs     = (ArrayList<RewardStruct>) rewardStructs.clone();
+		clone.formulaIdents     = (Vector<String>) formulaIdents.clone();
+		clone.constantIdents    = (Vector<String>) constantIdents.clone();
+		clone.varIdents         = (Vector<String>) varIdents.clone();
+		clone.varDecls          = (Vector<Declaration>) varDecls.clone();
+		clone.varNames          = (Vector<String>) varNames.clone();
+		clone.varTypes          = (Vector<Type>) varTypes.clone();
+		clone.viewDecls         = (Vector<Declaration>) viewDecls.clone();
+		clone.viewNames         = (Vector<String>) viewNames.clone();
+		clone.viewTypes         = (Vector<Type>) viewTypes.clone();
+
+		// clone other (generated) info
+		if (constantValues != null)
+			clone.constantValues = (Values) constantValues.clone();
+		if (undefinedConstantValues != null)
+			clone.undefinedConstantValues = (Values) undefinedConstantValues.clone();
+		if (moduleNames != null)
+			clone.moduleNames = moduleNames.clone();
+		if (synchs != null)
+			clone.synchs =  (Vector<String>) synchs.clone();
+
+		return clone;
+	}
 }
 
 // ------------------------------------------------------------------------------

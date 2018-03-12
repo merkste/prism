@@ -171,6 +171,16 @@ public class ExpressionViewVar extends Expression
 		return expr;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public ExpressionViewVar clone()
+	{
+		ExpressionViewVar clone = (ExpressionViewVar) super.clone();
+
+		clone.bits = (ArrayList<ExpressionVar>) bits.clone();
+
+		return clone;
+	}
 }
 
 //------------------------------------------------------------------------------

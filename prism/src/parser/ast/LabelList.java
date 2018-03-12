@@ -33,7 +33,7 @@ import prism.PrismLangException;
 
 // class to store list of labels
 
-public class LabelList extends ASTElement
+public class LabelList extends ASTElement implements Cloneable
 {
 	// Name/expression pairs to define labels
 	private Vector<String> names;
@@ -141,6 +141,19 @@ public class LabelList extends ASTElement
 		}
 		ret.setPosition(this);
 		return ret;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public LabelList clone()
+	{
+		LabelList clone = (LabelList) super.clone();
+
+		clone.labels     = (Vector<Expression>)      labels.clone();
+		clone.nameIdents = (Vector<ExpressionIdent>) nameIdents.clone();
+		clone.names      = (Vector<String>)          names.clone();
+
+		return clone;
 	}
 }
 

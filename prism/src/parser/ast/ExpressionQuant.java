@@ -189,6 +189,19 @@ public abstract class ExpressionQuant<E extends Expression> extends Expression
 	@Override
 	public abstract ExpressionQuant<E> deepCopy();
 
+	@Override
+	public ExpressionQuant<E> clone()
+	{
+		@SuppressWarnings("unchecked")
+		ExpressionQuant<E> clone = (ExpressionQuant<E>) super.clone();
+
+		if (minMax != null) {
+			clone.minMax = minMax.clone();
+		}
+
+		return clone;
+	}
+
 	// Standard methods
 
 	@Override

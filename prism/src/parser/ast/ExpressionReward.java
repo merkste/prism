@@ -258,6 +258,12 @@ public class ExpressionReward extends ExpressionQuant<Expression>
 		return expr;
 	}
 
+	@Override
+	public ExpressionReward clone()
+	{
+		return (ExpressionReward) super.clone();
+	}
+
 	// Standard methods
 
 	@Override

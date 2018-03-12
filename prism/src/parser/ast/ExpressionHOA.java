@@ -52,7 +52,7 @@ public class ExpressionHOA extends Expression
 	 * A list of (AP, expression) pairs, relating atomic propositions
 	 * in the automaton with expressions in the model.
 	 */
-	private List<Pair<String, Expression>> apRenames;
+	private ArrayList<Pair<String, Expression>> apRenames;
 
 	/** Constructor. */
 	public ExpressionHOA(QuotedString automatonFile)
@@ -105,6 +105,17 @@ public class ExpressionHOA extends Expression
 			result.addRename(rename.getKey(), rename.getValue().deepCopy());
 		}
 		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ExpressionHOA clone()
+	{
+		ExpressionHOA clone = (ExpressionHOA) super.clone();
+
+		clone.apRenames = (ArrayList<Pair<String, Expression>>) apRenames.clone();
+
+		return clone;
 	}
 
 	@Override

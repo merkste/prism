@@ -71,7 +71,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public abstract boolean returnsSingleValue();
 	
-	// Overrided version of deepCopy() from superclass ASTElement (to reduce casting).
+	// Override version of deepCopy() from superclass ASTElement (to reduce casting).
 
 	/**
 	 * Perform a deep copy.

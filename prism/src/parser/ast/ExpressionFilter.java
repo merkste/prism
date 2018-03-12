@@ -85,7 +85,7 @@ public class ExpressionFilter extends Expression
 	// (and string representation of)
 	private FilterOperator opType;
 	private String opName;
-	private List<QuotedString> opArguments = new ArrayList<QuotedString>();
+	private ArrayList<QuotedString> opArguments = new ArrayList<QuotedString>();
 	// Expression that filter is applied to
 	private Expression operand;
 	// Expression defining states that filter is over
@@ -181,7 +181,7 @@ public class ExpressionFilter extends Expression
 		}
 	}
 
-	public void setOperatorArguments(List<QuotedString> args)
+	public void setOperatorArguments(ArrayList<QuotedString> args)
 	{
 		if (args != null) {
 			opArguments = args;
@@ -326,6 +326,17 @@ public class ExpressionFilter extends Expression
 		}
 
 		return e;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ExpressionFilter clone()
+	{
+		ExpressionFilter clone = (ExpressionFilter) super.clone();
+
+		clone.opArguments = (ArrayList<QuotedString>) opArguments.clone();
+
+		return clone;
 	}
 	
 	// Standard methods

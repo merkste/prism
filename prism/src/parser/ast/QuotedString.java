@@ -93,6 +93,12 @@ public class QuotedString extends ASTElement
 		return new QuotedString(text, needsEscaping);
 	}
 
+	@Override
+	public QuotedString clone()
+	{
+		return (QuotedString) super.clone();
+	}
+
 	/** Does the unquoted string need quoting, i.e. does it contain " or \ characters?*/
 	private static boolean needsEscaping(String s)
 	{

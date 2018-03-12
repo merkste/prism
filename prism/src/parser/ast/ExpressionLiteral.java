@@ -129,6 +129,12 @@ public class ExpressionLiteral extends Expression
 		return expr;
 	}
 
+	@Override
+	public ExpressionLiteral clone()
+	{
+		return (ExpressionLiteral) super.clone();
+	}
+
 	// Standard methods
 	
 	@Override

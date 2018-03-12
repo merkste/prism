@@ -42,7 +42,7 @@ public class DeclarationIntView extends DeclarationType
 	// Max value
 	protected Expression high;
 
-	protected List<ExpressionVar> bits = new ArrayList<ExpressionVar>();
+	protected ArrayList<ExpressionVar> bits = new ArrayList<ExpressionVar>();
 
 	public DeclarationIntView(Expression low, Expression high)
 	{
@@ -84,7 +84,7 @@ public class DeclarationIntView extends DeclarationType
 		bits.add(bit);
 	}
 
-	public void setBits(List<ExpressionVar> bits)
+	public void setBits(ArrayList<ExpressionVar> bits)
 	{
 		this.bits = bits;
 	}
@@ -138,5 +138,16 @@ public class DeclarationIntView extends DeclarationType
 		}
 		ret.setPosition(this);
 		return ret;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public DeclarationIntView clone()
+	{
+		DeclarationIntView clone = (DeclarationIntView) super.clone();
+
+		clone.bits = (ArrayList<ExpressionVar>) bits.clone();
+
+		return clone;
 	}
 }

@@ -194,6 +194,12 @@ public class ExpressionTemporal extends Expression
 		return bounds;
 	}
 
+	@Override
+	public ExpressionTemporal clone()
+	{
+		return (ExpressionTemporal) super.clone();
+	}
+
 	// Standard methods
 
 	@Override

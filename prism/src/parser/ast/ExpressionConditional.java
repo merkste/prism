@@ -94,6 +94,12 @@ public class ExpressionConditional extends ExpressionQuant<ExpressionQuant<?>>
 	}
 
 	@Override
+	public ExpressionConditional clone()
+	{
+		return (ExpressionConditional) super.clone();
+	}
+
+	@Override
 	public Object accept(final ASTVisitor v) throws PrismLangException
 	{
 		return v.visit(this);

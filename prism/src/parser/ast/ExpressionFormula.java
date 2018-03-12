@@ -135,6 +135,12 @@ public class ExpressionFormula extends Expression
 		return ret;
 	}
 
+	@Override
+	public ExpressionFormula clone()
+	{
+		return (ExpressionFormula) super.clone();
+	}
+
 	// Standard methods
 	
 	@Override

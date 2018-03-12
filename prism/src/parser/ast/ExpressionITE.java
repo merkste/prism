@@ -129,6 +129,12 @@ public class ExpressionITE extends Expression
 		return expr;
 	}
 
+	@Override
+	public ExpressionITE clone()
+	{
+		return (ExpressionITE) super.clone();
+	}
+
 	// Standard methods
 	
 	@Override

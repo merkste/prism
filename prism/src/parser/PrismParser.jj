@@ -783,7 +783,7 @@ DeclarationType DeclarationVarType() :
 	Expression low = null, high = null;
 	DeclarationType declType, subtype;
 	Token begin = null;
-	List<ExpressionVar> viewBitVars = null;
+	ArrayList<ExpressionVar> viewBitVars = null;
 	String bitVar = null;
 }
 {
@@ -2082,7 +2082,7 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 	ExpressionFilter expr = null;
 	String op = null;
 	QuotedString qs = null;
-	List<QuotedString> operatorArguments = null;
+	ArrayList<QuotedString> operatorArguments = null;
 	Expression filter = null;
 	Expression expr2 = null;
 	Token begin = null;

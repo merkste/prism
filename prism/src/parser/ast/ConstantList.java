@@ -69,7 +69,7 @@ public class ConstantList extends ASTElement
 		types.addElement(t);
 		nameIdents.addElement(n);
 	}
-	
+
 	public void setConstant(int i, Expression c)
 	{
 		constants.setElementAt(c, i);
@@ -433,6 +433,20 @@ public class ConstantList extends ASTElement
 		}
 		ret.setPosition(this);
 		return ret;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public ConstantList clone()
+	{
+		ConstantList clone = (ConstantList) super.clone();
+
+		clone.constants  = (Vector<Expression>)      constants.clone();
+		clone.nameIdents = (Vector<ExpressionIdent>) nameIdents.clone();
+		clone.names      = (Vector<String>)          names.clone();
+		clone.types      = (Vector<Type>)            types.clone();
+
+		return clone;
 	}
 }
 
