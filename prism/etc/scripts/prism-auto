@@ -11,13 +11,45 @@
 
 # Run "prism-auto -h" for details of further options.
 
-import os,sys,re,subprocess,signal,tempfile,functools,filecmp,logging,time
+import os,sys,re,subprocess,signal,tempfile,functools,logging,time,platform
 from pipes import quote
 from optparse import OptionParser
 
 #==================================================================================================
+# Global variables
+#==================================================================================================
+
+# statistics about test results
+testStats = dict(SUCCESS = 0, FAILURE = 0, SKIPPED = 0, UNSUPPORTED = 0, WARNING = 0, DDWARNING = 0)
+
+# colour coding for test results
+# for colour values, see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+testColours = dict(SUCCESS = 32, FAILURE = 31, SKIPPED = 90, UNSUPPORTED = 34, WARNING = 33)
+
+#==================================================================================================
 # Utility functions
 #==================================================================================================
+
+# returns true if we are running on Windows
+def isWindows():
+    s = platform.system()
+    return s == 'Windows' or re.match('CYGWIN', s) != None
+
+# compare two files (with filenames f1,f2) for equality
+def compareFiles(f1,f2):
+    # We open the files in 'rU' mode (universal newline mode),
+    # which automatically converts all the different newline
+    # encodings to '\n'.
+    # This allow the two files to differ in their
+    # line ending encodings without affecting equality
+    with open(f1, 'rU') as fp1, open(f2, 'rU') as fp2:
+        while True:
+            s1 = fp1.readline()
+            s2 = fp2.readline()
+            if s1 != s2:  # mismatch
+                return False
+            if s1 == '':  # EOF (in both files)
+                return True
 
 # returns a sorted list of files / directories in dir
 def sortedListDir(dir):
@@ -123,6 +155,11 @@ def getAutoFilesInDir(dir):
 def getMatchingAutoFilesInDir(dir, modelFile):
     return getFilesInDir(dir, lambda file: isAutoFile(file) and startsWith(modelFile, dir, file))
 
+# Get a list of all out files in a directory
+
+def getOutFilesInDir(dir):
+    return getFilesInDir(dir, isOutFile, false)
+
 # Get a list of all out files in a directory whose prefix matches a model file name
 
 def getMatchingOutFilesInDir(dir, modelFile):
@@ -194,6 +231,10 @@ def possibleNameClash(fullName):
 
 def expandName(dir, option):
     splitOption = option.split(':')
+    # if the filename is 'stdout' (recognized as special by PRISM),
+    # we don't expand and simply return the input
+    if splitOption[0] == "stdout":
+        return option
     fullName = os.path.join(dir, splitOption[0])
     return fullName + (":" + splitOption[1] if len(splitOption) > 1 else '')
 
@@ -202,6 +243,10 @@ def expandName(dir, option):
 
 def prependToFile(prefix, option):
     splitOption = option.split(':')
+    # if the filename is 'stdout' (recognized as special by PRISM),
+    # we don't expand and simply return the input
+    if splitOption[0] == "stdout":
+        return option
     fullName = os.path.join(os.path.dirname(splitOption[0]), 'tmp.' + os.path.basename(splitOption[0]))
     return fullName + (":" + splitOption[1] if len(splitOption) > 1 else '')
 
@@ -267,7 +312,8 @@ def getExpectedOutFilesFromArgs(args):
                     fullName = base + str(i) + '.' + ext
                     foundFile = True
             if not foundFile:
-                print('\033[93m' + "Warning: There is no file of the form " + base + "[number]." + ext + " to compare against -- will skip" + '\033[0m')
+                printColoured('WARNING', "Warning: There is no file of the form " + base + "[number]." + ext + " to compare against -- will skip")
+                incrementTestStat('WARNING')
     return resultFiles
 
 # Create a valid name for a log file based on a list of benchmark arguments
@@ -293,6 +339,18 @@ def walk(dir, meth):
         if os.path.isdir(nfile):
             walk(nfile,meth)
 
+#
+# Print a message in colour, but only if isColourEnabled() is true.
+# If isColourEnabled is false, print message without colours.
+# The colour parameter is a key for the global testColours dictionary.
+#
+def printColoured(colour, msg):
+    global testColours
+    if isColourEnabled():
+        print('\033[' + str(testColours[colour]) + 'm' + msg + '\033[0m')
+    else:
+        print(msg)
+
 #==================================================================================================
 # Benchmarking
 #==================================================================================================
@@ -300,69 +358,143 @@ def walk(dir, meth):
 # Run PRISM with a given list of command-line args
 
 def runPrism(args, dir=""):
+    # keep track if we need to cleanup the log file after use
+    cleanupLogFile = False
     if options.test:
-        args.append('-testall' if options.testAll else '-test')
-    prismArgs = [options.ngprism] if options.nailgun else [options.prismExec]
-    prismArgs += args
+        if options.testAll: args.append("-testall")
+        else: args.append("-test")
+    if options.nailgun:
+        prismArgs = [options.ngprism] + args
+    else:
+        prismArgs = [options.prismExec] + args
     if options.echo or options.echoFull:
-        suffix = []
-        if options.logDir:
-            if options.echoFull:
-                suffix += (['|', 'tee'] if options.test else ['>'])
-            else:
-                suffix += ['-mainlog']
-            logFile = os.path.relpath(os.path.join(options.logDir, createLogFileName(args, dir)))
-            suffix += [quote(logFile)]
         if options.echoFull:
             prismArgs = ['echo', quote(' '.join(prismArgs)), ';'] + prismArgs
+            if options.logDir:
+                logFile = os.path.relpath(os.path.join(options.logDir, createLogFileName(args, dir)))
+                logFile = quote(logFile)
+                if options.test:
+                    prismArgs += ['|', 'tee', logFile]
+                else:
+                    prismArgs += ['>', logFile]
             if options.test:
-                suffix += ['|', 'grep "Testing result:"']
-        print(' '.join(prismArgs + suffix))
+                prismArgs += ['|', 'grep "Testing result:"']
+        print(' '.join(prismArgs))
         return
     print(' '.join(prismArgs))
-    # create log files
     if options.logDir:
-        logFile   = os.path.join(options.logDir, createLogFileName(args, dir))
+        logFile = os.path.join(options.logDir, createLogFileName(args, dir))
+        #f = open(logFile, 'w')
         prismArgs = prismArgs + ['-mainlog', logFile]
-    elif options.test:
-        logFile   = tempfile.NamedTemporaryFile(delete=False).name
+        exitCode = subprocess.Popen(prismArgs).wait()
+        #exitCode = subprocess.Popen(prismArgs, cwd=dir, stdout=f).wait()
+    elif options.test or options.ddWarnings:
+        # create logfile
+        if isWindows():
+            # On Windows, PRISM can not open a temporary file created with NamedTemporaryFile.
+            # So we use the not-as-secure mktemp...
+            # We use . as directory because PRISM / Java can not handle
+            # cygwin style paths (/tmp/...)
+            logFile = tempfile.mktemp(dir='.')
+        else:
+            # Not on Windows, use NamedTemporaryFile
+            f = tempfile.NamedTemporaryFile(delete=False)
+            logFile = f.name
+            f.close()
+        # we want cleanup when we are done, as this is a real temporary file
+        cleanupLogFile = True
         prismArgs = prismArgs + ['-mainlog', logFile]
-    # run prism
-    exitCode = subprocess.Popen(prismArgs).wait()
+        exitCode = subprocess.Popen(prismArgs).wait()
+    else:
+        exitCode = subprocess.Popen(prismArgs).wait()
+    # Extract DD reference count warnings
+    if options.ddWarnings:
+        for line in open(logFile, 'r').readlines():
+            if re.match('Warning: CUDD reports .* non-zero references', line):
+                printTestResult(line)
     # Extract test results if needed
     if options.test:
         for line in open(logFile, 'r').readlines():
             if re.match('Testing result:', line):
                 printTestResult(line)
-            if options.showWarnings and re.match('Warning:', line):
-                printTestResult(line)
-    if options.test and exitCode != 0:
+            elif re.match('Warning:', line):
+                if options.showWarnings or options.verboseTest:
+                    printTestResult(line)
+                else:
+                    # We don't print it, but we count it
+                    countTestResult(line)
+            elif options.verboseTest:
+                # in verbose mode, also print the non-matching lines
+                # rstrip to remove newline before printing
+                print(line.rstrip())
+    if options.test and not options.verboseTest and exitCode != 0:
+        # failure, we don't want to cleanup the log (if it was a temporary file)
+        # so that the user can inspect it
+        cleanupLogFile = False
         for line in open(logFile, 'r').readlines():
             if re.match('Error:', line):
                 printTestResult(line)
         print("To see log file, run:")
         print("edit " + logFile)
         if not options.testAll:
-            sys.exit(1)
+            closeDown(1)
+    if cleanupLogFile:
+        # logFile was a temporary file and we'd like to clean it up
+        os.remove(logFile)
 
 # Print a testing-related message, colour coding if needed
 
 def printTestResult(msg):
+    global testColours
     msg = str.rstrip(msg)
+    countTestResult(msg)
     if not isColourEnabled():
         print(msg);
         return
     # Coloured-coded...
     if 'Error:' in msg or 'FAIL' in msg:
-        print('\033[31m' + msg + '\033[0m')
+        printColoured('FAILURE', msg)
+    elif 'Warning:' in msg:
+        printColoured('WARNING', msg)
     elif 'PASS' in msg:
-        print('\033[32m' + msg + '\033[0m')
-    elif 'SKIPPED' in msg:
-        print('\033[90m' + msg + '\033[0m')
+        printColoured('SUCCESS', msg)
+    elif 'SKIPPED' in msg or 'NOT TESTED' in msg:
+        printColoured('SKIPPED', msg)
     elif 'UNSUPPORTED' in msg or 'Warning:' in msg:
-        print('\033[33m' + msg + '\033[0m')
+        printColoured('UNSUPPORTED', msg)
     else:
         print(msg)
+
+def incrementTestStat(stat):
+    global testStats
+    testStats[stat]+=1
+
+def printTestStatistics():
+    if options.test and not options.echo:
+        print('\nTest results:')
+        printColoured('SUCCESS',     ' Success:      ' + str(testStats['SUCCESS']))
+        printColoured('WARNING',     ' Warnings:     ' + str(testStats['WARNING'])
+                      + ('  (use -w to show)' if (testStats['WARNING']>0 and not options.showWarnings and not options.verboseTest) else ''))
+        if (options.ddWarnings):
+            printColoured('WARNING',     '  DD-Warnings: ' + str(testStats['DDWARNING']))
+        printColoured('FAILURE',     ' Failure:      ' + str(testStats['FAILURE']))
+        printColoured('UNSUPPORTED', ' Unsupported:  ' + str(testStats['UNSUPPORTED']))
+        printColoured('SKIPPED',     ' Skipped:      ' + str(testStats['SKIPPED']))
+
+def countTestResult(msg):
+    if 'Error:' in msg or 'FAIL' in msg:
+        incrementTestStat('FAILURE')
+    elif options.ddWarnings and re.match('Warning: CUDD reports .* non-zero references', msg):
+        incrementTestStat('WARNING')
+        incrementTestStat('DDWARNING')
+    elif 'Warning:' in msg:
+        incrementTestStat('WARNING')
+    elif 'PASS' in msg:
+        incrementTestStat('SUCCESS')
+    elif 'SKIPPED' in msg or 'NOT TESTED' in msg:
+        incrementTestStat('SKIPPED')
+    elif 'UNSUPPORTED' in msg:
+        incrementTestStat('UNSUPPORTED')
 
 # Is printing of colour coded messages enabled?
 
@@ -389,7 +521,7 @@ def verifyAndCleanupExports(outFiles, exportPrefix):
             if options.noExportTests:
                 msg = msg + "SKIPPED"
                 os.remove(expFile)
-            elif filecmp.cmp(outFile, expFile):
+            elif compareFiles(outFile, expFile):
                 # If successful, notify and delete exported file
                 msg = msg + "PASS"
                 os.remove(expFile)
@@ -404,7 +536,9 @@ def verifyAndCleanupExports(outFiles, exportPrefix):
             else:
                 msg = msg + "FAIL (no " + os.path.basename(expFile) + " to compare to)"
                 result = False
-    printTestResult(msg)
+        printTestResult(msg)
+        if not result:
+            return result
     return result
 
 # Run a benchmark, specified by a list of command-line args,
@@ -449,7 +583,7 @@ def benchmark(file, args, dir=""):
         # print "Out files to verify exports against: " + ' '.join(outFiles)
         allEqual = verifyAndCleanupExports(outFiles, exportPrefix)
         if (not allEqual) and (not options.testAll):
-            sys.exit(1)
+            closeDown(1)
 
 # Execute benchmarking based on a directory
 # Unless requested not to (via -n/--non-recursive), the directory is searched recursively.
@@ -612,6 +746,15 @@ def benchmarkPropListFile(propListFile):
         propFile = items[1].strip()
         benchmarkPropertiesFile(os.path.join(dir, propFile))
 
+# (Re-)start the nailgun server
+# We first try to stop an existing server (which should fail quickly if there is none running)
+def restartNailGunServer():
+    print("Stopping existing nailgun server, if it's running...")
+    subprocess.Popen([options.ngprism, "stop"]).wait()
+    print("Starting nailgun server...")
+    os.system(options.prismExec + " -ng &")
+    time.sleep(0.5)
+
 #==================================================================================================
 # Main program
 #==================================================================================================
@@ -620,9 +763,18 @@ def printUsage():
     print("Usage: prism-auto ...")
 
 def signal_handler(signal, frame):
+    closeDown(1)
+
+# Close down neatly, stopping nailgun if needed
+
+def closeDown(exitCode):
     if options.nailgun:
-        subprocess.Popen([options.ngprism, "stop"]).wait()
-    sys.exit(1)
+        if options.echo or options.echoFull:
+            print(options.ngprism + " stop")
+        else:
+            subprocess.Popen([options.ngprism, "stop"]).wait()
+    printTestStatistics()
+    sys.exit(exitCode)
 
 # Main program
 
@@ -637,6 +789,7 @@ parser.add_option("-p", "--prog", dest="prismExec", metavar="FILE", default="pri
 parser.add_option("-n", "--non-recursive", action="store_true", dest="nonRec", default=False, help="Don't recurse into directories")
 parser.add_option("-x", "--extra", action="append", dest="extraArgs", metavar="XXX", default=[], help="Pass extra switches to PRISM")
 parser.add_option("-t", "--test", action="store_true", dest="test", default=False, help="Run in test mode")
+parser.add_option("--verbose-test", action="store_true", dest="verboseTest", default=False, help="Run in verbose test mode (implies --test)")
 parser.add_option("-w", "--show-warnings", action="store_true", dest="showWarnings", default=False, help="Show warnings (as well as errors) when in test mode")
 parser.add_option("--nailgun", action="store_true", dest="nailgun", default=False, help="Run PRISM in Nailgun mode")
 parser.add_option("--ngprism", dest="ngprism", metavar="FILE", default="ngprism", help="Specify the location of ngprism (for Nailgun mode)")
@@ -646,6 +799,7 @@ parser.add_option("--debug", action="store_true", dest="debug", default=False, h
 parser.add_option("--echo-full", action="store_true", dest="echoFull", default=False, help="An expanded version of -e/--echo")
 parser.add_option("--models-filename", dest="modelsFilename", metavar="X", default="models", help="Read in list of models/parameters for a directory from file X, if present [default=models]")
 parser.add_option("--no-export-tests", action="store_true", dest="noExportTests", default=False, help="Don't check exported files when in test mode")
+parser.add_option("--dd-warnings", action="store_true", dest="ddWarnings", default=False, help="Print the DD reference count warnings")
 parser.add_option("--colour", dest="colourEnabled", metavar="X", type="choice", choices=["yes","no","auto"], default="auto", help="Whether to colour test results: yes, no, auto (yes iff in terminal mode) [default=auto]")
 (options, args) = parser.parse_args()
 if len(args) < 1:
@@ -653,12 +807,17 @@ if len(args) < 1:
     sys.exit(1)
 if options.debug:
     logging.basicConfig(level=logging.DEBUG)
+if options.verboseTest:
+    # --verbose-test implies --test
+    vars(options)['test'] = True
 if options.logDir and not os.path.isdir(options.logDir):
     print("Log directory \"" + options.logDir + "\" does not exist")
     sys.exit(1)
 if options.nailgun:
-    os.system(options.prismExec + " -ng &")
-    time.sleep(0.5)
+    if options.echo or options.echoFull:
+        print(options.prismExec + " -ng &")
+    else:
+        restartNailGunServer();
 for arg in args:
     if os.path.isdir(arg):
         benchmarkDir(arg)
@@ -666,5 +825,4 @@ for arg in args:
         benchmarkFile(arg)
     else:
         print("Error: File/directory " + arg + " does not exist")
-if options.nailgun:
-    subprocess.Popen([options.ngprism, "stop"]).wait()
+closeDown(0)
