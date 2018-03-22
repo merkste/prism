@@ -124,6 +124,7 @@ public class PrismSettings implements Observer
 
 	// STEADY-STATE AND LONG-RUN
 	public static final String PRISM_CACHE_STEADY_STATES			= "prism.cacheSteadyStates";
+	public static final String PRISM_COMPUTE_S_VIA_L					= "prism.compute_S_via_L";
 
 	public static final	String PRISM_STORM_PATH						= "prism.storm.path";
 	public static final	String PRISM_STORM_OPTIONS					= "prism.storm.options";
@@ -446,6 +447,8 @@ public class PrismSettings implements Observer
 			// STEADY-STATE AND LONG-RUN OPTIONS:
 			{ BOOLEAN_TYPE,		PRISM_CACHE_STEADY_STATES,				"Cache steady-state probabilities",					"4.0.3",		new Boolean(true),														"",
 																			"Compute steady-state probabilities at most once, and store them for further queries." },
+			{ BOOLEAN_TYPE,		PRISM_COMPUTE_S_VIA_L,					"Compute S-operator via L-operator",					"4.0.3",		new Boolean(true),														"",
+																			"Compute S-operator using the algorithm for the more general L-operator." },
 		},
 		{
 			{ INTEGER_TYPE,		SIMULATOR_DEFAULT_NUM_SAMPLES,			"Default number of samples",			"4.0",		1000,			"1,",
@@ -1347,6 +1350,13 @@ public class PrismSettings implements Observer
 		else if (sw.equals("nocachesteadystates")) {
 			set(PRISM_CACHE_STEADY_STATES, false);
 		}
+		// Compute S-operator via L-operator
+		else if (sw.equals("computeSviaL")) {
+			set(PRISM_COMPUTE_S_VIA_L, true);
+		}
+		else if (sw.equals("nocomputeSviaL")) {
+			set(PRISM_COMPUTE_S_VIA_L, false);
+		}
 
 		// SPARSE/HYBRID/MTBDD OPTIONS:
 		
@@ -1971,6 +1981,8 @@ public class PrismSettings implements Observer
 		mainLog.println("STEADY-STATE AND LONG-RUN OPTIONS:");
 		mainLog.println("-cachesteadystates ............. Compute steady-state probabilities at most once, and store them for further queries [default]");
 		mainLog.println("-nocachesteadystates ........... Compute steady-states anew everytime they are needed");
+		mainLog.println("-computeSviaL .................. Compute S-operator using the algorithm for the more general L-operator.");
+		mainLog.println("-nocomputeSviaL ................ Compute S-operator using a separate algorithm.");
 		mainLog.println();
 		mainLog.println("FAST ADAPTIVE UNIFORMISATION (FAU) OPTIONS:");
 		mainLog.println("-fauepsilon <x> ................ Set probability threshold of birth process in FAU [default: 1e-6]");

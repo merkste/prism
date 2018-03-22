@@ -523,7 +523,20 @@ public class ProbModelChecker extends NonProbModelChecker
 		// Model check operand for all states
 		JDDNode bits = checkExpressionDD(expr, reach.copy());
 
-		return computeSteadyStateBackwardsProbs(bits, statesOfInterest);
+		if (settings.getBoolean(PrismSettings.PRISM_COMPUTE_S_VIA_L)) {
+			// Convert bits to doubles
+			StateValues values = new StateValuesMTBDD(bits, model);
+			if ((engine == Prism.HYBRID || engine == Prism.SPARSE)) {
+				values = values.convertToStateValuesDV();
+			}
+			// Consider all states
+			JDDNode states = reach.copy();
+			assert JDD.IsZeroOneMTBDD(states) : "Boolean result expected.";
+			ReachBsccComputer reachComputer = new ReachBsccComputer(model, null);
+			return computeLongRun(values, states, reachComputer, statesOfInterest);
+		} else {
+			return computeSteadyStateBackwardsProbs(bits, statesOfInterest);
+		}
 	}
 
 	protected StateValues computeSteadyStateBackwardsProbs(JDDNode b, JDDNode statesOfInterest) throws PrismException

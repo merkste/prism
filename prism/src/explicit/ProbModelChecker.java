@@ -495,7 +495,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 		// S operator
 		else if (expr instanceof ExpressionSS) {
-			res = checkExpressionSteadyState(model, (ExpressionSS) expr);
+			res = checkExpressionSteadyState(model, (ExpressionSS) expr, statesOfInterest);
 		}
 		// Otherwise, use the superclass
 		else {
@@ -1190,14 +1190,14 @@ public class ProbModelChecker extends NonProbModelChecker
 	/**
 	 * Model check an S operator expression and return the values for all states.
 	 */
-	protected StateValues checkExpressionSteadyState(Model model, ExpressionSS expr) throws PrismException
+	protected StateValues checkExpressionSteadyState(Model model, ExpressionSS expr, BitSet statesOfInterest) throws PrismException
 	{
 		// Get info from S operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
 		MinMax minMax = opInfo.getMinMax(model.getModelType());
 
 		// Compute probabilities
-		StateValues probs = checkSteadyStateFormula(model, expr.getExpression(), minMax);
+		StateValues probs = checkSteadyStateFormula(model, expr.getExpression(), minMax, statesOfInterest);
 
 		// Print out probabilities
 		if (getVerbosity() > 5) {
@@ -1220,7 +1220,7 @@ public class ProbModelChecker extends NonProbModelChecker
 	/**
 	 * Compute steady-state probabilities for an S operator.
 	 */
-	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax) throws PrismException
+	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
 		throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
 	}

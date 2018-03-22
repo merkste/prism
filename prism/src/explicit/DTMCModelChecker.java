@@ -52,6 +52,7 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
+import prism.PrismSettings;
 import prism.PrismUtils;
 import prism.SteadyStateCache;
 import prism.SteadyStateProbs;
@@ -1723,7 +1724,7 @@ public class DTMCModelChecker extends ProbModelChecker
 	 * Compute steady-state probabilities for an S operator.
 	 */
 	@Override
-	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax) throws PrismException
+	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
 	{
 		if (model.getModelType() != ModelType.DTMC) {
 			throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
@@ -1734,8 +1735,16 @@ public class DTMCModelChecker extends ProbModelChecker
 		assert bits != null : "Booolean result expected.";
 		double[] values = Utils.bitsetToDoubleArray(bits, model.getNumStates());
 
-		ModelCheckerResult result = computeSteadyStateBackwardsProbs((DTMC) model, values);
-		return StateValues.createFromDoubleArray(result.soln, model);
+		if (settings.getBoolean(PrismSettings.PRISM_COMPUTE_S_VIA_L)) {
+			// Consider all states
+			BitSet states = new BitSet(model.getNumStates());
+			states.flip(0, model.getNumStates());
+			ReachBsccComputer reachComputer = new ReachBsccComputer((DTMC) model, null);
+			return computeLongRun((DTMC) model, StateValues.createFromDoubleArray(values, model), states, reachComputer, statesOfInterest);
+		} else {
+			ModelCheckerResult result = computeSteadyStateBackwardsProbs((DTMC) model, values);
+			return StateValues.createFromDoubleArray(result.soln, model);
+		}
 	}
 
 	/**
