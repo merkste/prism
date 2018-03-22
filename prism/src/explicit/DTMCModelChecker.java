@@ -1720,6 +1720,25 @@ public class DTMCModelChecker extends ProbModelChecker
 	}
 
 	/**
+	 * Compute steady-state probabilities for an S operator.
+	 */
+	@Override
+	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax) throws PrismException
+	{
+		if (model.getModelType() != ModelType.DTMC) {
+			throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
+		}
+
+		// Model check operand for all states
+		BitSet bits = checkExpression(model, expr, null).getBitSet();
+		assert bits != null : "Booolean result expected.";
+		double[] values = Utils.bitsetToDoubleArray(bits, model.getNumStates());
+
+		ModelCheckerResult result = computeSteadyStateBackwardsProbs((DTMC) model, values);
+		return StateValues.createFromDoubleArray(result.soln, model);
+	}
+
+	/**
 	 * Perform (backwards) steady-state probabilities, as required for (e.g. CSL) model checking.
 	 * Compute, for each initial state s, the sum over all states s'
 	 * of the steady-state probability of being in s'

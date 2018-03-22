@@ -487,18 +487,6 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	protected StateValues checkExpressionSteadyState(ExpressionSS expr, JDDNode statesOfInterest) throws PrismException
 	{
-		// BSCC stuff
-		List<JDDNode> bsccs = null;
-		JDDNode notInBSCCs = null;
-		// MTBDD stuff
-		JDDNode b = null, bscc, sol, tmp;
-		// Other stuff
-		StateValues probs = null, totalProbs = null;
-		int i, numBSCCs = 0;
-		double d, probBSCCs[];
-
-		JDD.Deref(statesOfInterest);
-
 		// Get info from S operator
 		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
 
@@ -512,10 +500,47 @@ public class ProbModelChecker extends NonProbModelChecker
 			return new StateValuesMTBDD(JDD.Constant(0), model);
 		}
 
-		try {
-			// Model check argument with stateOfInterest = all
-			b = checkExpressionDD(expr.getExpression(), model.getReach().copy());
+		StateValues totalProbs = checkSteadyStateFormula(expr.getExpression(), statesOfInterest);
 
+		// For =? properties, just return values
+		if (opInfo.isNumeric()) {
+			return totalProbs;
+		}
+		// Otherwise, compare against bound to get set of satisfying states
+		else {
+			JDDNode sol = totalProbs.getBDDFromInterval(opInfo.getRelOp(), opInfo.getBound());
+			// remove unreachable states from solution
+			JDD.Ref(reach);
+			sol = JDD.And(sol, reach);
+			// free vector
+			totalProbs.clear();
+			return new StateValuesMTBDD(sol, model);
+		}
+	}
+
+	protected StateValues checkSteadyStateFormula(Expression expr, JDDNode statesOfInterest) throws PrismException
+	{
+		// Model check operand for all states
+		JDDNode bits = checkExpressionDD(expr, reach.copy());
+
+		return computeSteadyStateBackwardsProbs(bits, statesOfInterest);
+	}
+
+	protected StateValues computeSteadyStateBackwardsProbs(JDDNode b, JDDNode statesOfInterest) throws PrismException
+	{
+		// BSCC stuff
+		List<JDDNode> bsccs = null;
+		JDDNode notInBSCCs = null;
+		// MTBDD stuff
+		JDDNode bscc, tmp;
+		// Other stuff
+		StateValues probs = null, totalProbs = null;
+		int i, numBSCCs = 0;
+		double d, probBSCCs[];
+
+		JDD.Deref(statesOfInterest);
+
+		try {
 			// Compute bottom strongly connected components (BSCCs)
 			if (bsccComp) {
 				SCCComputer sccComputer = prism.getSCCComputer(model);
@@ -632,23 +657,9 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 		if (notInBSCCs != null)
 			JDD.Deref(notInBSCCs);
-
-		// For =? properties, just return values
-		if (opInfo.isNumeric()) {
-			return totalProbs;
-		}
-		// Otherwise, compare against bound to get set of satisfying states
-		else {
-			sol = totalProbs.getBDDFromInterval(opInfo.getRelOp(), opInfo.getBound());
-			// remove unreachable states from solution
-			JDD.Ref(reach);
-			sol = JDD.And(sol, reach);
-			// free vector
-			totalProbs.clear();
-			return new StateValuesMTBDD(sol, model);
-		}
+		return totalProbs;
 	}
-	
+
 	// Model checking functions
 
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException

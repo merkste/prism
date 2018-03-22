@@ -1222,20 +1222,7 @@ public class ProbModelChecker extends NonProbModelChecker
 	 */
 	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax) throws PrismException
 	{
-		// Model check operand for all states
-		BitSet b = checkExpression(model, expr, null).getBitSet();
-
-		// Compute/return the probabilities
-		ModelCheckerResult res = null;
-		switch (model.getModelType()) {
-		case DTMC:
-			double multProbs[] = Utils.bitsetToDoubleArray(b, model.getNumStates());
-			res = ((DTMCModelChecker) this).computeSteadyStateBackwardsProbs((DTMC) model, multProbs);
-			break;
-		default:
-			throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
-		}
-		return StateValues.createFromDoubleArray(res.soln, model);
+		throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
 	}
 
 	// Utility methods for probability distributions
