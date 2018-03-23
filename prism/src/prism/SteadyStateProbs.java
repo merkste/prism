@@ -147,7 +147,6 @@ public interface SteadyStateProbs<S, V>
 
 	public static class SteadyStateProbsSimple extends SteadyStateProbsExplicit
 	{
-		protected double[] bsccProbs;       // steady-state probabilities for all BSCCs
 		protected ArrayList<BitSet> bsccs;  // list of BSCCs
 
 		public SteadyStateProbsSimple(DTMC model, double[] bsccProbs)
