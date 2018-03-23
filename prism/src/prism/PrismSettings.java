@@ -125,6 +125,7 @@ public class PrismSettings implements Observer
 	// STEADY-STATE AND LONG-RUN
 	public static final String PRISM_CACHE_STEADY_STATES			= "prism.cacheSteadyStates";
 	public static final String PRISM_COMPUTE_S_VIA_L					= "prism.compute_S_via_L";
+	public static final String PRISM_METHOD_STEADY_STATE			= "prism.methodSteadyState";
 
 	public static final	String PRISM_STORM_PATH						= "prism.storm.path";
 	public static final	String PRISM_STORM_OPTIONS					= "prism.storm.options";
@@ -449,6 +450,8 @@ public class PrismSettings implements Observer
 																			"Compute steady-state probabilities at most once, and store them for further queries." },
 			{ BOOLEAN_TYPE,		PRISM_COMPUTE_S_VIA_L,					"Compute S-operator via L-operator",					"4.0.3",		new Boolean(true),														"",
 																			"Compute S-operator using the algorithm for the more general L-operator." },
+			{ CHOICE_TYPE,		PRISM_METHOD_STEADY_STATE,				"Linear equations method for steady-state probabilities",				"4.0.3",			"Power",																	"Power,Jacobi,Gauss-Seidel,Backwards Gauss-Seidel,Pseudo-Gauss-Seidel,Backwards Pseudo-Gauss-Seidel,JOR,SOR,Backwards SOR,Pseudo-SOR,Backwards Pseudo-SOR",
+																			"Which iterative method to use when solving linear equation systems for steady-state probabilities." },
 		},
 		{
 			{ INTEGER_TYPE,		SIMULATOR_DEFAULT_NUM_SAMPLES,			"Default number of samples",			"4.0",		1000,			"1,",
@@ -1356,6 +1359,30 @@ public class PrismSettings implements Observer
 		}
 		else if (sw.equals("nocomputeSviaL")) {
 			set(PRISM_COMPUTE_S_VIA_L, false);
+		}
+		// Select linear equation method for steady-state computation
+		else if (sw.equals("steadypower")) {
+			set(PRISM_METHOD_STEADY_STATE, "Power");
+		} else if (sw.equals("steadyjacobi")) {
+			set(PRISM_METHOD_STEADY_STATE, "Jacobi");
+		} else if (sw.equals("steadygaussseidel")) {
+			set(PRISM_METHOD_STEADY_STATE, "Gauss-Seidel");
+		} else if (sw.equals("steadybgaussseidel")) {
+			set(PRISM_METHOD_STEADY_STATE, "Backwards Gauss-Seidel");
+		} else if (sw.equals("steadypgaussseidel")) {
+			set(PRISM_METHOD_STEADY_STATE, "Pseudo-Gauss-Seidel");
+		} else if (sw.equals("steadybpgaussseidel")) {
+			set(PRISM_METHOD_STEADY_STATE, "Backwards Pseudo-Gauss-Seidel");
+		} else if (sw.equals("steadyjor")) {
+			set(PRISM_METHOD_STEADY_STATE, "JOR");
+		} else if (sw.equals("steadysor")) {
+			set(PRISM_METHOD_STEADY_STATE, "SOR");
+		} else if (sw.equals("steadybsor")) {
+			set(PRISM_METHOD_STEADY_STATE, "Backwards SOR");
+		} else if (sw.equals("steadypsor")) {
+			set(PRISM_METHOD_STEADY_STATE, "Pseudo-SOR");
+		} else if (sw.equals("steadybpsor")) {
+			set(PRISM_METHOD_STEADY_STATE, "Backwards Pseudo-SOR");
 		}
 
 		// SPARSE/HYBRID/MTBDD OPTIONS:

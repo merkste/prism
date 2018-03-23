@@ -1859,6 +1859,12 @@ public class DTMCModelChecker extends ProbModelChecker
 		if (dtmc.getModelType() != ModelType.DTMC) {
 			throw new PrismNotSupportedException("Explicit engine currently does not support steady-state computation for " + dtmc.getModelType());
 		}
+
+		// Currently, only the power method is implemented
+		if (!PrismSettings.PRISM_METHOD_STEADY_STATE.equals("Power")) {
+			mainLog.printWarning("Switching to linear equation solution method \"" + LinEqMethod.POWER.fullName() + "\"\n");
+		}
+
 		IterableBitSet bscc = new IterableBitSet(states);
 
 		// Start value iteration

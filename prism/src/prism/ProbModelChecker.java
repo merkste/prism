@@ -2356,46 +2356,54 @@ public class ProbModelChecker extends NonProbModelChecker
 			}
 		}
 
-		// filter out unwanted states from transition matrix
-		JDD.Ref(tr);
-		JDD.Ref(bscc);
-		trf = JDD.Apply(JDD.TIMES, tr, bscc);
-		JDD.Ref(bscc);
-		trf = JDD.Apply(JDD.TIMES, trf, JDD.PermuteVariables(bscc, allDDRowVars, allDDColVars));
-
-		// compute initial solution (equiprobable)
-		JDD.Ref(bscc);
-		init = JDD.Apply(JDD.DIVIDE, bscc, JDD.Constant(n));
-
-		// compute remaining probabilities
-		mainLog.println("\nComputing probabilities...");
-		mainLog.println("Engine: " + Prism.getEngineString(engine));
 		try {
-			switch (engine) {
-			case Prism.MTBDD:
-				probsMTBDD = PrismMTBDD.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
-				probs = new StateValuesMTBDD(probsMTBDD, model);
-				break;
-			case Prism.SPARSE:
-				probsDV = PrismSparse.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
-				probs = new StateValuesDV(probsDV, model);
-				break;
-			case Prism.HYBRID:
-				probsDV = PrismHybrid.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
-				probs = new StateValuesDV(probsDV, model);
-				break;
-			default:
-				throw new PrismException("Unknown engine");
+			// Temporarily change linear equation method for steady-state computation
+			PrismNative.setLinEqMethod(settings.getChoice(PrismSettings.PRISM_METHOD_STEADY_STATE));
+
+			// filter out unwanted states from transition matrix
+			JDD.Ref(tr);
+			JDD.Ref(bscc);
+			trf = JDD.Apply(JDD.TIMES, tr, bscc);
+			JDD.Ref(bscc);
+			trf = JDD.Apply(JDD.TIMES, trf, JDD.PermuteVariables(bscc, allDDRowVars, allDDColVars));
+
+			// compute initial solution (equiprobable)
+			JDD.Ref(bscc);
+			init = JDD.Apply(JDD.DIVIDE, bscc, JDD.Constant(n));
+
+			// compute remaining probabilities
+			mainLog.println("\nComputing probabilities...");
+			mainLog.println("Engine: " + Prism.getEngineString(engine));
+			try {
+				switch (engine) {
+				case Prism.MTBDD:
+					probsMTBDD = PrismMTBDD.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
+					probs = new StateValuesMTBDD(probsMTBDD, model);
+					break;
+				case Prism.SPARSE:
+					probsDV = PrismSparse.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
+					probs = new StateValuesDV(probsDV, model);
+					break;
+				case Prism.HYBRID:
+					probsDV = PrismHybrid.StochSteadyState(trf, odd, init, allDDRowVars, allDDColVars);
+					probs = new StateValuesDV(probsDV, model);
+					break;
+				default:
+					throw new PrismException("Unknown engine");
+				}
+			} catch (PrismException e) {
+				JDD.Deref(trf);
+				JDD.Deref(init);
+				throw e;
 			}
-		} catch (PrismException e) {
+
+			// derefs
 			JDD.Deref(trf);
 			JDD.Deref(init);
-			throw e;
+		} finally {
+			// Reset linear equation method to original value
+			PrismNative.setLinEqMethod(settings.getChoice(PrismSettings.PRISM_LIN_EQ_METHOD));
 		}
-
-		// derefs
-		JDD.Deref(trf);
-		JDD.Deref(init);
 
 		return probs;
 	}
