@@ -582,7 +582,7 @@ public class ASTTraverseModify extends DAGVisitor
 	{
 		visitPre(e);
 		if (e.getBound() != null) e.setBound((Expression)(e.getBound().accept(this)));
-		if (e.getExpression() != null) e.setExpression((ExpressionQuant<?>)(e.getExpression().accept(this)));
+		if (e.getExpression() != null) e.setExpression((Expression)(e.getExpression().accept(this)));
 		if (e.getStates() != null) e.setStates((Expression)(e.getStates().accept(this)));
 		visitPost(e);
 		return e;

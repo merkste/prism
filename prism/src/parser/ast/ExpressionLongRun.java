@@ -12,16 +12,16 @@ import prism.PrismLangException;
 /**
  * @author Steffen
  */
-public class ExpressionLongRun extends ExpressionQuant<ExpressionQuant<?>>
+public class ExpressionLongRun extends ExpressionQuant<Expression>
 {
 	protected Expression states;
 
-	public ExpressionLongRun(ExpressionQuant<?> expression, Expression states, String relOpString, Expression bound)
+	public ExpressionLongRun(Expression expression, Expression states, String relOpString, Expression bound)
 	{
 		this(expression, states, RelOp.parseSymbol(relOpString), bound);
 	}
 
-	public ExpressionLongRun(ExpressionQuant<?> expression, Expression states, RelOp relOp, Expression bound)
+	public ExpressionLongRun(Expression expression, Expression states, RelOp relOp, Expression bound)
 	{
 		Objects.requireNonNull(expression);
 		Objects.requireNonNull(states);
