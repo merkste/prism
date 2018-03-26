@@ -237,14 +237,14 @@ public class GUIPropertiesList extends JList implements KeyListener
 		String namedString = "";
 		//Add named properties
 		for (GUIProperty p : referencedProps) {
-				namedString += "\"" + p.getName() + "\" : " + p.getPropString() + "\n";
+				namedString += "\"" + p.getName() + "\" : " + p.getPropString() + ";\n";
 		}
 		
 		for (GUIProperty gp : gps) {
 			if (gp.getName() != null) {
 				str += "\"" + gp.getName() + "\" : ";
 			}
-			str += gp.getPropString() + "\n";
+			str += gp.getPropString() + ";\n";
 		}
 		return namedString + str;
 	}

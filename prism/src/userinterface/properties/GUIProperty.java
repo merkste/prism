@@ -382,12 +382,12 @@ public class GUIProperty
 				if (namedProp.isValid() &&
 						(this.name == null || !this.name.equals(namedProp.getName()))) {
 					namedCount++;
-					namedString += "\"" + namedProp.getName() + "\" : " + namedProp.getPropString() + "\n";
+					namedString += "\"" + namedProp.getName() + "\" : " + namedProp.getPropString() + ";\n";
 				}
 			}
 			
 			//Parse all together
-			String withConsLabs = constantsString + "\n" + labelString + "\n" + namedString + propString;
+			String withConsLabs = constantsString + "\n" + labelString + "\n" + namedString + propString + ";";
 			PropertiesFile ff = prism.parsePropertiesString(m, withConsLabs);
 			
 			//Validation of number of properties
