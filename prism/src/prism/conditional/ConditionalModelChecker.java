@@ -36,6 +36,7 @@ abstract public class ConditionalModelChecker<M extends Model> {
 		} else {
 			throw new PrismException("Unexpected result type of conditional expression: " + type);
 		}
+		value = JDD.Times(value, model.getReach().copy());
 		return new StateValuesMTBDD(value, model);
 	}
 }
