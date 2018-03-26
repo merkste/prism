@@ -2159,17 +2159,18 @@ Expression ExpressionFilter(boolean prop, boolean pathprop) :
 	{
 		// transform legacy filter CLR to AVG of L operator over "init"
 		if (op.equals("clr")) {
+			Expression states = (filter == null) ? Expression.True() : filter;
 			if (expr2 instanceof ExpressionQuant) {
-				ExpressionQuant quant = (ExpressionQuant) expr2;
-				RelOp relop           = quant.getRelOp();
-				Expression bound      = quant.getBound();
+				ExpressionQuant<?> quant = (ExpressionQuant<?>) expr2;
+				RelOp relop              = quant.getRelOp();
+				Expression bound         = quant.getBound();
 				quant.setRelOp(RelOp.COMPUTE_VALUES);
 				quant.setBound(null);
-				expr2                 = new ExpressionLongRun(quant, filter, relop, bound);
+				expr2                 = new ExpressionLongRun(quant, states, relop, bound);
 			} else {
-				RelOp relop           = RelOp.COMPUTE_VALUES;
-				Expression bound      = null;
-				expr2                 = new ExpressionLongRun(expr2, filter, relop, bound);
+				RelOp relop      = RelOp.COMPUTE_VALUES;
+				Expression bound = null;
+				expr2            = new ExpressionLongRun(expr2, states, relop, bound);
 			}
 			op                    = "avg";
 			filter                = new ExpressionLabel("init");
