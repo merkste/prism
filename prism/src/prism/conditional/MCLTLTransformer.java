@@ -55,7 +55,7 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 				AcceptanceType.GENERIC
 		};
 
-		LTLProduct<M> ltlProduct = ltlTransformer.transform(model, expression.getCondition(), statesOfInterest, allowedAcceptance);
+		LTLProduct<M> ltlProduct = ltlTransformer.transform(model, expression.getCondition(), statesOfInterest.copy(), allowedAcceptance);
 		JDDNode accepting = getLtlTransformer().findAcceptingStates(ltlProduct);
 
 		prism.getLog().println("\nComputing reachability probabilities...");
