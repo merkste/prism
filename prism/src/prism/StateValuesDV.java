@@ -108,9 +108,6 @@ public class StateValuesDV implements StateValues
 	 */
 	public StateValuesDV(JDDNode dd, Model model)
 	{
-		if (jdd.SanityJDD.enabled) {
-			jdd.SanityJDD.checkIsContainedIn(dd, model.getReach());
-		}
 		init(new DoubleVector(dd, model.getAllDDRowVars(), model.getODD()), model);
 	}
 

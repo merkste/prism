@@ -117,7 +117,6 @@ public class StateValuesMTBDD implements StateValues
 		varValues = new int[varList.getNumVars()];
 		
 		if (jdd.SanityJDD.enabled) {
-			jdd.SanityJDD.checkIsContainedIn(values, reach);
 			jdd.SanityJDD.checkIsDDOverVars(values, vars);
 		}
 	}
