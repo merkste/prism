@@ -1184,24 +1184,26 @@ public class ProbModelChecker extends NonProbModelChecker
 		int i;
 		long l;
 
-		JDD.Deref(statesOfInterest);
-
 		if (Expression.containsTemporalRewardBounds(expr)) {
+			JDD.Deref(statesOfInterest);
 			throw new PrismException("Can not handle reward bounds via deterministic automata.");
 		}
 
 		if (Expression.containsTemporalTimeBounds(expr)) {
 			if (model.getModelType().continuousTime()) {
+				JDD.Deref(statesOfInterest);
 				throw new PrismException("DA construction for time-bounded operators not supported for " + model.getModelType()+".");
 			}
 		}
 
 		// Can't do "dfa" properties yet
 		if (expr instanceof ExpressionFunc && ((ExpressionFunc) expr).getName().equals("dfa")) {
+			JDD.Deref(statesOfInterest);
 			throw new PrismException("Model checking for \"dfa\" specifications not supported yet");
 		}
 
 		if (Expression.isHOA(expr)) {
+			JDD.Deref(statesOfInterest);
 			throw new PrismNotSupportedException("Co-safety rewards with HOA automata not supported yet");
 		}
 
