@@ -56,11 +56,11 @@ public class MCScaledTransformation<M extends ProbModel> implements ModelTransfo
 		// P''(s,v) = P'(s,v) * (1 / P(s, originProb))
 		JDDNode newTransScaled = JDD.Apply(JDD.TIMES, newTransTargetScaled, originProbsInverted);
 
+		assert exitRatesAreEqual(originalModel.getTrans(), newTransScaled, support, originalModel.getAllDDColVars())
+			: "scaling is expected to preserve the exit rate";
+
 		// P'''(s,v) = 0 for P(s, originProb) = 0 and P''(s,v) otherwise
 		final JDDNode newTrans = JDD.Apply(JDD.TIMES, newTransScaled, support.copy());
-
-		assert exitRatesAreEqual(originalModel.getTrans(), newTransScaled, support, originalModel.getAllDDColVars())
-		     : "scaling is expected to preserve the exit rate";
 
 		// start'(s) = statesOfInterest(s) && P(s, originProb) > 0
 		final JDDNode newStart = JDD.And(statesOfInterest, support);
