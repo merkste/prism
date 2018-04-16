@@ -143,6 +143,12 @@ public class ExpressionVar extends Expression
 	@Override
 	public int hashCode()
 	{
+		return shallowHashCode();
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + index;

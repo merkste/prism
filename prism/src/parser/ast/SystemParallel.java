@@ -187,6 +187,17 @@ public class SystemParallel extends SystemDefn
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((actions == null) ? 0 : actions.hashCode());
+		result = prime * result + ((operand1 == null) ? 0 : operand1.getClass().hashCode());
+		result = prime * result + ((operand2 == null) ? 0 : operand2.getClass().hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

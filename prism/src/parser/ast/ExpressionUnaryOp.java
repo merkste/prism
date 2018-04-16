@@ -173,7 +173,17 @@ public class ExpressionUnaryOp extends Expression
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + op;
-		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		result = prime * result + ((operand == null) ? 0 : operand.shallowHashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + op;
+		result = prime * result + ((operand == null) ? 0 : operand.getClass().hashCode());
 		return result;
 	}
 

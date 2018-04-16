@@ -225,10 +225,22 @@ public class ExpressionTemporal extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((bounds == null) ? 0 : bounds.hashCode());
+		result = prime * result + ((bounds == null) ? 0 : bounds.shallowHashCode());
 		result = prime * result + op;
-		result = prime * result + ((operand1 == null) ? 0 : operand1.hashCode());
-		result = prime * result + ((operand2 == null) ? 0 : operand2.hashCode());
+		result = prime * result + ((operand1 == null) ? 0 : operand1.shallowHashCode());
+		result = prime * result + ((operand2 == null) ? 0 : operand2.shallowHashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((bounds == null) ? 0 : bounds.getClass().hashCode());
+		result = prime * result + op;
+		result = prime * result + ((operand1 == null) ? 0 : operand1.getClass().hashCode());
+		result = prime * result + ((operand2 == null) ? 0 : operand2.getClass().hashCode());
 		return result;
 	}
 

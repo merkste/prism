@@ -215,6 +215,16 @@ public class SystemRename extends SystemDefn
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((from == null) ? 0 : from.hashCode());
+		result = prime * result + ((to == null) ? 0 : to.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

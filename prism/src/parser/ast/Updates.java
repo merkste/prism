@@ -195,6 +195,15 @@ public class Updates extends ASTElement
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((parent == null) ? 0 : parent.getClass().hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

@@ -384,6 +384,7 @@ public class Values implements Cloneable //implements Comparable
 		return getBooleanValue(i);
 	}
 
+	// FIXME missing hashCode
 	@Override
 	public boolean equals(Object o)
 	{

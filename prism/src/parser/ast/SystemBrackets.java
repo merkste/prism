@@ -126,6 +126,16 @@ public class SystemBrackets extends SystemDefn
 	{
 		return (SystemBrackets) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + getClass().hashCode();
+		result = prime * result + ((operand == null) ? 0 : operand.getClass().hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

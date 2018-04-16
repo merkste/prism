@@ -138,6 +138,12 @@ public class ExpressionLabel extends Expression
 	@Override
 	public int hashCode()
 	{
+		return shallowHashCode();
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());

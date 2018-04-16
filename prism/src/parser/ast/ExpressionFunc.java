@@ -435,6 +435,17 @@ public class ExpressionFunc extends Expression
 	}
 
 	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + code;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + (oldStyle ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)

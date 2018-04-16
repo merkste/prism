@@ -208,6 +208,18 @@ public class RenamedModule extends ASTElement
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((baseModule == null) ? 0 : baseModule.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((newNames == null) ? 0 : newNames.hashCode());
+		result = prime * result + ((oldNames == null) ? 0 : oldNames.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

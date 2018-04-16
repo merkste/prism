@@ -1478,6 +1478,25 @@ public class ModulesFile extends ASTElement implements ModelInfo
 	{
 		return viewNames;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((constantIdents == null) ? 0 : constantIdents.hashCode());
+		result = prime * result + ((constantValues == null) ? 0 : constantValues.hashCode());
+		result = prime * result + ((formulaIdents == null) ? 0 : formulaIdents.hashCode());
+		result = prime * result + ((modelType == null) ? 0 : modelType.hashCode());
+		result = prime * result + Arrays.hashCode(moduleNames);
+		result = prime * result + ((synchs == null) ? 0 : synchs.hashCode());
+		result = prime * result + ((systemDefnNames == null) ? 0 : systemDefnNames.hashCode());
+		result = prime * result + ((undefinedConstantValues == null) ? 0 : undefinedConstantValues.hashCode());
+		result = prime * result + ((varIdents == null) ? 0 : varIdents.hashCode());
+		result = prime * result + ((varNames == null) ? 0 : varNames.hashCode());
+		result = prime * result + ((varTypes == null) ? 0 : varTypes.hashCode());
+		return result;
+	}
 }
 
 // ------------------------------------------------------------------------------

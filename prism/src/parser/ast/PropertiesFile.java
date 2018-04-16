@@ -685,6 +685,17 @@ public class PropertiesFile extends ASTElement implements Cloneable
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((allIdentsUsed == null) ? 0 : allIdentsUsed.hashCode());
+		result = prime * result + ((constantValues == null) ? 0 : constantValues.hashCode());
+		result = prime * result + ((modelInfo == null) ? 0 : modelInfo.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

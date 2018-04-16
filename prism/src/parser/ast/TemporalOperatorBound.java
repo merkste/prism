@@ -376,10 +376,23 @@ public class TemporalOperatorBound extends ASTElement {
 		int result = 1;
 		result = prime * result + ((boundType == null) ? 0 : boundType.hashCode());
 		result = prime * result + (equals ? 1231 : 1237);
-		result = prime * result + ((lBound == null) ? 0 : lBound.hashCode());
+		result = prime * result + ((lBound == null) ? 0 : lBound.shallowHashCode());
 		result = prime * result + (lBoundStrict ? 1231 : 1237);
 		result = prime * result + ((rewardStructureIndex == null) ? 0 : rewardStructureIndex.hashCode());
-		result = prime * result + ((uBound == null) ? 0 : uBound.hashCode());
+		result = prime * result + ((uBound == null) ? 0 : uBound.shallowHashCode());
+		result = prime * result + (uBoundStrict ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((boundType == null) ? 0 : boundType.hashCode());
+		result = prime * result + (equals ? 1231 : 1237);
+		result = prime * result + (lBoundStrict ? 1231 : 1237);
+		result = prime * result + ((rewardStructureIndex == null) ? 0 : rewardStructureIndex.hashCode());
 		result = prime * result + (uBoundStrict ? 1231 : 1237);
 		return result;
 	}

@@ -154,6 +154,17 @@ public class ForLoop extends ASTElement
 	{
 		return (ForLoop) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((between == null) ? 0 : between.hashCode());
+		result = prime * result + ((lhs == null) ? 0 : lhs.hashCode());
+		result = prime * result + pc;
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

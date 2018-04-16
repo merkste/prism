@@ -153,6 +153,19 @@ public class RewardStructItem extends ASTElement
 	{
 		return (RewardStructItem) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((reward == null) ? 0 : reward.getClass().hashCode());
+		result = prime * result + ((states == null) ? 0 : states.getClass().hashCode());
+		result = prime * result + ((synch == null) ? 0 : synch.hashCode());
+		result = prime * result + synchIndex;
+		return result;
+	}
+
 }
 
 //------------------------------------------------------------------------------

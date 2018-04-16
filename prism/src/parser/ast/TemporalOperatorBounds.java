@@ -231,13 +231,19 @@ public class TemporalOperatorBounds extends ASTElement {
 	@Override
 	public int hashCode()
 	{
+		return shallowHashCode();
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((bounds == null) ? 0 : bounds.hashCode());
-		
+
 		return result;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -264,7 +270,6 @@ public class TemporalOperatorBounds extends ASTElement {
 
 		return true;
 	}
-
 
 	@Override
 	public TemporalOperatorBounds deepCopy()

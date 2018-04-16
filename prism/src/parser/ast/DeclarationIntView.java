@@ -145,4 +145,15 @@ public class DeclarationIntView extends DeclarationType
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((bits == null) ? 0 : bits.hashCode());
+		result = prime * result + ((high == null) ? 0 : high.hashCode());
+		return result;
+	}
+
 }

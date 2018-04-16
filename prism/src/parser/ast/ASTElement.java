@@ -575,6 +575,16 @@ public abstract class ASTElement implements Cloneable
 	{
 		return ASTToList.toList(this);
 	}
+
+	/**
+	 * Compute a simple hash code without descending the expression tree.
+	 * 
+	 * Member variables of type ASTElement are either left out or hashed
+	 * by class, i.e., {@code var.getClass().hashCode()}.
+	 * 
+	 * @return shallow hash code
+	 */
+	public abstract int shallowHashCode();
 }
 
 // ------------------------------------------------------------------------------

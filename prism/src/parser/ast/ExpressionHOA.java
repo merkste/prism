@@ -174,8 +174,17 @@ public class ExpressionHOA extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((automatonFile == null) ? 0 : automatonFile.hashCode());
+		result = prime * result + ((automatonFile == null) ? 0 : automatonFile.shallowHashCode());
 		result = prime * result + ((apRenames == null) ? 0 : apRenames.hashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((automatonFile == null) ? 0 : automatonFile.getClass().hashCode());
 		return result;
 	}
 

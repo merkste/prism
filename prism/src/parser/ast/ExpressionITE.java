@@ -149,9 +149,20 @@ public class ExpressionITE extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((operand1 == null) ? 0 : operand1.hashCode());
-		result = prime * result + ((operand2 == null) ? 0 : operand2.hashCode());
-		result = prime * result + ((operand3 == null) ? 0 : operand3.hashCode());
+		result = prime * result + ((operand1 == null) ? 0 : operand1.shallowHashCode());
+		result = prime * result + ((operand2 == null) ? 0 : operand2.shallowHashCode());
+		result = prime * result + ((operand3 == null) ? 0 : operand3.shallowHashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((operand1 == null) ? 0 : operand1.getClass().hashCode());
+		result = prime * result + ((operand2 == null) ? 0 : operand2.getClass().hashCode());
+		result = prime * result + ((operand3 == null) ? 0 : operand3.getClass().hashCode());
 		return result;
 	}
 

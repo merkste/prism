@@ -129,6 +129,16 @@ public class Filter extends ASTElement
 	{
 		return (Filter) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (maxReq ? 1231 : 1237);
+		result = prime * result + (minReq ? 1231 : 1237);
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

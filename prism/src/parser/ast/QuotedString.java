@@ -171,9 +171,14 @@ public class QuotedString extends ASTElement
 		return text.equals(otherQS.getText());
 	}
 
-
 	@Override
 	public int hashCode()
+	{
+		return shallowHashCode();
+	}
+
+	@Override
+	public int shallowHashCode()
 	{
 		final int prime = 31;
 		int result = 1;

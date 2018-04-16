@@ -267,6 +267,17 @@ public class ExpressionStrategy extends Expression
 	}
 
 	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((coalition == null) ? 0 : coalition.hashCode());
+		result = prime * result + (singleOperand ? 1231 : 1237);
+		result = prime * result + (thereExists ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)

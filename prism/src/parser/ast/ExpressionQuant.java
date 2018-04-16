@@ -233,9 +233,22 @@ public abstract class ExpressionQuant<E extends Expression> extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((bound == null) ? 0 : bound.hashCode());
-		result = prime * result + ((expression == null) ? 0 : expression.hashCode());
-		result = prime * result + ((filter == null) ? 0 : filter.hashCode());
+		result = prime * result + ((bound == null) ? 0 : bound.shallowHashCode());
+		result = prime * result + ((expression == null) ? 0 : expression.shallowHashCode());
+		result = prime * result + ((filter == null) ? 0 : filter.shallowHashCode());
+		result = prime * result + ((modifier == null) ? 0 : modifier.hashCode());
+		result = prime * result + ((relOp == null) ? 0 : relOp.hashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((bound == null) ? 0 : bound.getClass().hashCode());
+		result = prime * result + ((expression == null) ? 0 : expression.getClass().hashCode());
+		result = prime * result + ((filter == null) ? 0 : filter.getClass().hashCode());
 		result = prime * result + ((modifier == null) ? 0 : modifier.hashCode());
 		result = prime * result + ((relOp == null) ? 0 : relOp.hashCode());
 		return result;

@@ -441,6 +441,16 @@ public class ConstantList extends ASTElement
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((names == null) ? 0 : names.hashCode());
+		result = prime * result + ((types == null) ? 0 : types.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

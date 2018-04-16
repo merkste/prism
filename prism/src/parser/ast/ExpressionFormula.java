@@ -153,7 +153,17 @@ public class ExpressionFormula extends Expression
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((definition == null) ? 0 : definition.hashCode());
+		result = prime * result + ((definition == null) ? 0 : definition.shallowHashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((definition == null) ? 0 : definition.getClass().hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		return result;
 	}

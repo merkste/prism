@@ -152,6 +152,16 @@ public class Command extends ASTElement
 	{
 		return (Command) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((synch == null) ? 0 : synch.hashCode());
+		result = prime * result + synchIndex;
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

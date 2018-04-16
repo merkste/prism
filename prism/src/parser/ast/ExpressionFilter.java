@@ -365,12 +365,28 @@ public class ExpressionFilter extends Expression
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (explanationEnabled ? 1231 : 1237);
-		result = prime * result + ((filter == null) ? 0 : filter.hashCode());
+		result = prime * result + ((filter == null) ? 0 : filter.shallowHashCode());
 		result = prime * result + (invisible ? 1231 : 1237);
 		result = prime * result + ((opArguments == null) ? 0 : opArguments.hashCode());
 		result = prime * result + ((opName == null) ? 0 : opName.hashCode());
 		result = prime * result + ((opType == null) ? 0 : opType.hashCode());
-		result = prime * result + ((operand == null) ? 0 : operand.hashCode());
+		result = prime * result + ((operand == null) ? 0 : operand.shallowHashCode());
+		result = prime * result + (param ? 1231 : 1237);
+		result = prime * result + (storeVector ? 1231 : 1237);
+		return result;
+	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (explanationEnabled ? 1231 : 1237);
+		result = prime * result + ((filter == null) ? 0 : filter.getClass().hashCode());
+		result = prime * result + (invisible ? 1231 : 1237);
+		result = prime * result + ((opName == null) ? 0 : opName.hashCode());
+		result = prime * result + ((opType == null) ? 0 : opType.hashCode());
+		result = prime * result + ((operand == null) ? 0 : operand.getClass().hashCode());
 		result = prime * result + (param ? 1231 : 1237);
 		result = prime * result + (storeVector ? 1231 : 1237);
 		return result;

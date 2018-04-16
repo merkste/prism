@@ -331,6 +331,17 @@ public class Update extends ASTElement
 
 		return clone;
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((indices == null) ? 0 : indices.hashCode());
+		result = prime * result + ((types == null) ? 0 : types.hashCode());
+		result = prime * result + ((vars == null) ? 0 : vars.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

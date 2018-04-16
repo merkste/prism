@@ -484,6 +484,17 @@ public class Property extends ASTElement
 	{
 		return (Property) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((comment == null) ? 0 : comment.hashCode());
+		result = prime * result + ((expr == null) ? 0 : expr.getClass().hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		return result;
+	}
 }
 
 //------------------------------------------------------------------------------

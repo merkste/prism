@@ -121,4 +121,15 @@ public class DeclarationInt extends DeclarationType
 	{
 		return (DeclarationInt) super.clone();
 	}
+
+	@Override
+	public int shallowHashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + getClass().hashCode();
+		result = prime * result + ((low == null) ? 0 : low.getClass().hashCode());
+		result = prime * result + ((high == null) ? 0 : high.getClass().hashCode());
+		return result;
+	}
 }
