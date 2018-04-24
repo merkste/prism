@@ -45,7 +45,7 @@ import prism.PrismLangException;
  * Class to store a list of typed constant/variable values.
  * (Basically, just a mapping from String to Object)
  */
-public class Values //implements Comparable
+public class Values implements Cloneable //implements Comparable
 {
 	protected ArrayList<String> names;
 	protected ArrayList<Object> values;
@@ -444,15 +444,19 @@ public class Values //implements Comparable
 // 		return 0;
 // 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Object clone()
+	public Values clone()
 	{
-		Values res = new Values();
-		res.modelInfo = modelInfo;
-		for (int i = 0, n = getNumValues(); i < n; i++) {
-			res.addValue(getName(i), getValue(i));
+		Values clone;
+		try {
+			clone = (Values) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new InternalError("Object#clone is expected to work for Cloneable objects.", e);
 		}
-		return res;
+		clone.names = (ArrayList<String>) names.clone();
+		clone.values = (ArrayList<Object>) values.clone();
+		return clone;
 	}
 
 	@Override
