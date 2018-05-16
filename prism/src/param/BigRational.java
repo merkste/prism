@@ -28,6 +28,8 @@ package param;
 
 import java.math.BigInteger;
 
+import prism.PrismLangException;
+
 /**
  * Provides a class to store big rational numbers.
  * Nominator and denominator of a number stored using this class are not
@@ -50,10 +52,14 @@ public final class BigRational implements Comparable<BigRational>
 
 	/** the BigRational "1" */
 	final static BigRational ONE = new BigRational(BigInteger.ONE);
+	/** the BigRational "2" */
+	final static BigRational TWO = new BigRational(BigInteger.valueOf(2));
 	/** the BigRational "-1" */
 	final static BigRational MONE = new BigRational(BigInteger.ONE);
 	/** the BigRational "0" */
 	final static BigRational ZERO = new BigRational(BigInteger.ZERO);
+	/** the BigRational "1/2" */
+	final static BigRational HALF = ONE.divide(TWO);
 	/** the BigRational "infinity" */
 	final static BigRational INF = new BigRational(BigInteger.ONE, BigInteger.ZERO);
 	/** the BigRational "-infinity" */
@@ -608,6 +614,65 @@ public final class BigRational implements Comparable<BigRational>
 		} else {
 			return this;
 		}
+	}
+
+	/**
+	 * Return ceil(value), i.e., the smallest integer >= value.
+	 * @throws PrismLangException for special values (NaN, infinity)
+	 */
+	public BigRational ceil() throws PrismLangException
+	{
+		if (isSpecial()) {
+			throw new PrismLangException("Can not compute ceil of " + this);
+		}
+
+		BigInteger[] divideAndRemainder = getNum().divideAndRemainder(getDen());
+
+		switch (divideAndRemainder[1].compareTo(BigInteger.ZERO)) {
+		case 0:   // no remainder
+		case -1:  // negative remainder: value was negative, so we ignore the remainder
+			return new BigRational(divideAndRemainder[0]);
+		case 1:   // positive remainder: return next-largest integer
+			return new BigRational(divideAndRemainder[0].add(BigInteger.ONE));
+		default:
+			throw new IllegalStateException("Should not be reached");
+		}
+	}
+
+	/**
+	 * Return floor(value), i.e., the largest integer <= value.
+	 * @throws PrismLangException for special values (NaN, infinity)
+	 */
+	public BigRational floor() throws PrismLangException
+	{
+		if (isSpecial()) {
+			throw new PrismLangException("Can not compute floor of " + this);
+		}
+
+		BigInteger[] divideAndRemainder = getNum().divideAndRemainder(getDen());
+		switch (divideAndRemainder[1].compareTo(BigInteger.ZERO)) {
+		case 0:   // no remainder
+		case 1:   // positive remainder: value was positive, so we ignore the remainder
+			return new BigRational(divideAndRemainder[0]);
+		case -1:  // negative remainder: value was negative, return next-smallest integer
+			return new BigRational(divideAndRemainder[0].subtract(BigInteger.ONE));
+		default:
+			throw new IllegalStateException("Should not be reached");
+		}
+	}
+
+	/**
+	 * Return round(value), i.e., the integer closest to value with
+	 * ties rounding towards positive infinity.
+	 * @throws PrismLangException for special values (NaN, infinity)
+	 */
+	public BigRational round() throws PrismLangException
+	{
+		if (isSpecial()) {
+			throw new PrismLangException("Can not compute round of " + this);
+		}
+
+		return this.add(HALF).floor();
 	}
 
 	/**

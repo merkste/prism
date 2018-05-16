@@ -347,6 +347,7 @@ public class TypeCheck extends ASTTraverse
 		case ExpressionFunc.MAX:
 		case ExpressionFunc.FLOOR:
 		case ExpressionFunc.CEIL:
+		case ExpressionFunc.ROUND:
 		case ExpressionFunc.POW:
 		case ExpressionFunc.LOG:
 			// All operands must be ints or doubles
@@ -399,6 +400,7 @@ public class TypeCheck extends ASTTraverse
 			break;
 		case ExpressionFunc.FLOOR:
 		case ExpressionFunc.CEIL:
+		case ExpressionFunc.ROUND:
 		case ExpressionFunc.MOD:
 			// Resulting type is always int
 			e.setType(TypeInt.getInstance());
