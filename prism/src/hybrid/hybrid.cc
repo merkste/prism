@@ -30,11 +30,38 @@
 #include "hybrid.h"
 #include "PrismHybrid.h"
 #include "PrismHybridGlob.h"
-#include <math.h>
+#include <cmath>
+#include <functional> // for std::hash
+#include <unordered_map>
 #include <new>
+
+struct hash_HDDNodePtr {
+	std::size_t operator()(const HDDNode* node) const {
+		std::size_t h1 = std::hash<DdNode*>{}((DdNode*)(node->sm.ptr));
+		std::size_t h2 = std::hash<ODDNode*>{}(node->off.ptr);
+		std::size_t h3 = std::hash<ODDNode*>{}(node->off2.ptr);
+
+		std::size_t result = h1;
+		result ^=h2 + 0x9e3779b9 + (result<<6) + (result>>2);
+		result ^=h3 + 0x9e3779b9 + (result<<6) + (result>>2);
+
+		return result;
+	}
+};
+
+struct key_equal_HDDNodePtr {
+	bool operator()(const HDDNode* a, const HDDNode *b) const {
+		return (((DdNode*)(a->sm.ptr) == ((DdNode*)(b->sm.ptr)))
+				&& (a->off.ptr == b->off.ptr) && (a->off2.ptr == b->off2.ptr));
+	}
+};
+
+typedef std::unordered_map<HDDNode*, HDDNode*, hash_HDDNodePtr, key_equal_HDDNodePtr> HDDNode_unique_table;
 
 // globals (used by local functions)
 static HDDMatrix *hddm;
+static HDDNode_unique_table *row_unique;
+static HDDNode_unique_table *col_unique;
 static HDDNode *zero;
 static int *starts;
 static RMSparseMatrix *rmsm;
@@ -184,6 +211,7 @@ HDDMatrices::~HDDMatrices()
 // Methods for constructing offset-labelled MTBBDs
 //-----------------------------------------------------------------------------------
 
+
 // builds an offset-labelled mtbbd for a matrix (from an mtbdd)
 // throws std::bad_alloc on out-of-memory
 
@@ -195,7 +223,10 @@ HDDMatrix *build_hdd_matrix(DdNode *matrix, DdNode **rvars, DdNode **cvars, int 
 	int i, j;
 	HDDMatrix *res = NULL;
 	HDDNode *ptr = NULL;
-	
+
+	long start, stop;
+	start = util_cpu_time();
+
 	// try/catch for memory allocation/deallocation
 	try {
 	
@@ -206,8 +237,10 @@ HDDMatrix *build_hdd_matrix(DdNode *matrix, DdNode **rvars, DdNode **cvars, int 
 	// build lists to store hdd nodes
 	res->row_lists = new HDDNode*[num_vars+1];
 	for (i = 0; i < num_vars+1; i++) res->row_lists[i] = NULL;
+	row_unique = new HDDNode_unique_table[num_vars+1];
 	res->col_lists = new HDDNode*[num_vars];
 	for (i = 0; i < num_vars; i++) res->col_lists[i] = NULL;
+	col_unique = new HDDNode_unique_table[num_vars];
 	res->row_tables = new HDDNode**[num_vars+1];
 	for (i = 0; i < num_vars+1; i++) res->row_tables[i] = NULL;
 	res->col_tables = new HDDNode**[num_vars];
@@ -288,7 +321,15 @@ HDDMatrix *build_hdd_matrix(DdNode *matrix, DdNode **rvars, DdNode **cvars, int 
 	res->dist_num = 0;
 	res->dist_shift = 0;
 	res->dist_mask = 0;
-	
+
+	stop = util_cpu_time();
+	double time_taken = (double)(stop - start)/1000;
+
+	printf("Hybrid matrix node increase: %d -> %d (in %.2f seconds)\n", DD_GetNumNodes(ddman, matrix), res->num_nodes, time_taken);
+
+	delete[] row_unique;
+	delete[] col_unique;
+
 	// try/catch for memory allocation/deallocation
 	} catch(std::bad_alloc e) {
 		if (res) delete res;
@@ -313,18 +354,15 @@ HDDNode *build_hdd_matrix_rowrec(DdNode *dd, DdNode **rvars, DdNode **cvars, int
 	}
 	
 	// see if we already have the required node stored
-	ptr = hddm->row_lists[level];
-	while (ptr != NULL) {
-		if (((DdNode*)(ptr->sm.ptr) == dd) && (ptr->off.ptr == row) && (ptr->off2.ptr == col)) break;
-		// use this instead to check effect on node increase
-		// if (((DdNode*)(ptr->sm.ptr) == dd)) break;
-		ptr = ptr->next;
+	HDDNode tmp;
+	tmp.sm.ptr = dd;
+	tmp.off.ptr = row;
+	tmp.off2.ptr = col;
+	auto lookup = row_unique[level].find(&tmp);
+	if (lookup != row_unique[level].end()) {
+		return lookup->second;
 	}
-	// if so, return it
-	if (ptr != NULL) {
-		return ptr;
-	}
-	
+
 	// otherwise go on and create it...
 	
 	// if it's a terminal node, it's easy...
@@ -338,6 +376,8 @@ HDDNode *build_hdd_matrix_rowrec(DdNode *dd, DdNode **rvars, DdNode **cvars, int
 		ptr->next = hddm->row_lists[num_vars];
 		hddm->row_lists[num_vars] = ptr;
 		hddm->row_sizes[num_vars]++;
+
+		row_unique[level].insert(HDDNode_unique_table::value_type(ptr,ptr));
 		return ptr;
 	}
 	
@@ -361,6 +401,8 @@ HDDNode *build_hdd_matrix_rowrec(DdNode *dd, DdNode **rvars, DdNode **cvars, int
 	ptr->next = hddm->row_lists[level];
 	hddm->row_lists[level] = ptr;
 	hddm->row_sizes[level]++;
+	row_unique[level].insert(HDDNode_unique_table::value_type(ptr,ptr));
+
 	return ptr;
 }
 
@@ -375,16 +417,13 @@ HDDNode *build_hdd_matrix_colrec(DdNode *dd, DdNode **rvars, DdNode **cvars, int
 	}
 	
 	// see if we already have the required node stored
-	ptr = hddm->col_lists[level];
-	while (ptr != NULL) {
-		if (((DdNode*)(ptr->sm.ptr) == dd) && (ptr->off.ptr == col) && (ptr->off2.ptr == row)) break;
-		// use this instead to check effect on node increase
-		// if (((DdNode*)(ptr->sm.ptr) == dd)) break;
-		ptr = ptr->next;
-	}
-	// if so, return it
-	if (ptr != NULL) {
-		return ptr;
+	HDDNode tmp;
+	tmp.sm.ptr = dd;
+	tmp.off.ptr = row;
+	tmp.off2.ptr = col;
+	auto lookup = col_unique[level].find(&tmp);
+	if (lookup != col_unique[level].end()) {
+		return lookup->second;
 	}
 	
 	// otherwise go on and create it...
@@ -409,6 +448,7 @@ HDDNode *build_hdd_matrix_colrec(DdNode *dd, DdNode **rvars, DdNode **cvars, int
 	ptr->next = hddm->col_lists[level];
 	hddm->col_lists[level] = ptr;
 	hddm->col_sizes[level]++;
+	col_unique[level].insert(HDDNode_unique_table::value_type(ptr,ptr));
 	
 	return ptr;
 }
