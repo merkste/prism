@@ -3505,15 +3505,20 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	protected explicit.StateValues computeSteadyStateProbabilitiesExplicit(explicit.Model model, File fileIn) throws PrismException
 	{
-		DTMCModelChecker mcDTMC;
 		explicit.StateValues probs;
-		if (model.getModelType() == ModelType.DTMC) {
-			mcDTMC = new DTMCModelChecker(this);
-			//TODO: probs = mcDTMC.doSteadyState((DTMC) model, fileIn);
-			probs = mcDTMC.doSteadyState((DTMC) model, (File) null);
-		} else if (model.getModelType() == ModelType.CTMC) {
-			throw new PrismException("Not implemented yet");
-		} else {
+		switch (model.getModelType()) {
+		case DTMC: {
+			DTMCModelChecker mcDTMC = new DTMCModelChecker(this);
+			probs = mcDTMC.doSteadyState((DTMC) model, fileIn);
+			break;
+		}
+		case CTMC: {
+			CTMCModelChecker mcCTMC = new CTMCModelChecker(this);
+			probs = mcCTMC.doSteadyState((CTMC) model, fileIn);
+//			probs = mcDTMC.doSteadyState((DTMC) model, (File) null);
+			break;
+		}
+		default:
 			throw new PrismException("Steady-state probabilities only computed for DTMCs/CTMCs");
 		}
 
