@@ -631,6 +631,9 @@ public class GUIMultiModelHandler extends JPanel implements PrismModelListener
 		}
 		try {
 			prism.setPRISMModelConstants(unC.getMFConstantValues());
+		} catch (PrismLangException e) {
+			theModel.error(e.toString());
+			return;
 		} catch (PrismException e) {
 			theModel.error(e.getMessage());
 			return;
