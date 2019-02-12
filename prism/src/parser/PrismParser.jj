@@ -485,7 +485,8 @@ TOKEN :
 	// (PrismSyntaxHighlighter relies on this fact)
 |	< NOT:			"!" >
 |	< AND:			"&" >
-|   < COND:         "||" >
+|	< TBAR:			"|||" >
+|	< DBAR:			"||" >
 |	< OR:			"|" >
 |	< IMPLIES:		"=>" >
 |	< IFF:			"<=>" >
@@ -1014,7 +1015,7 @@ SystemDefn SystemFullParallel() :
 {
 	{ begin = getToken(1); }
 	sys1 = SystemInterleaved()
-	( { par = new SystemFullParallel(); par.addOperand(sys1); } ( LOOKAHEAD(<OR> <OR>) <OR> <OR> sys2 = SystemParallel() { par.addOperand(sys2); } )* )
+	( { par = new SystemFullParallel(); par.addOperand(sys1); } ( LOOKAHEAD(<DBAR>) <DBAR> sys2 = SystemParallel() { par.addOperand(sys2); } )* )
 	{
 		if (par==null || par.getNumOperands() == 1) {
 			return sys1;
@@ -1037,7 +1038,7 @@ SystemDefn SystemInterleaved() :
 {
 	{ begin = getToken(1); }
 	sys1 = SystemParallel()
-	( { par = new SystemInterleaved(); par.addOperand(sys1); } ( LOOKAHEAD(<OR> <OR> <OR>) <OR> <OR> <OR>  sys2 = SystemFullParallel() { par.addOperand(sys2); } )* )
+	( { par = new SystemInterleaved(); par.addOperand(sys1); } ( LOOKAHEAD(<TBAR>) <TBAR>  sys2 = SystemFullParallel() { par.addOperand(sys2); } )* )
 	{
 		if (par==null || par.getNumOperands() == 1) {
 			return sys1;
@@ -1684,7 +1685,7 @@ Expression ExpressionProb(boolean prop, boolean pathprop) :
 	<LBRACKET>
 		expr = PathSpecification(prop)
 		(filter = Filter())?
-		(<COND> condition = Expression(prop, true))?
+		(<DBAR> condition = Expression(prop, true))?
 	<RBRACKET>
 	{
 		exprProb.setModifier(modifier == null ? null : modifier.getName());
@@ -1811,7 +1812,7 @@ Expression ExpressionLongRun(boolean prop, boolean pathprop) :
 	)
 	<COMMA>
 		states = Expression(prop, false)
-		(<COND> condition = Expression(prop, true))?
+		(<DBAR> condition = Expression(prop, true))?
 	<RBRACKET>
 	{
 		ExpressionLongRun exprLongRun = new ExpressionLongRun(expression, states, relOp, bound);
@@ -1853,7 +1854,7 @@ Expression ExpressionSS(boolean prop, boolean pathprop) :
 	<LBRACKET>
 		expr = Expression(prop, pathprop)
 		(filter = Filter())?
-		(<COND> condition = Expression(prop, true))?
+		(<DBAR> condition = Expression(prop, true))?
 	<RBRACKET>
 	{
 		exprSS.setModifier(modifier == null ? null : modifier.getName());
@@ -1918,7 +1919,7 @@ Expression ExpressionReward(boolean prop, boolean pathprop) :
 	<LBRACKET>
 		expr = ExpressionRewardContents(prop, pathprop)
 		(filter = Filter())?
-		(<COND> condition = Expression(prop, true))?
+		(<DBAR> condition = Expression(prop, true))?
 	<RBRACKET>
 	{
 		exprRew.setModifier(modifier == null ? null : modifier.getName());
