@@ -27,6 +27,8 @@
 
 package explicit;
 
+import java.util.Objects;
+
 /**
  * A product state, i.e., a pair of two indizes for
  * referencing the states of the left and right part of the product.
@@ -43,8 +45,8 @@ public class ProductState implements Comparable<ProductState>
 	/** Constructor */
 	public ProductState(Integer state_1, Integer state_2)
 	{
-		this.state_1 = state_1;
-		this.state_2 = state_2;
+		this.state_1 = Objects.requireNonNull(state_1);
+		this.state_2 = Objects.requireNonNull(state_2);;
 	}
 
 	/** Get the first state */
@@ -68,7 +70,8 @@ public class ProductState implements Comparable<ProductState>
 	@Override
 	public int compareTo(ProductState other)
 	{
-		int rv = state_1.compareTo(state_2);
+		Objects.requireNonNull(other);
+		int rv = state_1.compareTo(other.state_1);
 		if (rv == 0) {
 			return state_2.compareTo(other.state_2);
 		} else {
