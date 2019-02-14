@@ -93,12 +93,6 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 		{
 			super(prism, modelChecker);
 		}
-
-		@Override
-		public boolean canHandle(Model model, ExpressionConditional expression)
-		{
-			return false;
-		}
 	}
 
 
