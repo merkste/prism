@@ -157,14 +157,12 @@ public class PrismSettings implements Observer
 	public static final String PRISM_FAU_ARRAYTHRESHOLD				= "prism.fau.arraythreshold";
 
 	//Conditional Model Checking
-	public static final String CONDITIONAL_USE_VIRTUAL_MODELS    = "conditional.use.virtualModels";
-	public static final String CONDITIONAL_USE_TACAS14_PROTOTYPE = "conditional.use.tacas14prototype";
-	public static final String CONDITIONAL_USE_PROTOTYPE         = "conditional.use.prototype";
-	public static final String CONDITIONAL_SCALE_LTL_MINIMIZE    = "conditional.scale.ltl.minimize";
-	public static final String CONDITIONAL_RESET_MDP_MINIMIZE    = "conditional.reset.mdp.minimize";
 	public static final String CONDITIONAL_PATTERNS_CTMC         = "conditional.patterns.ctmc";
 	public static final String CONDITIONAL_PATTERNS_DTMC         = "conditional.patterns.dtmc";
 	public static final String CONDITIONAL_PATTERNS_MDP          = "conditional.patterns.mdp";
+	public static final String CONDITIONAL_SCALE_LTL_MINIMIZE    = "conditional.scale.ltl.minimize";
+	public static final String CONDITIONAL_RESET_MDP_MINIMIZE    = "conditional.reset.mdp.minimize";
+	public static final String CONDITIONAL_USE_VIRTUAL_MODELS    = "conditional.use.virtualModels";
 
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
@@ -426,22 +424,18 @@ public class PrismSettings implements Observer
 		},
 		{
 			// CONDITIONAL MODEL CHECKING
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,		"Use virtual models for computation",	"4.2",			false,		"",
-																		"Compute conditional probabilities and expectations in virtual models." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_TACAS14_PROTOTYPE,	"Use TACAS'14 prototype implementation",	"4.2",		false,		"",
-																		"Use TACAS'14 prototype implementation for conditional probabilities and expectations." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_PROTOTYPE,			"Use prototype implementation",	"4.2",	false,		"",
-																		"Use prototype implemention for conditional probabilities and expectations." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_SCALE_LTL_MINIMIZE,		"Scale-ltl: minimize product",	"4.2",		false,		"",
-																		"Build DTMC quotient to identify prob1 product states." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_RESET_MDP_MINIMIZE,		"Reset-MDP: minimize normal-form model",	"4.2",		false,		"",
-																		"Always minimize normal-form model for states falsifying the objective in MDPs." },
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_CTMC,			"Set conditional patterns for CTMCs",	"4.2",			"scale",		"",
 																			"Use the first applicable pattern for conditionals in CTMCs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_DTMC,			"Set conditional patterns for DTMCs",	"4.2",			"scale",		"",
 																				"Use the first applicable pattern for conditionals in DTMCs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
 			{ STRING_TYPE,		CONDITIONAL_PATTERNS_MDP,			"Set conditinal patterns for MDPs",	"4.2",			"reset",		"",
 																			"Use the first applicable pattern for conditionals in MDPs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
+			{ BOOLEAN_TYPE,		CONDITIONAL_SCALE_LTL_MINIMIZE,		"Scale-ltl: minimize product",	"4.2",		false,		"",
+																			"Build DTMC quotient to identify prob1 product states." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_RESET_MDP_MINIMIZE,		"Reset-MDP: minimize normal-form model",	"4.2",		false,		"",
+																			"Always minimize normal-form model for states falsifying the objective in MDPs." },
+			{ BOOLEAN_TYPE,		CONDITIONAL_USE_VIRTUAL_MODELS,		"Use virtual models for computation",	"4.2",			false,		"",
+																			"Compute conditional probabilities and expectations in virtual models." },
 		},
 		{
 			// STEADY-STATE AND LONG-RUN OPTIONS:
@@ -1774,22 +1768,6 @@ public class PrismSettings implements Observer
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
 		}
-		// Switches for conditional model checking
-		else if (sw.equals("usevirtualmodels")) {
-			set(CONDITIONAL_USE_VIRTUAL_MODELS, true);
-		}
-		else if (sw.equals("usetacas14prototype")) {
-			set(CONDITIONAL_USE_TACAS14_PROTOTYPE, true);
-		}
-		else if (sw.equals("useprototype")) {
-			set(CONDITIONAL_USE_PROTOTYPE, true);
-		}
-		else if (sw.equals("scaleltlminimize")) {
-			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
-		}
-		else if (sw.equals("resetmdpminimize")) {
-			set(CONDITIONAL_RESET_MDP_MINIMIZE, true);
-		}
 		else if (sw.equals("patternsctmc")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
@@ -1831,6 +1809,16 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}
+		}
+		else if (sw.equals("scaleltlminimize")) {
+			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
+		}
+		else if (sw.equals("resetmdpminimize")) {
+			set(CONDITIONAL_RESET_MDP_MINIMIZE, true);
+		}
+		// Switches for conditional model checking
+		else if (sw.equals("usevirtualmodels")) {
+			set(CONDITIONAL_USE_VIRTUAL_MODELS, true);
 		}
 
 		// HIDDEN OPTIONS
@@ -2004,14 +1992,12 @@ public class PrismSettings implements Observer
 		mainLog.println("-paramdagmaxerror <b> .......... Maximal error probability allowed for DAG function representation [default: 1E-100]");
 		mainLog.println();
 		mainLog.println("CONDITIONAL MODEL CHECKING OPTIONS:");
-		mainLog.println("-usevirtualmodels .............. Use virtual models for computation");
-		mainLog.println("-usetacas14prototype ........... Use TACAS'14 prototype implementations");
-		mainLog.println("-useprototype .................. Use prototype implementation");
-		mainLog.println("-scaleltlminimize .............. Minimize product model in ltl pattern of scale method");
-		mainLog.println("-resetobjminimize .............. Minimize normal-form model for reset method in MDPs");
 		mainLog.println("-patternsctmc .................. Set conditional patterns for CTMCs: " + ConditionalTransformerType.getSpecificationHelp());
 		mainLog.println("-patternsdtmc .................. Set conditional patterns for DTMCs: " + ConditionalTransformerType.getSpecificationHelp());
 		mainLog.println("-patternmdp .................... Set conditional patterns for MDPs: " + ConditionalTransformerType.getSpecificationHelp());
+		mainLog.println("-scaleltlminimize .............. Minimize product model in ltl pattern of scale method");
+		mainLog.println("-resetobjminimize .............. Minimize normal-form model for reset method in MDPs");
+		mainLog.println("-usevirtualmodels .............. Use virtual models for computation");
 		mainLog.println();
 		mainLog.println("STEADY-STATE AND LONG-RUN OPTIONS:");
 		mainLog.println("-cachesteadystates ............. Compute steady-state probabilities at most once, and store them for further queries [default]");

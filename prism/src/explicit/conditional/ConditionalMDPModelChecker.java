@@ -23,10 +23,6 @@ import explicit.MinMax;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
 import explicit.conditional.NewFinallyUntilTransformer;
-import explicit.conditional.prototype.virtual.FinallyLtlTransformer;
-import explicit.conditional.prototype.virtual.FinallyUntilTransformer;
-import explicit.conditional.prototype.virtual.LtlLtlTransformer;
-import explicit.conditional.prototype.virtual.LtlUntilTransformer;
 import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.ModelView;
@@ -167,68 +163,25 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
 
 		NewConditionalTransformer<MDP, MDPModelChecker> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-			for (ConditionalTransformerType type : types) {
-				switch (type) {
-				case FinallyFinally:
-					transformer = new explicit.conditional.prototype.tacas14.MDPFinallyTransformer(modelChecker);
-					break;
-				case FinallyLtl:
-					transformer = new explicit.conditional.prototype.tacas14.MDPLTLConditionTransformer(modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new explicit.conditional.prototype.tacas14.MDPLTLTransformer(modelChecker);
-					break;
-				default:
-					continue;
-				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
-				}
+		for (ConditionalTransformerType type : types) {
+			switch (type) {
+			case FinallyFinally:
+				transformer = new NewFinallyUntilTransformer.MDP(modelChecker);
+				break;
+			case LtlFinally:
+				transformer = new NewLtlUntilTransformer.MDP(modelChecker);
+				break;
+			case FinallyLtl:
+				transformer = new NewFinallyLtlTransformer.MDP(modelChecker);
+				break;
+			case LtlLtl:
+				transformer = new NewLtlLtlTransformer.MDP(modelChecker);
+				break;
+			default:
+				continue;
 			}
-		} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			for (ConditionalTransformerType type : types) {
-				switch (type) {
-				case FinallyFinally:
-					transformer = new FinallyUntilTransformer.MDP(modelChecker);
-					break;
-				case LtlFinally:
-					transformer = new LtlUntilTransformer.MDP(modelChecker);
-					break;
-				case FinallyLtl:
-					transformer = new FinallyLtlTransformer.MDP(modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new LtlLtlTransformer.MDP(modelChecker);
-					break;
-				default:
-					continue;
-				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
-				}
-			}
-		} else {
-			for (ConditionalTransformerType type : types) {
-				switch (type) {
-				case FinallyFinally:
-					transformer = new NewFinallyUntilTransformer.MDP(modelChecker);
-					break;
-				case LtlFinally:
-					transformer = new NewLtlUntilTransformer.MDP(modelChecker);
-					break;
-				case FinallyLtl:
-					transformer = new NewFinallyLtlTransformer.MDP(modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new NewLtlLtlTransformer.MDP(modelChecker);
-					break;
-				default:
-					continue;
-				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
-				}
+			if (transformer.canHandle(model, expression)) {
+				return transformer;
 			}
 		}
 		return null;

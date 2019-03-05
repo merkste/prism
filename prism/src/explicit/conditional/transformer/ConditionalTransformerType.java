@@ -10,7 +10,6 @@ import prism.PrismException;
 // FIXME ALG: Rename to ConditionalTransform(ers/ations)
 public enum ConditionalTransformerType
 {
-	Finally,
 	Until,
 	Next,
 	Ltl,
@@ -69,7 +68,7 @@ public enum ConditionalTransformerType
 	 */
 	private static List<ConditionalTransformerType> scaleValues()
 	{
-		return List.of(Finally, Until, Next, Ltl);
+		return List.of(Until, Next, Ltl);
 	}
 
 	/**

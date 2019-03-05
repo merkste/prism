@@ -84,14 +84,6 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 
 	protected NewConditionalTransformer.MC<M, C> selectModelTransformer(M model, ExpressionConditional expression) throws PrismException
 	{
-		PrismSettings settings = prism.getSettings();
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-			throw new PrismNotSupportedException("There is no symbolic TACAS'14 prototype");
-		}
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			throw new PrismNotSupportedException("There is no symbolic prototype for the scale method in MCs");
-		}
-
 		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
 		NewConditionalTransformer.MC<M, C> transformer;
 		for (ConditionalTransformerType type : types) {

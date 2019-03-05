@@ -24,8 +24,6 @@ import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.StateValues;
-import prism.conditional.prototype.MDPFinallyTransformer;
-import prism.conditional.prototype.MDPLTLTransformer;
 
 //FIXME ALG: add comment
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel>
@@ -128,55 +126,36 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 	protected NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
 	{
-		PrismSettings settings = prism.getSettings();
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-			throw new PrismException("There is no symbolic TACAS'14 prototype");
-		}
-
-		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
-		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			for (ConditionalTransformerType type : types) {
-				NewConditionalTransformer.MDP transformer;
-				switch (type) {
-				case FinallyFinally:
-					transformer = new MDPFinallyTransformer(prism, modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new MDPLTLTransformer(prism, modelChecker);
-					break;
-				default:
-					continue;
-				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
-				}
+		final SortedSet<ConditionalTransformerType> types = getTransformerTypes();
+		for (ConditionalTransformerType type : types) {
+			NewConditionalTransformer.MDP transformer;
+			switch (type) {
+			case FinallyFinally:
+				transformer = new NewFinallyUntilTransformer.MDP(prism, modelChecker);
+				break;
+			case LtlFinally:
+				transformer = new NewLtlUntilTransformer.MDP(prism, modelChecker);
+				break;
+			case FinallyLtl:
+				transformer = new NewFinallyLtlTransformer.MDP(prism, modelChecker);
+				break;
+			case LtlLtl:
+				transformer = new NewLtlLtlTransformer.MDP(prism, modelChecker);
+				break;
+			default:
+				continue;
 			}
-		} else {
-			for (ConditionalTransformerType type : types) {
-				NewConditionalTransformer.MDP transformer;
-				switch (type) {
-				case FinallyFinally:
-					transformer = new NewFinallyUntilTransformer.MDP(prism, modelChecker);
-					break;
-				case LtlFinally:
-					transformer = new NewLtlUntilTransformer.MDP(prism, modelChecker);
-					break;
-				case FinallyLtl:
-					transformer = new NewFinallyLtlTransformer.MDP(prism, modelChecker);
-					break;
-				case LtlLtl:
-					transformer = new NewLtlLtlTransformer.MDP(prism, modelChecker);
-					break;
-				default:
-					continue;
-				}
-				if (transformer.canHandle(model, expression)) {
-					return transformer;
-				}
+			if (transformer.canHandle(model, expression)) {
+				return transformer;
 			}
 		}
 		return null;
+	}
+
+	protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+	{
+		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
+		return ConditionalTransformerType.getValuesOf(specification);
 	}
 
 	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation) throws PrismException
