@@ -28,7 +28,7 @@ import prism.conditional.transform.MCPivotTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
 
-public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
+public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
 	public MCNextTransformer(Prism prism, C modelChecker)
 	{
@@ -246,7 +246,7 @@ public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModel
 
 
 
-	public static class CTMC extends MCNextTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	public static class CTMC extends MCNextTransformer<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -256,7 +256,7 @@ public abstract class MCNextTransformer<M extends ProbModel, C extends ProbModel
 
 
 
-	public static class DTMC extends MCNextTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	public static class DTMC extends MCNextTransformer<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{

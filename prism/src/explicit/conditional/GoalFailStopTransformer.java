@@ -27,7 +27,7 @@ import prism.PrismException;
 
 
 
-public interface NewGoalFailStopTransformer<M extends Model>
+public interface GoalFailStopTransformer<M extends Model>
 {
 	public static final int GOAL = 0;
 	public static final int FAIL = 1;
@@ -102,7 +102,7 @@ public interface NewGoalFailStopTransformer<M extends Model>
 
 
 
-	public static class CTMC implements NewGoalFailStopTransformer<explicit.CTMC>
+	public static class CTMC implements GoalFailStopTransformer<explicit.CTMC>
 	{
 
 		@Override
@@ -121,7 +121,7 @@ public interface NewGoalFailStopTransformer<M extends Model>
 
 
 
-	public static class DTMC implements NewGoalFailStopTransformer<explicit.DTMC>
+	public static class DTMC implements GoalFailStopTransformer<explicit.DTMC>
 	{
 
 		@Override
@@ -140,7 +140,7 @@ public interface NewGoalFailStopTransformer<M extends Model>
 
 
 
-	public static class MDP implements NewGoalFailStopTransformer<explicit.MDP>
+	public static class MDP implements GoalFailStopTransformer<explicit.MDP>
 	{
 		@Override
 		public MDPAdditionalStates addTrapStates(explicit.MDP model, int numTrapStates)
@@ -233,7 +233,7 @@ public interface NewGoalFailStopTransformer<M extends Model>
 		public ProbabilisticRedistribution swap()
 		{
 			// inverse probabilities to swap target states
-			probabilities = NewConditionalTransformer.Basic.subtractFromOne(probabilities);
+			probabilities = ConditionalTransformer.Basic.subtractFromOne(probabilities);
 			return this;
 		}
 	}

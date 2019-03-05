@@ -37,7 +37,7 @@ import prism.conditional.SimplePathProperty.WeakUntil;
 import prism.conditional.transform.LTLProductTransformer;
 import prism.PrismComponent;
 
-public interface NewConditionalTransformer<M extends ProbModel, C extends StateModelChecker>
+public interface ConditionalTransformer<M extends ProbModel, C extends StateModelChecker>
 {
 	public static final JDDNode ALL_STATES = null;
 
@@ -156,7 +156,7 @@ public interface NewConditionalTransformer<M extends ProbModel, C extends StateM
 
 
 
-	public static abstract class Basic<M extends ProbModel, C extends StateModelChecker> extends PrismComponent implements NewConditionalTransformer<M, C>
+	public static abstract class Basic<M extends ProbModel, C extends StateModelChecker> extends PrismComponent implements ConditionalTransformer<M, C>
 	{
 		protected Prism prism;
 		protected C modelChecker;
@@ -401,7 +401,7 @@ public interface NewConditionalTransformer<M extends ProbModel, C extends StateM
 
 
 
-	public interface CTMC extends NewConditionalTransformer<StochModel, StochModelChecker>
+	public interface CTMC extends ConditionalTransformer<StochModel, StochModelChecker>
 	{
 		@Override
 		default boolean canHandleModelType(Model model)
@@ -412,7 +412,7 @@ public interface NewConditionalTransformer<M extends ProbModel, C extends StateM
 
 
 
-	public interface DTMC extends NewConditionalTransformer<ProbModel, ProbModelChecker>
+	public interface DTMC extends ConditionalTransformer<ProbModel, ProbModelChecker>
 	{
 		@Override
 		default boolean canHandleModelType(Model model)

@@ -18,7 +18,7 @@ import explicit.LTLModelChecker;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
-import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.ConditionalTransformer;
 
 // FIXME ALG: add comment
 public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
@@ -99,7 +99,7 @@ public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbMo
 
 
 
-	public static class CTMC extends NewConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCQuotientTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCQuotientTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -109,7 +109,7 @@ public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbMo
 
 
 
-	public static class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCQuotientTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCQuotientTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{

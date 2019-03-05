@@ -26,9 +26,9 @@ import explicit.StateValues;
 import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mc.MCQuotientTransformer;
-import explicit.conditional.transformer.mc.NewMcLtlTransformer;
-import explicit.conditional.transformer.mc.NewMcNextTransformer;
-import explicit.conditional.transformer.mc.NewMcUntilTransformer;
+import explicit.conditional.transformer.mc.MCLtlTransformer;
+import explicit.conditional.transformer.mc.MCNextTransformer;
+import explicit.conditional.transformer.mc.MCUntilTransformer;
 import explicit.modelviews.MCView;
 
 // FIXME ALG: add comment
@@ -45,7 +45,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 	@Override
 	public StateValues checkExpression(M model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
 	{
-		NewConditionalTransformer<M, C> transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer<M, C> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			if (expression.getObjective() instanceof ExpressionLongRun) {
 				// try alternative long-run approach
@@ -66,7 +66,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		return transformation.projectToOriginalModel(result);
 	}
 
-	public ModelExpressionTransformation<M, ? extends M> transformModel(final NewConditionalTransformer<M, C> transformer, final M model,
+	public ModelExpressionTransformation<M, ? extends M> transformModel(final ConditionalTransformer<M, C> transformer, final M model,
 			final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
@@ -95,10 +95,10 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		return (model instanceof MCView) && ((MCView) model).isVirtual();
 	}
 
-	public NewConditionalTransformer<M, C> selectModelTransformer(final M model, final ExpressionConditional expression) throws PrismException
+	public ConditionalTransformer<M, C> selectModelTransformer(final M model, final ExpressionConditional expression) throws PrismException
 	{
 		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
-		NewConditionalTransformer<M, C> transformer;
+		ConditionalTransformer<M, C> transformer;
 		for (ConditionalTransformerType type : types) {
 			transformer = getTransformer(type);
 			if (transformer != null && transformer.canHandle(model, expression)) {
@@ -125,7 +125,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 
 	protected abstract SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException;
 
-	protected abstract NewConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
+	protected abstract ConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
 
 	protected abstract ModelExpressionTransformation<M, ? extends M> convertVirtualModel(ModelExpressionTransformation<M,? extends M> transformation);
 
@@ -235,23 +235,23 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getTransformer(ConditionalTransformerType type)
+		protected ConditionalTransformer<explicit.CTMC, CTMCModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
 			case Until:
-				return new NewMcUntilTransformer.CTMC(modelChecker);
+				return new MCUntilTransformer.CTMC(modelChecker);
 			case Next:
-				return new NewMcNextTransformer.CTMC(modelChecker);
+				return new MCNextTransformer.CTMC(modelChecker);
 			case Ltl:
-				return new NewMcLtlTransformer.CTMC(modelChecker);
+				return new MCLtlTransformer.CTMC(modelChecker);
 			case FinallyFinally:
-				return new NewFinallyUntilTransformer.CTMC(modelChecker);
+				return new FinallyUntilTransformer.CTMC(modelChecker);
 			case LtlFinally:
-				return new NewLtlUntilTransformer.CTMC(modelChecker);
+				return new LtlUntilTransformer.CTMC(modelChecker);
 			case FinallyLtl:
-				return new NewFinallyLtlTransformer.CTMC(modelChecker);
+				return new FinallyLtlTransformer.CTMC(modelChecker);
 			case LtlLtl:
-				return  new NewLtlLtlTransformer.CTMC(modelChecker);
+				return  new LtlLtlTransformer.CTMC(modelChecker);
 			case Quotient:
 				return new MCQuotientTransformer.CTMC(modelChecker);
 			default:
@@ -295,23 +295,23 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getTransformer(ConditionalTransformerType type)
+		protected ConditionalTransformer<explicit.DTMC, DTMCModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
 			case Until:
-				return new NewMcUntilTransformer.DTMC(modelChecker);
+				return new MCUntilTransformer.DTMC(modelChecker);
 			case Next:
-				return new NewMcNextTransformer.DTMC(modelChecker);
+				return new MCNextTransformer.DTMC(modelChecker);
 			case Ltl:
-				return new NewMcLtlTransformer.DTMC(modelChecker);
+				return new MCLtlTransformer.DTMC(modelChecker);
 			case FinallyFinally:
-				return new NewFinallyUntilTransformer.DTMC(modelChecker);
+				return new FinallyUntilTransformer.DTMC(modelChecker);
 			case LtlFinally:
-				return new NewLtlUntilTransformer.DTMC(modelChecker);
+				return new LtlUntilTransformer.DTMC(modelChecker);
 			case FinallyLtl:
-				return new NewFinallyLtlTransformer.DTMC(modelChecker);
+				return new FinallyLtlTransformer.DTMC(modelChecker);
 			case LtlLtl:
-				return  new NewLtlLtlTransformer.DTMC(modelChecker);
+				return  new LtlLtlTransformer.DTMC(modelChecker);
 			case Quotient:
 				return new MCQuotientTransformer.DTMC(modelChecker);
 			default:

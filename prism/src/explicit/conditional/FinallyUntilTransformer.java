@@ -10,8 +10,8 @@ import explicit.MinMax;
 import explicit.Model;
 import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Globally;
 import explicit.conditional.SimplePathProperty.Reach;
 import parser.ast.Expression;
@@ -27,13 +27,13 @@ import prism.PrismSettings;
 
 
 // FIXME ALG: add comment
-public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends NewNormalFormTransformer<M, MC>
+public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends NormalFormTransformer<M, MC>
 {
 	@Override
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -133,7 +133,7 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewFinallyUntilTransformer<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements FinallyUntilTransformer<explicit.CTMC, CTMCModelChecker>
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -160,7 +160,7 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyUntilTransformer<explicit.DTMC, DTMCModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements FinallyUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -187,7 +187,7 @@ public interface NewFinallyUntilTransformer<M extends Model, MC extends ProbMode
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewFinallyUntilTransformer<explicit.MDP, MDPModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements FinallyUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{

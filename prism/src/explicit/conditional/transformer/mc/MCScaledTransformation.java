@@ -19,7 +19,7 @@ import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAlteredDistributions;
 import prism.PrismUtils;
 
-public class McScaledTransformation
+public class MCScaledTransformation
 {
 	public static BasicModelTransformation<CTMC,CTMCAlteredDistributions> transform(CTMC model, double[] originProbs)
 	{
@@ -136,7 +136,7 @@ public class McScaledTransformation
 		System.out.println("Original DTMC:");
 		System.out.println(dtmc);
 
-		ModelTransformation<DTMC, DTMCAlteredDistributions> scaledDtmc = McScaledTransformation.transform(dtmc, new double[] {0.7, 0.0, 1.0, 1.0});
+		ModelTransformation<DTMC, DTMCAlteredDistributions> scaledDtmc = MCScaledTransformation.transform(dtmc, new double[] {0.7, 0.0, 1.0, 1.0});
 		System.out.println("Scaled DTMC:");
 		System.out.println(scaledDtmc.getTransformedModel());
 		System.out.println();
@@ -155,7 +155,7 @@ public class McScaledTransformation
 		System.out.println("Original CTMC:");
 		System.out.println(ctmc);
 
-		ModelTransformation<CTMC, CTMCAlteredDistributions> scaledCtmc = McScaledTransformation.transform(ctmc, new double[] {0.7, 0.0, 1.0, 1.0});
+		ModelTransformation<CTMC, CTMCAlteredDistributions> scaledCtmc = MCScaledTransformation.transform(ctmc, new double[] {0.7, 0.0, 1.0, 1.0});
 		System.out.println("Scaled CTMC:");
 		System.out.println(scaledCtmc.getTransformedModel());
 	}

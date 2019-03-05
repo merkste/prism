@@ -30,13 +30,13 @@ import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedis
 
 
 // FIXME ALG: add comment
-public interface NewFinallyUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NewNormalFormTransformer<M, C>
+public interface FinallyUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
 {
 	@Override
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -138,7 +138,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, C extends State
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewFinallyUntilTransformer<StochModel, StochModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements FinallyUntilTransformer<StochModel, StochModelChecker>
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -165,7 +165,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, C extends State
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyUntilTransformer<ProbModel, ProbModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements FinallyUntilTransformer<ProbModel, ProbModelChecker>
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{
@@ -192,7 +192,7 @@ public interface NewFinallyUntilTransformer<M extends ProbModel, C extends State
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewFinallyUntilTransformer<NondetModel, NondetModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements FinallyUntilTransformer<NondetModel, NondetModelChecker>
 	{
 		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{

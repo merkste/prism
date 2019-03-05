@@ -25,7 +25,7 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.NewConditionalTransformer.MC;
+import prism.conditional.ConditionalTransformer.MC;
 
 public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends ConditionalModelChecker<M>
 {
@@ -40,7 +40,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 	@Override
 	public StateValues checkExpression(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		NewConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			if (expression.getObjective() instanceof ExpressionLongRun) {
 				// try alternative long-run approach
@@ -66,7 +66,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		return resultOriginal;
 	}
 
-	protected ModelExpressionTransformation<M, ? extends M> transformModel(final NewConditionalTransformer.MC<M,C> transformer, final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	protected ModelExpressionTransformation<M, ? extends M> transformModel(final ConditionalTransformer.MC<M,C> transformer, final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
 		long timer = System.currentTimeMillis();
@@ -82,10 +82,10 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		return transformation;
 	}
 
-	protected NewConditionalTransformer.MC<M, C> selectModelTransformer(M model, ExpressionConditional expression) throws PrismException
+	protected ConditionalTransformer.MC<M, C> selectModelTransformer(M model, ExpressionConditional expression) throws PrismException
 	{
 		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
-		NewConditionalTransformer.MC<M, C> transformer;
+		ConditionalTransformer.MC<M, C> transformer;
 		for (ConditionalTransformerType type : types) {
 			transformer = getTransformer(type);
 			if (transformer != null && transformer.canHandle(model, expression)) {
@@ -222,7 +222,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected MC<StochModel, StochModelChecker> getTransformer(ConditionalTransformerType type)
+		protected ConditionalTransformer.MC<StochModel, StochModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
 			case Until:
@@ -232,13 +232,13 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			case Ltl:
 				return new MCLTLTransformer.CTMC(prism, modelChecker);
 			case FinallyFinally:
-				return new NewFinallyUntilTransformer.CTMC(prism, modelChecker);
+				return new FinallyUntilTransformer.CTMC(prism, modelChecker);
 			case LtlFinally:
-				return new NewLtlUntilTransformer.CTMC(prism, modelChecker);
+				return new LtlUntilTransformer.CTMC(prism, modelChecker);
 			case FinallyLtl:
-				return new NewFinallyLtlTransformer.CTMC(prism, modelChecker);
+				return new FinallyLtlTransformer.CTMC(prism, modelChecker);
 			case LtlLtl:
-				return new NewLtlLtlTransformer.CTMC(prism, modelChecker);
+				return new LtlLtlTransformer.CTMC(prism, modelChecker);
 			case Quotient:
 				return new MCQuotientTransformer.CTMC(prism, modelChecker);
 			default:
@@ -264,7 +264,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected NewConditionalTransformer.MC<ProbModel, ProbModelChecker> getTransformer(ConditionalTransformerType type)
+		protected ConditionalTransformer.MC<ProbModel, ProbModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
 			case Until:
@@ -274,13 +274,13 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			case Ltl:
 				return new MCLTLTransformer.DTMC(prism, modelChecker);
 			case FinallyFinally:
-				return new NewFinallyUntilTransformer.DTMC(prism, modelChecker);
+				return new FinallyUntilTransformer.DTMC(prism, modelChecker);
 			case LtlFinally:
-				return new NewLtlUntilTransformer.DTMC(prism, modelChecker);
+				return new LtlUntilTransformer.DTMC(prism, modelChecker);
 			case FinallyLtl:
-				return new NewFinallyLtlTransformer.DTMC(prism, modelChecker);
+				return new FinallyLtlTransformer.DTMC(prism, modelChecker);
 			case LtlLtl:
-				return new NewLtlLtlTransformer.DTMC(prism, modelChecker);
+				return new LtlLtlTransformer.DTMC(prism, modelChecker);
 			case Quotient:
 				return new MCQuotientTransformer.DTMC(prism, modelChecker);
 			default:

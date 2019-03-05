@@ -20,7 +20,7 @@ import prism.StateValues;
  * For each resetState an additional tau action is added, that deterministically
  * leads back to the {@code resetState}.
  */
-public class NewMCResetTransformation<M extends ProbModel> implements ModelTransformation<M, M>
+public class MCResetTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
 	public static final String SINGLE_RESET_TARGET = "expected a single state of interest";
 
@@ -33,7 +33,7 @@ public class NewMCResetTransformation<M extends ProbModel> implements ModelTrans
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public NewMCResetTransformation(M model, JDDNode resetDet, JDDNode statesOfInterest)
+	public MCResetTransformation(M model, JDDNode resetDet, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		this(model, new MCResetOperator(model, resetDet, statesOfInterest));
@@ -43,7 +43,7 @@ public class NewMCResetTransformation<M extends ProbModel> implements ModelTrans
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
 	@SuppressWarnings("unchecked")
-	public NewMCResetTransformation(M model, MCResetOperator operator)
+	public MCResetTransformation(M model, MCResetOperator operator)
 			throws PrismException
 	{
 		this.originalModel    = model;

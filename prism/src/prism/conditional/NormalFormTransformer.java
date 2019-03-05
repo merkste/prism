@@ -33,13 +33,13 @@ import prism.conditional.SimplePathProperty.Reach;
 import prism.conditional.SimplePathProperty.Until;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 import prism.conditional.transform.GoalFailStopTransformation;
-import prism.conditional.transform.NewMCResetTransformation;
-import prism.conditional.transform.NewMDPResetTransformation;
+import prism.conditional.transform.MCResetTransformation;
+import prism.conditional.transform.MDPResetTransformation;
 import prism.conditional.transform.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends ProbModel, C extends StateModelChecker> extends NewConditionalTransformer<M, C>, Clearable
+public interface NormalFormTransformer<M extends ProbModel, C extends StateModelChecker> extends ConditionalTransformer<M, C>, Clearable
 {
 	@Override
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
@@ -136,7 +136,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 
 
 
-	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C> implements NewNormalFormTransformer<M, C>
+	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C> implements NormalFormTransformer<M, C>
 	{
 		protected Map<SimplePathProperty<M>, JDDNode> cache;
 
@@ -149,13 +149,13 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 		/**
 		 * Override to enable caching of probabilities.
 		 *
-		 * @see NewNormalFormTransformer#transform(ProbModel, ExpressionConditional, JDDNode)
+		 * @see NormalFormTransformer#transform(ProbModel, ExpressionConditional, JDDNode)
 		 */
 		@Override
 		public ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			ModelExpressionTransformation<M,M> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			ModelExpressionTransformation<M,M> result = NormalFormTransformer.super.transform(model, expression, statesOfInterest);
 			clear();
 			return result;
 		}
@@ -170,10 +170,10 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 		}
 
 		@Override
-		public NewMCResetTransformation<M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
+		public MCResetTransformation<M> transformReset(M model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMCResetTransformation<>(model, resetStates, statesOfInterest);
+			return new MCResetTransformation<>(model, resetStates, statesOfInterest);
 		}
 
 		@Override
@@ -255,7 +255,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 
 
 
-	public static abstract class CTMC extends MC<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	public static abstract class CTMC extends MC<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -272,7 +272,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 
 
 
-	public static abstract class DTMC extends MC<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	public static abstract class DTMC extends MC<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{
@@ -289,7 +289,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 
 
 
-	public static abstract class MDP extends NewConditionalTransformer.MDP implements NewNormalFormTransformer<NondetModel, NondetModelChecker>
+	public static abstract class MDP extends ConditionalTransformer.MDP implements NormalFormTransformer<NondetModel, NondetModelChecker>
 	{
 		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
@@ -309,7 +309,7 @@ public interface NewNormalFormTransformer<M extends ProbModel, C extends StateMo
 		public ModelTransformation<NondetModel, ? extends NondetModel> transformReset(NondetModel model, JDDNode resetStates, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			return new NewMDPResetTransformation(model, resetStates, statesOfInterest);
+			return new MDPResetTransformation(model, resetStates, statesOfInterest);
 		}
 
 		@Override

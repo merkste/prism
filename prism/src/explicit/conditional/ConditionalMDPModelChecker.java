@@ -22,7 +22,7 @@ import explicit.MDPSparse;
 import explicit.MinMax;
 import explicit.ModelExpressionTransformation;
 import explicit.StateValues;
-import explicit.conditional.NewFinallyUntilTransformer;
+import explicit.conditional.FinallyUntilTransformer;
 import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.ModelView;
@@ -59,7 +59,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		OpRelOpBound oprel       = objective.getRelopBoundInfo(modelChecker.getConstantValues());
 		assert oprel.getMinMax(model.getModelType()).isMax() : "Pmax expected: " + expression;
 
-		NewConditionalTransformer<MDP, MDPModelChecker> transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer<MDP, MDPModelChecker> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			throw new PrismNotSupportedException("Cannot model check " + expression);
 		}
@@ -102,7 +102,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return modelChecker.checkExpression(model, inverseExpression, statesOfInterest);
 	}
 
-	public ModelExpressionTransformation<MDP, ? extends MDP> transformModel(final NewConditionalTransformer<MDP, MDPModelChecker> transformer, final MDP model, final ExpressionConditional expression,
+	public ModelExpressionTransformation<MDP, ? extends MDP> transformModel(final ConditionalTransformer<MDP, MDPModelChecker> transformer, final MDP model, final ExpressionConditional expression,
 			final BitSet statesOfInterest) throws PrismException
 	{
 		mainLog.println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
@@ -157,25 +157,25 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return sv;
 	}
 
-	public NewConditionalTransformer<MDP, MDPModelChecker> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
+	public ConditionalTransformer<MDP, MDPModelChecker> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
 	{
 		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
 		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
 
-		NewConditionalTransformer<MDP, MDPModelChecker> transformer;
+		ConditionalTransformer<MDP, MDPModelChecker> transformer;
 		for (ConditionalTransformerType type : types) {
 			switch (type) {
 			case FinallyFinally:
-				transformer = new NewFinallyUntilTransformer.MDP(modelChecker);
+				transformer = new FinallyUntilTransformer.MDP(modelChecker);
 				break;
 			case LtlFinally:
-				transformer = new NewLtlUntilTransformer.MDP(modelChecker);
+				transformer = new LtlUntilTransformer.MDP(modelChecker);
 				break;
 			case FinallyLtl:
-				transformer = new NewFinallyLtlTransformer.MDP(modelChecker);
+				transformer = new FinallyLtlTransformer.MDP(modelChecker);
 				break;
 			case LtlLtl:
-				transformer = new NewLtlLtlTransformer.MDP(modelChecker);
+				transformer = new LtlLtlTransformer.MDP(modelChecker);
 				break;
 			default:
 				continue;

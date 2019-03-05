@@ -23,7 +23,7 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 
-public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
+public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
 	public MCQuotientTransformer(Prism prism, C modelChecker)
 	{
@@ -135,7 +135,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 
 
 
-	public static class CTMC extends MCQuotientTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	public static class CTMC extends MCQuotientTransformer<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -145,7 +145,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 
 
 
-	public static class DTMC extends MCQuotientTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	public static class DTMC extends MCQuotientTransformer<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{

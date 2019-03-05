@@ -13,7 +13,7 @@ import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.CTMCRestricted;
@@ -26,7 +26,7 @@ import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
 
-public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
+public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
 {
 	@Override
 	default boolean canHandleCondition(final Model model, final ExpressionConditional expression)
@@ -196,7 +196,7 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 
 	
 
-	public class CTMC extends NewConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements NewMcUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -212,13 +212,13 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 		@Override
 		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> pivot(explicit.CTMC model, BitSet pivotStates)
 		{
-			return McPivotTransformation.transform(model, pivotStates);
+			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override
 		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> pivoted, double[] probs)
 		{
-			return McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+			return MCScaledTransformation.transform(pivoted.getTransformedModel(), probs);
 		}
 
 		@Override
@@ -230,7 +230,7 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 
 
 
-	public class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements NewMcUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -246,13 +246,13 @@ public interface NewMcUntilTransformer<M extends explicit.DTMC, C extends ProbMo
 		@Override
 		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> pivot(explicit.DTMC model, BitSet pivotStates)
 		{
-			return McPivotTransformation.transform(model, pivotStates);
+			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override
 		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted, double[] probs)
 		{
-			return McScaledTransformation.transform(pivoted.getTransformedModel(), probs);
+			return MCScaledTransformation.transform(pivoted.getTransformedModel(), probs);
 		}
 
 		@Override

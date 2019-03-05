@@ -14,7 +14,7 @@ import explicit.LTLModelChecker.LTLProduct;
 import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
-import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.transformer.LTLProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.CTMCAlteredDistributions;
@@ -31,7 +31,7 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
-public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
+public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = AcceptanceType.allTypes();
 
@@ -139,7 +139,7 @@ public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModel
 
 
 
-	public class CTMC extends NewConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements NewMcLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -149,7 +149,7 @@ public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModel
 		@Override
 		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(explicit.CTMC productModel, double[] probs)
 		{
-			return McScaledTransformation.transform(productModel, probs);
+			return MCScaledTransformation.transform(productModel, probs);
 		}
 
 		@Override
@@ -167,7 +167,7 @@ public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModel
 
 
 
-	public class DTMC extends NewConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements NewMcLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -177,7 +177,7 @@ public interface NewMcLtlTransformer<M extends explicit.DTMC,C extends ProbModel
 		@Override
 		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(explicit.DTMC productModel, double[] probs)
 		{
-			return McScaledTransformation.transform(productModel, probs);
+			return MCScaledTransformation.transform(productModel, probs);
 		}
 
 		@Override

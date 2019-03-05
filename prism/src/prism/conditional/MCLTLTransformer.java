@@ -21,7 +21,7 @@ import prism.StochModelChecker;
 import prism.conditional.transform.BasicModelExpressionTransformation;
 
 // FIXME ALG: support PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE
-public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M, C>
+public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
 	public MCLTLTransformer(Prism prism, C modelChecker)
 	{
@@ -87,7 +87,7 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 
 
 
-	public static class CTMC extends MCLTLTransformer<StochModel, StochModelChecker> implements NewConditionalTransformer.CTMC
+	public static class CTMC extends MCLTLTransformer<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -97,7 +97,7 @@ public abstract class MCLTLTransformer<M extends ProbModel, C extends ProbModelC
 
 
 
-	public static class DTMC extends MCLTLTransformer<ProbModel, ProbModelChecker> implements NewConditionalTransformer.DTMC
+	public static class DTMC extends MCLTLTransformer<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{

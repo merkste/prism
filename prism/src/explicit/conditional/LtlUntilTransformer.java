@@ -12,8 +12,8 @@ import explicit.MinMax;
 import explicit.Model;
 import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.SimplePathProperty.Reach;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
@@ -30,7 +30,7 @@ import prism.PrismSettings;
 
 
 // FIXME ALG: add comment
-public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChecker> extends NewNormalFormTransformer<M, C>
+public interface LtlUntilTransformer<M extends Model, C extends ProbModelChecker> extends NormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: all
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
@@ -42,7 +42,7 @@ public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChec
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -115,18 +115,18 @@ public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChec
 		Finally<M> objectivePath = new Finally<M>(productModel, acceptStates);
 
 		// FIXME ALG: reuse computation of conditionSatisfied?
-		NewFinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
+		FinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
 		finallyUntilTransformer.clear();
 		return result;
 	}
 
-	NewFinallyUntilTransformer<M, C> getFinallyUntilTransformer();
+	FinallyUntilTransformer<M, C> getFinallyUntilTransformer();
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlUntilTransformer<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements LtlUntilTransformer<explicit.CTMC, CTMCModelChecker>
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -142,15 +142,15 @@ public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChec
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.CTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.CTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.CTMC(getModelChecker());
+			return new FinallyUntilTransformer.CTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewLtlUntilTransformer<explicit.DTMC, DTMCModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements LtlUntilTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -166,15 +166,15 @@ public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChec
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.DTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.DTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.DTMC(getModelChecker());
+			return new FinallyUntilTransformer.DTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewLtlUntilTransformer<explicit.MDP, MDPModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements LtlUntilTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -263,9 +263,9 @@ public interface NewLtlUntilTransformer<M extends Model, C extends ProbModelChec
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.MDP getFinallyUntilTransformer()
+		public FinallyUntilTransformer.MDP getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.MDP(getModelChecker());
+			return new FinallyUntilTransformer.MDP(getModelChecker());
 		}
 
 		public ProbabilisticRedistribution redistributeProb0Objective(Finally<explicit.MDP> objectivePath, Reach<explicit.MDP> conditionPath)

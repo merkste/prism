@@ -1,39 +1,37 @@
-package prism.conditional;
+package explicit.conditional;
+
+import java.util.BitSet;
 
 import acceptance.AcceptanceType;
+import common.BitSetTools;
+import explicit.CTMCModelChecker;
+import explicit.DTMCModelChecker;
+import explicit.LTLModelChecker.LTLProduct;
+import explicit.MDPModelChecker;
 import explicit.MinMax;
+import explicit.Model;
+import explicit.ProbModelChecker;
 import explicit.conditional.ExpressionInspector;
+import explicit.conditional.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.GoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.SimplePathProperty.Finally;
+import explicit.conditional.SimplePathProperty.Reach;
+import explicit.conditional.SimplePathProperty.Until;
+import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import jdd.JDD;
-import jdd.JDDNode;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionProb;
-import prism.NondetModel;
-import prism.NondetModelChecker;
 import prism.Pair;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
-import prism.ProbModel;
-import prism.ProbModelChecker;
-import prism.StateModelChecker;
-import prism.StochModel;
-import prism.StochModelChecker;
-import prism.LTLModelChecker.LTLProduct;
-import prism.Model;
-import prism.conditional.SimplePathProperty.Finally;
-import prism.conditional.SimplePathProperty.Reach;
-import prism.conditional.transform.GoalFailStopTransformation;
-import prism.conditional.transform.GoalFailStopTransformation.ProbabilisticRedistribution;
-import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 
 
 
 // FIXME ALG: add comment
-public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateModelChecker> extends NewNormalFormTransformer<M, C>
+public interface FinallyLtlTransformer<M extends Model, C extends ProbModelChecker> extends NormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: all
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
@@ -45,7 +43,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -62,7 +60,7 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 	}
 
 	@Override
-	default NormalFormTransformation<M> transformNormalForm(M model, ExpressionConditional expression, JDDNode statesOfInterest)
+	default NormalFormTransformation<M> transformNormalForm(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
 		checkCanHandle(model, expression);
@@ -86,17 +84,16 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 		ExpressionProb transformedObjectiveBounded = new ExpressionProb(transformedObjective.getExpression(), objective.getMinMax(), objective.getRelOp().toString(), objective.getBound());
 		ExpressionConditional transformedExpressionBounded = new ExpressionConditional(transformedObjectiveBounded, transformedExpression.getCondition());
 
-		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded, transformation.getFailLabel(), transformation.getBadLabel());
+		return new NormalFormTransformation<>(transformation, expression, transformedExpressionBounded);
 	}
 
-	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalForm(Reach<M> objectivePath, LabeledDA conditionDA, JDDNode statesOfInterest)
+	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalForm(Reach<M> objectivePath, LabeledDA conditionDA, BitSet statesOfInterest)
 			throws PrismException
 	{
 		// 1) LTL Product Transformation for Condition
 		LTLProduct<M> product = getLtlTransformer().constructProduct(objectivePath.getModel(), conditionDA, statesOfInterest);
 		//    Lift state sets to product model
 		Reach<M> objectivePathProduct = objectivePath.lift(product);
-		objectivePath.clear();
 
 		// 2) Normal-Form Transformation
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = transformNormalForm(product, objectivePathProduct);
@@ -114,32 +111,34 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 	default Pair<GoalFailStopTransformation<M>, ExpressionConditional> transformNormalFormReach(LTLProduct<M> product, Reach<M> objectivePath)
 			throws PrismException
 	{
+		objectivePath.requireSameModel(product.getProductModel());
+
 		// FIXME ALG: remove redundancy?
 		M productModel           = product.getProductModel();
-		JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
-		JDDNode acceptStates     = getLtlTransformer().findAcceptingStates(product);
-		Finally<M> conditionPath = new Finally<>(productModel, acceptStates);
+		BitSet statesOfInterest  = product.getTransformedStatesOfInterest();
+		BitSet acceptStates      = getLtlTransformer().findAcceptingStates(product);
+		Finally<M> conditionPath = new Finally<M>(productModel, acceptStates);
 
-		NewFinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
+		FinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
 		finallyUntilTransformer.clear();
 		return result;
 	}
 
-	NewFinallyUntilTransformer<M, C> getFinallyUntilTransformer();
+	FinallyUntilTransformer<M, C> getFinallyUntilTransformer();
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewFinallyLtlTransformer<StochModel, StochModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements FinallyLtlTransformer<explicit.CTMC, CTMCModelChecker>
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(CTMCModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
-		public Pair<GoalFailStopTransformation<StochModel>, ExpressionConditional> transformNormalForm(LTLProduct<StochModel> product, Reach<StochModel> objectivePath)
+		public Pair<GoalFailStopTransformation<explicit.CTMC>, ExpressionConditional> transformNormalForm(LTLProduct<explicit.CTMC> product, Reach<explicit.CTMC> objectivePath)
 				throws PrismException, UndefinedTransformationException
 		{
 			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
@@ -147,23 +146,23 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.CTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.CTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.CTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.CTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewFinallyLtlTransformer<ProbModel, ProbModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements FinallyLtlTransformer<explicit.DTMC, DTMCModelChecker>
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(DTMCModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
-		public Pair<GoalFailStopTransformation<ProbModel>, ExpressionConditional> transformNormalForm(LTLProduct<ProbModel> product, Reach<ProbModel> objectivePath)
+		public Pair<GoalFailStopTransformation<explicit.DTMC>, ExpressionConditional> transformNormalForm(LTLProduct<explicit.DTMC> product, Reach<explicit.DTMC> objectivePath)
 				throws PrismException, UndefinedTransformationException
 		{
 			// Since each BSCC is either accepting or not, it suffices to reach the set of accepting states
@@ -171,41 +170,43 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.DTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.DTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.DTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.DTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewFinallyLtlTransformer<NondetModel, NondetModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements FinallyLtlTransformer<explicit.MDP, MDPModelChecker>
 	{
-		public MDP(Prism prism, NondetModelChecker modelChecker)
+		public MDP(MDPModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
-		public Pair<GoalFailStopTransformation<NondetModel>, ExpressionConditional> transformNormalForm(LTLProduct<NondetModel> product, Reach<NondetModel> objectivePath)
+		public Pair<GoalFailStopTransformation<explicit.MDP>, ExpressionConditional> transformNormalForm(LTLProduct<explicit.MDP> product, Reach<explicit.MDP> objectivePath)
 				throws PrismException
 		{
+			objectivePath.requireSameModel(product.getProductModel());
+
 			if (product.getAcceptance().getType() == AcceptanceType.REACH) {
 				return transformNormalFormReach(product, objectivePath);
 			}
 
-			NondetModel productModel = product.getProductModel();
-			JDDNode statesOfInterest = product.getTransformedStatesOfInterest();
+			explicit.MDP productModel           = product.getProductModel();
+			BitSet statesOfInterest             = product.getTransformedStatesOfInterest();
 
 			// compute accepting states  (ECs or REACH states)
-			JDDNode acceptStates               = getLtlTransformer().findAcceptingStates(product);
-			Finally<NondetModel> conditionPath = new Finally<>(productModel, acceptStates.copy());
+			BitSet acceptStates                 = getLtlTransformer().findAcceptingStates(product);
+			Finally<explicit.MDP> conditionPath = new Finally<>(productModel, acceptStates);
 
 			// FIXME ALG: consider whether this is actually an error in a normal-form transformation
-			JDDNode conditionFalsifiedStates = checkSatisfiability(conditionPath, statesOfInterest);
+			BitSet conditionFalsifiedStates = checkSatisfiability(conditionPath, statesOfInterest);
 
 			// compute bad states
-			JDDNode badStates = computeBadStates(product, conditionFalsifiedStates);
+			BitSet badStates = computeBadStates(product, conditionFalsifiedStates);
 
 			// compute redistribution for satisfied objective
 			ProbabilisticRedistribution objectiveSatisfied = redistributeProb1(objectivePath, conditionPath);
@@ -214,12 +215,11 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 			ProbabilisticRedistribution objectiveFalsified = redistributeProb0Objective(objectivePath, conditionFalsifiedStates, badStates);
 
 			// compute states where objective and condition can be satisfied
-			JDDNode instantGoalStates = computeInstantGoalStates(product, objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), acceptStates, conditionFalsifiedStates);
-			JDD.Deref(acceptStates);
+			BitSet instantGoalStates = computeInstantGoalStates(product, objectivePath, objectiveSatisfied.getStates(), objectiveFalsified.getStates(), acceptStates, conditionFalsifiedStates);
 
 			// transform goal-fail-stop
-			ProbabilisticRedistribution conditionSatisfied         = new ProbabilisticRedistribution();
-			GoalFailStopTransformation<NondetModel> transformation = transformGoalFailStop(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
+			ProbabilisticRedistribution conditionSatisfied          = new ProbabilisticRedistribution();
+			GoalFailStopTransformation<explicit.MDP> transformation = transformGoalFailStop(productModel, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 
 			// build expression
 			ExpressionLabel goal                = new ExpressionLabel(transformation.getGoalLabel());
@@ -230,8 +230,6 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 			Expression transformedCondition     = Expression.Or(Expression.Finally(goal), new ExpressionLabel("accept_condition"));
 			ExpressionConditional transformedExpression = new ExpressionConditional(transformedObjective, transformedCondition);
 
-			objectivePath.clear();
-			conditionPath.clear();
 			return new Pair<>(transformation, transformedExpression);
 		}
 
@@ -240,52 +238,47 @@ public interface NewFinallyLtlTransformer<M extends ProbModel, C extends StateMo
 		 * For efficiency, do not minimizing the probability to satisfy the condition, but
 		 * maximize the probability to reach badStates | conditionFalsifiedStates, which is equivalent.
 		 */
-		public ProbabilisticRedistribution redistributeProb0Objective(Reach<NondetModel> objectivePath, JDDNode conditionFalsified, JDDNode conditionMaybeFalsified)
+		public ProbabilisticRedistribution redistributeProb0Objective(Reach<explicit.MDP> objectivePath, BitSet conditionFalsified, BitSet conditionMaybeFalsified)
 				throws PrismException
 		{
 			// Do we have to reset once a state violates the objective?
 			if (objectivePath.hasToRemain() || settings.getBoolean(PrismSettings.CONDITIONAL_RESET_MDP_MINIMIZE)) {
 				// path to non-accepting states
-				JDDNode conditionFalsifiedStates            = JDD.Or(conditionFalsified.copy(), conditionMaybeFalsified.copy());
-				Finally<NondetModel> conditionFalsifiedPath = new Finally<>(objectivePath.getModel(), conditionFalsifiedStates);
+				BitSet conditionFalsifiedStates = BitSetTools.union(conditionFalsified, conditionMaybeFalsified);
+				Finally<explicit.MDP> conditionFalsifiedPath = new Finally<>(objectivePath.getModel(), conditionFalsifiedStates);
 				// compute redistribution
-				ProbabilisticRedistribution objectiveFalsified = redistributeProb0Complement(objectivePath, conditionFalsifiedPath);
-				conditionFalsifiedPath.clear();
-				return objectiveFalsified;
+				return redistributeProb0Complement(objectivePath, conditionFalsifiedPath);
 			}
 			// Skip costly normalization
 			return new ProbabilisticRedistribution();
 		}
 
-		public JDDNode computeInstantGoalStates(LTLProduct<NondetModel> product, Reach<NondetModel> objectivePath, JDDNode objectiveSatisfiedStates, JDDNode objectiveFalsifiedStates, JDDNode conditionAcceptStates, JDDNode conditionFalsifiedStates)
+		public BitSet computeInstantGoalStates(LTLProduct<explicit.MDP> product, Reach<explicit.MDP> objectivePath, BitSet objectiveSatisfiedStates, BitSet objectiveFalsifiedStates, BitSet conditionAcceptStates, BitSet conditionFalsifiedStates)
 				throws PrismException
 		{
-			NondetModel productModel = product.getProductModel();
+			explicit.MDP productModel = product.getProductModel();
 			objectivePath.requireSameModel(productModel);
 
-			JDDNode instantGoalStates = JDD.And(objectiveSatisfiedStates.copy(), conditionAcceptStates.copy());
+			BitSet instantGoalStates = BitSetTools.intersect(objectiveSatisfiedStates, conditionAcceptStates);
 
 			// exclude objective/condition falsified states
-			JDDNode falsifiedStates    = JDD.Or(objectiveFalsifiedStates.copy(), conditionFalsifiedStates.copy());
-			JDDNode notFalsifiedStates = JDD.And(allStates(productModel), JDD.Not(falsifiedStates.copy()));
+			BitSet falsifiedStates    = BitSetTools.union(objectiveFalsifiedStates, conditionFalsifiedStates);
+			BitSet notFalsifiedStates = BitSetTools.complement(productModel.getNumStates(), falsifiedStates);
 
 			// Does the objective specify behavior in the limit?
 			if (!objectivePath.isCoSafe()) {
 				// Find accepting ECs that do not already include a normalize state
-				JDDNode remain       = JDD.And(conditionAcceptStates.copy(), JDD.Not(JDD.Or(objectiveSatisfiedStates.copy(), falsifiedStates.copy())));
-				JDDNode acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
-				instantGoalStates    = JDD.Or(instantGoalStates, acceptStates);
-				JDD.Deref(remain);
+				BitSet remain       = BitSetTools.minus(conditionAcceptStates, objectiveSatisfiedStates, falsifiedStates);
+				BitSet acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
+				instantGoalStates.or(acceptStates);
 			}
-			JDDNode result = computeProb1E(productModel, false, notFalsifiedStates, instantGoalStates);
-			JDD.Deref(falsifiedStates, notFalsifiedStates, instantGoalStates);
-			return result;
+			return computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.MDP getFinallyUntilTransformer()
+		public FinallyUntilTransformer.MDP getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.MDP(prism, getModelChecker());
+			return new FinallyUntilTransformer.MDP(getModelChecker());
 		}
 	}
 }

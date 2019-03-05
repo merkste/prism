@@ -10,7 +10,7 @@ import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
-import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.SimplePathProperty;
 import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.SimplePathProperty.Globally;
@@ -20,7 +20,7 @@ import explicit.conditional.SimplePathProperty.Until;
 import prism.PrismComponent;
 import prism.PrismException;
 
-public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChecker>
+public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker>
 {
 	public C getModelChecker();
 
@@ -72,7 +72,7 @@ public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default BitSet computeProb0(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeProb0(eventually.getModel(), eventually.isNegated(), NewConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeProb0(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
 	}
 
 	default BitSet computeProb0(Until<M> until)
@@ -96,7 +96,7 @@ public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default BitSet computeProb1(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeProb1(eventually.getModel(), eventually.isNegated(), NewConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeProb1(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
 	}
 
 	default BitSet computeProb1(Until<M> until)
@@ -126,7 +126,7 @@ public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default double[] computeProbs(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeUntilProbs(eventually.getModel(), eventually.isNegated(), NewConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
 	}
 
 	default double[] computeProbs(Next<M> next)
@@ -158,7 +158,7 @@ public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 
 
 
-	public static class DTMC extends PrismComponent implements McModelChecker<explicit.DTMC, DTMCModelChecker>
+	public static class DTMC extends PrismComponent implements MCModelChecker<explicit.DTMC, DTMCModelChecker>
 	{
 		protected final DTMCModelChecker modelChecker;
 
@@ -239,7 +239,7 @@ public interface McModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 
 
 
-	public static class CTMC extends PrismComponent implements McModelChecker<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends PrismComponent implements MCModelChecker<explicit.CTMC, CTMCModelChecker>
 	{
 		protected CTMCModelChecker modelChecker;
 

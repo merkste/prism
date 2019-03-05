@@ -20,7 +20,7 @@ import explicit.modelviews.CTMCDisjointUnion;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 
-public class McPivotTransformation
+public class MCPivotTransformation
 {
 	public static BasicModelTransformation<CTMC, CTMCAlteredDistributions> transform(final CTMC model, final BitSet pivotStates)
 	{
@@ -106,7 +106,7 @@ public class McPivotTransformation
 		System.out.println("Original Model:");
 		System.out.println(original);
 
-		ModelTransformation<DTMC, DTMCAlteredDistributions> pivoted = McPivotTransformation.transform(original, BitSetTools.asBitSet(2));
+		ModelTransformation<DTMC, DTMCAlteredDistributions> pivoted = MCPivotTransformation.transform(original, BitSetTools.asBitSet(2));
 		System.out.println("Pivoted Model:");
 		System.out.println(pivoted.getTransformedModel());
 	}

@@ -19,7 +19,7 @@ import explicit.conditional.SimplePathProperty.Release;
 import explicit.conditional.SimplePathProperty.TemporalOperator;
 import explicit.conditional.SimplePathProperty.Until;
 import explicit.conditional.SimplePathProperty.WeakUntil;
-import explicit.conditional.checker.McModelChecker;
+import explicit.conditional.checker.MCModelChecker;
 import explicit.conditional.transformer.LTLProductTransformer;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -32,7 +32,7 @@ import prism.PrismLog;
 import prism.PrismSettings;
 import prism.PrismComponent;
 
-public interface NewConditionalTransformer<M extends Model, C extends StateModelChecker>
+public interface ConditionalTransformer<M extends Model, C extends StateModelChecker>
 {
 	public static final BitSet ALL_STATES = null;
 	public static final BitSet NO_STATES  = new BitSet(0);
@@ -148,7 +148,7 @@ public interface NewConditionalTransformer<M extends Model, C extends StateModel
 
 
 
-	public static abstract class Basic<M extends Model, C extends ProbModelChecker> extends PrismComponent implements NewConditionalTransformer<M, C>
+	public static abstract class Basic<M extends Model, C extends ProbModelChecker> extends PrismComponent implements ConditionalTransformer<M, C>
 	{
 		protected C modelChecker;
 		protected LTLProductTransformer<M> ltlTransformer;
@@ -209,9 +209,9 @@ public interface NewConditionalTransformer<M extends Model, C extends StateModel
 
 
 
-	public interface MC<M extends explicit.DTMC, C extends ProbModelChecker> extends NewConditionalTransformer<M,C>// extends Basic<M, C>
+	public interface MC<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer<M,C>// extends Basic<M, C>
 	{
-		McModelChecker<M,C> getMcModelChecker();
+		MCModelChecker<M,C> getMcModelChecker();
 	}
 
 
@@ -225,9 +225,9 @@ public interface NewConditionalTransformer<M extends Model, C extends StateModel
 		}
 
 		@Override
-		default McModelChecker<explicit.CTMC, CTMCModelChecker> getMcModelChecker()
+		default MCModelChecker<explicit.CTMC, CTMCModelChecker> getMcModelChecker()
 		{
-			return new McModelChecker.CTMC(getModelChecker());
+			return new MCModelChecker.CTMC(getModelChecker());
 		}
 	}
 
@@ -242,9 +242,9 @@ public interface NewConditionalTransformer<M extends Model, C extends StateModel
 		}
 
 		@Override
-		default McModelChecker<explicit.DTMC, DTMCModelChecker> getMcModelChecker()
+		default MCModelChecker<explicit.DTMC, DTMCModelChecker> getMcModelChecker()
 		{
-			return new McModelChecker.DTMC(getModelChecker());
+			return new MCModelChecker.DTMC(getModelChecker());
 		}
 	}
 

@@ -64,7 +64,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			throw new PrismException("Currently, only a single state of interest is supported for MDP conditionals, got "+n);
 		}
 
-		NewConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			JDD.Deref(statesOfInterest);
 			throw new PrismNotSupportedException("Cannot model check " + expression);
@@ -109,7 +109,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return modelChecker.checkExpression(inverseExpression, statesOfInterest);
 	}
 
-	protected ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformModel(final NewConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	protected ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformModel(final ConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 		long timer = System.currentTimeMillis();
@@ -124,23 +124,23 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return transformation;
 	}
 
-	protected NewConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
+	protected ConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
 	{
 		final SortedSet<ConditionalTransformerType> types = getTransformerTypes();
 		for (ConditionalTransformerType type : types) {
-			NewConditionalTransformer.MDP transformer;
+			ConditionalTransformer.MDP transformer;
 			switch (type) {
 			case FinallyFinally:
-				transformer = new NewFinallyUntilTransformer.MDP(prism, modelChecker);
+				transformer = new FinallyUntilTransformer.MDP(prism, modelChecker);
 				break;
 			case LtlFinally:
-				transformer = new NewLtlUntilTransformer.MDP(prism, modelChecker);
+				transformer = new LtlUntilTransformer.MDP(prism, modelChecker);
 				break;
 			case FinallyLtl:
-				transformer = new NewFinallyLtlTransformer.MDP(prism, modelChecker);
+				transformer = new FinallyLtlTransformer.MDP(prism, modelChecker);
 				break;
 			case LtlLtl:
-				transformer = new NewLtlLtlTransformer.MDP(prism, modelChecker);
+				transformer = new LtlLtlTransformer.MDP(prism, modelChecker);
 				break;
 			default:
 				continue;

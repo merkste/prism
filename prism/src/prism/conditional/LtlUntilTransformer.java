@@ -33,7 +33,7 @@ import prism.conditional.transform.LTLProductTransformer.LabeledDA;
 
 
 // FIXME ALG: add comment
-public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NewNormalFormTransformer<M, C>
+public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: all
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.RABIN, AcceptanceType.GENERALIZED_RABIN, AcceptanceType.STREETT};
@@ -45,7 +45,7 @@ public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateMode
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -119,18 +119,18 @@ public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateMode
 		Finally<M> objectivePath = new Finally<M>(productModel, acceptStates);
 
 		// FIXME ALG: reuse computation of conditionSatisfied?
-		NewFinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
+		FinallyUntilTransformer<M, C> finallyUntilTransformer         = getFinallyUntilTransformer();
 		getLog().println("\nDelegating to " + finallyUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyUntilTransformer.transformNormalForm(objectivePath, conditionPath, statesOfInterest);
 		finallyUntilTransformer.clear();
 		return result;
 	}
 
-	NewFinallyUntilTransformer<M, C> getFinallyUntilTransformer();
+	FinallyUntilTransformer<M, C> getFinallyUntilTransformer();
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlUntilTransformer<StochModel, StochModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements LtlUntilTransformer<StochModel, StochModelChecker>
 	{
 		public CTMC(Prism prism, StochModelChecker modelChecker)
 		{
@@ -146,15 +146,15 @@ public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateMode
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.CTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.CTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.CTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.CTMC(prism, getModelChecker());
 		}
 	}
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewLtlUntilTransformer<ProbModel, ProbModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements LtlUntilTransformer<ProbModel, ProbModelChecker>
 	{
 		public DTMC(Prism prism, ProbModelChecker modelChecker)
 		{
@@ -170,15 +170,15 @@ public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateMode
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.DTMC getFinallyUntilTransformer()
+		public FinallyUntilTransformer.DTMC getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.DTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.DTMC(prism, getModelChecker());
 		}
 	}
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewLtlUntilTransformer<NondetModel, NondetModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements LtlUntilTransformer<NondetModel, NondetModelChecker>
 	{
 		public MDP(Prism prism, NondetModelChecker modelChecker)
 		{
@@ -269,9 +269,9 @@ public interface NewLtlUntilTransformer<M extends ProbModel, C extends StateMode
 		}
 
 		@Override
-		public NewFinallyUntilTransformer.MDP getFinallyUntilTransformer()
+		public FinallyUntilTransformer.MDP getFinallyUntilTransformer()
 		{
-			return new NewFinallyUntilTransformer.MDP(prism, getModelChecker());
+			return new FinallyUntilTransformer.MDP(prism, getModelChecker());
 		}
 
 		public ProbabilisticRedistribution redistributeProb0Objective(Finally<NondetModel> objectivePath, Reach<NondetModel> conditionPath)

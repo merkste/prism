@@ -20,7 +20,7 @@ import prism.StateValues;
  * For each resetState an additional tau action is added, that deterministically
  * leads back to the {@code resetState}.
  */
-public class NewMDPResetTransformation implements ModelTransformation<NondetModel, NondetModel>
+public class MDPResetTransformation implements ModelTransformation<NondetModel, NondetModel>
 {
 	public static final boolean ROW    = true;
 	public static final boolean COLUMN = false;
@@ -35,7 +35,7 @@ public class NewMDPResetTransformation implements ModelTransformation<NondetMode
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public NewMDPResetTransformation(NondetModel model, JDDNode resetNonDet, JDDNode statesOfInterest)
+	public MDPResetTransformation(NondetModel model, JDDNode resetNonDet, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		this(model, new MDPResetOperator(model, resetNonDet, statesOfInterest));
@@ -44,7 +44,7 @@ public class NewMDPResetTransformation implements ModelTransformation<NondetMode
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public NewMDPResetTransformation(NondetModel model, JDDNode resetDet, JDDNode resetNonDet, JDDNode statesOfInterest)
+	public MDPResetTransformation(NondetModel model, JDDNode resetDet, JDDNode resetNonDet, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		this(model, new MDPResetOperator(model, resetDet, resetNonDet, statesOfInterest));
@@ -53,7 +53,7 @@ public class NewMDPResetTransformation implements ModelTransformation<NondetMode
 	/**
 	 * [ REFS: <i>deadlockStates, statesOfInterest</i>, DEREFS: <i>none</i> ]
 	 */
-	public NewMDPResetTransformation(NondetModel model, MDPResetOperator operator)
+	public MDPResetTransformation(NondetModel model, MDPResetOperator operator)
 			throws PrismException
 	{
 		this.originalModel    = model;

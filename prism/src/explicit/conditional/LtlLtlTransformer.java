@@ -13,8 +13,8 @@ import explicit.MDPModelChecker;
 import explicit.MinMax;
 import explicit.Model;
 import explicit.ProbModelChecker;
-import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Finally;
 import explicit.conditional.transformer.LTLProductTransformer.LabeledDA;
 import parser.ast.Expression;
@@ -30,7 +30,7 @@ import prism.PrismSettings;
 
 
 // FIXME ALG: add comment
-public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecker> extends NewNormalFormTransformer<M, C>
+public interface LtlLtlTransformer<M extends Model, C extends ProbModelChecker> extends NormalFormTransformer<M, C>
 {
 	// FIXME ALG: Generalize acceptance types: DMTC=all, MDP=REACH, STREETT
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = {AcceptanceType.REACH, AcceptanceType.STREETT};
@@ -42,7 +42,7 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
-		if (! NewNormalFormTransformer.super.canHandleObjective(model, expression)) {
+		if (! NormalFormTransformer.super.canHandleObjective(model, expression)) {
 			return false;
 		}
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -96,7 +96,7 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		Finally<M> objectivePathProduct = new Finally<>(productModel, acceptStates);
 		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
-		NewFinallyLtlTransformer<M, C> finallyLtlTransformer             = getFinallyLtlTransformer();
+		FinallyLtlTransformer<M, C> finallyLtlTransformer             = getFinallyLtlTransformer();
 		getLog().println("\nDelegating to " + finallyLtlTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = finallyLtlTransformer.transformNormalForm(objectivePathProduct, conditionDA.liftToProduct(product), statesOfInterestProduct);
 		finallyLtlTransformer.clear();
@@ -119,7 +119,7 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		BitSet statesOfInterestProduct  = product.getTransformedStatesOfInterest();
 
 		// 2) Normal-Form Transformation
-		NewLtlUntilTransformer<M,C> ltlUntilTransformer                  = getLtlUntilTransformer();
+		LtlUntilTransformer<M,C> ltlUntilTransformer                  = getLtlUntilTransformer();
 		getLog().println("\nDelegating to " + ltlUntilTransformer.getName());
 		Pair<GoalFailStopTransformation<M>, ExpressionConditional> result = ltlUntilTransformer.transformNormalForm(objectiveDA.liftToProduct(product), conditionPathProduct, statesOfInterestProduct);
 		ltlUntilTransformer.clear();
@@ -131,13 +131,13 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		return new Pair<>(transformation, transformedExpression);
 	}
 
-	NewLtlUntilTransformer<M, C> getLtlUntilTransformer();
+	LtlUntilTransformer<M, C> getLtlUntilTransformer();
 
-	NewFinallyLtlTransformer<M, C> getFinallyLtlTransformer();
+	FinallyLtlTransformer<M, C> getFinallyLtlTransformer();
 
 
 
-	public static class CTMC extends NewNormalFormTransformer.CTMC implements NewLtlLtlTransformer<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends NormalFormTransformer.CTMC implements LtlLtlTransformer<explicit.CTMC, CTMCModelChecker>
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -153,21 +153,21 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		}
 
 		@Override
-		public NewLtlUntilTransformer.CTMC getLtlUntilTransformer()
+		public LtlUntilTransformer.CTMC getLtlUntilTransformer()
 		{
-			return new NewLtlUntilTransformer.CTMC(getModelChecker());
+			return new LtlUntilTransformer.CTMC(getModelChecker());
 		}
 
 		@Override
-		public NewFinallyLtlTransformer.CTMC getFinallyLtlTransformer()
+		public FinallyLtlTransformer.CTMC getFinallyLtlTransformer()
 		{
-			return new NewFinallyLtlTransformer.CTMC(getModelChecker());
+			return new FinallyLtlTransformer.CTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class DTMC extends NewNormalFormTransformer.DTMC implements NewLtlLtlTransformer<explicit.DTMC, DTMCModelChecker>
+	public static class DTMC extends NormalFormTransformer.DTMC implements LtlLtlTransformer<explicit.DTMC, DTMCModelChecker>
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -183,21 +183,21 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		}
 
 		@Override
-		public NewLtlUntilTransformer.DTMC getLtlUntilTransformer()
+		public LtlUntilTransformer.DTMC getLtlUntilTransformer()
 		{
-			return new NewLtlUntilTransformer.DTMC(getModelChecker());
+			return new LtlUntilTransformer.DTMC(getModelChecker());
 		}
 
 		@Override
-		public NewFinallyLtlTransformer.DTMC getFinallyLtlTransformer()
+		public FinallyLtlTransformer.DTMC getFinallyLtlTransformer()
 		{
-			return new NewFinallyLtlTransformer.DTMC(getModelChecker());
+			return new FinallyLtlTransformer.DTMC(getModelChecker());
 		}
 	}
 
 
 
-	public static class MDP extends NewNormalFormTransformer.MDP implements NewLtlLtlTransformer<explicit.MDP, MDPModelChecker>
+	public static class MDP extends NormalFormTransformer.MDP implements LtlLtlTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -312,15 +312,15 @@ public interface NewLtlLtlTransformer<M extends Model, C extends ProbModelChecke
 		}
 
 		@Override
-		public NewLtlUntilTransformer.MDP getLtlUntilTransformer()
+		public LtlUntilTransformer.MDP getLtlUntilTransformer()
 		{
-			return new NewLtlUntilTransformer.MDP(getModelChecker());
+			return new LtlUntilTransformer.MDP(getModelChecker());
 		}
 
 		@Override
-		public NewFinallyLtlTransformer.MDP getFinallyLtlTransformer()
+		public FinallyLtlTransformer.MDP getFinallyLtlTransformer()
 		{
-			return new NewFinallyLtlTransformer.MDP(getModelChecker());
+			return new FinallyLtlTransformer.MDP(getModelChecker());
 		}
 	}
 }

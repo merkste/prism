@@ -12,7 +12,7 @@ import explicit.conditional.SimplePathProperty.Until;
 import jdd.Clearable;
 import prism.PrismException;
 
-public interface CachedMcModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends McModelChecker<M, C>, Clearable
+public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends MCModelChecker<M, C>, Clearable
 {
 	double[] lookup(SimplePathProperty<M> path);
 
@@ -24,7 +24,7 @@ public interface CachedMcModelChecker<M extends explicit.DTMC, C extends ProbMod
 	{
 		double[] probs = lookup(eventually);
 		if (probs == null) {
-			probs = store(eventually, McModelChecker.super.computeProbs(eventually));
+			probs = store(eventually, MCModelChecker.super.computeProbs(eventually));
 		}
 		return probs;
 	}
@@ -35,14 +35,14 @@ public interface CachedMcModelChecker<M extends explicit.DTMC, C extends ProbMod
 	{
 		double[] probs = lookup(until);
 		if (probs == null) {
-			probs = store(until, McModelChecker.super.computeProbs(until));
+			probs = store(until, MCModelChecker.super.computeProbs(until));
 		}
 		return probs;
 	}
 
 
 
-	public static class DTMC extends McModelChecker.DTMC implements CachedMcModelChecker<explicit.DTMC, DTMCModelChecker>
+	public static class DTMC extends MCModelChecker.DTMC implements CachedMCModelChecker<explicit.DTMC, DTMCModelChecker>
 	{
 		protected Map<SimplePathProperty<explicit.DTMC>, double[]> cache;
 
@@ -74,7 +74,7 @@ public interface CachedMcModelChecker<M extends explicit.DTMC, C extends ProbMod
 
 
 
-	public static class CTMC extends McModelChecker.CTMC implements CachedMcModelChecker<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends MCModelChecker.CTMC implements CachedMCModelChecker<explicit.CTMC, CTMCModelChecker>
 	{
 		protected Map<SimplePathProperty<explicit.CTMC>, double[]> cache;
 

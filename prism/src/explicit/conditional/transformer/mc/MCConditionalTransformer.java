@@ -10,9 +10,9 @@ import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
-import explicit.conditional.NewConditionalTransformer;
+import explicit.conditional.ConditionalTransformer;
 
-public interface MCConditionalTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends NewConditionalTransformer.MC<M,C>
+public interface MCConditionalTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.MC<M,C>
 {
 	@Override
 	default BasicModelExpressionTransformation<M, ? extends M> transform(final M model, final ExpressionConditional expression, final BitSet statesOfInterest)
@@ -36,14 +36,14 @@ public interface MCConditionalTransformer<M extends explicit.DTMC, C extends Pro
 
 
 
-	public interface CTMC extends MCConditionalTransformer<explicit.CTMC, CTMCModelChecker>, NewConditionalTransformer.CTMC
+	public interface CTMC extends MCConditionalTransformer<explicit.CTMC, CTMCModelChecker>, ConditionalTransformer.CTMC
 	{
 		// Marker interface to ease inheritance
 	}
 
 
 
-	public interface DTMC extends MCConditionalTransformer<explicit.DTMC, DTMCModelChecker>, NewConditionalTransformer.DTMC
+	public interface DTMC extends MCConditionalTransformer<explicit.DTMC, DTMCModelChecker>, ConditionalTransformer.DTMC
 	{
 		// Marker interface to ease inheritance
 	}

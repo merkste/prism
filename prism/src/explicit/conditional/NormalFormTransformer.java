@@ -17,10 +17,10 @@ import explicit.ModelTransformation;
 import explicit.ModelTransformationNested;
 import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
-import explicit.conditional.NewGoalFailStopTransformer.GoalFailStopTransformation;
-import explicit.conditional.NewGoalFailStopTransformer.ProbabilisticRedistribution;
+import explicit.conditional.GoalFailStopTransformer.GoalFailStopTransformation;
+import explicit.conditional.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.checker.CachedMcModelChecker;
+import explicit.conditional.checker.CachedMCModelChecker;
 import explicit.conditional.transformer.ResetTransformer;
 import explicit.conditional.transformer.ResetTransformer.ResetTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -33,7 +33,7 @@ import parser.ast.ExpressionConditional;
 import prism.PrismException;
 
 // FIXME ALG: add comment
-public interface NewNormalFormTransformer<M extends Model, C extends StateModelChecker> extends NewConditionalTransformer<M, C>, Clearable
+public interface NormalFormTransformer<M extends Model, C extends StateModelChecker> extends ConditionalTransformer<M, C>, Clearable
 {
 	@Override
 	default ModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
@@ -111,9 +111,9 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 
 
 
-	public static abstract class MC<M extends explicit.DTMC, C extends ProbModelChecker> extends NewConditionalTransformer.Basic<M, C> implements NewConditionalTransformer.MC<M,C>, NewNormalFormTransformer<M, C>
+	public static abstract class MC<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.Basic<M, C> implements ConditionalTransformer.MC<M,C>, NormalFormTransformer<M, C>
 	{
-		protected CachedMcModelChecker<M,C> mcModelChecker;
+		protected CachedMCModelChecker<M,C> mcModelChecker;
 
 		public MC(C modelChecker)
 		{
@@ -121,10 +121,10 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 			mcModelChecker = createCachedMcModelChecker();
 		}
 
-		protected abstract CachedMcModelChecker<M, C> createCachedMcModelChecker();
+		protected abstract CachedMCModelChecker<M, C> createCachedMcModelChecker();
 
 		@Override
-		public CachedMcModelChecker<M, C> getMcModelChecker()
+		public CachedMCModelChecker<M, C> getMcModelChecker()
 		{
 			return mcModelChecker;
 		}
@@ -132,13 +132,13 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		/**
 		 * Override to enable caching of probabilities.
 		 *
-		 * @see NewNormalFormTransformer#transform(Model, ExpressionConditional, BitSet)
+		 * @see NormalFormTransformer#transform(Model, ExpressionConditional, BitSet)
 		 */
 		@Override
 		public ModelExpressionTransformation<M,M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
 				throws PrismException
 		{
-			ModelExpressionTransformation<M,M> result = NewNormalFormTransformer.super.transform(model, expression, statesOfInterest);
+			ModelExpressionTransformation<M,M> result = NormalFormTransformer.super.transform(model, expression, statesOfInterest);
 			clear();
 			return result;
 		}
@@ -204,11 +204,11 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		public GoalFailStopTransformation<M> transformGoalFailStop(M model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
 				throws PrismException
 		{
-			NewGoalFailStopTransformer<M> transformer = getGoalFailStopTransformer();
+			GoalFailStopTransformer<M> transformer = getGoalFailStopTransformer();
 			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 		}
 
-		protected abstract NewGoalFailStopTransformer<M> getGoalFailStopTransformer();
+		protected abstract GoalFailStopTransformer<M> getGoalFailStopTransformer();
 
 		@Override
 		public void clear()
@@ -219,7 +219,7 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 
 
 
-	public static abstract class CTMC extends MC<explicit.CTMC, CTMCModelChecker> implements NewConditionalTransformer.CTMC
+	public static abstract class CTMC extends MC<explicit.CTMC, CTMCModelChecker> implements ConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -227,9 +227,9 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		}
 
 		@Override
-		public CachedMcModelChecker.CTMC createCachedMcModelChecker()
+		public CachedMCModelChecker.CTMC createCachedMcModelChecker()
 		{
-			return new CachedMcModelChecker.CTMC(getModelChecker());
+			return new CachedMCModelChecker.CTMC(getModelChecker());
 		}
 
 
@@ -247,15 +247,15 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		}
 
 		@Override
-		protected NewGoalFailStopTransformer<explicit.CTMC> getGoalFailStopTransformer()
+		protected GoalFailStopTransformer<explicit.CTMC> getGoalFailStopTransformer()
 		{
-			return new NewGoalFailStopTransformer.CTMC();
+			return new GoalFailStopTransformer.CTMC();
 		}
 	}
 
 
 
-	public static abstract class DTMC extends MC<explicit.DTMC,DTMCModelChecker> implements NewConditionalTransformer.DTMC
+	public static abstract class DTMC extends MC<explicit.DTMC,DTMCModelChecker> implements ConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -263,9 +263,9 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		}
 
 		@Override
-		public CachedMcModelChecker.DTMC createCachedMcModelChecker()
+		public CachedMCModelChecker.DTMC createCachedMcModelChecker()
 		{
-			return new CachedMcModelChecker.DTMC(getModelChecker());
+			return new CachedMCModelChecker.DTMC(getModelChecker());
 		}
 
 
@@ -283,15 +283,15 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		}
 
 		@Override
-		protected NewGoalFailStopTransformer<explicit.DTMC> getGoalFailStopTransformer()
+		protected GoalFailStopTransformer<explicit.DTMC> getGoalFailStopTransformer()
 		{
-			return new NewGoalFailStopTransformer.DTMC();
+			return new GoalFailStopTransformer.DTMC();
 		}
 	}
 
 
 
-	public static abstract class MDP extends NewConditionalTransformer.MDP implements NewNormalFormTransformer<explicit.MDP, MDPModelChecker>
+	public static abstract class MDP extends ConditionalTransformer.MDP implements NormalFormTransformer<explicit.MDP, MDPModelChecker>
 	{
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -411,7 +411,7 @@ public interface NewNormalFormTransformer<M extends Model, C extends StateModelC
 		public GoalFailStopTransformation<explicit.MDP> transformGoalFailStop(explicit.MDP model, ProbabilisticRedistribution objectiveSatisfied, ProbabilisticRedistribution conditionSatisfied, ProbabilisticRedistribution objectiveFalsified, BitSet instantGoalStates, BitSet conditionFalsifiedStates, BitSet badStates, BitSet statesOfInterest)
 				throws PrismException
 		{
-			NewGoalFailStopTransformer<explicit.MDP> transformer = new NewGoalFailStopTransformer.MDP();
+			GoalFailStopTransformer<explicit.MDP> transformer = new GoalFailStopTransformer.MDP();
 			return transformer.transformModel(model, objectiveSatisfied, conditionSatisfied, objectiveFalsified, instantGoalStates, conditionFalsifiedStates, badStates, statesOfInterest);
 		}
 	}
