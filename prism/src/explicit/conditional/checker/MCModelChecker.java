@@ -11,12 +11,11 @@ import explicit.DTMCModelChecker;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
 import explicit.conditional.ConditionalTransformer;
-import explicit.conditional.SimplePathProperty;
-import explicit.conditional.SimplePathProperty.Finally;
-import explicit.conditional.SimplePathProperty.Globally;
-import explicit.conditional.SimplePathProperty.Next;
-import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathProperty.Finally;
+import explicit.conditional.checker.SimplePathProperty.Globally;
+import explicit.conditional.checker.SimplePathProperty.Next;
+import explicit.conditional.checker.SimplePathProperty.Reach;
+import explicit.conditional.checker.SimplePathProperty.Until;
 import prism.PrismComponent;
 import prism.PrismException;
 

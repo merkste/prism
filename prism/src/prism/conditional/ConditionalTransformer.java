@@ -26,15 +26,16 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.SimplePathProperty.Finally;
-import prism.conditional.SimplePathProperty.Globally;
-import prism.conditional.SimplePathProperty.Next;
-import prism.conditional.SimplePathProperty.Reach;
-import prism.conditional.SimplePathProperty.Release;
-import prism.conditional.SimplePathProperty.TemporalOperator;
-import prism.conditional.SimplePathProperty.Until;
-import prism.conditional.SimplePathProperty.WeakUntil;
-import prism.conditional.transform.LTLProductTransformer;
+import prism.conditional.checker.SimplePathProperty;
+import prism.conditional.checker.SimplePathProperty.Finally;
+import prism.conditional.checker.SimplePathProperty.Globally;
+import prism.conditional.checker.SimplePathProperty.Next;
+import prism.conditional.checker.SimplePathProperty.Reach;
+import prism.conditional.checker.SimplePathProperty.Release;
+import prism.conditional.checker.SimplePathProperty.TemporalOperator;
+import prism.conditional.checker.SimplePathProperty.Until;
+import prism.conditional.checker.SimplePathProperty.WeakUntil;
+import prism.conditional.transformer.LtlProductTransformer;
 import prism.PrismComponent;
 
 public interface ConditionalTransformer<M extends ProbModel, C extends StateModelChecker>
@@ -88,7 +89,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 
 	C getModelChecker(M model) throws PrismException;
 
-	LTLProductTransformer<M> getLtlTransformer();
+	LtlProductTransformer<M> getLtlTransformer();
 
 	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
 			throws PrismException
@@ -108,7 +109,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 			temporal = (ExpressionTemporal) trimmed;
 		}
 
-		C mc                     = getModelChecker(model);
+		C mc                      = getModelChecker(model);
 		TemporalOperator operator = TemporalOperator.fromConstant(temporal.getOperator());
 		JDDNode goal, remain, stop;
 		switch (operator) {
@@ -160,7 +161,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 	{
 		protected Prism prism;
 		protected C modelChecker;
-		protected LTLProductTransformer<M> ltlTransformer;
+		protected LtlProductTransformer<M> ltlTransformer;
 
 		public Basic(Prism prism, C modelChecker) {
 			super(modelChecker);
@@ -186,10 +187,10 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 		}
 
 		@Override
-		public LTLProductTransformer<M> getLtlTransformer()
+		public LtlProductTransformer<M> getLtlTransformer()
 		{
 			if (ltlTransformer == null) {
-				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
+				ltlTransformer = new LtlProductTransformer<M>(modelChecker);
 			}
 			return ltlTransformer;
 		}

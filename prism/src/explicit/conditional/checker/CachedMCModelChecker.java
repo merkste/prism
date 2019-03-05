@@ -6,9 +6,8 @@ import java.util.Map;
 import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.ProbModelChecker;
-import explicit.conditional.SimplePathProperty;
-import explicit.conditional.SimplePathProperty.Finally;
-import explicit.conditional.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathProperty.Finally;
+import explicit.conditional.checker.SimplePathProperty.Until;
 import jdd.Clearable;
 import prism.PrismException;
 

@@ -35,7 +35,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import explicit.QuantAbstractRefine;
-import explicit.conditional.transformer.ConditionalTransformerType;
+import explicit.conditional.ConditionalTransformerType;
 
 import java.util.regex.*;
 

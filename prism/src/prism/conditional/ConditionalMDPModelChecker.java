@@ -3,7 +3,7 @@ package prism.conditional;
 import java.util.SortedSet;
 
 import explicit.MinMax;
-import explicit.conditional.transformer.ConditionalTransformerType;
+import explicit.conditional.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -24,6 +24,10 @@ import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.ProbModel;
 import prism.StateValues;
+import prism.conditional.reset.FinallyLtlTransformer;
+import prism.conditional.reset.FinallyUntilTransformer;
+import prism.conditional.reset.LtlLtlTransformer;
+import prism.conditional.reset.LtlUntilTransformer;
 
 //FIXME ALG: add comment
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel>

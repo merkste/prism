@@ -11,16 +11,17 @@ import explicit.ModelExpressionTransformation;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
-import explicit.conditional.SimplePathProperty.Finally;
-import explicit.conditional.SimplePathProperty.Globally;
-import explicit.conditional.SimplePathProperty.Next;
-import explicit.conditional.SimplePathProperty.Reach;
-import explicit.conditional.SimplePathProperty.Release;
-import explicit.conditional.SimplePathProperty.TemporalOperator;
-import explicit.conditional.SimplePathProperty.Until;
-import explicit.conditional.SimplePathProperty.WeakUntil;
 import explicit.conditional.checker.MCModelChecker;
-import explicit.conditional.transformer.LTLProductTransformer;
+import explicit.conditional.checker.SimplePathProperty;
+import explicit.conditional.checker.SimplePathProperty.Finally;
+import explicit.conditional.checker.SimplePathProperty.Globally;
+import explicit.conditional.checker.SimplePathProperty.Next;
+import explicit.conditional.checker.SimplePathProperty.Reach;
+import explicit.conditional.checker.SimplePathProperty.Release;
+import explicit.conditional.checker.SimplePathProperty.TemporalOperator;
+import explicit.conditional.checker.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathProperty.WeakUntil;
+import explicit.conditional.transformer.LtlProductTransformer;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
@@ -94,8 +95,8 @@ public interface ConditionalTransformer<M extends Model, C extends StateModelChe
 
 	C getModelChecker(M model) throws PrismException;
 
-	LTLProductTransformer<M> getLtlTransformer();
-	
+	LtlProductTransformer<M> getLtlTransformer();
+
 	PrismSettings getSettings();
 
 	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
@@ -151,7 +152,7 @@ public interface ConditionalTransformer<M extends Model, C extends StateModelChe
 	public static abstract class Basic<M extends Model, C extends ProbModelChecker> extends PrismComponent implements ConditionalTransformer<M, C>
 	{
 		protected C modelChecker;
-		protected LTLProductTransformer<M> ltlTransformer;
+		protected LtlProductTransformer<M> ltlTransformer;
 
 		public Basic(C modelChecker)
 		{
@@ -177,10 +178,10 @@ public interface ConditionalTransformer<M extends Model, C extends StateModelChe
 		}
 
 		@Override
-		public LTLProductTransformer<M> getLtlTransformer()
+		public LtlProductTransformer<M> getLtlTransformer()
 		{
 			if (ltlTransformer == null) {
-				ltlTransformer = new LTLProductTransformer<M>(modelChecker);
+				ltlTransformer = new LtlProductTransformer<M>(modelChecker);
 			}
 			return ltlTransformer;
 		}

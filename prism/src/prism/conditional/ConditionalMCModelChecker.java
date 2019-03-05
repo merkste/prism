@@ -2,7 +2,7 @@ package prism.conditional;
 
 import java.util.SortedSet;
 
-import explicit.conditional.transformer.ConditionalTransformerType;
+import explicit.conditional.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -26,6 +26,14 @@ import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
 import prism.conditional.ConditionalTransformer.MC;
+import prism.conditional.quotient.MCQuotientTransformer;
+import prism.conditional.reset.FinallyLtlTransformer;
+import prism.conditional.reset.FinallyUntilTransformer;
+import prism.conditional.reset.LtlLtlTransformer;
+import prism.conditional.reset.LtlUntilTransformer;
+import prism.conditional.scale.MCLtlTransformer;
+import prism.conditional.scale.MCNextTransformer;
+import prism.conditional.scale.MCUntilTransformer;
 
 public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends ConditionalModelChecker<M>
 {
@@ -230,7 +238,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			case Next:
 				return new MCNextTransformer.CTMC(prism, modelChecker);
 			case Ltl:
-				return new MCLTLTransformer.CTMC(prism, modelChecker);
+				return new MCLtlTransformer.CTMC(prism, modelChecker);
 			case FinallyFinally:
 				return new FinallyUntilTransformer.CTMC(prism, modelChecker);
 			case LtlFinally:
@@ -272,7 +280,7 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			case Next:
 				return new MCNextTransformer.DTMC(prism, modelChecker);
 			case Ltl:
-				return new MCLTLTransformer.DTMC(prism, modelChecker);
+				return new MCLtlTransformer.DTMC(prism, modelChecker);
 			case FinallyFinally:
 				return new FinallyUntilTransformer.DTMC(prism, modelChecker);
 			case LtlFinally:

@@ -74,7 +74,7 @@ import dv.DoubleVector;
 import dv.IntegerVector;
 import explicit.MinMax;
 import prism.conditional.ConditionalMDPModelChecker;
-import prism.conditional.MDPConditionalMinMaxFilterTransformer;
+import prism.conditional.transformer.MDPConditionalMinMaxFilterTransformer;
 
 /*
  * Model checker for MDPs
