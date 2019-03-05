@@ -3,7 +3,7 @@ package prism.conditional;
 import java.util.SortedSet;
 
 import explicit.MinMax;
-import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -133,10 +133,10 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			throw new PrismException("There is no symbolic TACAS'14 prototype");
 		}
 
-		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
+		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
+		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			for (MdpTransformerType type : types) {
+			for (ConditionalTransformerType type : types) {
 				NewConditionalTransformer.MDP transformer;
 				switch (type) {
 				case FinallyFinally:
@@ -153,7 +153,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 				}
 			}
 		} else {
-			for (MdpTransformerType type : types) {
+			for (ConditionalTransformerType type : types) {
 				NewConditionalTransformer.MDP transformer;
 				switch (type) {
 				case FinallyFinally:

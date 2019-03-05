@@ -11,7 +11,6 @@ import parser.ast.ExpressionProb;
 import parser.ast.RelOp;
 import prism.OpRelOpBound;
 import prism.PrismException;
-import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import explicit.BasicModelExpressionTransformation;
@@ -31,8 +30,7 @@ import explicit.conditional.prototype.virtual.LtlUntilTransformer;
 import explicit.conditional.prototype.virtual.MCLTLTransformer;
 import explicit.conditional.prototype.virtual.MCNextTransformer;
 import explicit.conditional.prototype.virtual.MCUntilTransformer;
-import explicit.conditional.transformer.DtmcTransformerType;
-import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.conditional.transformer.mc.MCQuotientTransformer;
 import explicit.conditional.transformer.mc.NewMcLtlTransformer;
@@ -106,55 +104,27 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 
 	public NewConditionalTransformer<M, C> selectModelTransformer(final M model, final ExpressionConditional expression) throws PrismException
 	{
+		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
 		NewConditionalTransformer<M, C> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-			String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-			SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-				for (MdpTransformerType type : types) {
-					transformer = getResetTransformerTacas14(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
+		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
+			for (ConditionalTransformerType type : types) {
+				transformer = getTransformerTacas14(type);
+				if (transformer != null && transformer.canHandle(model, expression)) {
+					return transformer;
 				}
-			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-				for (MdpTransformerType type : types) {
-					transformer = getResetTransformerPrototype(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
-			} else {
-				for (MdpTransformerType type : types) {
-					transformer = getResetTransformer(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
+			}
+		} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
+			for (ConditionalTransformerType type : types) {
+				transformer = getTransformerPrototype(type);
+				if (transformer != null && transformer.canHandle(model, expression)) {
+					return transformer;
 				}
 			}
 		} else {
-			String specification                 = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
-			SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-				for (DtmcTransformerType type : types) {
-					transformer = getScaleTransformerTacas14(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
-			} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-				for (DtmcTransformerType type : types) {
-					transformer = getScaleTransformerPrototype(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
-				}
-			} else {
-				for (DtmcTransformerType type : types) {
-					transformer = getScaleTransformer(type);
-					if (transformer != null && transformer.canHandle(model, expression)) {
-						return transformer;
-					}
+			for (ConditionalTransformerType type : types) {
+				transformer = getTransformer(type);
+				if (transformer != null && transformer.canHandle(model, expression)) {
+					return transformer;
 				}
 			}
 		}
@@ -176,20 +146,18 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		return sv;
 	}
 
-	protected NewConditionalTransformer<M, C> getResetTransformerTacas14(MdpTransformerType type) throws PrismNotSupportedException
+	protected NewConditionalTransformer<M, C> getResetTransformerTacas14(ConditionalTransformerType type) throws PrismNotSupportedException
 	{
 		throw new PrismNotSupportedException("There is no explicit TACAS'14 prototype for the reset method in MCs");
 	}
 
-	protected abstract NewConditionalTransformer<M, C> getResetTransformerPrototype(MdpTransformerType type) throws PrismNotSupportedException;
+	protected abstract SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException;
 
-	protected abstract NewConditionalTransformer<M, C> getResetTransformer(MdpTransformerType type);
+	protected abstract NewConditionalTransformer<M, C> getTransformerTacas14(ConditionalTransformerType type) throws PrismNotSupportedException;
 
-	protected abstract NewConditionalTransformer<M, C> getScaleTransformerTacas14(DtmcTransformerType type) throws PrismNotSupportedException;
+	protected abstract NewConditionalTransformer<M, C> getTransformerPrototype(ConditionalTransformerType type) throws PrismNotSupportedException;
 
-	protected abstract NewConditionalTransformer<M, C> getScaleTransformerPrototype(DtmcTransformerType type) throws PrismNotSupportedException;
-
-	protected abstract NewConditionalTransformer<M, C> getScaleTransformer(DtmcTransformerType type);
+	protected abstract NewConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
 
 	protected abstract ModelExpressionTransformation<M, ? extends M> convertVirtualModel(ModelExpressionTransformation<M,? extends M> transformation);
 
@@ -292,15 +260,34 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getResetTransformerPrototype(MdpTransformerType type) throws PrismNotSupportedException
+		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
 		{
-			throw new PrismNotSupportedException("There is no explicit prototype for the reset method in CTMCs");
+			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
+			return ConditionalTransformerType.getValuesOf(specification);
 		}
-	
+
 		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getResetTransformer(MdpTransformerType type)
+		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getTransformerTacas14(ConditionalTransformerType type) throws PrismNotSupportedException
+		{
+			throw new PrismNotSupportedException("There is no explicit TACAS'14 prototype for CTMCs");
+		}
+
+		@Override
+		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getTransformerPrototype(ConditionalTransformerType type) throws PrismNotSupportedException
+		{
+			throw new PrismNotSupportedException("There is no explicit prototype for CTMCs");
+		}
+
+		@Override
+		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
+			case Until:
+				return new NewMcUntilTransformer.CTMC(modelChecker);
+			case Next:
+				return new NewMcNextTransformer.CTMC(modelChecker);
+			case Ltl:
+				return new NewMcLtlTransformer.CTMC(modelChecker);
 			case FinallyFinally:
 				return new NewFinallyUntilTransformer.CTMC(modelChecker);
 			case LtlFinally:
@@ -309,35 +296,8 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 				return new NewFinallyLtlTransformer.CTMC(modelChecker);
 			case LtlLtl:
 				return  new NewLtlLtlTransformer.CTMC(modelChecker);
-			default:
-				return null;
-			}
-		}
-	
-		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getScaleTransformerTacas14(DtmcTransformerType type) throws PrismNotSupportedException
-		{
-			throw new PrismNotSupportedException("There is no explicit TACAS'14 prototype for the scale method in CTMCs");
-		}
-	
-		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getScaleTransformerPrototype(DtmcTransformerType type) throws PrismNotSupportedException
-		{
-			throw new PrismNotSupportedException("There is no explicit prototype for the scale method in CTMCs");
-		}
-	
-		@Override
-		protected NewConditionalTransformer<explicit.CTMC, CTMCModelChecker> getScaleTransformer(DtmcTransformerType type)
-		{
-			switch (type) {
 			case Quotient:
 				return new MCQuotientTransformer.CTMC(modelChecker);
-			case Until:
-				return new NewMcUntilTransformer.CTMC(modelChecker);
-			case Next:
-				return new NewMcNextTransformer.CTMC(modelChecker);
-			case Ltl:
-				return new NewMcLtlTransformer.CTMC(modelChecker);
 			default:
 				return null;
 			}
@@ -372,41 +332,14 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getResetTransformerPrototype(MdpTransformerType type)
+		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
 		{
-			switch (type) {
-			case FinallyFinally:
-				return new FinallyUntilTransformer.DTMC(modelChecker);
-			case LtlFinally:
-				return new LtlUntilTransformer.DTMC(modelChecker);
-			case FinallyLtl:
-				return new FinallyLtlTransformer.DTMC(modelChecker);
-			case LtlLtl:
-				return new LtlLtlTransformer.DTMC(modelChecker);
-			default:
-				return null;
-			}
+			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
+			return ConditionalTransformerType.getValuesOf(specification);
 		}
-	
+
 		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getResetTransformer(MdpTransformerType type)
-		{
-			switch (type) {
-			case FinallyFinally:
-				return new NewFinallyUntilTransformer.DTMC(modelChecker);
-			case LtlFinally:
-				return new NewLtlUntilTransformer.DTMC(modelChecker);
-			case FinallyLtl:
-				return new NewFinallyLtlTransformer.DTMC(modelChecker);
-			case LtlLtl:
-				return  new NewLtlLtlTransformer.DTMC(modelChecker);
-			default:
-				return null;
-			}
-		}
-	
-		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getScaleTransformerTacas14(DtmcTransformerType type)
+		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getTransformerTacas14(ConditionalTransformerType type)
 		{
 			switch (type) {
 			case Finally:
@@ -423,34 +356,50 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 	
 		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getScaleTransformerPrototype(DtmcTransformerType type)
+		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getTransformerPrototype(ConditionalTransformerType type)
 		{
 			switch (type) {
-			case Quotient:
-				return new MCQuotientTransformer.DTMC(modelChecker);
 			case Until:
 				return new MCUntilTransformer(modelChecker);
 			case Next:
 				return new MCNextTransformer(modelChecker);
 			case Ltl:
 				return new MCLTLTransformer(modelChecker);
+			case FinallyFinally:
+				return new FinallyUntilTransformer.DTMC(modelChecker);
+			case LtlFinally:
+				return new LtlUntilTransformer.DTMC(modelChecker);
+			case FinallyLtl:
+				return new FinallyLtlTransformer.DTMC(modelChecker);
+			case LtlLtl:
+				return new LtlLtlTransformer.DTMC(modelChecker);
+			case Quotient:
+				return new MCQuotientTransformer.DTMC(modelChecker);
 			default:
 				return null;
 			}
 		}
 	
 		@Override
-		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getScaleTransformer(DtmcTransformerType type)
+		protected NewConditionalTransformer<explicit.DTMC, DTMCModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
-			case Quotient:
-				return new MCQuotientTransformer.DTMC(modelChecker);
 			case Until:
 				return new NewMcUntilTransformer.DTMC(modelChecker);
 			case Next:
 				return new NewMcNextTransformer.DTMC(modelChecker);
 			case Ltl:
 				return new NewMcLtlTransformer.DTMC(modelChecker);
+			case FinallyFinally:
+				return new NewFinallyUntilTransformer.DTMC(modelChecker);
+			case LtlFinally:
+				return new NewLtlUntilTransformer.DTMC(modelChecker);
+			case FinallyLtl:
+				return new NewFinallyLtlTransformer.DTMC(modelChecker);
+			case LtlLtl:
+				return  new NewLtlLtlTransformer.DTMC(modelChecker);
+			case Quotient:
+				return new MCQuotientTransformer.DTMC(modelChecker);
 			default:
 				return null;
 			}

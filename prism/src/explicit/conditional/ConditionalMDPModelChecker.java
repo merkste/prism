@@ -27,7 +27,7 @@ import explicit.conditional.prototype.virtual.FinallyLtlTransformer;
 import explicit.conditional.prototype.virtual.FinallyUntilTransformer;
 import explicit.conditional.prototype.virtual.LtlLtlTransformer;
 import explicit.conditional.prototype.virtual.LtlUntilTransformer;
-import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.ModelView;
 
@@ -163,12 +163,12 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 	public NewConditionalTransformer<MDP, MDPModelChecker> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
 	{
-		final String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-		final SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
+		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
+		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
 
 		NewConditionalTransformer<MDP, MDPModelChecker> transformer;
 		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_TACAS14_PROTOTYPE)) {
-			for (MdpTransformerType type : types) {
+			for (ConditionalTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
 					transformer = new explicit.conditional.prototype.tacas14.MDPFinallyTransformer(modelChecker);
@@ -187,7 +187,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 				}
 			}
 		} else if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_PROTOTYPE)) {
-			for (MdpTransformerType type : types) {
+			for (ConditionalTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
 					transformer = new FinallyUntilTransformer.MDP(modelChecker);
@@ -209,7 +209,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 				}
 			}
 		} else {
-			for (MdpTransformerType type : types) {
+			for (ConditionalTransformerType type : types) {
 				switch (type) {
 				case FinallyFinally:
 					transformer = new NewFinallyUntilTransformer.MDP(modelChecker);

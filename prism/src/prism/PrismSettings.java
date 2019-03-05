@@ -35,8 +35,7 @@ import java.awt.*;
 import javax.swing.*;
 
 import explicit.QuantAbstractRefine;
-import explicit.conditional.transformer.DtmcTransformerType;
-import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.ConditionalTransformerType;
 
 import java.util.regex.*;
 
@@ -161,11 +160,11 @@ public class PrismSettings implements Observer
 	public static final String CONDITIONAL_USE_VIRTUAL_MODELS    = "conditional.use.virtualModels";
 	public static final String CONDITIONAL_USE_TACAS14_PROTOTYPE = "conditional.use.tacas14prototype";
 	public static final String CONDITIONAL_USE_PROTOTYPE         = "conditional.use.prototype";
-	public static final String CONDITIONAL_USE_RESET_FOR_MC      = "conditional.use.resetForMarkovChains";
 	public static final String CONDITIONAL_SCALE_LTL_MINIMIZE    = "conditional.scale.ltl.minimize";
 	public static final String CONDITIONAL_RESET_MDP_MINIMIZE    = "conditional.reset.mdp.minimize";
-	public static final String CONDITIONAL_PATTERNS_SCALE        = "conditional.patterns.scale";
-	public static final String CONDITIONAL_PATTERNS_RESET        = "conditional.patterns.reset";
+	public static final String CONDITIONAL_PATTERNS_CTMC         = "conditional.patterns.ctmc";
+	public static final String CONDITIONAL_PATTERNS_DTMC         = "conditional.patterns.dtmc";
+	public static final String CONDITIONAL_PATTERNS_MDP          = "conditional.patterns.mdp";
 
 	//Simulator
 	public static final String SIMULATOR_DEFAULT_NUM_SAMPLES		= "simulator.defaultNumSamples";
@@ -433,22 +432,22 @@ public class PrismSettings implements Observer
 																		"Use TACAS'14 prototype implementation for conditional probabilities and expectations." },
 			{ BOOLEAN_TYPE,		CONDITIONAL_USE_PROTOTYPE,			"Use prototype implementation",	"4.2",	false,		"",
 																		"Use prototype implemention for conditional probabilities and expectations." },
-			{ BOOLEAN_TYPE,		CONDITIONAL_USE_RESET_FOR_MC,		"Use reset method for Markov Chains",	"4.2",			false,		"",
-																		"Use reset method for DTMCs and CTMCs instead scale method." },
 			{ BOOLEAN_TYPE,		CONDITIONAL_SCALE_LTL_MINIMIZE,		"Scale-ltl: minimize product",	"4.2",		false,		"",
 																		"Build DTMC quotient to identify prob1 product states." },
 			{ BOOLEAN_TYPE,		CONDITIONAL_RESET_MDP_MINIMIZE,		"Reset-MDP: minimize normal-form model",	"4.2",		false,		"",
 																		"Always minimize normal-form model for states falsifying the objective in MDPs." },
-			{ STRING_TYPE,		CONDITIONAL_PATTERNS_SCALE,			"Set patterns for scale method",	"4.2",			"all",		"",
-																		"Use the first applicable pattern for the scale method from a list of: " + DtmcTransformerType.getSpecificationHelp()},
-			{ STRING_TYPE,		CONDITIONAL_PATTERNS_RESET,			"Set patterns for reset method",	"4.2",			"all",		"",
-																		"Use the first applicable pattern for the scale method from a list of: " + MdpTransformerType.getSpecificationHelp()},
+			{ STRING_TYPE,		CONDITIONAL_PATTERNS_CTMC,			"Set conditional patterns for CTMCs",	"4.2",			"scale",		"",
+																			"Use the first applicable pattern for conditionals in CTMCs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
+			{ STRING_TYPE,		CONDITIONAL_PATTERNS_DTMC,			"Set conditional patterns for DTMCs",	"4.2",			"scale",		"",
+																				"Use the first applicable pattern for conditionals in DTMCs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
+			{ STRING_TYPE,		CONDITIONAL_PATTERNS_MDP,			"Set conditinal patterns for MDPs",	"4.2",			"reset",		"",
+																			"Use the first applicable pattern for conditionals in MDPs from a list of: " + ConditionalTransformerType.getSpecificationHelp()},
 		},
 		{
 			// STEADY-STATE AND LONG-RUN OPTIONS:
-			{ BOOLEAN_TYPE,		PRISM_CACHE_STEADY_STATES,				"Cache steady-state probabilities",					"4.0.3",		new Boolean(true),														"",
+			{ BOOLEAN_TYPE,		PRISM_CACHE_STEADY_STATES,				"Cache steady-state probabilities",					"4.0.3",		true,														"",
 																			"Compute steady-state probabilities at most once, and store them for further queries." },
-			{ BOOLEAN_TYPE,		PRISM_COMPUTE_S_VIA_L,					"Compute S-operator via L-operator",					"4.0.3",		new Boolean(true),														"",
+			{ BOOLEAN_TYPE,		PRISM_COMPUTE_S_VIA_L,					"Compute S-operator via L-operator",					"4.0.3",		true,														"",
 																			"Compute S-operator using the algorithm for the more general L-operator." },
 			{ CHOICE_TYPE,		PRISM_METHOD_STEADY_STATE,				"Linear equations method for steady-state probabilities",				"4.0.3",			"Power",																	"Power,Jacobi,Gauss-Seidel,Backwards Gauss-Seidel,Pseudo-Gauss-Seidel,Backwards Pseudo-Gauss-Seidel,JOR,SOR,Backwards SOR,Pseudo-SOR,Backwards Pseudo-SOR",
 																			"Which iterative method to use when solving linear equation systems for steady-state probabilities." },
@@ -1785,45 +1784,54 @@ public class PrismSettings implements Observer
 		else if (sw.equals("useprototype")) {
 			set(CONDITIONAL_USE_PROTOTYPE, true);
 		}
-		else if (sw.equals("useresetformc")) {
-			set(CONDITIONAL_USE_RESET_FOR_MC, true);
-		}
 		else if (sw.equals("scaleltlminimize")) {
 			set(CONDITIONAL_SCALE_LTL_MINIMIZE, true);
 		}
 		else if (sw.equals("resetmdpminimize")) {
 			set(CONDITIONAL_RESET_MDP_MINIMIZE, true);
 		}
-		else if (sw.equals("patternsscale")) {
+		else if (sw.equals("patternsctmc")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
 				try {
 					// check for syntactic correctness
-					DtmcTransformerType.getValuesOf(spec);
-					set(PrismSettings.CONDITIONAL_PATTERNS_SCALE, spec);
+					ConditionalTransformerType.getValuesOf(spec);
+					set(PrismSettings.CONDITIONAL_PATTERNS_CTMC, spec);
 				} catch (PrismException e) {
-					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + DtmcTransformerType.getSpecificationHelp() + ")");
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + ConditionalTransformerType.getSpecificationHelp() + ")");
 				}
 			} else {
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}
 		}
-		else if (sw.equals("patternsreset")) {
+		else if (sw.equals("patternsdtmc")) {
 			if (i < args.length - 1) {
 				String spec = args[++i];
 				try {
-					MdpTransformerType.getValuesOf(spec);
 					// check for syntactic correctness
-					MdpTransformerType.getValuesOf(spec);
-					set(PrismSettings.CONDITIONAL_PATTERNS_RESET, spec);
+					ConditionalTransformerType.getValuesOf(spec);
+					set(PrismSettings.CONDITIONAL_PATTERNS_DTMC, spec);
 				} catch (PrismException e) {
-					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + MdpTransformerType.getSpecificationHelp() + ")");
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + ConditionalTransformerType.getSpecificationHelp() + ")");
 				}
 			} else {
 				throw new PrismException("No parameter specified for -" + sw + " switch");
 			}
 		}
-
+		else if (sw.equals("patternsmdp")) {
+			if (i < args.length - 1) {
+				String spec = args[++i];
+				try {
+					// check for syntactic correctness
+					ConditionalTransformerType.getValuesOf(spec);
+					set(PrismSettings.CONDITIONAL_PATTERNS_MDP, spec);
+				} catch (PrismException e) {
+					throw new PrismException("Unrecognised option for -" + sw + " switch (options are: " + ConditionalTransformerType.getSpecificationHelp() + ")");
+				}
+			} else {
+				throw new PrismException("No parameter specified for -" + sw + " switch");
+			}
+		}
 
 		// HIDDEN OPTIONS
 		
@@ -1999,11 +2007,11 @@ public class PrismSettings implements Observer
 		mainLog.println("-usevirtualmodels .............. Use virtual models for computation");
 		mainLog.println("-usetacas14prototype ........... Use TACAS'14 prototype implementations");
 		mainLog.println("-useprototype .................. Use prototype implementation");
-		mainLog.println("-useresetformc ................. Use reset method for Markov Chains");
-		mainLog.println("-scaleltlminimize .............. Minimize product model in scale-ltl");
+		mainLog.println("-scaleltlminimize .............. Minimize product model in ltl pattern of scale method");
 		mainLog.println("-resetobjminimize .............. Minimize normal-form model for reset method in MDPs");
-		mainLog.println("-patternsscale ................. Set patterns for scale method: " + DtmcTransformerType.getSpecificationHelp());
-		mainLog.println("-patternsreset ................. Set patterns for reset method: " + MdpTransformerType.getSpecificationHelp());
+		mainLog.println("-patternsctmc .................. Set conditional patterns for CTMCs: " + ConditionalTransformerType.getSpecificationHelp());
+		mainLog.println("-patternsdtmc .................. Set conditional patterns for DTMCs: " + ConditionalTransformerType.getSpecificationHelp());
+		mainLog.println("-patternmdp .................... Set conditional patterns for MDPs: " + ConditionalTransformerType.getSpecificationHelp());
 		mainLog.println();
 		mainLog.println("STEADY-STATE AND LONG-RUN OPTIONS:");
 		mainLog.println("-cachesteadystates ............. Compute steady-state probabilities at most once, and store them for further queries [default]");

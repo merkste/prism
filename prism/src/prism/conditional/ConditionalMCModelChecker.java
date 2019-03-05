@@ -2,8 +2,7 @@ package prism.conditional;
 
 import java.util.SortedSet;
 
-import explicit.conditional.transformer.DtmcTransformerType;
-import explicit.conditional.transformer.MdpTransformerType;
+import explicit.conditional.transformer.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -93,24 +92,12 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 			throw new PrismNotSupportedException("There is no symbolic prototype for the scale method in MCs");
 		}
 
+		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
 		NewConditionalTransformer.MC<M, C> transformer;
-		if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_RESET_FOR_MC)) {
-			String specification                = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_RESET);
-			SortedSet<MdpTransformerType> types = MdpTransformerType.getValuesOf(specification);
-			for (MdpTransformerType type : types) {
-				transformer = getResetTransformer(type);
-				if (transformer != null && transformer.canHandle(model, expression)) {
-					return transformer;
-				}
-			}
-		} else {
-			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_SCALE);
-			SortedSet<DtmcTransformerType> types = DtmcTransformerType.getValuesOf(specification);
-			for (DtmcTransformerType type : types) {
-				transformer = getScaleTransformer(type);
-				if (transformer != null && transformer.canHandle(model, expression)) {
-					return transformer;
-				}
+		for (ConditionalTransformerType type : types) {
+			transformer = getTransformer(type);
+			if (transformer != null && transformer.canHandle(model, expression)) {
+				return transformer;
 			}
 		}
 		return null;
@@ -132,9 +119,9 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		return result;
 	}
 
-	protected abstract MC<M, C> getScaleTransformer(DtmcTransformerType type);
+	protected abstract SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException;
 
-	protected abstract MC<M, C> getResetTransformer(MdpTransformerType type);
+	protected abstract MC<M, C> getTransformer(ConditionalTransformerType type);
 
 
 
@@ -236,9 +223,22 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected NewConditionalTransformer.MC<StochModel, StochModelChecker> getResetTransformer(MdpTransformerType type)
+		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		{
+			String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
+			return ConditionalTransformerType.getValuesOf(specification);
+		}
+
+		@Override
+		protected MC<StochModel, StochModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
+			case Until:
+				return new MCUntilTransformer.CTMC(prism, modelChecker);
+			case Next:
+				return new MCNextTransformer.CTMC(prism, modelChecker);
+			case Ltl:
+				return new MCLTLTransformer.CTMC(prism, modelChecker);
 			case FinallyFinally:
 				return new NewFinallyUntilTransformer.CTMC(prism, modelChecker);
 			case LtlFinally:
@@ -247,23 +247,8 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				return new NewFinallyLtlTransformer.CTMC(prism, modelChecker);
 			case LtlLtl:
 				return new NewLtlLtlTransformer.CTMC(prism, modelChecker);
-			default:
-				return null;
-			}
-		}
-
-		@Override
-		protected MC<StochModel, StochModelChecker> getScaleTransformer(DtmcTransformerType type)
-		{
-			switch (type) {
 			case Quotient:
 				return new MCQuotientTransformer.CTMC(prism, modelChecker);
-			case Until:
-				return new MCUntilTransformer.CTMC(prism, modelChecker);
-			case Next:
-				return new MCNextTransformer.CTMC(prism, modelChecker);
-			case Ltl:
-				return new MCLTLTransformer.CTMC(prism, modelChecker);
 			default:
 				return null;
 			}
@@ -280,9 +265,22 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected MC<ProbModel, ProbModelChecker> getResetTransformer(MdpTransformerType type)
+		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		{
+			String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
+			return ConditionalTransformerType.getValuesOf(specification);
+		}
+
+		@Override
+		protected NewConditionalTransformer.MC<ProbModel, ProbModelChecker> getTransformer(ConditionalTransformerType type)
 		{
 			switch (type) {
+			case Until:
+				return new MCUntilTransformer.DTMC(prism, modelChecker);
+			case Next:
+				return new MCNextTransformer.DTMC(prism, modelChecker);
+			case Ltl:
+				return new MCLTLTransformer.DTMC(prism, modelChecker);
 			case FinallyFinally:
 				return new NewFinallyUntilTransformer.DTMC(prism, modelChecker);
 			case LtlFinally:
@@ -291,23 +289,8 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 				return new NewFinallyLtlTransformer.DTMC(prism, modelChecker);
 			case LtlLtl:
 				return new NewLtlLtlTransformer.DTMC(prism, modelChecker);
-			default:
-				return null;
-			}
-		}
-
-		@Override
-		protected NewConditionalTransformer.MC<ProbModel, ProbModelChecker> getScaleTransformer(DtmcTransformerType type)
-		{
-			switch (type) {
 			case Quotient:
 				return new MCQuotientTransformer.DTMC(prism, modelChecker);
-			case Until:
-				return new MCUntilTransformer.DTMC(prism, modelChecker);
-			case Next:
-				return new MCNextTransformer.DTMC(prism, modelChecker);
-			case Ltl:
-				return new MCLTLTransformer.DTMC(prism, modelChecker);
 			default:
 				return null;
 			}
