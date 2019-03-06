@@ -26,10 +26,7 @@
 
 package parser;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 
 import parser.ast.Declaration;
 import parser.ast.DeclarationIntView;
@@ -40,6 +37,7 @@ import parser.type.TypeDouble;
 import parser.type.TypeInt;
 import prism.ModelInfo;
 import prism.PrismLangException;
+import prism.PrismUtils;
 
 /**
  * Class to store a list of typed constant/variable values.
@@ -520,9 +518,7 @@ public class Values implements Cloneable //implements Comparable
 		String s;
 		
 		if (o instanceof Double) {
-			NumberFormat nf = DecimalFormat.getInstance(Locale.UK);
-			nf.setMaximumFractionDigits(6);
-			s = nf.format(((Double)o).doubleValue());
+			s = PrismUtils.formatDouble((double)o);
 		} else {
 			s = o.toString();
 		}
