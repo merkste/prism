@@ -59,6 +59,7 @@ import java.util.List;
 
 import param.Lumper.BisimType;
 import param.StateEliminator.EliminationOrder;
+import parser.EvaluateContextStateCached;
 import parser.State;
 import parser.Values;
 import parser.ast.Expression;
@@ -66,6 +67,7 @@ import parser.ast.ExpressionBinaryOp;
 import parser.ast.ExpressionConstant;
 import parser.ast.ExpressionFilter;
 import parser.ast.ExpressionFilter.FilterOperator;
+import parser.ast.ExpressionFunc;
 import parser.ast.ExpressionLabel;
 import parser.ast.ExpressionLiteral;
 import parser.ast.ExpressionProb;
@@ -80,6 +82,7 @@ import parser.ast.PropertiesFile;
 import parser.ast.Property;
 import parser.ast.RelOp;
 import parser.ast.RewardStruct;
+import parser.type.Type;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
@@ -337,7 +340,7 @@ final public class ParamModelChecker extends PrismComponent
 			break;
 		default:
 			throw new PrismNotSupportedException("operator \"" + ExpressionBinaryOp.opSymbols[parserOp]
-					+ "\" not currently supported for parametric analyses");				
+					+ "\" not currently supported for parametric analyses");
 		}
 		return regionOp;
 	}
@@ -352,14 +355,17 @@ final public class ParamModelChecker extends PrismComponent
 	RegionValues checkExpression(ParamModel model, Expression expr, BitSet needStates) throws PrismException
 	{
 		RegionValues res;
-		if (expr instanceof ExpressionUnaryOp) {
+		if (expr instanceof ExpressionLabel) {
+			res = checkExpressionLabel(model, (ExpressionLabel) expr, needStates);
+		} else if (expr.isProposition()) {
+			res = checkProposition(model, expr, needStates);
+		} else if (expr instanceof ExpressionUnaryOp) {
 			res = checkExpressionUnaryOp(model, (ExpressionUnaryOp) expr, needStates);
 		} else if (expr instanceof ExpressionBinaryOp) {
 			res = checkExpressionBinaryOp(model, (ExpressionBinaryOp) expr, needStates);
-		} else if (expr instanceof ExpressionLabel) {
-			res = checkExpressionLabel(model, (ExpressionLabel) expr, needStates);
 		} else if (expr instanceof ExpressionProp) {
 			res = checkExpressionProp(model, (ExpressionProp) expr, needStates);
+			System.out.println(res);
 		} else if (expr instanceof ExpressionFilter) {
 			if (((ExpressionFilter) expr).isParam()) {
 				res = checkExpressionFilterParam(model, (ExpressionFilter) expr, needStates);
@@ -378,20 +384,51 @@ final public class ParamModelChecker extends PrismComponent
 		return res;
 	}
 
-	private RegionValues checkExpressionAtomic(ParamModel model, Expression expr, BitSet needStates) throws PrismException
+	private RegionValues checkProposition(ParamModel model, Expression expr, BitSet needStates) throws PrismException
 	{
-		expr = (Expression) expr.deepCopy().replaceConstants(constantValues);
-		
+		expr = (Expression) expr.deepCopy().expandLabels(propertiesFile.getCombinedLabelList()).replaceConstants(constantValues);
+
 		int numStates = model.getNumStates();
 		List<State> statesList = model.getStatesList();
 		StateValues stateValues = new StateValues(numStates, model.getFirstInitialState());
-		int[] varMap = new int[statesList.get(0).varValues.length];
-		for (int var = 0; var < varMap.length; var++) {
-			varMap[var] = var;
-		}
+		Type type = expr.getType();
 		for (int state = 0; state < numStates; state++) {
-			Expression exprVar = (Expression) expr.deepCopy().evaluatePartially(statesList.get(state), varMap);
 			if (needStates.get(state)) {
+				EvaluateContextStateCached context = new EvaluateContextStateCached(statesList.get(state));
+				if (type instanceof TypeBool) {
+					stateValues.setStateValue(state, expr.evaluateBoolean(context));
+				} else if (type instanceof TypeDouble) {
+					Double valueDouble = expr.evaluateDouble(context);
+					BigRational valueRational = new BigRational(valueDouble.toString());
+					stateValues.setStateValue(state, functionFactory.fromBigRational(valueRational));
+				} else if (type instanceof TypeInt) {
+					int valueInteger = expr.evaluateInt(context);
+					stateValues.setStateValue(state, functionFactory.fromLong(valueInteger));
+				} else {
+					throw new PrismNotSupportedException("expresssion of unknown type " + type);
+				}
+			} else {
+				if (expr.getType() instanceof TypeBool) {
+					stateValues.setStateValue(state, false);
+				} else {
+					stateValues.setStateValue(state, functionFactory.getZero());
+				}
+			}
+		}
+		return regionFactory.completeCover(stateValues);
+	}
+
+	private RegionValues checkExpressionAtomic(ParamModel model, Expression expr, BitSet needStates) throws PrismException
+	{
+		expr = (Expression) expr.deepCopy().replaceConstants(constantValues);
+
+		int numStates = model.getNumStates();
+		List<State> statesList = model.getStatesList();
+		StateValues stateValues = new StateValues(numStates, model.getFirstInitialState());
+		for (int state = 0; state < numStates; state++) {
+			if (needStates.get(state)) {
+				State stateObj = statesList.get(state);
+				Expression exprVar = (Expression) expr.deepCopy().evaluatePartially(new EvaluateContextStateCached(stateObj));
 				if (exprVar instanceof ExpressionLiteral) {
 					ExpressionLiteral exprLit = (ExpressionLiteral) exprVar;
 					if (exprLit.getType() instanceof TypeBool) {
@@ -410,10 +447,10 @@ final public class ParamModelChecker extends PrismComponent
 					throw new PrismNotSupportedException("cannot handle expression " + expr + " in parametric analysis");
 				}
 			} else {
-				if (exprVar.getType() instanceof TypeBool) {
+				if (expr.getType() instanceof TypeBool) {
 					stateValues.setStateValue(state, false);
 				} else {
-					stateValues.setStateValue(state, functionFactory.getZero());						
+					stateValues.setStateValue(state, functionFactory.getZero());
 				}
 			}
 		}	
