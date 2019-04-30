@@ -36,7 +36,7 @@ public class MCPivotTransformation<M extends ProbModel> implements ModelTransfor
 			throws PrismException
 	{
 		originalModel    = model;
-		operator         = new UnionOperator(model, pivotStates, statesOfInterest);
+		operator         = new UnionOperator(model, pivotStates, statesOfInterest, startInPivotStates);
 		transformedModel = (M) originalModel.getTransformed(operator);
 	}
 
