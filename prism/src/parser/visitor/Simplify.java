@@ -93,27 +93,38 @@ public class Simplify extends ASTTraverseModify
 				return e.getOperand2();
 			if (Expression.isDouble(e.getOperand2()) && e.getOperand2().evaluateDouble() == 0.0) {
 				// Need to be careful that type is preserved
-				e.getOperand1().setType(e.getType());
-				return e.getOperand1();
+				Expression op = e.getOperand1().clone();
+				op.setType(e.getType());
+				return op;
 			}
 			if (Expression.isDouble(e.getOperand1()) && e.getOperand1().evaluateDouble() == 0.0) {
 				// Need to be careful that type is preserved
-				e.getOperand2().setType(e.getType());
-				return e.getOperand2();
+				Expression op = e.getOperand2().clone();
+				op.setType(e.getType());
+				return op;
 			}
 			break;
 		case ExpressionBinaryOp.MINUS:
 			if (Expression.isInt(e.getOperand2()) && e.getOperand2().evaluateInt() == 0)
 				return e.getOperand1();
-			if (Expression.isInt(e.getOperand1()) && e.getOperand1().evaluateInt() == 0)
-				return new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, e.getOperand2());
+			if (Expression.isInt(e.getOperand1()) && e.getOperand1().evaluateInt() == 0) {
+				ExpressionUnaryOp simplified = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, e.getOperand2());
+				// preserve type
+				simplified.setType(e.getType());
+				return simplified;
+			}
 			if (Expression.isDouble(e.getOperand2()) && e.getOperand2().evaluateDouble() == 0.0) {
 				// Need to be careful that type is preserved
-				e.getOperand1().setType(e.getType());
-				return e.getOperand1();
+				Expression op = e.getOperand1().clone();
+				op.setType(e.getType());
+				return op;
 			}
-			if (Expression.isDouble(e.getOperand1()) && e.getOperand1().evaluateDouble() == 0.0)
-				return new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, e.getOperand2());
+			if (Expression.isDouble(e.getOperand1()) && e.getOperand1().evaluateDouble() == 0.0) {
+				ExpressionUnaryOp simplified = new ExpressionUnaryOp(ExpressionUnaryOp.MINUS, e.getOperand2());
+				// preserve type
+				simplified.setType(e.getType());
+				return simplified;
+			}
 			break;
 		case ExpressionBinaryOp.TIMES:
 			if (Expression.isInt(e.getOperand2()) && e.getOperand2().evaluateInt() == 1)
@@ -122,13 +133,15 @@ public class Simplify extends ASTTraverseModify
 				return e.getOperand2();
 			if (Expression.isDouble(e.getOperand2()) && e.getOperand2().evaluateDouble() == 1.0) {
 				// Need to be careful that type is preserved
-				e.getOperand1().setType(e.getType());
-				return e.getOperand1();
+				Expression op = e.getOperand1().clone();
+				op.setType(e.getType());
+				return op;
 			}
 			if (Expression.isDouble(e.getOperand1()) && e.getOperand1().evaluateDouble() == 1.0) {
 				// Need to be careful that type is preserved
-				e.getOperand2().setType(e.getType());
-				return e.getOperand2();
+				Expression op = e.getOperand2().clone();
+				op.setType(e.getType());
+				return op;
 			}
 			if (Expression.isInt(e.getOperand2()) && e.getOperand2().evaluateInt() == 0) {
 				// Need to be careful that type is preserved
