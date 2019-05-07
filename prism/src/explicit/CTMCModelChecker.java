@@ -43,7 +43,7 @@ import prism.*;
 /**
  * Explicit-state model checker for continuous-time Markov chains (CTMCs).
  */
-public class CTMCModelChecker extends ProbModelChecker
+public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker
 {
 	/**
 	 * Create a new CTMCModelChecker, inherit basic state from parent (unless null).
@@ -56,7 +56,7 @@ public class CTMCModelChecker extends ProbModelChecker
 	// Model checking functions
 
 	@Override
-	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
+	public StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
 	{
 		return new ConditionalMCModelChecker.CTMC(this).checkExpression((CTMC) model, expression, statesOfInterest);
 	}
@@ -885,9 +885,24 @@ public class CTMCModelChecker extends ProbModelChecker
 	/**
 	 * @see DTMCModelChecker#computeSteadyStateProbsForBSCC(DTMC, BitSet, double[], BSCCPostProcessor)
 	 */
+	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[]) throws PrismException
+	{
+		if (dtmc.getModelType() == ModelType.CTMC) {
+			return computeSteadyStateProbsForBSCC((CTMC) dtmc, states, result);
+		}
+		return createDTMCModelChecker().computeSteadyStateProbsForBSCC(dtmc, states, result);
+	}
+
+	/**
+	 * @see DTMCModelChecker#computeSteadyStateProbsForBSCC(DTMC, BitSet, double[], BSCCPostProcessor)
+	 */
 	public ModelCheckerResult computeSteadyStateProbsForBSCC(CTMC ctmc, BitSet states, double result[]) throws PrismException
 	{
-		return createDTMCModelChecker().computeSteadyStateProbsForBSCC(ctmc, states, result, new SteadyStateBSCCPostProcessor(ctmc));
+		// We construct the embedded DTMC and do the steady-state computation there
+		mainLog.println("Building embedded DTMC...");
+		DTMC dtmcEmb = ctmc.getImplicitEmbeddedDTMC();
+
+		return createDTMCModelChecker().computeSteadyStateProbsForBSCC(dtmcEmb, states, result, new SteadyStateBSCCPostProcessor(ctmc));
 	}
 
 	/**
@@ -994,7 +1009,8 @@ public class CTMCModelChecker extends ProbModelChecker
 	/**
 	 * Create a new DTMC model checker with the same settings as this one. 
 	 */
-	private DTMCModelChecker createDTMCModelChecker() throws PrismException
+	@Override
+	public DTMCModelChecker createDTMCModelChecker() throws PrismException
 	{
 		DTMCModelChecker mcDTMC = new DTMCModelChecker(this);
 		mcDTMC.inheritSettings(this);

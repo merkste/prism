@@ -41,11 +41,9 @@ import parser.ast.DeclarationIntUnbounded;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionLabel;
-import parser.ast.ExpressionLongRun;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.ModelType;
-import parser.type.TypeBool;
 import parser.ast.RelOp;
 import prism.Prism;
 import prism.PrismComponent;
@@ -54,9 +52,6 @@ import prism.PrismFileLog;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
 import prism.PrismUtils;
-import prism.SteadyStateCache;
-import prism.SteadyStateProbs;
-import prism.SteadyStateProbs.SteadyStateProbsExplicit;
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.BitSetTools;
@@ -70,7 +65,7 @@ import explicit.rewards.Rewards;
 /**
  * Explicit-state model checker for discrete-time Markov chains (DTMCs).
  */
-public class DTMCModelChecker extends ProbModelChecker
+public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 {
 	/**
 	 * Create a new DTMCModelChecker, inherit basic state from parent (unless null).
@@ -80,10 +75,16 @@ public class DTMCModelChecker extends ProbModelChecker
 		super(parent);
 	}
 
+	@Override
+	public DTMCModelChecker createDTMCModelChecker()
+	{
+		return this;
+	}
+
 	// Model checking functions
 
 	@Override
-	protected StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
+	public StateValues checkExpressionConditional(Model model, ExpressionConditional expression, BitSet statesOfInterest) throws PrismException
 	{
 		return new ConditionalMCModelChecker.DTMC(this).checkExpression((DTMC) model, expression, statesOfInterest);
 	}
@@ -1475,16 +1476,18 @@ public class DTMCModelChecker extends ProbModelChecker
 
 	// L operator
 
-	protected class ReachBsccComputer
+	protected static class ReachBsccComputer<T extends MCModelChecker>
 	{
+		T mc;
 		DTMC model;
 		String bsccName                     = null;
 		String nonBsccName                  = null;
 		ExpressionProb untilBscc            = null;
 		ExpressionConditional condReachBscc = null;
 
-		public ReachBsccComputer(DTMC model, Expression condition)
+		public ReachBsccComputer(T mc, DTMC model, Expression condition)
 		{
+			this.mc = mc;
 			this.model = model;
 			if (condition != null) {
 				bsccName      = model.addUniqueLabel("current_bscc", new BitSet(0));
@@ -1494,7 +1497,7 @@ public class DTMCModelChecker extends ProbModelChecker
 			}
 		}
 
-		public ReachBsccComputer clear()
+		public ReachBsccComputer<T> clear()
 		{
 			if (bsccName != null) {
 				model.getLabelStates(bsccName).clear();
@@ -1510,114 +1513,13 @@ public class DTMCModelChecker extends ProbModelChecker
 		public double[] computeUntilProbs(BitSet nonBsccStates, BitSet bsccStates, BitSet statesOfInterest) throws PrismException
 		{
 			if (bsccName == null) {
-				return DTMCModelChecker.this.computeUntilProbs(model, nonBsccStates, bsccStates).soln;
+				return mc.createDTMCModelChecker().computeUntilProbs(model, nonBsccStates, bsccStates).soln;
 			}
 			// switch label to current BSCC and compute conditional reach probs
 			model.addLabel(bsccName, bsccStates);
 			model.addLabel(nonBsccName, nonBsccStates);
-			return checkExpressionConditional(model, condReachBscc, statesOfInterest).getDoubleArray();
+			return mc.checkExpressionConditional(model, condReachBscc, statesOfInterest).getDoubleArray();
 		}
-	}
-
-	@Override
-	public StateValues checkExpressionLongRun(Model dtmc, ExpressionLongRun expr, BitSet statesOfInterest) throws PrismException
-	{
-		return checkConditionalExpressionLongRun(dtmc, expr, null, statesOfInterest);
-	}
-
-
-	@Override
-	public StateValues checkConditionalExpressionLongRun(Model dtmc, ExpressionLongRun expr, Expression condition, BitSet statesOfInterest) throws PrismException
-	{
-		BitSet states = checkExpression(dtmc, expr.getStates(), null).getBitSet();
-		assert states != null : "Booolean result expected.";
-
-		StateValues values = checkExpression(dtmc, expr.getExpression(), states);
-		assert values.getType() != TypeBool.getInstance() : "Non-Boolean values expected.";
-
-		ReachBsccComputer reachComputer = new ReachBsccComputer((DTMC) dtmc, condition);
-		return computeLongRun((DTMC) dtmc, values, states, reachComputer, statesOfInterest);
-	}
-
-	protected StateValues computeLongRun(DTMC dtmc, StateValues values, BitSet states, ReachBsccComputer reachComputer, BitSet statesOfInterest)
-			throws PrismException
-	{
-		// Store num states, fix statesOfInterest
-		int numStates = dtmc.getNumStates();
-		if (statesOfInterest == null) {
-			statesOfInterest = new BitSet(numStates);
-			statesOfInterest.flip(0, numStates);
-		}
-
-		// 1. compute steady-state probabilities or fetch from cache
-		SteadyStateProbsExplicit steadyStateProbsBscc;
-		if (SteadyStateCache.getInstance().isEnabled()) {
-			SteadyStateCache cache = SteadyStateCache.getInstance();
-			if (cache.containsSteadyStateProbs(dtmc)) {
-				mainLog.println("\nTaking steady-state probabilities from cache.");
-				steadyStateProbsBscc = cache.getSteadyStateProbs(dtmc);
-			} else {
-				mainLog.println("\nComputing steady-state probabilities.");
-				steadyStateProbsBscc = SteadyStateProbs.computeCompact(this, dtmc);
-				mainLog.println("\nCaching steady-state probabilities.");
-				cache.storeSteadyStateProbs(dtmc, steadyStateProbsBscc, settings);
-			}
-		} else {
-			steadyStateProbsBscc = SteadyStateProbs.computeSimple(this, dtmc);
-		}
-		BitSet nonBsccStates = steadyStateProbsBscc.getNonBsccStates();
-		StateValues steadyStateProbs = StateValues.createFromDoubleArray(steadyStateProbsBscc.getSteadyStateProbabilities(), dtmc);
-
-		// 2. compute weighted sums for each state-of-interest
-		double[] numerator   = new double[numStates];
-		double[] denominator = new double[numStates];
-		// weightedValues = values x steady (filter by states)
-		StateValues weightedValues = values.deepCopy();
-		weightedValues.times(steadyStateProbs, states);
-		// skip reach computation if each state-of-interest is in a bscc
-		boolean computeReachProbs = statesOfInterest.intersects(nonBsccStates);
-		for (BitSet bscc : steadyStateProbsBscc.getBSCCs()) {
-			// compute intersection of states and current BSCC
-			BitSet statesInBscc = (BitSet) bscc.clone();
-			statesInBscc.and(states);
-			if (statesInBscc.isEmpty()) {
-				// no state in current BSCC, skip BSCC
-				continue;
-			}
-			// compute probability to reach BSCC
-			double[] reachProbs;
-			if (computeReachProbs) {
-				// if some state-of-interest is not in a BSCC:
-				reachProbs = reachComputer.computeUntilProbs(nonBsccStates, bscc, statesOfInterest);
-			} else {
-				// each state-of-interest is in a BSCC
-				BitSet probs = (BitSet) bscc.clone();
-				probs.and(statesOfInterest);
-				reachProbs = Utils.bitsetToDoubleArray(probs, numStates);
-			}
-			// compute weighted sum
-			double sumWeight = (double) weightedValues.sumOverBitSet(statesInBscc);
-			double sumSteady = (double) steadyStateProbs.sumOverBitSet(statesInBscc);
-			for (OfInt iter = new IterableBitSet(statesOfInterest).iterator(); iter.hasNext();) {
-				int state = iter.nextInt();
-				numerator[state]   += reachProbs[state] * sumWeight;
-				denominator[state] += reachProbs[state] * sumSteady;
-			}
-			// remove visited bscc states
-			states.andNot(bscc);
-			if (states.isEmpty()) {
-				// no states left, skip remaining BSCCs
-				break;
-			}
-		}
-
-		// 3. compute final quotient
-		double[] quotient = numerator;
-		for (OfInt iter = new IterableBitSet(statesOfInterest).iterator(); iter.hasNext();) {
-			int state = iter.nextInt();
-			quotient[state] /= denominator[state];
-		}
-		return StateValues.createFromDoubleArray(quotient, dtmc);
 	}
 
 	/**
@@ -1767,7 +1669,7 @@ public class DTMCModelChecker extends ProbModelChecker
 			// Consider all states
 			BitSet states = new BitSet(model.getNumStates());
 			states.flip(0, model.getNumStates());
-			ReachBsccComputer reachComputer = new ReachBsccComputer((DTMC) model, null);
+			ReachBsccComputer<DTMCModelChecker> reachComputer = new ReachBsccComputer<>(this, (DTMC) model, null);
 			return computeLongRun((DTMC) model, StateValues.createFromDoubleArray(values, model), states, reachComputer, statesOfInterest);
 		} else {
 			ModelCheckerResult result = computeSteadyStateBackwardsProbs((DTMC) model, values);
@@ -1893,7 +1795,7 @@ public class DTMCModelChecker extends ProbModelChecker
 	 */
 	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[], BSCCPostProcessor bsccPostProcessor) throws PrismException
 	{
-		if (dtmc.getModelType() != ModelType.DTMC) {
+		if (dtmc.getModelType() != ModelType.DTMC && dtmc.getModelType() != ModelType.CTMC) {
 			throw new PrismNotSupportedException("Explicit engine currently does not support steady-state computation for " + dtmc.getModelType());
 		}
 

@@ -10,7 +10,7 @@ import common.iterable.FunctionalPrimitiveIterable.IterableInt;
 import common.iterable.IterableArray;
 import explicit.BSCCConsumer;
 import explicit.DTMC;
-import explicit.DTMCModelChecker;
+import explicit.MCModelChecker;
 import explicit.SCCComputer;
 import jdd.JDD;
 import jdd.JDDNode;
@@ -319,22 +319,22 @@ public interface SteadyStateProbs<S, V>
 
 
 
-	public static SteadyStateProbsCompact computeCompact(DTMCModelChecker mc, DTMC dtmc) throws PrismException
+	public static SteadyStateProbsCompact computeCompact(MCModelChecker mc, DTMC dtmc) throws PrismException
 	{
 		double[] probs = new double[dtmc.getNumStates()];
 		return compute(mc, dtmc, new SteadyStateProbsCompact(dtmc, probs));
 	}
 
-	public static SteadyStateProbsSimple computeSimple(DTMCModelChecker mc, DTMC dtmc) throws PrismException
+	public static SteadyStateProbsSimple computeSimple(MCModelChecker mc, DTMC dtmc) throws PrismException
 	{
 		double[] probs = new double[dtmc.getNumStates()];
 		return compute(mc, dtmc, new SteadyStateProbsSimple(dtmc, probs));
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T extends SteadyStateProbsExplicit> T compute(DTMCModelChecker mc, DTMC dtmc, T steadyStateProbs) throws PrismException
+	public static <T extends SteadyStateProbsExplicit> T compute(MCModelChecker mc, DTMC dtmc, T steadyStateProbs) throws PrismException
 	{
-		BSCCConsumer consumer = new BSCCConsumer(mc, dtmc)
+		BSCCConsumer consumer = new BSCCConsumer((PrismComponent) mc, dtmc)
 		{
 			double[] probs = steadyStateProbs.getSteadyStateProbabilities();
 			int i = 0;
@@ -348,7 +348,7 @@ public interface SteadyStateProbs<S, V>
 				i++;
 			}
 		};
-		SCCComputer.createSCCComputer(mc, dtmc, consumer).computeSCCs();
+		SCCComputer.createSCCComputer((PrismComponent) mc, dtmc, consumer).computeSCCs();
 
 		return (T) steadyStateProbs.trimToSize();
 	}
