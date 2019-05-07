@@ -883,6 +883,14 @@ public class CTMCModelChecker extends ProbModelChecker
 	}
 
 	/**
+	 * @see DTMCModelChecker#computeSteadyStateProbsForBSCC(DTMC, BitSet, double[], BSCCPostProcessor)
+	 */
+	public ModelCheckerResult computeSteadyStateProbsForBSCC(CTMC ctmc, BitSet states, double result[]) throws PrismException
+	{
+		return createDTMCModelChecker().computeSteadyStateProbsForBSCC(ctmc, states, result, new SteadyStateBSCCPostProcessor(ctmc));
+	}
+
+	/**
 	 * Compute transient probabilities.
 	 * i.e. compute the probability of being in each state at time {@code t},
 	 * assuming the initial distribution {@code initDist}. 

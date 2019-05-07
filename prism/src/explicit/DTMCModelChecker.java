@@ -1708,10 +1708,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		if (initInOneBSCC > -1) {
 			mainLog.println("\nInitial states are all in one BSCC (so no reachability probabilities computed)");
 			BitSet bscc = bsccs.get(initInOneBSCC);
-			computeSteadyStateProbsForBSCC(dtmc, bscc, solnProbs);
-			if (bsccPostProcessor != null) {
-				bsccPostProcessor.apply(solnProbs, bscc);
-			}
+			computeSteadyStateProbsForBSCC(dtmc, bscc, solnProbs, bsccPostProcessor);
 		}
 
 		// Otherwise, have to consider all the BSCCs
@@ -1737,10 +1734,7 @@ public class DTMCModelChecker extends ProbModelChecker
 				mainLog.println("\nComputing steady-state probabilities for BSCC " + (b + 1));
 				BitSet bscc = bsccs.get(b);
 				// Compute steady-state probabilities for the BSCC
-				computeSteadyStateProbsForBSCC(dtmc, bscc, solnProbs);
-				if (bsccPostProcessor != null) {
-					bsccPostProcessor.apply(solnProbs, bscc);
-				}
+				computeSteadyStateProbsForBSCC(dtmc, bscc, solnProbs, bsccPostProcessor);
 				// Multiply by BSCC reach prob
 				for (int i = bscc.nextSetBit(0); i >= 0; i = bscc.nextSetBit(i + 1))
 					solnProbs[i] *= probBSCCs[b];
@@ -1869,6 +1863,14 @@ public class DTMCModelChecker extends ProbModelChecker
 	}
 
 	/**
+	 * @see DTMCModelChecker#computeSteadyStateProbsForBSCC(DTMC, BitSet, double[], BSCCPostProcessor)
+	 */
+	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[]) throws PrismException
+	{
+		return computeSteadyStateProbsForBSCC(dtmc, states, result, null);
+	}
+
+	/**
 	 * Compute steady-state probabilities for a BSCC
 	 * i.e. compute the long-run probability of being in each state of the BSCC.
 	 * No initial distribution is specified since it does not affect the result.
@@ -1886,9 +1888,10 @@ public class DTMCModelChecker extends ProbModelChecker
 	 * </p>
 	 * @param dtmc The DTMC
 	 * @param states The BSCC to be analysed
+	 * @param bsccPostProcessor Post-processor for the values of each BSCC (optional: null means no post-processing)
 	 * @param result Storage for result (ignored if null)
 	 */
-	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[]) throws PrismException
+	public ModelCheckerResult computeSteadyStateProbsForBSCC(DTMC dtmc, BitSet states, double result[], BSCCPostProcessor bsccPostProcessor) throws PrismException
 	{
 		if (dtmc.getModelType() != ModelType.DTMC) {
 			throw new PrismNotSupportedException("Explicit engine currently does not support steady-state computation for " + dtmc.getModelType());
@@ -1983,6 +1986,11 @@ public class DTMCModelChecker extends ProbModelChecker
 		// normalise solution
 		PrismUtils.normalise(soln, bscc);
 
+		// Apply post processing
+		if (bsccPostProcessor != null) {
+			bsccPostProcessor.apply(soln, states);
+		}
+
 		if (result != null && result != soln) {
 			// If result vector was passed in as method argument,
 			// it can be the case that result does not point to the current soln vector (most recent values)
@@ -1993,6 +2001,10 @@ public class DTMCModelChecker extends ProbModelChecker
 				result[state] = soln[state];
 			}
 		}
+
+		// NOTE: from here on, don't change the values of result/soln,
+		// as the values may have already been copied to the result vector above
+		//
 		// store only one result vector, free temporary vectors
 		result = soln;
 		soln = soln2 = null;
@@ -2009,6 +2021,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		res.soln = result;
 		res.numIters = iters;
 		res.timeTaken = watch.elapsedSeconds();
+
 		return res;
 	}
 
