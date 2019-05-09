@@ -27,6 +27,7 @@
 package explicit;
 
 import java.util.*;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 
 import common.IterableStateSet;
@@ -239,53 +240,12 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	{
 		if (exitRates[s] == 0) {
 			// return prob-1 self-loop
-			Map<Integer,Double> m = new TreeMap<Integer,Double>();
-			m.put(s, 1.0);
-			return m.entrySet().iterator();
+			return DiracDistribution.iterator(s);
 		} else {
-			final Iterator<Entry<Integer,Double>> ctmcIterator = ctmc.getTransitionsIterator(s);
-			
+			FunctionalIterator<Entry<Integer,Double>> ctmcIterator = FunctionalIterator.extend(ctmc.getTransitionsIterator(s));
 			// return iterator over entries, with probabilities divided by exitRates[s]
-			final double er = exitRates[s];
-			return new Iterator<Entry<Integer,Double>>() {
-				@Override
-				public boolean hasNext()
-				{
-					return ctmcIterator.hasNext();
-				}
-
-				@Override
-				public Entry<Integer, Double> next()
-				{
-					final Entry<Integer, Double> ctmcEntry = ctmcIterator.next();
-					
-					return new Entry<Integer, Double>() {
-						@Override
-						public Integer getKey()
-						{
-							return ctmcEntry.getKey();
-						}
-
-						@Override
-						public Double getValue()
-						{
-							return ctmcEntry.getValue() / er;
-						}
-
-						@Override
-						public Double setValue(Double value)
-						{
-							throw new UnsupportedOperationException();
-						}
-					};
-				}
-
-				@Override
-				public void remove()
-				{
-					throw new UnsupportedOperationException();
-				}
-			};
+			double er = exitRates[s];
+			return ctmcIterator.map(e -> new SimpleImmutableEntry<>(e.getKey(), e.getValue() / er));
 		}
 	}
 
