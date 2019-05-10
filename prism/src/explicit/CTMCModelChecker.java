@@ -31,6 +31,7 @@ import java.util.*;
 
 import explicit.Model;
 import explicit.StateValues;
+import explicit.DTMCModelChecker.ReachBsccComputer;
 import explicit.conditional.ConditionalMCModelChecker;
 import common.IterableBitSet;
 import explicit.rewards.MCRewards;
@@ -880,6 +881,37 @@ public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker
 		// compute the steady-state probabilities in the embedded DTMC, applying the BSCC value post-processing
 		mainLog.println("Doing steady-state computation in embedded DTMC (with exit-rate weighting for BSCC probabilities)...");
 		return createDTMCModelChecker().computeSteadyStateProbs(dtmcEmb, initDist, new SteadyStateBSCCPostProcessor(ctmc));
+	}
+
+	/**
+	 * Compute steady-state probabilities for an S operator.
+	 */
+	@Override
+	protected StateValues checkSteadyStateFormula(Model model, Expression expr, MinMax minMax, BitSet statesOfInterest) throws PrismException
+	{
+		if (model.getModelType() == ModelType.CTMC) {
+			assert model instanceof CTMC : "Expected mode to be instance of " + CTMC.class;
+			return checkSteadyStateFormula((CTMC) model, expr, statesOfInterest);
+		}
+		throw new PrismNotSupportedException("Explicit engine does not yet handle the S operator for " + model.getModelType() + "s");
+	}
+
+	protected StateValues checkSteadyStateFormula(CTMC ctmc, Expression expr, BitSet statesOfInterest) throws PrismException, PrismNotSupportedException
+	{
+		// Model check operand for all states
+		BitSet bits = checkExpression(ctmc, expr, null).getBitSet();
+		assert bits != null : "Booolean result expected.";
+		double[] values = Utils.bitsetToDoubleArray(bits, ctmc.getNumStates());
+
+		if (settings.getBoolean(PrismSettings.PRISM_COMPUTE_S_VIA_L)) {
+			// Consider all states
+			BitSet states = new BitSet(ctmc.getNumStates());
+			states.flip(0, ctmc.getNumStates());
+			ReachBsccComputer<CTMCModelChecker> reachComputer = new ReachBsccComputer<>(this, ctmc, null);
+			return computeLongRun(ctmc, StateValues.createFromDoubleArray(values, ctmc), states, reachComputer, statesOfInterest);
+		} else {
+			throw new PrismNotSupportedException("Explicit engine does handle the S operator only via the L operator for CTMCs");
+		}
 	}
 
 	/**
