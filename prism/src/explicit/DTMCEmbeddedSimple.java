@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 
 import common.IterableStateSet;
 import common.iterable.FunctionalIterator;
+import common.iterable.SingletonIterator;
 import explicit.rewards.MCRewards;
 import parser.State;
 import parser.Values;
@@ -62,9 +63,6 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 		this.ctmc = ctmc;
 		this.numStates = ctmc.getNumStates();
 		this.deadlocks = new TreeSet<Integer>();
-		for (String label : ctmc.getLabels()) {
-			labels.put(label, ctmc.getLabelStates(label));
-		}
 		// TODO: should we copy other stuff across too?
 		exitRates = new double[numStates];
 		numExtraTransitions = 0;
@@ -139,9 +137,7 @@ public class DTMCEmbeddedSimple extends DTMCExplicit
 	public Iterator<Integer> getSuccessorsIterator(final int s)
 	{
 		if (exitRates[s] == 0) {
-			List<Integer> list = new ArrayList<Integer>(1);
-			list.add(s);
-			return list.iterator();
+			return new SingletonIterator.OfInt(s);
 		} else {
 			return ctmc.getSuccessorsIterator(s);
 		}

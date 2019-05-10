@@ -134,7 +134,7 @@ public class CTMCSparse extends DTMCSparse implements CTMC
 	public DTMC getImplicitEmbeddedDTMC()
 	{
 		if (cachedEmbeddedDTMC == null) {
-			cachedEmbeddedDTMC = new DTMCSparse(new DTMCEmbeddedSimple(this));
+			cachedEmbeddedDTMC = new DTMCEmbeddedSimple(this);
 		}
 		return cachedEmbeddedDTMC;
 	}
