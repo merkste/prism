@@ -99,10 +99,10 @@ public class FindAllSynchedGlobalVarUpdates extends ASTTraverse
 			isGlobalView = isLocal ? false : mf.isGlobalView(var);
 			if (!c.getSynch().equals("")) {
 				if (isGlobal) {
-					if (globalVarToModule.containsKey(var) && globalVarToModule.get(var) != inModule.getName()) {
-						throw new PrismLangException("To update global variable "+var+", only one module may update (previously by "+globalVarToModule.get(var)+")",
-								e.getVarIdent(i));
-					}
+//					if (globalVarToModule.containsKey(var) && globalVarToModule.get(var) != inModule.getName()) {
+//						throw new PrismLangException("To update global variable "+var+", only one module may update (previously by "+globalVarToModule.get(var)+")",
+//								e.getVarIdent(i));
+//					}
 					globalVarToModule.put(var, inModule.getName());
 				} else if (isGlobalView) {
 					// for an update to a global view, we add each underlying variable
