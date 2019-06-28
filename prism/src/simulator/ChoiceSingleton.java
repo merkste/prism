@@ -109,30 +109,36 @@ public class ChoiceSingleton implements Choice
 	{
 		return null;
 	}
-	
-	public State computeTarget(State oldState) throws PrismLangException
-	{
-		State newState = new State(oldState);
-		for (Update up : updates)
-			up.update(oldState, newState);
-		return newState;
-	}
-
-	public void computeTarget(State oldState, State newState) throws PrismLangException
-	{
-		for (Update up : updates)
-			up.update(oldState, newState);
-	}
 
 	public State computeTarget(int i, State oldState) throws PrismLangException
 	{
-		if (i == 0) return computeTarget(oldState);
+		State newState = new State(oldState);
+		return computeTarget(i, oldState, newState);
+	}
+
+	public State computeTarget(int i, State oldState, State newState) throws PrismLangException
+	{
+		if (i == 0) {
+			for (Update up : updates)
+				up.update(oldState, newState);
+			return newState;
+		}
 		else throw new PrismLangException("Choice does not have an element " + i);
 	}
 
-	public void computeTarget(int i, State oldState, State newState) throws PrismLangException
+	public State computeTarget(int i, EvaluateContextState oldContext) throws PrismLangException
 	{
-		if (i == 0) computeTarget(oldState, newState);
+		State newState = new State(oldContext.getState());
+		return computeTarget(i, oldContext, newState);
+	}
+
+	public State computeTarget(int i, EvaluateContextState oldContext, State newState) throws PrismLangException
+	{
+		if (i == 0) {
+			for (Update up : updates)
+				up.update(oldContext.getState(), newState);
+			return newState;
+		}
 		else throw new PrismLangException("Choice does not have an element " + i);
 	}
 

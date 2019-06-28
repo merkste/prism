@@ -137,35 +137,37 @@ public class ChoiceList implements Choice
 	{
 		return null;
 	}
-	
-	public State computeTarget(State oldState) throws PrismLangException
-	{
-		return computeTarget(0, oldState);
-	}
-
-	public void computeTarget(State oldState, State newState) throws PrismLangException
-	{
-		computeTarget(0, oldState, newState);
-	}
 
 	public State computeTarget(int i, State oldState) throws PrismLangException
 	{
+		State newState = new State(oldState);
+		return computeTarget(i, oldState, newState);
+	}
+
+	public State computeTarget(int i, State oldState, State newState) throws PrismLangException
+	{
 		if (i < 0 || i >= size())
 			throw new PrismLangException("Choice does not have an element " + i);
-		State newState = new State(oldState);
 		for (Update up : updates.get(i))
 			up.update(oldState, newState);
 		return newState;
 	}
 
-	public void computeTarget(int i, State oldState, State newState) throws PrismLangException
+	public State computeTarget(int i, EvaluateContextState oldContext) throws PrismLangException
+	{
+		State newState = new State(oldContext.getState());
+		return computeTarget(i, oldContext, newState);
+	}
+
+	public State computeTarget(int i, EvaluateContextState oldContext, State newState) throws PrismLangException
 	{
 		if (i < 0 || i >= size())
 			throw new PrismLangException("Choice does not have an element " + i);
 		for (Update up : updates.get(i))
-			up.update(oldState, newState);
+			up.update(oldContext, newState);
+		return newState;
 	}
-	
+
 	public double getProbability()
 	{
 		return getProbability(0);

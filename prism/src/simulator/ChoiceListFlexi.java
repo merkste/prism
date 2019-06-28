@@ -287,16 +287,30 @@ public class ChoiceListFlexi implements Choice
 	public State computeTarget(int i, State currentState) throws PrismLangException
 	{
 		State newState = new State(currentState);
+		return computeTarget(i, currentState, newState);
+	}
+
+	@Override
+	public State computeTarget(int i, State currentState, State newState) throws PrismLangException
+	{
 		for (Update up : updates.get(i))
 			up.update(currentState, newState);
 		return newState;
 	}
 
 	@Override
-	public void computeTarget(int i, State currentState, State newState) throws PrismLangException
+	public State computeTarget(int i, EvaluateContextState currentContext) throws PrismLangException
+	{
+		State newState = new State(currentContext.getState());
+		return computeTarget(i, currentContext, newState);
+	}
+
+	@Override
+	public State computeTarget(int i, EvaluateContextState currentContext, State newState) throws PrismLangException
 	{
 		for (Update up : updates.get(i))
-			up.update(currentState, newState);
+			up.update(currentContext, newState);
+		return newState;
 	}
 
 	@Override

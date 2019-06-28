@@ -33,19 +33,25 @@ package parser;
  */
 public class EvaluateContextState implements EvaluateContext
 {
+	protected State state;
 	protected Values constantValues;
 	protected Object[] varValues;
 
 	public EvaluateContextState(State state)
 	{
-		this.constantValues = null;
-		this.varValues = state.varValues;
+		this(null, state);
 	}
 
 	public EvaluateContextState(Values constantValues, State state)
 	{
+		this.state = state;
 		this.constantValues = constantValues;
 		this.varValues = state.varValues;
+	}
+
+	public State getState()
+	{
+		return state;
 	}
 
 	public Object getConstantValue(String name)

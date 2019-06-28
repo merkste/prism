@@ -243,7 +243,15 @@ public class TransitionList
 	{
 		return getChoiceOfTransition(index).computeTarget(transitionOffsets.get(index), currentState);
 	}
-	
+
+	/**
+	 * Get the target of a transition (as a new State object), specified by its index.
+	 */
+	public State computeTransitionTarget(int index, EvaluateContextState currentContext) throws PrismLangException
+	{
+		return getChoiceOfTransition(index).computeTarget(transitionOffsets.get(index), currentContext);
+	}
+
 	// Other checks and queries
 	
 	/**

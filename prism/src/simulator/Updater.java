@@ -143,6 +143,18 @@ public class Updater extends PrismComponent
 	 */
 	public void calculateTransitions(State state, TransitionList transitionList) throws PrismException
 	{
+		EvaluateContextState context = new EvaluateContextStateCached(state);
+		calculateTransitions(context, transitionList);
+	}
+
+	/**
+	 * Determine the set of outgoing transitions from state 'state' and store in 'transitionList'.
+	 * @param state State from which to explore
+	 * @param transitionList TransitionList object in which to store result
+	 */
+	public void calculateTransitions(EvaluateContextState context, TransitionList transitionList) throws PrismException
+	{
+		State state = context.getState();
 		List<ChoiceListFlexi> chs;
 		int i, j, k, l, n, count;
 
@@ -161,7 +173,7 @@ public class Updater extends PrismComponent
 		// Calculate the available updates for each module/action
 		// (update information in updateLists, enabledSynchs and enabledModules)
 		for (i = 0; i < numModules; i++) {
-			calculateUpdatesForModule(i, state);
+			calculateUpdatesForModule(i, context);
 		}
 		//System.out.println("updateLists: " + updateLists);
 
@@ -305,9 +317,9 @@ public class Updater extends PrismComponent
 	 * Determine the enabled updates for the 'm'th module from (global) state 'state'.
 	 * Update information in updateLists, enabledSynchs and enabledModules.
 	 * @param m The module index
-	 * @param state State from which to explore
+	 * @param context EvaluateContextState of the state from which to explore
 	 */
-	protected void calculateUpdatesForModule(int m, State state) throws PrismLangException
+	protected void calculateUpdatesForModule(int m, EvaluateContextState context) throws PrismLangException
 	{
 		Module module;
 		Command command;
@@ -317,7 +329,7 @@ public class Updater extends PrismComponent
 		n = module.getNumCommands();
 		for (i = 0; i < n; i++) {
 			command = module.getCommand(i);
-			if (command.getGuard().evaluateBoolean(state)) {
+			if (command.getGuard().evaluateBoolean(context)) {
 				j = command.getSynchIndex();
 				updateLists.get(m).get(j).add(command.getUpdates());
 				enabledSynchs.set(j);

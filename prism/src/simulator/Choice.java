@@ -76,14 +76,27 @@ public interface Choice
 	 * returning the result as a new State object copied from the existing one.
 	 */
 	public State computeTarget(int i, State currentState) throws PrismLangException;
-	
+
+	/**
+	 * Compute the target for the ith transition, based on a current state.
+	 * Apply changes in variables to a provided copy of the State object.
+	 * (i.e. currentState and newState should be equal when passed in.)
+	 */
+	public State computeTarget(int i, State currentState, State newState) throws PrismLangException;
+
+	/**
+	 * Compute the target for the ith transition, based on a current state,
+	 * returning the result as a new State object copied from the existing one.
+	 */
+	public State computeTarget(int i, EvaluateContextState currentContext) throws PrismLangException;
+
 	/**
 	 * Compute the target for the ith transition, based on a current state.
 	 * Apply changes in variables to a provided copy of the State object.
 	 * (i.e. currentState and newState should be equal when passed in.) 
 	 */
-	public void computeTarget(int i, State currentState, State newState) throws PrismLangException;
-	
+	public State computeTarget(int i, EvaluateContextState currentContext, State newState) throws PrismLangException;
+
 	/**
 	 * Get the probability/rate for the ith transition.
 	 */

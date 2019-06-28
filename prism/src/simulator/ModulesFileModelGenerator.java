@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 import parser.EvaluateContextMutableState;
+import parser.EvaluateContextStateCached;
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -38,7 +39,7 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	// Model exploration info
 	
 	// State currently being explored
-	private State exploreState;
+	private EvaluateContextStateCached exploreContext;
 	// Updater object for model
 	protected Updater updater;
 	// List of currently available transitions
@@ -246,14 +247,14 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	@Override
 	public void exploreState(State exploreState) throws PrismException
 	{
-		this.exploreState = exploreState;
+		this.exploreContext = new EvaluateContextStateCached(exploreState);
 		transitionListBuilt = false;
 	}
 	
 	@Override
 	public State getExploreState()
 	{
-		return exploreState;
+		return exploreContext.getState();
 	}
 	
 	@Override
@@ -306,15 +307,15 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	@Override
 	public State computeTransitionTarget(int index, int offset) throws PrismException
 	{
-		return getTransitionList().getChoice(index).computeTarget(offset, exploreState);
+		return getTransitionList().getChoice(index).computeTarget(offset, exploreContext);
 	}
 
 	//@Override
 	public State computeTransitionTarget(int index) throws PrismException
 	{
-		return getTransitionList().computeTransitionTarget(index, exploreState);
+		return getTransitionList().computeTransitionTarget(index, exploreContext);
 	}
-	
+
 	//@Override
 	public void calculateStateRewards(State state, double[] store) throws PrismLangException
 	{
@@ -335,7 +336,7 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	public boolean isLabelTrue(int i) throws PrismException
 	{
 		Expression expr = labelList.getLabel(i);
-		return expr.evaluateBoolean(exploreState);
+		return expr.evaluateBoolean(exploreContext);
 	}
 	
 	@Override
@@ -365,7 +366,7 @@ public class ModulesFileModelGenerator extends DefaultModelGenerator
 	{
 		// Compute the current transition list, if required
 		if (!transitionListBuilt) {
-			updater.calculateTransitions(exploreState, transitionList);
+			updater.calculateTransitions(exploreContext, transitionList);
 			transitionListBuilt = true;
 		}
 		return transitionList;
