@@ -27,10 +27,10 @@
 
 package explicit;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 import common.BitSetTools;
-
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypeInt;
@@ -57,6 +57,7 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 {
 	protected M originalModel = null;
 	protected M productModel = null;
+	protected int[] productStates = null;
 
 	/**
 	 * For the given productState index, return the corresponding
@@ -225,13 +226,16 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	@Override
 	public Integer mapToTransformedModel(final int state)
 	{
-		final Iterable<Integer> initial = productModel.getInitialStates();
-		for (Integer productState : initial) {
-			if (getModelState(productState) == state) {
-				return productState;
+		// cache mapping in LUT original -> transformed
+		if (productStates == null) {
+			productStates = new int[originalModel.getNumStates()];
+			Arrays.fill(productStates, -1);
+			for (int s : productModel.getInitialStates()) {
+				productStates[getModelState(s)] = s;
 			}
 		}
-		return null;
+		int productState = productStates[state];
+		return productState == -1 ? null : productState;
 	}
 
 	@Override
