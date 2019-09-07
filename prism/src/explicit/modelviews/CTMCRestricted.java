@@ -2,6 +2,7 @@ package explicit.modelviews;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +16,7 @@ import common.IterableStateSet;
 import common.iterable.EmptyIterator;
 import common.iterable.FunctionalIterable;
 import common.iterable.FunctionalPrimitiveIterable.IterableInt;
+import common.iterable.FunctionalPrimitiveIterator.OfInt;
 import common.iterable.MappingIterator;
 import common.iterable.collections.UnionSet;
 import parser.State;
@@ -24,6 +26,7 @@ import prism.PrismException;
 import explicit.BasicModelTransformation;
 import explicit.CTMC;
 import explicit.CTMCSimple;
+import explicit.ModelTransformation;
 import explicit.ReachabilityComputer;
 
 public class CTMCRestricted extends CTMCView
@@ -36,7 +39,7 @@ public class CTMCRestricted extends CTMCView
 	private Restriction restriction;
 	// FIXME ALG: consider using a mapping function instead
 	protected int[] mappingToOriginalModel;
-	protected Integer[] mappingToRestrictedModel;
+	protected int[] mappingToRestrictedModel;
 	protected BitSet redirectTransitions;
 
 
@@ -75,8 +78,9 @@ public class CTMCRestricted extends CTMCView
 		this.states = restriction.getStateSet(model, include);
 		numStates = states.cardinality();
 
-		mappingToRestrictedModel = new Integer[model.getNumStates()];
 		mappingToOriginalModel = new int[numStates];
+		mappingToRestrictedModel = new int[model.getNumStates()];
+		Arrays.fill(mappingToRestrictedModel, ModelTransformation.UNDEF);
 		int firstModified = 0;
 		for (int state = states.nextSetBit(0), index = 0; state >= 0; state = states.nextSetBit(state+1)) {
 			mappingToRestrictedModel[state] = index;
@@ -139,7 +143,7 @@ public class CTMCRestricted extends CTMCView
 	@Override
 	public int getFirstInitialState()
 	{
-		final Iterator<Integer> initials = getInitialStates().iterator();
+		final OfInt initials = getInitialStates().iterator();
 		return initials.hasNext() ? initials.next() : -1;
 	}
 
@@ -245,7 +249,8 @@ public class CTMCRestricted extends CTMCView
 		restriction = Restriction.TRANSITIVE_CLOSURE_SAFE;
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[numStates];
-		mappingToRestrictedModel = new Integer[mappingToRestrictedModel.length];
+		mappingToRestrictedModel = new int[mappingToRestrictedModel.length];
+		Arrays.fill(mappingToRestrictedModel, ModelTransformation.UNDEF);
 		int state = 0;
 		for (; state < numStates; state++) {
 			mappingToOriginalModel[state] = state;
@@ -272,7 +277,8 @@ public class CTMCRestricted extends CTMCView
 		restriction = Restriction.TRANSITIVE_CLOSURE_SAFE;
 		// FIXME ALG: extract identity array generation
 		mappingToOriginalModel = new int[numStates];
-		mappingToRestrictedModel = new Integer[mappingToRestrictedModel.length];
+		mappingToRestrictedModel = new int[mappingToRestrictedModel.length];
+		Arrays.fill(mappingToRestrictedModel, ModelTransformation.UNDEF);
 		int state = 0;
 		for (; state < numStates; state++) {
 			mappingToOriginalModel[state] = state;
@@ -307,7 +313,7 @@ public class CTMCRestricted extends CTMCView
 		return originalStates;
 	}
 
-	public Integer mapStateToRestrictedModel(final int state)
+	public int mapStateToRestrictedModel(final int state)
 	{
 		return mappingToRestrictedModel[state];
 	}
@@ -323,8 +329,8 @@ public class CTMCRestricted extends CTMCView
 		//FIXME ALG: consider allocating a BitSet in a suited size
 		final BitSet mappedStates = new BitSet();
 		for (int originalState : new IterableStateSet(originalStates, model.getNumStates())) {
-			final Integer state = mappingToRestrictedModel[originalState];
-			if (state != null) {
+			final int state = mappingToRestrictedModel[originalState];
+			if (state != ModelTransformation.UNDEF) {
 				mappedStates.set(state);
 			}
 		}
@@ -356,7 +362,7 @@ public class CTMCRestricted extends CTMCView
 	{
 		final CTMCRestricted restricted = new CTMCRestricted(model, states, restriction);
 		final BitSet transformedStates = restricted.mapStatesToRestrictedModel(states);
-		return new BasicModelTransformation<>(model, restricted, transformedStates, state -> restricted.mappingToRestrictedModel[state]);
+		return new BasicModelTransformation<>(model, restricted, transformedStates, restricted.mappingToRestrictedModel);
 	}
 
 	public static void main(final String[] args) throws PrismException

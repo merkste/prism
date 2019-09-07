@@ -89,8 +89,7 @@ public class ModelTransformationNested<OriginalModel extends Model,
 	@Override
 	public int mapToTransformedModel(final int state)
 	{
-		int intermediate = innerTransformation.mapToTransformedModel(state);
-		return (intermediate == UNDEF) ? UNDEF : outerTransformation.mapToTransformedModel(intermediate);
+		return outerTransformation.mapToTransformedModel(innerTransformation.mapToTransformedModel(state));
 	}
 
 	@Override

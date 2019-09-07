@@ -48,10 +48,9 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		numberOfStates              = originalModel.getNumStates();
 	}
 
-	@Deprecated
-	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, Integer[] mapToTransformedModel)
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, int[] mapToTransformedModel)
 	{
-		this(originalModel, transformedModel, transformedStatesOfInterest, state -> mapToTransformedModel[state]);
+		this(originalModel, transformedModel, transformedStatesOfInterest, state -> (state == UNDEF) ? UNDEF : mapToTransformedModel[state]);
 	}
 
 	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final IntUnaryOperator mapToTransformedModel)
@@ -181,14 +180,7 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		} else {
 			innerMapping = inner::mapToTransformedModel;
 		}
-		IntUnaryOperator composed = new IntUnaryOperator()
-		{
-			@Override
-			public int applyAsInt(int state) {
-				int intermediate = innerMapping.applyAsInt(state);
-				return (intermediate == UNDEF) ? UNDEF : mapToTransformedModel.applyAsInt(intermediate);
-			}
-		};
+		IntUnaryOperator composed = mapToTransformedModel.compose(innerMapping);
 		return new BasicModelTransformation<>(inner.getOriginalModel(), transformedModel, transformedStatesOfInterest, composed);
 	}
 }

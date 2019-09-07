@@ -94,7 +94,7 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 			transformedStatesOfInterest     = BitSetTools.union(statesOfInterestNonPivot, BitSetTools.shiftUp(statesOfInterestAndPivot, offset));
 
 			// Allow states of interest in pivot states
-			IntUnaryOperator mapToTransformedModel = state -> state != ModelTransformation.UNDEF && pivotStates.get(state) ? state + offset : state;
+			IntUnaryOperator mapToTransformedModel = state -> (state != ModelTransformation.UNDEF && pivotStates.get(state)) ? state + offset : state;
 			pivoted = new BasicModelTransformation<>(pivotModel, pivotModel, transformedStatesOfInterest, mapToTransformedModel).compose(pivoted);
 
 			// Compute reachable states

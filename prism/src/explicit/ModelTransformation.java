@@ -60,6 +60,7 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	 * Get the corresponding index of a {@code state} in the transformed model.
 	 * This is the index from which a result may be projected to the original model.
 	 * If no such state exists, return {@link ModelTransformation#UNDEF}.
+	 * Returns the argument if it is {@link ModelTransformation#UNDEF}.
 	 *
 	 * @param state index in the original model
 	 * @return corresponding index in the transformed model or {@link ModelTransformation#UNDEF}

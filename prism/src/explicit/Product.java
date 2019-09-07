@@ -227,6 +227,9 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	public int mapToTransformedModel(final int state)
 	{
 		// cache mapping in LUT original -> transformed
+		if (state == UNDEF) {
+			return UNDEF;
+		}
 		if (productStates == null) {
 			productStates = new int[originalModel.getNumStates()];
 			Arrays.fill(productStates, UNDEF);
