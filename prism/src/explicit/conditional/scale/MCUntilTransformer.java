@@ -2,7 +2,7 @@ package explicit.conditional.scale;
 
 import java.util.BitSet;
 import java.util.Objects;
-import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
 
 import common.BitSetTools;
 import explicit.BasicModelTransformation;
@@ -94,7 +94,7 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 			transformedStatesOfInterest     = BitSetTools.union(statesOfInterestNonPivot, BitSetTools.shiftUp(statesOfInterestAndPivot, offset));
 
 			// Allow states of interest in pivot states
-			IntFunction<Integer> mapToTransformedModel = state -> pivotStates.get(state) ? state + offset : state;
+			IntUnaryOperator mapToTransformedModel = state -> state != ModelTransformation.UNDEF && pivotStates.get(state) ? state + offset : state;
 			pivoted = new BasicModelTransformation<>(pivotModel, pivotModel, transformedStatesOfInterest, mapToTransformedModel).compose(pivoted);
 
 			// Compute reachable states

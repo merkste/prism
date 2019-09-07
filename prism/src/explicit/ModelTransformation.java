@@ -33,7 +33,9 @@ import prism.PrismException;
 /**
  * Interface for a model transformation.
  */
-public interface ModelTransformation<OriginalModel extends Model, TransformedModel extends Model> {
+public interface ModelTransformation<OriginalModel extends Model, TransformedModel extends Model>
+{
+	public static final int UNDEF = -1;
 
 	/** Get the original model. */
 	public OriginalModel getOriginalModel();
@@ -57,12 +59,12 @@ public interface ModelTransformation<OriginalModel extends Model, TransformedMod
 	/**
 	 * Get the corresponding index of a {@code state} in the transformed model.
 	 * This is the index from which a result may be projected to the original model.
-	 * If no such state exists, return {@code null}.
+	 * If no such state exists, return {@link ModelTransformation#UNDEF}.
 	 *
 	 * @param state index in the original model
-	 * @return corresponding index in the transformed model or null
+	 * @return corresponding index in the transformed model or {@link ModelTransformation#UNDEF}
 	 */
-	public Integer mapToTransformedModel(int state);
+	public int mapToTransformedModel(int state);
 
 	/**
 	 * Get the indices of a set of {@code states} in the transformed model.

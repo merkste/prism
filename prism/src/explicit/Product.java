@@ -224,18 +224,17 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	}
 
 	@Override
-	public Integer mapToTransformedModel(final int state)
+	public int mapToTransformedModel(final int state)
 	{
 		// cache mapping in LUT original -> transformed
 		if (productStates == null) {
 			productStates = new int[originalModel.getNumStates()];
-			Arrays.fill(productStates, -1);
+			Arrays.fill(productStates, UNDEF);
 			for (int s : productModel.getInitialStates()) {
 				productStates[getModelState(s)] = s;
 			}
 		}
-		int productState = productStates[state];
-		return productState == -1 ? null : productState;
+		return productStates[state];
 	}
 
 	@Override
@@ -243,7 +242,7 @@ public abstract class Product<M extends Model> implements ModelTransformation<M,
 	{
 		final BitSet result = new BitSet();
 		final Iterable<Integer> initial = productModel.getInitialStates();
-		for (Integer productState : initial) {
+		for (int productState : initial) {
 			if (states.get(getModelState(productState))) {
 				result.set(productState);
 			}

@@ -310,7 +310,7 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 				current = new CounterTransformation<M>(parent, originalModel, originalExpression, groupedBounds, statesOfInterest);
 				nested = current;
 			} else {
-			    current = new CounterTransformation<M>(parent, nested.getTransformedModel(), nested.getTransformedExpression(), groupedBounds, nested.getTransformedStatesOfInterest());
+				current = new CounterTransformation<M>(parent, nested.getTransformedModel(), nested.getTransformedExpression(), groupedBounds, nested.getTransformedStatesOfInterest());
 				nested = new ModelExpressionTransformationNested<M, M, M>(nested, current);
 			}
 			
@@ -322,7 +322,7 @@ public class CounterTransformation<M extends Model> implements ModelExpressionTr
 	}
 
 	@Override
-	public Integer mapToTransformedModel(final int state)
+	public int mapToTransformedModel(final int state)
 	{
 		return product.mapToTransformedModel(state);
 	}

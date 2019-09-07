@@ -99,7 +99,7 @@ public class ModelExpressionTransformationIdentity<M extends Model> implements M
 	}
 
 	@Override
-	public Integer mapToTransformedModel(final int state)
+	public int mapToTransformedModel(final int state)
 	{
 		return state;
 	}

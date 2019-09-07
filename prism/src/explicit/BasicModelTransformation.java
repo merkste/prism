@@ -1,7 +1,7 @@
 package explicit;
 
 import java.util.BitSet;
-import java.util.function.IntFunction;
+import java.util.function.IntUnaryOperator;
 
 import common.IterableBitSet;
 import parser.type.TypeBool;
@@ -12,7 +12,7 @@ import prism.PrismException;
 //FIXME ALG: add comment
 public class BasicModelTransformation<OM extends Model, TM extends Model> implements ModelTransformation<OM, TM>
 {
-	public static final IntFunction<Integer> IDENTITY = Integer::valueOf;
+	public static final IntUnaryOperator IDENTITY = i -> i;
 
 	public static final boolean DEFAULT_BOOLEAN = false;
 	public static final double DEFAULT_DOUBLE   = Double.NaN;
@@ -21,7 +21,7 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 	protected final OM originalModel;
 	protected final TM transformedModel;
 	protected BitSet transformedStatesOfInterest;
-	protected final IntFunction<Integer> mapToTransformedModel;
+	protected final IntUnaryOperator mapToTransformedModel;
 
 	protected final int numberOfStates;
 
@@ -54,7 +54,7 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		this(originalModel, transformedModel, transformedStatesOfInterest, state -> mapToTransformedModel[state]);
 	}
 
-	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final IntFunction<Integer> mapToTransformedModel)
+	public BasicModelTransformation(final OM originalModel, final TM transformedModel, final BitSet transformedStatesOfInterest, final IntUnaryOperator mapToTransformedModel)
 	{
 		this.originalModel               = originalModel;
 		this.transformedModel            = transformedModel;
@@ -119,8 +119,8 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		final BitSet result = new BitSet(numberOfStates);
 
 		for (int state = 0; state < numberOfStates; state++) {
-			final Integer mappedState = mapToTransformedModel(state);
-			final boolean mappedValue = (mappedState == null) ? DEFAULT_BOOLEAN : values.get(mappedState);
+			final int mappedState = mapToTransformedModel(state);
+			final boolean mappedValue = (mappedState == UNDEF) ? DEFAULT_BOOLEAN : values.get(mappedState);
 			result.set(state, mappedValue);
 		}
 		return result;
@@ -131,8 +131,8 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		final double[] result = new double[numberOfStates];
 
 		for (int state = 0; state < numberOfStates; state++) {
-			final Integer mappedState = mapToTransformedModel(state);
-			final double mappedValue = (mappedState == null) ? DEFAULT_DOUBLE : values[mappedState];
+			final int mappedState = mapToTransformedModel(state);
+			final double mappedValue = (mappedState == UNDEF) ? DEFAULT_DOUBLE : values[mappedState];
 			result[state] = mappedValue;
 		}
 		return result;
@@ -143,20 +143,20 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		final int[] result = new int[numberOfStates];
 
 		for (int state = 0; state < numberOfStates; state++) {
-			final Integer mappedState = mapToTransformedModel(state);
-			final int mappedValue = (mappedState == null) ? DEFAULT_INTEGER : values[mappedState];
+			final int mappedState = mapToTransformedModel(state);
+			final int mappedValue = (mappedState == UNDEF) ? DEFAULT_INTEGER : values[mappedState];
 			result[state] = mappedValue;
 		}
 		return result;
 	}
 
 	@Override
-	public Integer mapToTransformedModel(final int state)
+	public int mapToTransformedModel(final int state)
 	{
 		if (state >= numberOfStates) {
 			throw new IndexOutOfBoundsException("State index does not belong to original model.");
 		}
-		return mapToTransformedModel.apply(state);
+		return mapToTransformedModel.applyAsInt(state);
 	}
 
 	@Override
@@ -165,8 +165,8 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 		final BitSet result = new BitSet();
 
 		for (int state : new IterableBitSet(states)) {
-			final Integer mappedState = mapToTransformedModel(state);
-			if (mappedState != null) {
+			final int mappedState = mapToTransformedModel(state);
+			if (mappedState != UNDEF) {
 				result.set(mappedState);
 			}
 		}
@@ -175,18 +175,18 @@ public class BasicModelTransformation<OM extends Model, TM extends Model> implem
 
 	public <M extends Model> BasicModelTransformation<M, TM> compose(final ModelTransformation<M, ? extends OM> inner)
 	{
-		IntFunction<Integer> innerMapping;
+		IntUnaryOperator innerMapping;
 		if (inner instanceof BasicModelTransformation) {
-			innerMapping   = ((BasicModelTransformation<?,?>) inner).mapToTransformedModel;
+			innerMapping = ((BasicModelTransformation<?,?>) inner).mapToTransformedModel;
 		} else {
-			innerMapping   = inner::mapToTransformedModel;
+			innerMapping = inner::mapToTransformedModel;
 		}
-		IntFunction<Integer> composed = new IntFunction<Integer>()
+		IntUnaryOperator composed = new IntUnaryOperator()
 		{
 			@Override
-			public Integer apply(int state) {
-				Integer intermediate = innerMapping.apply(state);
-				return (intermediate == null) ? null : mapToTransformedModel.apply(intermediate);
+			public int applyAsInt(int state) {
+				int intermediate = innerMapping.applyAsInt(state);
+				return (intermediate == UNDEF) ? UNDEF : mapToTransformedModel.applyAsInt(intermediate);
 			}
 		};
 		return new BasicModelTransformation<>(inner.getOriginalModel(), transformedModel, transformedStatesOfInterest, composed);

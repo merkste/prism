@@ -276,7 +276,7 @@ public class MDPMinMaxFilterTransformer extends PrismComponent
 		}
 
 		@Override
-		public Integer mapToTransformedModel(final int state)
+		public int mapToTransformedModel(final int state)
 		{
 			return state;
 		}
