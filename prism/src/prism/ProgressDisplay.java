@@ -44,6 +44,7 @@ public class ProgressDisplay
 	private long lastPercentageDone;
 	private long timerProgress;
 	private boolean first;
+	private int line;
 
 	public ProgressDisplay(PrismLog mainLog)
 	{
@@ -60,6 +61,7 @@ public class ProgressDisplay
 		lastPercentageDone = 0;
 		timerProgress = System.currentTimeMillis();
 		first = true;
+		line = 0;
 	}
 
 	/**
@@ -119,7 +121,15 @@ public class ProgressDisplay
 			// Print if new
 			if (count > lastCount) {
 				lastCount = count;
-				mainLog.print(" " + count);
+				String progress;
+				if (line > 120) {
+					progress = "\n" + count;
+					line = 0;
+				} else {
+					progress = " " + count;
+				}
+				line += progress.length();
+				mainLog.print(progress);
 				mainLog.flush();
 				timerProgress = System.currentTimeMillis();
 			}
