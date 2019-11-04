@@ -29,10 +29,10 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.conditional.ConditionalTransformer;
-import prism.conditional.checker.SimplePathProperty;
-import prism.conditional.checker.SimplePathProperty.Finally;
-import prism.conditional.checker.SimplePathProperty.Reach;
-import prism.conditional.checker.SimplePathProperty.Until;
+import prism.conditional.checker.SimplePathEvent;
+import prism.conditional.checker.SimplePathEvent.Finally;
+import prism.conditional.checker.SimplePathEvent.Reach;
+import prism.conditional.checker.SimplePathEvent.Until;
 import prism.conditional.reset.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.BasicModelExpressionTransformation;
@@ -137,7 +137,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 
 	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C> implements NormalFormTransformer<M, C>
 	{
-		protected Map<SimplePathProperty<M>, JDDNode> cache;
+		protected Map<SimplePathEvent<M>, JDDNode> cache;
 
 		public MC(Prism prism, C modelChecker)
 		{
@@ -224,7 +224,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		@Override
 		public void clear()
 		{
-			cache.keySet().forEach(SimplePathProperty::clear);
+			cache.keySet().forEach(SimplePathEvent::clear);
 			cache.values().forEach(JDD::Deref);
 			cache.clear();
 		}

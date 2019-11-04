@@ -22,8 +22,8 @@ import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.checker.SimplePathProperty.Globally;
-import prism.conditional.checker.SimplePathProperty.Reach;
+import prism.conditional.checker.SimplePathEvent.Globally;
+import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 
 

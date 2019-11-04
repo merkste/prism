@@ -10,14 +10,14 @@ import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
 import explicit.conditional.checker.MCModelChecker;
 import explicit.conditional.checker.MDPModelChecker;
-import explicit.conditional.checker.SimplePathProperty;
-import explicit.conditional.checker.SimplePathProperty.Finally;
-import explicit.conditional.checker.SimplePathProperty.Globally;
-import explicit.conditional.checker.SimplePathProperty.Next;
-import explicit.conditional.checker.SimplePathProperty.Release;
-import explicit.conditional.checker.SimplePathProperty.TemporalOperator;
-import explicit.conditional.checker.SimplePathProperty.Until;
-import explicit.conditional.checker.SimplePathProperty.WeakUntil;
+import explicit.conditional.checker.SimplePathEvent;
+import explicit.conditional.checker.SimplePathEvent.Finally;
+import explicit.conditional.checker.SimplePathEvent.Globally;
+import explicit.conditional.checker.SimplePathEvent.Next;
+import explicit.conditional.checker.SimplePathEvent.Release;
+import explicit.conditional.checker.SimplePathEvent.TemporalOperator;
+import explicit.conditional.checker.SimplePathEvent.Until;
+import explicit.conditional.checker.SimplePathEvent.WeakUntil;
 import explicit.conditional.transformer.LtlProductTransformer;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -96,7 +96,7 @@ public interface ConditionalTransformer<M extends Model, C extends StateModelChe
 
 	PrismSettings getSettings();
 
-	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
+	default SimplePathEvent<M> computeSimplePathProperty(M model, Expression expression)
 			throws PrismException
 	{
 		Expression trimmed = ExpressionInspector.trimUnaryOperations(expression);

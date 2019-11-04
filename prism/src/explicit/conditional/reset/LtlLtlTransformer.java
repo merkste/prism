@@ -13,7 +13,7 @@ import explicit.MDPModelChecker;
 import explicit.MinMax;
 import explicit.Model;
 import explicit.ProbModelChecker;
-import explicit.conditional.checker.SimplePathProperty.Finally;
+import explicit.conditional.checker.SimplePathEvent.Finally;
 import explicit.conditional.reset.GoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.reset.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.transformer.LtlProductTransformer.LabeledDA;

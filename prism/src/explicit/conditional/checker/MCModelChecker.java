@@ -10,11 +10,11 @@ import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
-import explicit.conditional.checker.SimplePathProperty.Finally;
-import explicit.conditional.checker.SimplePathProperty.Globally;
-import explicit.conditional.checker.SimplePathProperty.Next;
-import explicit.conditional.checker.SimplePathProperty.Reach;
-import explicit.conditional.checker.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathEvent.Finally;
+import explicit.conditional.checker.SimplePathEvent.Globally;
+import explicit.conditional.checker.SimplePathEvent.Next;
+import explicit.conditional.checker.SimplePathEvent.Reach;
+import explicit.conditional.checker.SimplePathEvent.Until;
 import prism.PrismException;
 
 public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends SimplePathEventModelChecker<M,C>
@@ -83,7 +83,7 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 		return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 	}
 
-	default double[] computeProbs(SimplePathProperty<M> path)
+	default double[] computeProbs(SimplePathEvent<M> path)
 			throws PrismException
 	{
 		if (path instanceof Finally) {

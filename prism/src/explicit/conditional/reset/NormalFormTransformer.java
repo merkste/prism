@@ -18,7 +18,7 @@ import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
 import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.checker.CachedMCModelChecker;
-import explicit.conditional.checker.SimplePathProperty.Reach;
+import explicit.conditional.checker.SimplePathEvent.Reach;
 import explicit.conditional.reset.GoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.reset.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.reset.ResetTransformer.ResetTransformation;

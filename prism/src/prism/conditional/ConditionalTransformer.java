@@ -26,15 +26,15 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.checker.SimplePathProperty;
-import prism.conditional.checker.SimplePathProperty.Finally;
-import prism.conditional.checker.SimplePathProperty.Globally;
-import prism.conditional.checker.SimplePathProperty.Next;
-import prism.conditional.checker.SimplePathProperty.Reach;
-import prism.conditional.checker.SimplePathProperty.Release;
-import prism.conditional.checker.SimplePathProperty.TemporalOperator;
-import prism.conditional.checker.SimplePathProperty.Until;
-import prism.conditional.checker.SimplePathProperty.WeakUntil;
+import prism.conditional.checker.SimplePathEvent;
+import prism.conditional.checker.SimplePathEvent.Finally;
+import prism.conditional.checker.SimplePathEvent.Globally;
+import prism.conditional.checker.SimplePathEvent.Next;
+import prism.conditional.checker.SimplePathEvent.Reach;
+import prism.conditional.checker.SimplePathEvent.Release;
+import prism.conditional.checker.SimplePathEvent.TemporalOperator;
+import prism.conditional.checker.SimplePathEvent.Until;
+import prism.conditional.checker.SimplePathEvent.WeakUntil;
 import prism.conditional.transformer.LtlProductTransformer;
 import prism.PrismComponent;
 
@@ -91,7 +91,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 
 	LtlProductTransformer<M> getLtlTransformer();
 
-	default SimplePathProperty<M> computeSimplePathProperty(M model, Expression expression)
+	default SimplePathEvent<M> computeSimplePathProperty(M model, Expression expression)
 			throws PrismException
 	{
 		Expression trimmed = ExpressionInspector.trimUnaryOperations(expression);
@@ -354,7 +354,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 			return computeProb1(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public JDDNode computeProbs(SimplePathProperty<M> path)
+		public JDDNode computeProbs(SimplePathEvent<M> path)
 				throws PrismException
 		{
 			if (path instanceof Finally) {
@@ -714,7 +714,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 			return computeProb1A(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public JDDNode computeMaxProbs(SimplePathProperty<NondetModel> path)
+		public JDDNode computeMaxProbs(SimplePathEvent<NondetModel> path)
 				throws PrismException
 		{
 			if (path instanceof Finally) {
@@ -759,7 +759,7 @@ public interface ConditionalTransformer<M extends ProbModel, C extends StateMode
 			return computeUntilMaxProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 		}
 
-		public JDDNode computeMinProbs(SimplePathProperty<NondetModel> path)
+		public JDDNode computeMinProbs(SimplePathEvent<NondetModel> path)
 				throws PrismException
 		{
 			if (path instanceof Finally) {

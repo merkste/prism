@@ -24,8 +24,8 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
-import prism.conditional.checker.SimplePathProperty.Finally;
-import prism.conditional.checker.SimplePathProperty.Reach;
+import prism.conditional.checker.SimplePathEvent.Finally;
+import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.LtlProductTransformer.LabeledDA;
 

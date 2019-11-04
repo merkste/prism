@@ -1,30 +1,35 @@
-package explicit.conditional.checker;
+package prism.conditional.checker;
 
-import java.util.BitSet;
 import java.util.Objects;
 
-import common.BitSetTools;
-import explicit.LTLModelChecker.LTLProduct;
-import explicit.Model;
+import jdd.Clearable;
+import jdd.JDD;
+import jdd.JDDNode;
 import parser.ast.ExpressionTemporal;
+import prism.LTLModelChecker.LTLProduct;
+import prism.Model;
 
 
 
-public abstract class SimplePathProperty<M extends Model> implements Cloneable
+public abstract class SimplePathEvent<M extends Model> implements Clearable, Cloneable
 {
 	protected M       model;
-	protected int     numStates;
 	protected boolean negated;
 
 
 
-	public SimplePathProperty(M model, boolean negated)
+	public SimplePathEvent(M model, boolean negated)
 	{
 		Objects.requireNonNull(model);
 		this.model     = model;
-		this.numStates = model.getNumStates();
 		this.negated   = negated;
 	}
+
+	/**
+	 * Deref all referenced state sets (JDD nodes). Do not clear the model.
+	 */
+	@Override
+	public abstract void clear();
 
 	public abstract TemporalOperator getOperator();
 
@@ -40,7 +45,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 
 	public abstract boolean isCoSafe();
 
-	public abstract SimplePathProperty<M> lift(LTLProduct<M> product);
+	public abstract SimplePathEvent<M> lift(LTLProduct<M> product);
 
 	/**
 	 * Construct a property which state sets are subsets of a model's reachable state space.
@@ -48,14 +53,14 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	 * @param model
 	 * @return a property in {@code model}
 	 */
-	public abstract <OM extends Model> SimplePathProperty<OM> copy(OM model);
+	public abstract <OM extends Model> SimplePathEvent<OM> copy(OM model);
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public SimplePathProperty<M> clone()
+	public SimplePathEvent<M> clone()
 	{
 		try {
-			return (SimplePathProperty<M>) super.clone();
+			return (SimplePathEvent<M>) super.clone();
 		} catch (CloneNotSupportedException e) {
 			e.printStackTrace();
 			throw new RuntimeException("Object#clone is expected to work for Cloneable objects.", e);
@@ -87,18 +92,18 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof SimplePathProperty)) {
+		if (!(obj instanceof SimplePathEvent)) {
 			return false;
 		}
 		@SuppressWarnings("rawtypes")
-		SimplePathProperty other = (SimplePathProperty) obj;
+		SimplePathEvent other = (SimplePathEvent) obj;
 		return model == other.model && negated == other.negated;
 	}
 
 	/**
 	 * Throw an exception, iff the paths are defined for different models.
 	 */
-	public void requireSameModel(SimplePathProperty<?> path)
+	public void requireSameModel(SimplePathEvent<?> path)
 	{
 		requireSameModel(path.getModel());
 	}
@@ -113,46 +118,57 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		}
 	}
 
-	protected BitSet allStates()
+	/**
+	 * [ REFS: <i>result</i>, DEREFS: none ]
+	 */
+	protected JDDNode allStates()
 	{
-		BitSet states = new BitSet(numStates);
-		states.set(0, numStates);
-		return states;
+		return model.getReach().copy();
 	}
 
-	protected boolean isAllStates(BitSet states)
+	protected boolean isAllStates(JDDNode states)
 	{
-		return states.nextClearBit(0) == numStates;
+		return model.getReach().equals(states);
 	}
 
-	protected BitSet restrict(BitSet states)
+	/**
+	 * [ REFS: result, DEREFS: <i>states</i> ]
+	 */
+	protected JDDNode restrict(JDDNode states)
 	{
 		Objects.requireNonNull(states);
-		// states highest index is included in model's state space
-		if (states.length() <= numStates) {
-			return states;
-		}
-		// restrict states to model's state space
-		return states.get(0, numStates);
+		return JDD.And(states, allStates());
 	}
 
 
 
-	public static class Next<M extends Model> extends SimplePathProperty<M>
+	public static class Next<M extends Model> extends SimplePathEvent<M>
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.Next;
 
-		protected BitSet goal;
+		protected JDDNode goal;
 
-		public Next(M model, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Next(M model, JDDNode goal)
 		{
 			this(model, false, goal);
 		}
 
-		public Next(M model, boolean negated, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Next(M model, boolean negated, JDDNode goal)
 		{
 			super(model, negated);
 			this.goal = restrict(goal);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(goal);
 		}
 
 		@Override
@@ -161,7 +177,10 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getGoal()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
 		{
 			return goal;
 		}
@@ -176,19 +195,21 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		public Next<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new Next<>(product.getProductModel(), negated, product.liftFromModel(goal));
+			return new Next<>(product.getProductModel(), negated, goal.copy());
 		}
 
 		@Override
 		public <OM extends Model> Next<OM> copy(OM model)
 		{
-			return new Next<>(model, negated, goal);
+			return new Next<>(model, negated, goal.copy());
 		}
 
 		@Override
 		public Next<M> clone()
 		{
-			return (Next<M>) super.clone();
+			Next<M> clone = (Next<M>) super.clone();
+			clone.goal    = goal.copy();
+			return clone;
 		}
 
 		@Override
@@ -231,7 +252,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 
 
 
-	public static abstract class Reach<M extends Model> extends SimplePathProperty<M>
+	public static abstract class Reach<M extends Model> extends SimplePathEvent<M>
 	{
 		public Reach(M model, boolean negated)
 		{
@@ -240,6 +261,11 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 
 		public abstract boolean hasToRemain();
 
+		/**
+		 * Convert reach property to until property.
+		 *
+		 * @return a new until instance that is equivalent to the receiver
+		 */
 		public abstract Until<M> asUntil();
 
 		@Override
@@ -261,17 +287,29 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.Finally;
 
-		protected BitSet goal;
+		protected JDDNode goal;
 
-		public Finally(M model, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Finally(M model, JDDNode goal)
 		{
 			this(model, false, goal);
 		}
 
-		public Finally(M model, boolean negated, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>goal</i> ]
+		 */
+		public Finally(M model, boolean negated, JDDNode goal)
 		{
 			super(model, negated);
 			this.goal = restrict(goal);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(goal);
 		}
 
 		@Override
@@ -280,7 +318,10 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getGoal()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
 		{
 			return goal;
 		}
@@ -297,34 +338,41 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return negated;
 		}
 
+		/**
+		 * Convert property to finally property.
+		 *
+		 * @return a new finally instance that is equivalent to the receiver
+		 */
 		public Finally<M> asFinally()
 		{
-			return this;
+			return this.clone();
 		}
 
 		@Override
 		public Until<M> asUntil()
 		{
-			return new Until<>(model, negated, allStates(), goal);
+			return new Until<>(model, negated, allStates(), goal.copy());
 		}
 
 		@Override
 		public Finally<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new Finally<>(product.getProductModel(), negated, product.liftFromModel(goal));
+			return new Finally<>(product.getProductModel(), negated, goal.copy());
 		}
 
 		@Override
 		public <OM extends Model> Finally<OM> copy(OM model)
 		{
-			return new Finally<>(model, negated, goal);
+			return new Finally<>(model, negated, goal.copy());
 		}
 
 		@Override
 		public Finally<M> clone()
 		{
-			return (Finally<M>) super.clone();
+			Finally<M> clone = (Finally<M>) super.clone();
+			clone.goal       = goal.copy();
+			return clone;
 		}
 
 		@Override
@@ -371,17 +419,29 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.Globally;
 
-		protected BitSet remain;
+		protected JDDNode remain;
 
-		public Globally(M model, BitSet remain)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain</i> ]
+		 */
+		public Globally(M model, JDDNode remain)
 		{
 			this(model, false, remain);
 		}
 
-		public Globally(M model, boolean negated, BitSet remain)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain</i> ]
+		 */
+		public Globally(M model, boolean negated, JDDNode remain)
 		{
 			super(model, negated);
 			this.remain = restrict(remain);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(remain);
 		}
 
 		@Override
@@ -390,7 +450,10 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getRemain()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
 		{
 			return remain;
 		}
@@ -407,16 +470,21 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return ! negated;
 		}
 
+		/**
+		 * Convert property to finally property.
+		 *
+		 * @return a new finally instance that is equivalent to the receiver
+		 */
 		public Finally<M> asFinally()
 		{
-			BitSet finallyGoal = BitSetTools.complement(numStates, remain);
+			JDDNode finallyGoal = JDD.And(allStates(), JDD.Not(remain.copy()));
 			return new Finally<>(model, ! negated, finallyGoal);
 		}
 
 		@Override
 		public Until<M> asUntil()
 		{
-			BitSet untilGoal = BitSetTools.complement(numStates, remain);
+			JDDNode untilGoal = JDD.And(allStates(), JDD.Not(remain.copy()));
 			return new Until<>(model, ! negated, allStates(), untilGoal);
 		}
 
@@ -424,19 +492,21 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		public Globally<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new Globally<>(product.getProductModel(), negated, product.liftFromModel(remain));
+			return new Globally<>(product.getProductModel(), negated, remain.copy());
 		}
 
 		@Override
 		public <OM extends Model> Globally<OM> copy(OM model)
 		{
-			return new Globally<>(model, negated, remain);
+			return new Globally<>(model, negated, remain.copy());
 		}
 
 		@Override
 		public Globally<M> clone()
 		{
-			return (Globally<M>) super.clone();
+			Globally<M> clone = (Globally<M>) super.clone();
+			clone.remain      = remain.copy();
+			return clone;
 		}
 
 		@Override
@@ -483,19 +553,31 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.Until;
 
-		protected BitSet remain;
-		protected BitSet goal;
+		protected JDDNode remain;
+		protected JDDNode goal;
 
-		public Until(M model, BitSet remain, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public Until(M model, JDDNode remain, JDDNode goal)
 		{
 			this(model, false, remain, goal);
 		}
 
-		public Until(M model, boolean negated, BitSet remain, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public Until(M model, boolean negated, JDDNode remain, JDDNode goal)
 		{
 			super(model, negated);
 			this.remain = restrict(remain);
 			this.goal   = restrict(goal);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(remain, goal);
 		}
 
 		@Override
@@ -504,12 +586,18 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getRemain()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
 		{
 			return remain;
 		}
 
-		public BitSet getGoal()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
 		{
 			return goal;
 		}
@@ -525,7 +613,7 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		{
 			if (negated) {
 				// stay in S\goal
-				return ! goal.isEmpty();
+				return ! goal.equals(JDD.ZERO);
 			} else {
 				// stay in remain
 				return ! isAllStates(remain);
@@ -535,26 +623,29 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		@Override
 		public Until<M> asUntil()
 		{
-			return this;
+			return this.clone();
 		}
 
 		@Override
 		public Until<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new Until<>(product.getProductModel(), negated, product.liftFromModel(remain), product.liftFromModel(goal));
+			return new Until<>(product.getProductModel(), negated, remain.copy(), goal.copy());
 		}
 
 		@Override
 		public <OM extends Model> Until<OM> copy(OM model)
 		{
-			return new Until<>(model, negated, remain, goal);
+			return new Until<>(model, negated, remain.copy(), goal.copy());
 		}
 
 		@Override
 		public Until<M> clone()
 		{
-			return (Until<M>) super.clone();
+			Until<M> clone = (Until<M>) super.clone();
+			clone.remain   = remain.copy();
+			clone.goal     = goal.copy();
+			return clone;
 		}
 
 		@Override
@@ -603,19 +694,31 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.Release;
 
-		protected BitSet stop;
-		protected BitSet remain;
+		protected JDDNode stop;
+		protected JDDNode remain;
 
-		public Release(M model, BitSet stop, BitSet remain)
+		/**
+		 * [ REFS: none, DEREFS: <i>stop, remain</i> ]
+		 */
+		public Release(M model, JDDNode stop, JDDNode remain)
 		{
 			this(model, false, stop, remain);
 		}
 
-		public Release(M model, boolean negated, BitSet stop, BitSet remain)
+		/**
+		 * [ REFS: none, DEREFS: <i>stop, remain</i> ]
+		 */
+		public Release(M model, boolean negated, JDDNode stop, JDDNode remain)
 		{
 			super(model, negated);
 			this.stop   = restrict(stop);
 			this.remain = restrict(remain);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(stop, remain);
 		}
 
 		@Override
@@ -624,12 +727,18 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getStop()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getStop()
 		{
 			return stop;
 		}
 
-		public BitSet getRemain()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
 		{
 			return remain;
 		}
@@ -643,15 +752,18 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		@Override
 		public boolean hasToRemain()
 		{
-			return asUntil().hasToRemain();
+			Until<M> until = asUntil();
+			boolean result = until.hasToRemain();
+			until.clear();
+			return result;
 		}
 
 		@Override
 		public Until<M> asUntil()
 		{
 			// φ R ψ = ¬(¬φ U ¬ψ)
-			BitSet untilRemain = BitSetTools.complement(numStates, stop);
-			BitSet untilStop   = BitSetTools.complement(numStates, remain);
+			JDDNode untilRemain = JDD.And(allStates(), JDD.Not(stop.copy()));
+			JDDNode untilStop   = JDD.And(allStates(), JDD.Not(remain.copy()));
 			return new Until<>(model, ! negated, untilRemain, untilStop);
 		}
 
@@ -659,19 +771,22 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		public Release<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new Release<>(product.getProductModel(), negated, product.liftFromModel(stop), product.liftFromModel(remain));
+			return new Release<>(product.getProductModel(), negated, stop.copy(), remain.copy());
 		}
 
 		@Override
 		public <OM extends Model> Release<OM> copy(OM model)
 		{
-			return new Release<>(model, negated, stop, remain);
+			return new Release<>(model, negated, stop.copy(), remain.copy());
 		}
 
 		@Override
 		public Release<M> clone()
 		{
-			return (Release<M>) super.clone();
+			Release<M> clone = (Release<M>) super.clone();
+			clone.stop       = stop.copy();
+			clone.remain     = remain.copy();
+			return clone;
 		}
 
 		@Override
@@ -720,19 +835,31 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 	{
 		public static final TemporalOperator OPERATOR = TemporalOperator.WeakUntil;
 
-		protected BitSet remain;
-		protected BitSet goal;
+		protected JDDNode remain;
+		protected JDDNode goal;
 
-		public WeakUntil(M model, BitSet remain, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public WeakUntil(M model, JDDNode remain, JDDNode goal)
 		{
 			this(model, false, remain, goal);
 		}
 
-		public WeakUntil(M model, boolean negated, BitSet remain, BitSet goal)
+		/**
+		 * [ REFS: none, DEREFS: <i>remain, goal</i> ]
+		 */
+		public WeakUntil(M model, boolean negated, JDDNode remain, JDDNode goal)
 		{
 			super(model, negated);
 			this.remain = restrict(remain);
 			this.goal   = restrict(goal);
+		}
+
+		@Override
+		public void clear()
+		{
+			JDD.Deref(remain, goal);
 		}
 
 		@Override
@@ -741,12 +868,18 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 			return OPERATOR;
 		}
 
-		public BitSet getRemain()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getRemain()
 		{
 			return remain;
 		}
 
-		public BitSet getGoal()
+		/**
+		 * [ REFS: none, DEREFS: none ]
+		 */
+		public JDDNode getGoal()
 		{
 			return goal;
 		}
@@ -760,16 +893,19 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		@Override
 		public boolean hasToRemain()
 		{
-			return asUntil().hasToRemain();
+			Until<M> until = asUntil();
+			boolean result = until.hasToRemain();
+			until.clear();
+			return result;
 		}
 
 		@Override
 		public Until<M> asUntil()
 		{
 			// φ W ψ ≡ ¬((φ ∧ ¬ψ) U (¬φ ∧ ¬ψ))
-			BitSet untilRemain = BitSetTools.minus(remain, goal);
-			BitSet untilGoal   = BitSetTools.complement(numStates, remain);
-			untilGoal.andNot(goal);
+			JDDNode untilRemain = JDD.And(remain.copy(), JDD.Not(goal.copy()));
+			JDDNode untilGoal   = JDD.And(allStates(), JDD.Not(remain.copy()));
+			untilGoal           = JDD.And(untilGoal, JDD.Not(goal.copy()));
 			return new Until<>(model, ! negated, untilRemain, untilGoal);
 		}
 
@@ -777,19 +913,22 @@ public abstract class SimplePathProperty<M extends Model> implements Cloneable
 		public WeakUntil<M> lift(LTLProduct<M> product)
 		{
 			requireSameModel(product.getOriginalModel());
-			return new WeakUntil<>(product.getProductModel(), negated, product.liftFromModel(remain), product.liftFromModel(goal));
+			return new WeakUntil<>(product.getProductModel(), negated, remain.copy(), goal.copy());
 		}
 
 		@Override
 		public <OM extends Model> WeakUntil<OM> copy(OM model)
 		{
-			return new WeakUntil<>(model, remain, goal);
+			return new WeakUntil<>(model, remain.copy(), goal.copy());
 		}
 
 		@Override
 		public WeakUntil<M> clone()
 		{
-			return (WeakUntil<M>) super.clone();
+			WeakUntil<M> clone = (WeakUntil<M>) super.clone();
+			clone.remain       = remain.copy();
+			clone.goal         = goal.copy();
+			return clone;
 		}
 
 		@Override

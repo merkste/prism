@@ -6,16 +6,16 @@ import java.util.Map;
 import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.ProbModelChecker;
-import explicit.conditional.checker.SimplePathProperty.Finally;
-import explicit.conditional.checker.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathEvent.Finally;
+import explicit.conditional.checker.SimplePathEvent.Until;
 import jdd.Clearable;
 import prism.PrismException;
 
 public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends MCModelChecker<M, C>, Clearable
 {
-	double[] lookup(SimplePathProperty<M> path);
+	double[] lookup(SimplePathEvent<M> path);
 
-	double[] store(SimplePathProperty<M> path, double[] probs);
+	double[] store(SimplePathEvent<M> path, double[] probs);
 
 	@Override
 	default double[] computeProbs(Finally<M> eventually)
@@ -43,7 +43,7 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 
 	public static class DTMC extends MCModelChecker.DTMC implements CachedMCModelChecker<explicit.DTMC, DTMCModelChecker>
 	{
-		protected Map<SimplePathProperty<explicit.DTMC>, double[]> cache;
+		protected Map<SimplePathEvent<explicit.DTMC>, double[]> cache;
 
 		public DTMC(DTMCModelChecker modelChecker)
 		{
@@ -52,13 +52,13 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 		}
 
 		@Override
-		public double[] lookup(SimplePathProperty<explicit.DTMC> path)
+		public double[] lookup(SimplePathEvent<explicit.DTMC> path)
 		{
 			return cache.get(path);
 		}
 
 		@Override
-		public double[] store(SimplePathProperty<explicit.DTMC> path, double[] probs)
+		public double[] store(SimplePathEvent<explicit.DTMC> path, double[] probs)
 		{
 			cache.put(path, probs);
 			return probs;
@@ -75,7 +75,7 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 
 	public static class CTMC extends MCModelChecker.CTMC implements CachedMCModelChecker<explicit.CTMC, CTMCModelChecker>
 	{
-		protected Map<SimplePathProperty<explicit.CTMC>, double[]> cache;
+		protected Map<SimplePathEvent<explicit.CTMC>, double[]> cache;
 
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -84,13 +84,13 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 		}
 
 		@Override
-		public double[] lookup(SimplePathProperty<explicit.CTMC> path)
+		public double[] lookup(SimplePathEvent<explicit.CTMC> path)
 		{
 			return cache.get(path);
 		}
 
 		@Override
-		public double[] store(SimplePathProperty<explicit.CTMC> path, double[] probs)
+		public double[] store(SimplePathEvent<explicit.CTMC> path, double[] probs)
 		{
 			cache.put(path, probs);
 			return probs;

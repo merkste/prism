@@ -4,11 +4,11 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import explicit.PredecessorRelation;
-import explicit.conditional.checker.SimplePathProperty.Finally;
-import explicit.conditional.checker.SimplePathProperty.Globally;
-import explicit.conditional.checker.SimplePathProperty.Next;
-import explicit.conditional.checker.SimplePathProperty.Reach;
-import explicit.conditional.checker.SimplePathProperty.Until;
+import explicit.conditional.checker.SimplePathEvent.Finally;
+import explicit.conditional.checker.SimplePathEvent.Globally;
+import explicit.conditional.checker.SimplePathEvent.Next;
+import explicit.conditional.checker.SimplePathEvent.Reach;
+import explicit.conditional.checker.SimplePathEvent.Until;
 import prism.PrismException;
 
 public class MDPModelChecker extends SimplePathEventModelChecker.Basic<explicit.MDP, explicit.MDPModelChecker>
@@ -206,7 +206,7 @@ public class MDPModelChecker extends SimplePathEventModelChecker.Basic<explicit.
 		return computeProb1A(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 	}
 
-	public double[] computeMaxProbs(SimplePathProperty<explicit.MDP> path)
+	public double[] computeMaxProbs(SimplePathEvent<explicit.MDP> path)
 			throws PrismException
 	{
 		if (path instanceof Finally) {
@@ -242,7 +242,7 @@ public class MDPModelChecker extends SimplePathEventModelChecker.Basic<explicit.
 		return computeUntilMaxProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 	}
 
-	public double[] computeMinProbs(SimplePathProperty<explicit.MDP> path)
+	public double[] computeMinProbs(SimplePathEvent<explicit.MDP> path)
 			throws PrismException
 	{
 		if (path instanceof Finally) {
