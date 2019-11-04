@@ -281,7 +281,7 @@ public interface LtlLtlTransformer<M extends Model, C extends ProbModelChecker> 
 		{
 			BitSet acceptingStates = getLtlTransformer().findAcceptingStates(objectiveAndConditionProduct);
 			// States in remain from which some scheduler can enforce acceptance to maximize probability
-			return computeProb1E(objectiveAndConditionProduct.getProductModel(), false, ALL_STATES, acceptingStates);
+			return getMDPModelChecker().computeProb1E(objectiveAndConditionProduct.getProductModel(), false, ALL_STATES, acceptingStates);
 		}
 
 		/**

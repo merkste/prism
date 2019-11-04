@@ -272,7 +272,7 @@ public interface FinallyLtlTransformer<M extends Model, C extends ProbModelCheck
 				BitSet acceptStates = getLtlTransformer().findAcceptingStates(product, remain);
 				instantGoalStates.or(acceptStates);
 			}
-			return computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
+			return getMDPModelChecker().computeProb1E(new Until<>(productModel, notFalsifiedStates, instantGoalStates));
 		}
 
 		@Override

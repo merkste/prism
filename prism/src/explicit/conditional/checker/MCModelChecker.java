@@ -10,36 +10,15 @@ import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.PredecessorRelation;
 import explicit.ProbModelChecker;
-import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.checker.SimplePathProperty.Finally;
 import explicit.conditional.checker.SimplePathProperty.Globally;
 import explicit.conditional.checker.SimplePathProperty.Next;
 import explicit.conditional.checker.SimplePathProperty.Reach;
 import explicit.conditional.checker.SimplePathProperty.Until;
-import prism.PrismComponent;
 import prism.PrismException;
 
-public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker>
+public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends SimplePathEventModelChecker<M,C>
 {
-	public C getModelChecker();
-
-	/**
-	 * Instantiate a fresh model checker for a model.
-	 * 
-	 * @param model
-	 * @return model checker instance
-	 * @throws PrismException if instantiation fails
-	 */
-	default C getModelChecker(M model)
-			throws PrismException
-	{
-		C parent  = getModelChecker();
-		@SuppressWarnings("unchecked")
-		C checker = (C) ProbModelChecker.createModelChecker(model.getModelType(), parent);
-		checker.inheritSettings(parent);
-		return parent;
-	}
-
 	BitSet computeProb0(M model, boolean negated, BitSet remain, BitSet goal)
 			throws PrismException;
 
@@ -71,7 +50,7 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default BitSet computeProb0(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeProb0(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeProb0(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 	}
 
 	default BitSet computeProb0(Until<M> until)
@@ -95,7 +74,7 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default BitSet computeProb1(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeProb1(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeProb1(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 	}
 
 	default BitSet computeProb1(Until<M> until)
@@ -125,7 +104,7 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 	default double[] computeProbs(Finally<M> eventually)
 			throws PrismException
 	{
-		return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ConditionalTransformer.ALL_STATES, eventually.getGoal());
+		return computeUntilProbs(eventually.getModel(), eventually.isNegated(), ALL_STATES, eventually.getGoal());
 	}
 
 	default double[] computeProbs(Next<M> next)
@@ -140,38 +119,15 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 		return computeUntilProbs(until.getModel(), until.isNegated(), until.getRemain(), until.getGoal());
 	}
 
-	/**
-	 * Subtract probabilities from one in-place.
-	 * 
-	 * @param probabilities
-	 * @return argument array altered to hold result
-	 */
-	public static double[] subtractFromOne(double[] probabilities)
+
+
+	public static class DTMC extends SimplePathEventModelChecker.Basic<explicit.DTMC, DTMCModelChecker> implements MCModelChecker<explicit.DTMC, DTMCModelChecker>
 	{
-		// FIXME ALG: code dupes, e.g., in ConditionalReachabilityTransformer::negateProbabilities
-		for (int state = 0; state < probabilities.length; state++) {
-			probabilities[state] = 1 - probabilities[state];
-		}
-		return probabilities;
-	}
-
-
-
-	public static class DTMC extends PrismComponent implements MCModelChecker<explicit.DTMC, DTMCModelChecker>
-	{
-		protected final DTMCModelChecker modelChecker;
-
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-			this.modelChecker = modelChecker;
 		}
 
-		public DTMCModelChecker getModelChecker()
-		{
-			return modelChecker;
-		}
-		
 		@Override
 		public BitSet computeProb0(explicit.DTMC model, boolean negated, BitSet remain, BitSet goal)
 				throws PrismException
@@ -238,21 +194,13 @@ public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChec
 
 
 
-	public static class CTMC extends PrismComponent implements MCModelChecker<explicit.CTMC, CTMCModelChecker>
+	public static class CTMC extends SimplePathEventModelChecker.Basic<explicit.CTMC, CTMCModelChecker> implements MCModelChecker<explicit.CTMC, CTMCModelChecker>
 	{
-		protected CTMCModelChecker modelChecker;
-
 		public CTMC(CTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-			this.modelChecker = modelChecker;
 		}
 
-		public CTMCModelChecker getModelChecker()
-		{
-			return modelChecker;
-		}
-		
 		@Override
 		public BitSet computeProb0(explicit.CTMC model, boolean negated, BitSet remain, BitSet goal)
 				throws PrismException

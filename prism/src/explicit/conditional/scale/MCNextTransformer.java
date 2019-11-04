@@ -130,16 +130,16 @@ public interface MCNextTransformer<M extends explicit.DTMC,C extends ProbModelCh
 		}
 
 		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
-		{
-			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
-		}
-
-		@Override
 		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> pivoted, double[] originProbs,
 				double[] targetProbs)
 		{
 			return MCScaledTransformation.transform(pivoted.getTransformedModel(), originProbs, targetProbs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
+		{
+			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		}
 
 		@Override
@@ -159,16 +159,16 @@ public interface MCNextTransformer<M extends explicit.DTMC,C extends ProbModelCh
 		}
 
 		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
-		{
-			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
-		}
-
-		@Override
 		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted, double[] originProbs,
 				double[] targetProbs)
 		{
 			return MCScaledTransformation.transform(pivoted.getTransformedModel(), originProbs, targetProbs);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
+		{
+			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		}
 
 		@Override

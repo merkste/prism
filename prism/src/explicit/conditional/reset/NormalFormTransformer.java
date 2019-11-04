@@ -291,18 +291,27 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 
 
 
-	public static abstract class MDP extends ConditionalTransformer.MDP implements NormalFormTransformer<explicit.MDP, MDPModelChecker>
+	public static abstract class MDP extends ConditionalTransformer.Basic<explicit.MDP,explicit.MDPModelChecker> implements ConditionalTransformer.MDP, NormalFormTransformer<explicit.MDP, MDPModelChecker>
 	{
+		protected explicit.conditional.checker.MDPModelChecker mdpModelChecker;
+
 		public MDP(MDPModelChecker modelChecker)
 		{
 			super(modelChecker);
+			mdpModelChecker = ConditionalTransformer.MDP.super.getMDPModelChecker();
+		}
+
+		@Override
+		public explicit.conditional.checker.MDPModelChecker getMDPModelChecker()
+		{
+			return mdpModelChecker;
 		}
 
 		@Override
 		public BitSet checkSatisfiability(Reach<explicit.MDP> conditionPath, BitSet statesOfInterest)
 				throws PrismException
 		{
-			BitSet conditionFalsifiedStates = computeProb0A(conditionPath);
+			BitSet conditionFalsifiedStates = getMDPModelChecker().computeProb0A(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -324,7 +333,7 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 		public BitSet computeBadStates(Reach<explicit.MDP> reach, BitSet unsatisfiedStates)
 				throws PrismException
 		{
-			BitSet maybeFalsified = computeProb0E(reach);
+			BitSet maybeFalsified = getMDPModelChecker().computeProb0E(reach);
 			if (maybeFalsified.isEmpty()) {
 				return maybeFalsified;
 			}
@@ -348,7 +357,7 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 //				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
 //				bad.and(rStates);
 //			}
-			BitSet maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
+			BitSet maybeUnsatisfiedStatesProb1E = getMDPModelChecker().computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
 			maybeUnsatisfiedStatesProb1E.andNot(unsatisfiedStates);
 			return maybeUnsatisfiedStatesProb1E;
 		}
@@ -359,13 +368,13 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 		{
 			pathProb1.requireSameModel(pathProbs);
 
-			BitSet states = computeProb1A(pathProb1);
+			BitSet states = getMDPModelChecker().computeProb1A(pathProb1);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeMaxProbs(pathProbs);
+				probabilities = getMDPModelChecker().computeMaxProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -376,13 +385,13 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 		{
 			pathProb0.requireSameModel(pathProbs);
 
-			BitSet states = computeProb0A(pathProb0);
+			BitSet states = getMDPModelChecker().computeProb0A(pathProb0);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeMinProbs(pathProbs);
+				probabilities = getMDPModelChecker().computeMinProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -396,13 +405,13 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 		{
 			pathProb0.requireSameModel(compPathProbs);
 
-			BitSet states = computeProb0A(pathProb0);
+			BitSet states = getMDPModelChecker().computeProb0A(pathProb0);
 			double[] probabilities;
 			if (states.isEmpty()) {
 				// FIXME ALG: check whether we use new double[0], new double[model.getNumState()] or null
 				probabilities = new double[0];
 			} else {
-				probabilities = computeMaxProbs(compPathProbs);
+				probabilities = getMDPModelChecker().computeMaxProbs(compPathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities).swap();
 		}

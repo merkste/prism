@@ -211,11 +211,11 @@ public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelCh
 			if (!objectivePath.isCoSafe() && !conditionPath.isCoSafe()) {
 				// Compute ECs that never falsify the objective/condition
 				Globally<explicit.MDP> neverFalsified = new Globally<>(model, notFalsifiedStates);
-				BitSet neverFalsifiedStates           = computeProb1E(neverFalsified);
+				BitSet neverFalsifiedStates           = getMDPModelChecker().computeProb1E(neverFalsified);
 				instantGoalStates.or(neverFalsifiedStates);
 			}
 			// enlarge target set
-			return computeProb1E(model, false, notFalsifiedStates, instantGoalStates);
+			return getMDPModelChecker().computeProb1E(model, false, notFalsifiedStates, instantGoalStates);
 		}
 
 		@Override

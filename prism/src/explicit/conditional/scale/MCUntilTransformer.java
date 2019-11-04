@@ -197,23 +197,11 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 
 	
 
-	public class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public explicit.CTMC deadlock(explicit.CTMC model, BitSet pivotStates)
-		{
-			return CTMCAlteredDistributions.trapStates(model, pivotStates);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> pivot(explicit.CTMC model, BitSet pivotStates)
-		{
-			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override
@@ -227,27 +215,27 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 		{
 			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		}
+
+		@Override
+		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> pivot(explicit.CTMC model, BitSet pivotStates)
+		{
+			return MCPivotTransformation.transform(model, pivotStates);
+		}
+
+		@Override
+		public explicit.CTMC deadlock(explicit.CTMC model, BitSet pivotStates)
+		{
+			return CTMCAlteredDistributions.trapStates(model, pivotStates);
+		}
 	}
 
 
 
-	public class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public explicit.DTMC deadlock(explicit.DTMC model, BitSet pivotStates)
-		{
-			return DTMCAlteredDistributions.trapStates(model, pivotStates);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> pivot(explicit.DTMC model, BitSet pivotStates)
-		{
-			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override
@@ -260,6 +248,18 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
 		{
 			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
+		}
+
+		@Override
+		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> pivot(explicit.DTMC model, BitSet pivotStates)
+		{
+			return MCPivotTransformation.transform(model, pivotStates);
+		}
+
+		@Override
+		public explicit.DTMC deadlock(explicit.DTMC model, BitSet pivotStates)
+		{
+			return DTMCAlteredDistributions.trapStates(model, pivotStates);
 		}
 	}
 }

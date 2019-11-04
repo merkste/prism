@@ -16,7 +16,7 @@ import explicit.BasicModelTransformation;
 import explicit.DiracDistribution;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.conditional.ConditionalTransformer;
+import explicit.conditional.checker.SimplePathEventModelChecker;
 import explicit.modelviews.CTMCAdditionalStates;
 import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAdditionalStates;
@@ -234,7 +234,7 @@ public interface GoalFailStopTransformer<M extends Model>
 		public ProbabilisticRedistribution swap()
 		{
 			// inverse probabilities to swap target states
-			probabilities = ConditionalTransformer.Basic.subtractFromOne(probabilities);
+			probabilities = SimplePathEventModelChecker.Basic.subtractFromOne(probabilities);
 			return this;
 		}
 	}

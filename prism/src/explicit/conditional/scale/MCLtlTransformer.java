@@ -140,7 +140,7 @@ public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChe
 
 
 
-	public class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -168,7 +168,7 @@ public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChe
 
 
 
-	public class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
