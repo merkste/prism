@@ -13,21 +13,17 @@ import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
 import explicit.ReachabilityComputer;
 import explicit.conditional.ExpressionInspector;
-import explicit.conditional.MCConditionalTransformer;
 import explicit.conditional.ConditionalTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.CTMCAlteredDistributions;
-import explicit.modelviews.CTMCRestricted;
 import explicit.modelviews.DTMCAlteredDistributions;
-import explicit.modelviews.DTMCRestricted;
-import explicit.modelviews.Restriction;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
 
-public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
+public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ScaleTransformer<M,C>
 {
 	@Override
 	default boolean canHandleCondition(final Model model, final ExpressionConditional expression)
@@ -106,7 +102,7 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 		assert BitSetTools.isSubset(pivotStates, prob1) : "Pivot states must have probability 1";
 
 		// Scale probabilities
-		BasicModelTransformation<M, ? extends M> scaled = scale(pivoted, probs);
+		BasicModelTransformation<M, ? extends M> scaled = scale(pivoted.getTransformedModel(), probs);
 		scaled.setTransformedStatesOfInterest(transformedStatesOfInterest);
 
 		// Restrict to reachable states
@@ -189,37 +185,13 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 
 	M deadlock(M model, BitSet pivotStates);
 
-	BasicModelTransformation<M, ? extends M> pivot(M model, BitSet pivotStates);
 
-	BasicModelTransformation<M, ? extends M> scale(BasicModelTransformation<M, ? extends M> pivoted, double[] probs);
 
-	BasicModelTransformation<M, ? extends M> restrict(BasicModelTransformation<M, ? extends M> scaled, BitSet restrict);
-
-	
-
-	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCUntilTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCUntilTransformer<explicit.CTMC, CTMCModelChecker>, ScaleTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> pivoted, double[] probs)
-		{
-			return MCScaledTransformation.transform(pivoted.getTransformedModel(), probs);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
-		{
-			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> pivot(explicit.CTMC model, BitSet pivotStates)
-		{
-			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override
@@ -231,29 +203,11 @@ public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModel
 
 
 
-	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCUntilTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCUntilTransformer<explicit.DTMC, DTMCModelChecker>, ScaleTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> pivoted, double[] probs)
-		{
-			return MCScaledTransformation.transform(pivoted.getTransformedModel(), probs);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
-		{
-			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> pivot(explicit.DTMC model, BitSet pivotStates)
-		{
-			return MCPivotTransformation.transform(model, pivotStates);
 		}
 
 		@Override

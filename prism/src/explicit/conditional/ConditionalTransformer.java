@@ -192,7 +192,7 @@ public interface ConditionalTransformer<M extends Model, C extends StateModelChe
 
 
 
-	public interface MC<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer<M,C>// extends Basic<M, C>
+	public interface MC<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer<M,C>
 	{
 		MCModelChecker<M,C> getMcModelChecker();
 	}

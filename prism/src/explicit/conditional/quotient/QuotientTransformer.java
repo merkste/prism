@@ -18,12 +18,22 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
 import explicit.conditional.ConditionalTransformer;
-import explicit.conditional.MCConditionalTransformer;
 import explicit.conditional.transformer.BasicModelExpressionTransformation;
 
 // FIXME ALG: add comment
-public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
+public interface QuotientTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.MC<M,C>
 {
+	@Override
+	default BasicModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
+			throws PrismException
+	{
+		checkCanHandle(model, expression);
+
+		ModelTransformation<M, ? extends M> transformation = transformModel(model, expression, statesOfInterest);
+		Expression transformedExpression = transformExpression(expression);
+		return new BasicModelExpressionTransformation<M, M>(transformation, expression, transformedExpression);
+	}
+
 	@Override
 	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
@@ -44,23 +54,12 @@ public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbMo
 		return LTLModelChecker.isSupportedLTLFormula(model.getModelType(), expression.getCondition());
 	}
 
-	@Override
-	default BasicModelExpressionTransformation<M, M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)
-			throws PrismException
-	{
-		ModelTransformation<M,M> modelTransformation = transformModel(model, expression, statesOfInterest);
-		Expression transformedExpression             = transformExpression(expression);
-		return new BasicModelExpressionTransformation<M, M>(modelTransformation, expression, transformedExpression);
-	}
-
-	@Override
 	default BasicModelTransformation<M, M> transformModel(M model, ExpressionConditional expression, BitSet statesOfInterest)
 			throws PrismException
 	{
 		return new BasicModelTransformation<M, M>(model, model, statesOfInterest);
 	}
 
-	@Override
 	default Expression transformExpression(ExpressionConditional expression)
 			throws PrismNotSupportedException
 	{
@@ -100,7 +99,7 @@ public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbMo
 
 
 
-	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCQuotientTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements QuotientTransformer<explicit.CTMC, CTMCModelChecker>, ConditionalTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
@@ -110,7 +109,7 @@ public interface MCQuotientTransformer<M extends explicit.DTMC, C extends ProbMo
 
 
 
-	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCQuotientTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements QuotientTransformer<explicit.DTMC, DTMCModelChecker>, ConditionalTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{

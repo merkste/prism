@@ -15,24 +15,18 @@ import explicit.Model;
 import explicit.ModelTransformation;
 import explicit.ProbModelChecker;
 import explicit.conditional.ConditionalTransformer;
-import explicit.conditional.MCConditionalTransformer;
 import explicit.conditional.transformer.LtlProductTransformer;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.CTMCEquiv;
-import explicit.modelviews.CTMCRestricted;
-import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCEquiv;
-import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.EquivalenceRelationInteger;
-import explicit.modelviews.Restriction;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
-public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends MCConditionalTransformer<M,C>
+public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends ScaleTransformer<M,C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = AcceptanceType.allTypes();
 
@@ -132,31 +126,15 @@ public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChe
 		return new EquivalenceRelationInteger(classes);
 	}
 
-	BasicModelTransformation<M, ? extends M> scale(M productModel, double[] probs);
-
 	BasicModelTransformation<M, ? extends M> quotient(BasicModelTransformation<M, ? extends M> scaled, EquivalenceRelationInteger equivalence);
 
-	BasicModelTransformation<M, ? extends M> restrict(BasicModelTransformation<M, ? extends M> scaled, BitSet restrict);
 
 
-
-	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCLtlTransformer<explicit.CTMC, CTMCModelChecker>, MCConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<explicit.CTMC, CTMCModelChecker> implements MCLtlTransformer<explicit.CTMC, CTMCModelChecker>, ScaleTransformer.CTMC
 	{
 		public CTMC(CTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCAlteredDistributions> scale(explicit.CTMC productModel, double[] probs)
-		{
-			return MCScaledTransformation.transform(productModel, probs);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.CTMC, CTMCRestricted> restrict(BasicModelTransformation<explicit.CTMC, ? extends explicit.CTMC> scaled, BitSet restrict)
-		{
-			return CTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		}
 
 		@Override
@@ -168,23 +146,11 @@ public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChe
 
 
 
-	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCLtlTransformer<explicit.DTMC, DTMCModelChecker>, MCConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<explicit.DTMC, DTMCModelChecker> implements MCLtlTransformer<explicit.DTMC, DTMCModelChecker>, ScaleTransformer.DTMC
 	{
 		public DTMC(DTMCModelChecker modelChecker)
 		{
 			super(modelChecker);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCAlteredDistributions> scale(explicit.DTMC productModel, double[] probs)
-		{
-			return MCScaledTransformation.transform(productModel, probs);
-		}
-
-		@Override
-		public BasicModelTransformation<explicit.DTMC, DTMCRestricted> restrict(BasicModelTransformation<explicit.DTMC, ? extends explicit.DTMC> scaled, BitSet restrict)
-		{
-			return DTMCRestricted.transform(scaled.getTransformedModel(), restrict, Restriction.TRANSITIVE_CLOSURE_SAFE);
 		}
 
 		@Override

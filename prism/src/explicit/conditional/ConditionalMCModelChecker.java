@@ -19,7 +19,7 @@ import explicit.DTMCSparse;
 import explicit.ModelExpressionTransformation;
 import explicit.ProbModelChecker;
 import explicit.StateValues;
-import explicit.conditional.quotient.MCQuotientTransformer;
+import explicit.conditional.quotient.QuotientTransformer;
 import explicit.conditional.reset.FinallyLtlTransformer;
 import explicit.conditional.reset.FinallyUntilTransformer;
 import explicit.conditional.reset.LtlLtlTransformer;
@@ -185,7 +185,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			case LtlLtl:
 				return  new LtlLtlTransformer.CTMC(modelChecker);
 			case Quotient:
-				return new MCQuotientTransformer.CTMC(modelChecker);
+				return new QuotientTransformer.CTMC(modelChecker);
 			default:
 				return null;
 			}
@@ -232,7 +232,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			case LtlLtl:
 				return  new LtlLtlTransformer.DTMC(modelChecker);
 			case Quotient:
-				return new MCQuotientTransformer.DTMC(modelChecker);
+				return new QuotientTransformer.DTMC(modelChecker);
 			default:
 				return null;
 			}
