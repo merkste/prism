@@ -1,7 +1,6 @@
 package explicit.conditional;
 
 import java.util.BitSet;
-import java.util.SortedSet;
 
 import parser.ast.Expression;
 import parser.ast.ExpressionBinaryOp;
@@ -13,11 +12,9 @@ import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
-import explicit.BasicModelTransformation;
 import explicit.CTMCModelChecker;
 import explicit.CTMCSparse;
 import explicit.DTMCModelChecker;
-import explicit.DTMCSimple;
 import explicit.DTMCSparse;
 import explicit.ModelExpressionTransformation;
 import explicit.ProbModelChecker;
@@ -30,19 +27,14 @@ import explicit.conditional.reset.LtlUntilTransformer;
 import explicit.conditional.scale.MCLtlTransformer;
 import explicit.conditional.scale.MCNextTransformer;
 import explicit.conditional.scale.MCUntilTransformer;
-import explicit.conditional.transformer.BasicModelExpressionTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.modelviews.MCView;
 
 // FIXME ALG: add comment
-public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalModelChecker<M>
+public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalModelChecker<M, C>
 {
-	protected C modelChecker;
-
 	public ConditionalMCModelChecker(C modelChecker)
 	{
 		super(modelChecker);
-		this.modelChecker = modelChecker;
 	}
 
 	@Override
@@ -60,6 +52,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 
 		ModelExpressionTransformation<M, ? extends M> transformation;
 		try {
+			mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
 			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			mainLog.println("\nTransformation failed: " + e.getMessage());
@@ -68,69 +61,6 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		StateValues result = checkExpressionTransformedModel(transformation);
 		return transformation.projectToOriginalModel(result);
 	}
-
-	public ModelExpressionTransformation<M, ? extends M> transformModel(final ConditionalTransformer<M, C> transformer, final M model,
-			final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
-	{
-		mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
-		long overallTime = System.currentTimeMillis();
-		ModelExpressionTransformation<M, ? extends M> transformation = transformer.transform(model, expression, statesOfInterest);
-		long transformationTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
-
-		M transformedModel = transformation.getTransformedModel();
-		if (isVirtualModel(transformedModel) || transformedModel instanceof DTMCSimple) {
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
-				mainLog.println("Using simple/virtual model");
-			} else {
-				transformation = convertVirtualModel(transformation);
-			}
-		}
-		overallTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
-		mainLog.print("Transformed model has ");
-		mainLog.println(transformation.getTransformedModel().infoString());
-		return transformation;
-	}
-
-	public boolean isVirtualModel(M model)
-	{
-		return (model instanceof MCView) && ((MCView) model).isVirtual();
-	}
-
-	public ConditionalTransformer<M, C> selectModelTransformer(final M model, final ExpressionConditional expression) throws PrismException
-	{
-		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
-		ConditionalTransformer<M, C> transformer;
-		for (ConditionalTransformerType type : types) {
-			transformer = getTransformer(type);
-			if (transformer != null && transformer.canHandle(model, expression)) {
-				return transformer;
-			}
-		}
-		return null;
-	}
-
-	public StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation) throws PrismException
-	{
-		M transformedModel                 = transformation.getTransformedModel();
-		Expression transformedExpression   = transformation.getTransformedExpression();
-		BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-
-		mainLog.println("\nChecking transformed property in transformed model: " + transformedExpression);
-		long timer     = System.currentTimeMillis();
-		StateValues sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
-		timer          = System.currentTimeMillis() - timer;
-		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
-
-		return sv;
-	}
-
-	protected abstract SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException;
-
-	protected abstract ConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
-
-	protected abstract ModelExpressionTransformation<M, ? extends M> convertVirtualModel(ModelExpressionTransformation<M,? extends M> transformation);
 
 
 
@@ -231,10 +161,9 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		protected String getConditionalPatterns()
 		{
-			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
-			return ConditionalTransformerType.getValuesOf(specification);
+			return settings.getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
 		}
 
 		@Override
@@ -263,21 +192,9 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected ModelExpressionTransformation<explicit.CTMC, ? extends explicit.CTMC> convertVirtualModel(ModelExpressionTransformation<explicit.CTMC, ? extends explicit.CTMC> transformation)
+		protected CTMCSparse convertToSparseModel(explicit.CTMC model)
 		{
-			mainLog.println("\nConverting simple/virtual model to " + CTMCSparse.class.getSimpleName());
-			long buildTime = System.currentTimeMillis();
-			explicit.CTMC transformedModel = transformation.getTransformedModel();
-			CTMCSparse transformedModelSparse = new CTMCSparse(transformedModel);
-			buildTime = System.currentTimeMillis() - buildTime;
-			mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-			// build transformation
-			BasicModelTransformation<explicit.CTMC, explicit.CTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse, transformation.getTransformedStatesOfInterest());
-			sparseTransformation = sparseTransformation.compose(transformation);
-			// attach transformed expression
-			Expression originalExpression    = transformation.getOriginalExpression();
-			Expression transformedExpression = transformation.getTransformedExpression();
-			return new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
+			return new CTMCSparse(model);
 		}
 	}
 
@@ -291,10 +208,9 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		protected String getConditionalPatterns()
 		{
-			String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
-			return ConditionalTransformerType.getValuesOf(specification);
+			return settings.getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
 		}
 
 		@Override
@@ -323,21 +239,9 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 		}
 
 		@Override
-		protected ModelExpressionTransformation<explicit.DTMC, ? extends explicit.DTMC> convertVirtualModel(ModelExpressionTransformation<explicit.DTMC, ? extends explicit.DTMC> transformation)
+		protected DTMCSparse convertToSparseModel(explicit.DTMC model)
 		{
-			mainLog.println("\nConverting simple/virtual model to " + DTMCSparse.class.getSimpleName());
-			long buildTime = System.currentTimeMillis();
-			explicit.DTMC transformedModel = transformation.getTransformedModel();
-			DTMCSparse transformedModelSparse = new DTMCSparse(transformedModel);
-			buildTime = System.currentTimeMillis() - buildTime;
-			mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-			// build transformation
-			BasicModelTransformation<explicit.DTMC, explicit.DTMC> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse, transformation.getTransformedStatesOfInterest());
-			sparseTransformation = sparseTransformation.compose(transformation);
-			// attach transformed expression
-			Expression originalExpression    = transformation.getOriginalExpression();
-			Expression transformedExpression = transformation.getTransformedExpression();
-			return new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
+			return new DTMCSparse(model);
 		}
 	}
 }

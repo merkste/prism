@@ -1,7 +1,6 @@
 package explicit.conditional;
 
 import java.util.BitSet;
-import java.util.SortedSet;
 
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -13,10 +12,8 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
-import explicit.BasicModelTransformation;
 import explicit.MDP;
 import explicit.MDPModelChecker;
-import explicit.MDPSimple;
 import explicit.MDPSparse;
 import explicit.MinMax;
 import explicit.ModelExpressionTransformation;
@@ -25,19 +22,14 @@ import explicit.conditional.reset.FinallyLtlTransformer;
 import explicit.conditional.reset.FinallyUntilTransformer;
 import explicit.conditional.reset.LtlLtlTransformer;
 import explicit.conditional.reset.LtlUntilTransformer;
-import explicit.conditional.transformer.BasicModelExpressionTransformation;
 import explicit.conditional.transformer.UndefinedTransformationException;
-import explicit.modelviews.ModelView;
 
 //FIXME ALG: add comment
-public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
+public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP, MDPModelChecker>
 {
-	protected MDPModelChecker modelChecker;
-
-	public ConditionalMDPModelChecker(MDPModelChecker mc)
+	public ConditionalMDPModelChecker(MDPModelChecker modelChecker)
 	{
-		super(mc);
-		this.modelChecker = mc;
+		super(modelChecker);
 	}
 
 	@Override
@@ -55,6 +47,33 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		return checkExpressionMax(model, expression, statesOfInterest);
 	}
 
+	@Override
+	protected MDPSparse convertToSparseModel(explicit.MDP transformedModel)
+	{
+		return new MDPSparse(transformedModel);
+	}
+
+	protected String getConditionalPatterns()
+	{
+		return settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
+	}
+
+	protected ConditionalTransformer<MDP, MDPModelChecker> getTransformer(ConditionalTransformerType type)
+	{
+		switch (type) {
+		case FinallyFinally:
+			return new FinallyUntilTransformer.MDP(modelChecker);
+		case LtlFinally:
+			return new LtlUntilTransformer.MDP(modelChecker);
+		case FinallyLtl:
+			return new FinallyLtlTransformer.MDP(modelChecker);
+		case LtlLtl:
+			return new LtlLtlTransformer.MDP(modelChecker);
+		default:
+			return null;
+		}
+	}
+
 	private StateValues checkExpressionMax(final MDP model, final ExpressionConditional expression, final BitSet statesOfInterest) throws PrismException
 	{
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -68,8 +87,9 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 
 		StateValues result;
 		try {
+			mainLog.println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 			ModelExpressionTransformation<MDP, ? extends MDP> transformation = transformModel(transformer, model, expression, statesOfInterest);
-			StateValues resultTransformedModel = checkExpressionTransformedModel(transformation, statesOfInterest);
+			StateValues resultTransformedModel = checkExpressionTransformedModel(transformation);
 			result = transformation.projectToOriginalModel(resultTransformedModel);
 		} catch (UndefinedTransformationException e) {
 			mainLog.println("\nTransformation failed: " + e.getMessage());
@@ -102,90 +122,5 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<MDP>
 		// Debug output
 		getLog().println("Transform Pmin conditional expression to "+inverseExpression);
 		return modelChecker.checkExpression(model, inverseExpression, statesOfInterest);
-	}
-
-	public ModelExpressionTransformation<MDP, ? extends MDP> transformModel(final ConditionalTransformer<MDP, MDPModelChecker> transformer, final MDP model, final ExpressionConditional expression,
-			final BitSet statesOfInterest) throws PrismException
-	{
-		mainLog.println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
-		long overallTime = System.currentTimeMillis();
-		ModelExpressionTransformation<MDP, ? extends MDP> transformation = transformer.transform(model, expression, statesOfInterest);
-		long transformationTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("\nTime for model transformation: " + transformationTime / 1000.0 + " seconds.");
-
-		MDP transformedModel = transformation.getTransformedModel();
-		if (isVirtualModel(transformedModel)  || transformedModel instanceof MDPSimple) {
-			if (settings.getBoolean(PrismSettings.CONDITIONAL_USE_VIRTUAL_MODELS)) {
-				mainLog.println("Using simple/virtual model");
-			} else {
-				mainLog.println("\nConverting simple/virtual model to " + MDPSparse.class.getSimpleName());
-				long buildTime                   = System.currentTimeMillis();
-				MDPSparse transformedModelSparse = new MDPSparse(transformedModel);
-				buildTime = System.currentTimeMillis() - buildTime;
-				mainLog.println("Time for converting: " + buildTime / 1000.0 + " seconds.");
-				// build in transformation
-				BasicModelTransformation<MDP, ? extends MDP> sparseTransformation = new BasicModelTransformation<>(transformation.getTransformedModel(), transformedModelSparse);
-				sparseTransformation = sparseTransformation.compose(transformation);
-				// attach transformed expression
-				Expression originalExpression    = transformation.getOriginalExpression();
-				Expression transformedExpression = transformation.getTransformedExpression();
-				transformation                   = new BasicModelExpressionTransformation<>(sparseTransformation, originalExpression, transformedExpression);
-			}
-		}
-		overallTime = System.currentTimeMillis() - overallTime;
-		mainLog.println("\nOverall time for model transformation: " + overallTime / 1000.0 + " seconds.");
-		mainLog.print("Transformed model has ");
-		mainLog.println(transformedModel.infoString());
-		return transformation;
-	}
-
-	public boolean isVirtualModel(final MDP model)
-	{
-		return (model instanceof ModelView) && ((ModelView) model).isVirtual();
-	}
-
-	public StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<MDP, ? extends MDP> transformation, final BitSet statesOfInterest) throws PrismException
-	{
-		MDP transformedModel               = transformation.getTransformedModel();
-		Expression transformedExpression   = transformation.getTransformedExpression();
-		BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-
-		mainLog.println("\nChecking transformed property in transformed model: " + transformedExpression);
-		long timer     = System.currentTimeMillis();
-		StateValues sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
-		timer          = System.currentTimeMillis() - timer;
-		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
-
-		return sv;
-	}
-
-	public ConditionalTransformer<MDP, MDPModelChecker> selectModelTransformer(final MDP model, final ExpressionConditional expression) throws PrismException
-	{
-		final String specification = settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
-		final SortedSet<ConditionalTransformerType> types = ConditionalTransformerType.getValuesOf(specification);
-
-		ConditionalTransformer<MDP, MDPModelChecker> transformer;
-		for (ConditionalTransformerType type : types) {
-			switch (type) {
-			case FinallyFinally:
-				transformer = new FinallyUntilTransformer.MDP(modelChecker);
-				break;
-			case LtlFinally:
-				transformer = new LtlUntilTransformer.MDP(modelChecker);
-				break;
-			case FinallyLtl:
-				transformer = new FinallyLtlTransformer.MDP(modelChecker);
-				break;
-			case LtlLtl:
-				transformer = new LtlLtlTransformer.MDP(modelChecker);
-				break;
-			default:
-				continue;
-			}
-			if (transformer.canHandle(model, expression)) {
-				return transformer;
-			}
-		}
-		return null;
 	}
 }
