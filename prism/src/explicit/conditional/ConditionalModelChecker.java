@@ -78,12 +78,12 @@ abstract public class ConditionalModelChecker<M extends Model, C extends StateMo
 		BitSet transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
 	
 		mainLog.println("\nChecking transformed property in transformed model: " + transformedExpression);
-		long timer     = System.currentTimeMillis();
-		StateValues sv = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
-		timer          = System.currentTimeMillis() - timer;
+		long timer         = System.currentTimeMillis();
+		StateValues result = modelChecker.checkExpression(transformedModel, transformedExpression, transformedStatesOfInterest);
+		timer              = System.currentTimeMillis() - timer;
 		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 	
-		return sv;
+		return result;
 	}
 
 	public StateValues createUndefinedStateValues(M model, ExpressionConditional expression) throws PrismException
@@ -128,5 +128,4 @@ abstract public class ConditionalModelChecker<M extends Model, C extends StateMo
 	protected abstract String getConditionalPatterns();
 
 	protected abstract ConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
-
 }

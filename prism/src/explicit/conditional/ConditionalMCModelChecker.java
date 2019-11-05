@@ -52,7 +52,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 
 		ModelExpressionTransformation<M, ? extends M> transformation;
 		try {
-			mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression);
+			mainLog.println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
 			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			mainLog.println("\nTransformation failed: " + e.getMessage());
@@ -230,7 +230,7 @@ public abstract class ConditionalMCModelChecker<M extends explicit.DTMC, C exten
 			case FinallyLtl:
 				return new FinallyLtlTransformer.DTMC(modelChecker);
 			case LtlLtl:
-				return  new LtlLtlTransformer.DTMC(modelChecker);
+				return new LtlLtlTransformer.DTMC(modelChecker);
 			case Quotient:
 				return new QuotientTransformer.DTMC(modelChecker);
 			default:
