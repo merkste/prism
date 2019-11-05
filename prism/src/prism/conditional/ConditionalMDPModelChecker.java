@@ -1,7 +1,5 @@
 package prism.conditional;
 
-import java.util.SortedSet;
-
 import explicit.MinMax;
 import explicit.conditional.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -12,7 +10,6 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionProb;
 import parser.ast.ExpressionQuant;
 import parser.ast.RelOp;
-import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
@@ -22,7 +19,6 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismNotSupportedException;
 import prism.PrismSettings;
-import prism.ProbModel;
 import prism.StateValues;
 import prism.conditional.reset.FinallyLtlTransformer;
 import prism.conditional.reset.FinallyUntilTransformer;
@@ -30,14 +26,11 @@ import prism.conditional.reset.LtlLtlTransformer;
 import prism.conditional.reset.LtlUntilTransformer;
 
 //FIXME ALG: add comment
-public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel>
+public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel, NondetModelChecker>
 {	
-	protected NondetModelChecker modelChecker;
-
 	public ConditionalMDPModelChecker(NondetModelChecker modelChecker, Prism prism)
 	{
-		super(prism);
-		this.modelChecker = modelChecker;
+		super(modelChecker, prism);
 	}
 
 	@Override
@@ -68,7 +61,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			throw new PrismException("Currently, only a single state of interest is supported for MDP conditionals, got "+n);
 		}
 
-		ConditionalTransformer.MDP transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer<NondetModel,NondetModelChecker> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			JDD.Deref(statesOfInterest);
 			throw new PrismNotSupportedException("Cannot model check " + expression);
@@ -76,6 +69,7 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 		ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation;
 		try {
+			prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
@@ -113,68 +107,26 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 		return modelChecker.checkExpression(inverseExpression, statesOfInterest);
 	}
 
-	protected ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformModel(final ConditionalTransformer.MDP transformer, final NondetModel model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
+	@Override
+	protected String getConditionalPatterns()
 	{
-		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
-		long timer = System.currentTimeMillis();
-		ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation = transformer.transform(model, expression, statesOfInterest);
-		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().print("Transformed model has ");
-		prism.getLog().println(transformation.getTransformedModel().infoString());
-		prism.getLog().print("Transformed matrix has ");
-		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
-		return transformation;
+		return prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
 	}
 
-	protected ConditionalTransformer.MDP selectModelTransformer(final ProbModel model, final ExpressionConditional expression) throws PrismException
+	@Override
+	protected ConditionalTransformer<NondetModel, NondetModelChecker> getTransformer(ConditionalTransformerType type)
 	{
-		final SortedSet<ConditionalTransformerType> types = getTransformerTypes();
-		for (ConditionalTransformerType type : types) {
-			ConditionalTransformer.MDP transformer;
-			switch (type) {
-			case FinallyFinally:
-				transformer = new FinallyUntilTransformer.MDP(prism, modelChecker);
-				break;
-			case LtlFinally:
-				transformer = new LtlUntilTransformer.MDP(prism, modelChecker);
-				break;
-			case FinallyLtl:
-				transformer = new FinallyLtlTransformer.MDP(prism, modelChecker);
-				break;
-			case LtlLtl:
-				transformer = new LtlLtlTransformer.MDP(prism, modelChecker);
-				break;
-			default:
-				continue;
-			}
-			if (transformer.canHandle(model, expression)) {
-				return transformer;
-			}
+		switch (type) {
+		case FinallyFinally:
+			return new FinallyUntilTransformer.MDP(prism, modelChecker);
+		case LtlFinally:
+			return new LtlUntilTransformer.MDP(prism, modelChecker);
+		case FinallyLtl:
+			return new FinallyLtlTransformer.MDP(prism, modelChecker);
+		case LtlLtl:
+			return new LtlLtlTransformer.MDP(prism, modelChecker);
+		default:
+			return null;
 		}
-		return null;
-	}
-
-	protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
-	{
-		final String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
-		return ConditionalTransformerType.getValuesOf(specification);
-	}
-
-	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation) throws PrismException
-	{
-		NondetModel transformedModel        = transformation.getTransformedModel();
-		Expression transformedExpression    = transformation.getTransformedExpression();
-		JDDNode transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
-
-		long timer = System.currentTimeMillis();
-		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
-		StateValues result         = mcTransformed.checkExpression(transformedExpression, transformedStatesOfInterest);
-		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
-
-		return result;
 	}
 }

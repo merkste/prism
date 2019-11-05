@@ -1,7 +1,5 @@
 package prism.conditional;
 
-import java.util.SortedSet;
-
 import explicit.conditional.ConditionalTransformerType;
 import explicit.conditional.transformer.UndefinedTransformationException;
 import jdd.JDD;
@@ -25,7 +23,6 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.ConditionalTransformer.MC;
 import prism.conditional.quotient.MCQuotientTransformer;
 import prism.conditional.reset.FinallyLtlTransformer;
 import prism.conditional.reset.FinallyUntilTransformer;
@@ -35,20 +32,18 @@ import prism.conditional.scale.MCLtlTransformer;
 import prism.conditional.scale.MCNextTransformer;
 import prism.conditional.scale.MCUntilTransformer;
 
-public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends ConditionalModelChecker<M>
+//FIXME ALG: add comment
+public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends ConditionalModelChecker<M,C>
 {
-	protected C modelChecker;
-
 	public ConditionalMCModelChecker(Prism prism, C modelChecker)
 	{
-		super(prism);
-		this.modelChecker = modelChecker;
+		super(modelChecker, prism);
 	}
 
 	@Override
 	public StateValues checkExpression(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		ConditionalTransformer.MC<M,C> transformer = selectModelTransformer(model, expression);
+		ConditionalTransformer<M,C> transformer = selectModelTransformer(model, expression);
 		if (transformer == null) {
 			if (expression.getObjective() instanceof ExpressionLongRun) {
 				// try alternative long-run approach
@@ -62,66 +57,18 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 
 		ModelExpressionTransformation<M, ? extends M> transformation;
 		try {
+			prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
 			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
 			prism.getLog().println("\nTransformation failed: " + e.getMessage());
 			return createUndefinedStateValues(model, expression);
 		}
-		StateValues resultTransformed = checkExpressionTransformedModel(transformation, expression);
+		StateValues resultTransformed = checkExpressionTransformedModel(transformation);
 		StateValues resultOriginal = transformation.projectToOriginalModel(resultTransformed);
 		transformation.clear();
 		return resultOriginal;
 	}
-
-	protected ModelExpressionTransformation<M, ? extends M> transformModel(final ConditionalTransformer.MC<M,C> transformer, final M model, final ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
-	{
-		prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for condition: " + expression.getCondition());
-		long timer = System.currentTimeMillis();
-		final ModelExpressionTransformation<M, ? extends M> transformation = transformer.transform(model, expression, statesOfInterest);
-		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().print("Transformed model has ");
-		prism.getLog().println(transformation.getTransformedModel().infoString());
-		prism.getLog().print("Transformed matrix has ");
-		prism.getLog().println(transformation.getTransformedModel().matrixInfoString());
-
-		return transformation;
-	}
-
-	protected ConditionalTransformer.MC<M, C> selectModelTransformer(M model, ExpressionConditional expression) throws PrismException
-	{
-		SortedSet<ConditionalTransformerType> types = getTransformerTypes();
-		ConditionalTransformer.MC<M, C> transformer;
-		for (ConditionalTransformerType type : types) {
-			transformer = getTransformer(type);
-			if (transformer != null && transformer.canHandle(model, expression)) {
-				return transformer;
-			}
-		}
-		return null;
-	}
-
-	protected StateValues checkExpressionTransformedModel(final ModelExpressionTransformation<M, ? extends M> transformation, final ExpressionConditional expression) throws PrismException
-	{
-		ProbModel transformedModel          = transformation.getTransformedModel();
-		Expression transformedExpression    = transformation.getTransformedExpression();
-		JDDNode transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-
-		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
-		long timer = System.currentTimeMillis();
-		ModelChecker mcTransformed = modelChecker.createModelChecker(transformedModel);
-		StateValues result         = mcTransformed.checkExpression(transformedExpression, transformedStatesOfInterest);
-		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
-
-		return result;
-	}
-
-	protected abstract SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException;
-
-	protected abstract MC<M, C> getTransformer(ConditionalTransformerType type);
 
 
 
@@ -223,10 +170,9 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		protected String getConditionalPatterns()
 		{
-			String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
-			return ConditionalTransformerType.getValuesOf(specification);
+			return prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_CTMC);
 		}
 
 		@Override
@@ -265,10 +211,9 @@ public abstract class ConditionalMCModelChecker<M extends ProbModel, C extends P
 		}
 
 		@Override
-		protected SortedSet<ConditionalTransformerType> getTransformerTypes() throws PrismException
+		protected String getConditionalPatterns()
 		{
-			String specification = prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
-			return ConditionalTransformerType.getValuesOf(specification);
+			return prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_DTMC);
 		}
 
 		@Override
