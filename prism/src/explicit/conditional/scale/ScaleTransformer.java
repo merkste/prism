@@ -18,7 +18,7 @@ import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.Restriction;
 
-public interface ScaleTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.MC<M,C>
+public interface ScaleTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
 	@Override
 	default BasicModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, BitSet statesOfInterest)

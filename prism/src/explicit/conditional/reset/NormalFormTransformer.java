@@ -232,7 +232,6 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 			return new CachedMCModelChecker.CTMC(getModelChecker());
 		}
 
-
 		@Override
 		public ResetTransformation<explicit.CTMC> transformReset(explicit.CTMC model, BitSet resetStates, BitSet statesOfInterest)
 				throws PrismException
