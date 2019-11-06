@@ -14,7 +14,6 @@ import prism.ModelExpressionTransformation;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.OpRelOpBound;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismNotSupportedException;
@@ -28,9 +27,9 @@ import prism.conditional.reset.LtlUntilTransformer;
 //FIXME ALG: add comment
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel, NondetModelChecker>
 {	
-	public ConditionalMDPModelChecker(NondetModelChecker modelChecker, Prism prism)
+	public ConditionalMDPModelChecker(NondetModelChecker modelChecker)
 	{
-		super(modelChecker, prism);
+		super(modelChecker);
 	}
 
 	@Override
@@ -69,11 +68,11 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 
 		ModelExpressionTransformation<NondetModel, ? extends NondetModel> transformation;
 		try {
-			prism.getLog().println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
+			mainLog.println("\nTransforming model (using " + transformer.getName() + ") for " + expression);
 			transformation = transformModel(transformer, model, expression, statesOfInterest);
 		} catch (UndefinedTransformationException e) {
 			// the condition is unsatisfiable for the state of interest
-			prism.getLog().println("\nTransformation failed: " + e.getMessage());
+			mainLog.println("\nTransformation failed: " + e.getMessage());
 			return createUndefinedStateValues(model, expression);
 		}
 		StateValues resultTransformed = checkExpressionTransformedModel(transformation);
@@ -103,14 +102,14 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 			inverseExpression = new ExpressionConditional(inverseObjective, expression.getCondition());
 		}
 		// Debug output
-		prism.getLog().println("Transform Pmin conditional expression to "+inverseExpression);
+		mainLog.println("Transform Pmin conditional expression to "+inverseExpression);
 		return modelChecker.checkExpression(inverseExpression, statesOfInterest);
 	}
 
 	@Override
 	protected String getConditionalPatterns()
 	{
-		return prism.getSettings().getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
+		return settings.getString(PrismSettings.CONDITIONAL_PATTERNS_MDP);
 	}
 
 	@Override
@@ -118,13 +117,13 @@ public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetMo
 	{
 		switch (type) {
 		case FinallyFinally:
-			return new FinallyUntilTransformer.MDP(prism, modelChecker);
+			return new FinallyUntilTransformer.MDP(modelChecker);
 		case LtlFinally:
-			return new LtlUntilTransformer.MDP(prism, modelChecker);
+			return new LtlUntilTransformer.MDP(modelChecker);
 		case FinallyLtl:
-			return new FinallyLtlTransformer.MDP(prism, modelChecker);
+			return new FinallyLtlTransformer.MDP(modelChecker);
 		case LtlLtl:
-			return new LtlLtlTransformer.MDP(prism, modelChecker);
+			return new LtlLtlTransformer.MDP(modelChecker);
 		default:
 			return null;
 		}

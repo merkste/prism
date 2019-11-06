@@ -4,44 +4,43 @@ import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import prism.ModelTransformation;
-import prism.Prism;
+import prism.PrismComponent;
 import prism.PrismException;
 import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
-public class MCScaledTransformation<M extends ProbModel> implements ModelTransformation<M, M>
+public class MCScaledTransformation<M extends ProbModel> extends PrismComponent implements ModelTransformation<M, M>
 {
 	private M originalModel;
 	private M scaledModel;
 	private JDDNode validStates;
-	private Prism prism;
 
 	boolean debug = false;
 
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, statesOfInterest</i> ]
 	 */
-	public MCScaledTransformation(Prism prism, final M originalModel, final JDDNode originProbs, final JDDNode statesOfInterest) throws PrismException
+	public MCScaledTransformation(PrismComponent parent, final M originalModel, final JDDNode originProbs, final JDDNode statesOfInterest) throws PrismException
 	{
-		this(prism, originalModel, originProbs, originProbs.copy(), statesOfInterest);
+		this(parent, originalModel, originProbs, originProbs.copy(), statesOfInterest);
 	}
 
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>originProbs, targetProbs, statesOfInterest</i> ]
 	 */
 	@SuppressWarnings("unchecked")
-	public MCScaledTransformation(Prism prism, final M originalModel, final JDDNode originProbs, final JDDNode targetProbs, final JDDNode statesOfInterest) throws PrismException
+	public MCScaledTransformation(PrismComponent parent, final M originalModel, final JDDNode originProbs, final JDDNode targetProbs, final JDDNode statesOfInterest) throws PrismException
 	{
+		super(parent);
 		this.originalModel = originalModel;
-		this.prism = prism;
 
 		// originProbsInverted := state s -> 1/originProbs
 		JDDNode originProbsInverted = JDD.Apply(JDD.DIVIDE, JDD.Constant(1), originProbs.copy());
 		if (debug) {
-			StateValuesMTBDD.print(prism.getLog(), originProbs.copy(), originalModel, "originProbs");
-			StateValuesMTBDD.print(prism.getLog(), originProbsInverted.copy(), originalModel, "originProbsInverted");
+			StateValuesMTBDD.print(mainLog, originProbs.copy(), originalModel, "originProbs");
+			StateValuesMTBDD.print(mainLog, originProbsInverted.copy(), originalModel, "originProbsInverted");
 		}
 
 		// support := state s -> 1 if originProbs>0, 0 if originProbs=0
@@ -128,8 +127,8 @@ public class MCScaledTransformation<M extends ProbModel> implements ModelTransfo
 	public StateValues projectToOriginalModel(StateValues svTransformed) throws PrismException
 	{
 		if (debug) {
-			prism.getMainLog().println("svTransformed");
-			svTransformed.print(prism.getMainLog());
+			mainLog.println("svTransformed");
+			svTransformed.print(mainLog);
 		}
 
 		StateValuesMTBDD sv = svTransformed.convertToStateValuesMTBDD();
@@ -138,16 +137,16 @@ public class MCScaledTransformation<M extends ProbModel> implements ModelTransfo
 		// clear argument StateValues
 		sv.clear();
 		if (debug) {
-			prism.getMainLog().println("svOriginal");
-			svOriginal.print(prism.getMainLog());
+			mainLog.println("svOriginal");
+			svOriginal.print(mainLog);
 		}
 
 		// filter: set all (reachable) states that are not valid to NaN
 		svOriginal.filter(validStates, Double.NaN);
 		if (debug) {
-			StateValuesMTBDD.print(prism.getMainLog(), validStates, originalModel, "validStates");
-			prism.getMainLog().println("sv (filtered)");
-			svOriginal.print(prism.getMainLog());
+			StateValuesMTBDD.print(mainLog, validStates, originalModel, "validStates");
+			mainLog.println("sv (filtered)");
+			svOriginal.print(mainLog);
 		}
 
 		return svOriginal;

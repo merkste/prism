@@ -76,7 +76,7 @@ public class StochModelChecker extends ProbModelChecker
 	@Override
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		return new ConditionalMCModelChecker.CTMC(prism, this).checkExpression((StochModel) model, expression, statesOfInterest);
+		return new ConditionalMCModelChecker.CTMC(this).checkExpression((StochModel) model, expression, statesOfInterest);
 	}
 
 	// -----------------------------------------------------------------------------------

@@ -12,7 +12,6 @@ import parser.ast.RelOp;
 import prism.Model;
 import prism.ModelExpressionTransformation;
 import prism.ModelTransformation;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismNotSupportedException;
@@ -24,15 +23,11 @@ import prism.StochModelChecker;
 import prism.conditional.ConditionalTransformer;
 import prism.conditional.transformer.BasicModelExpressionTransformation;
 
-public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
+//FIXME ALG: add comment
+public interface MCQuotientTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
-	public MCQuotientTransformer(Prism prism, C modelChecker)
-	{
-		super(prism, modelChecker);
-	}
-
 	@Override
-	public boolean canHandleObjective(Model model, ExpressionConditional expression)
+	default boolean canHandleObjective(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		// only prob formulae
@@ -44,7 +39,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 	}
 
 	@Override
-	public boolean canHandleCondition(Model model, ExpressionConditional expression)
+	default boolean canHandleCondition(Model model, ExpressionConditional expression)
 			throws PrismLangException
 	{
 		// FIXME ALG: Should check whether formula can be turned into ExpressionProb
@@ -52,7 +47,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 	}
 
 	@Override
-	public ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
+	default ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		ModelTransformation<M,M> modelTransformation = transformModel(model, expression, statesOfInterest);
@@ -60,7 +55,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 		return new BasicModelExpressionTransformation<>(modelTransformation, expression, transformedExpression);
 	}
 
-	protected ModelTransformation<M,M> transformModel(M model, ExpressionConditional expression, JDDNode statesOfInterest)
+	default ModelTransformation<M,M> transformModel(M model, ExpressionConditional expression, JDDNode statesOfInterest)
 			throws PrismException, UndefinedTransformationException
 	{
 		return new ModelTransformation<M,M>() {
@@ -97,7 +92,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 		};
 	}
 
-	protected Expression transformExpression(ExpressionConditional expression)
+	default Expression transformExpression(ExpressionConditional expression)
 			throws PrismNotSupportedException
 	{
 		ExpressionProb objective = (ExpressionProb) expression.getObjective();
@@ -118,7 +113,7 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 		return new ExpressionBinaryOp(binOp, Expression.Parenth(fraction), objective.getBound().deepCopy());
 	}
 
-	protected int convertToBinaryOp(RelOp relop) throws PrismNotSupportedException
+	default int convertToBinaryOp(RelOp relop) throws PrismNotSupportedException
 	{
 		switch (relop) {
 		case GT:
@@ -136,21 +131,21 @@ public abstract class MCQuotientTransformer<M extends ProbModel, C extends ProbM
 
 
 
-	public static class CTMC extends MCQuotientTransformer<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<StochModel, StochModelChecker> implements MCQuotientTransformer<StochModel, StochModelChecker>, ConditionalTransformer.CTMC
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 	}
 
 
 
-	public static class DTMC extends MCQuotientTransformer<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<ProbModel, ProbModelChecker> implements MCQuotientTransformer<ProbModel, ProbModelChecker>, ConditionalTransformer.DTMC
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 	}
 }

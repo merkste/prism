@@ -14,7 +14,6 @@ import parser.ast.ExpressionTemporal;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
@@ -28,8 +27,6 @@ import prism.Model;
 import prism.conditional.checker.SimplePathEvent.Finally;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.LtlProductTransformer.LabeledDA;
-
-
 
 // FIXME ALG: add comment
 public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
@@ -141,9 +138,9 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 
 	public static class CTMC extends NormalFormTransformer.CTMC implements LtlLtlTransformer<StochModel, StochModelChecker>
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -157,13 +154,13 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 		@Override
 		public LtlUntilTransformer.CTMC getLtlUntilTransformer()
 		{
-			return new LtlUntilTransformer.CTMC(prism, getModelChecker());
+			return new LtlUntilTransformer.CTMC(getModelChecker());
 		}
 
 		@Override
 		public FinallyLtlTransformer.CTMC getFinallyLtlTransformer()
 		{
-			return new FinallyLtlTransformer.CTMC(prism, getModelChecker());
+			return new FinallyLtlTransformer.CTMC(getModelChecker());
 		}
 	}
 
@@ -171,9 +168,9 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 
 	public static class DTMC extends NormalFormTransformer.DTMC implements LtlLtlTransformer<ProbModel, ProbModelChecker>
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -187,13 +184,13 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 		@Override
 		public LtlUntilTransformer.DTMC getLtlUntilTransformer()
 		{
-			return new LtlUntilTransformer.DTMC(prism, getModelChecker());
+			return new LtlUntilTransformer.DTMC(getModelChecker());
 		}
 
 		@Override
 		public FinallyLtlTransformer.DTMC getFinallyLtlTransformer()
 		{
-			return new FinallyLtlTransformer.DTMC(prism, getModelChecker());
+			return new FinallyLtlTransformer.DTMC(getModelChecker());
 		}
 	}
 
@@ -201,9 +198,9 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 
 	public static class MDP extends NormalFormTransformer.MDP implements LtlLtlTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(Prism prism, NondetModelChecker modelChecker)
+		public MDP(NondetModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -291,7 +288,7 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 		{
 			JDDNode acceptingStates = getLtlTransformer().findAcceptingStates(objectiveAndConditionProduct);
 			// States in remain from which some scheduler can enforce acceptance to maximize probability
-			JDDNode result = computeProb1E(objectiveAndConditionProduct.getProductModel(), false, ALL_STATES, acceptingStates);
+			JDDNode result = getMDPModelChecker().computeProb1E(objectiveAndConditionProduct.getProductModel(), false, ALL_STATES, acceptingStates);
 			JDD.Deref(acceptingStates);
 			return result;
 		}
@@ -328,13 +325,13 @@ public interface LtlLtlTransformer<M extends ProbModel, C extends StateModelChec
 		@Override
 		public LtlUntilTransformer.MDP getLtlUntilTransformer()
 		{
-			return new LtlUntilTransformer.MDP(prism, getModelChecker());
+			return new LtlUntilTransformer.MDP(getModelChecker());
 		}
 
 		@Override
 		public FinallyLtlTransformer.MDP getFinallyLtlTransformer()
 		{
-			return new FinallyLtlTransformer.MDP(prism, getModelChecker());
+			return new FinallyLtlTransformer.MDP(getModelChecker());
 		}
 	}
 }

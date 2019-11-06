@@ -1,8 +1,5 @@
 package prism.conditional.reset;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import acceptance.AcceptanceOmegaDD;
 import acceptance.AcceptanceType;
 import explicit.conditional.transformer.UndefinedTransformationException;
@@ -19,7 +16,6 @@ import prism.ModelTransformationNested;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.OpRelOpBound;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.ProbModel;
@@ -29,10 +25,8 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.conditional.ConditionalTransformer;
-import prism.conditional.checker.SimplePathEvent;
-import prism.conditional.checker.SimplePathEvent.Finally;
+import prism.conditional.checker.CachedMCModelChecker;
 import prism.conditional.checker.SimplePathEvent.Reach;
-import prism.conditional.checker.SimplePathEvent.Until;
 import prism.conditional.reset.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.BasicModelExpressionTransformation;
@@ -135,14 +129,22 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 
 
 
-	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C> implements NormalFormTransformer<M, C>
+	public static abstract class MC<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.Basic<M, C> implements ConditionalTransformer.MC<M,C>, NormalFormTransformer<M, C>
 	{
-		protected Map<SimplePathEvent<M>, JDDNode> cache;
+		protected CachedMCModelChecker<M,C> mcModelChecker;
 
-		public MC(Prism prism, C modelChecker)
+		public MC(C modelChecker)
 		{
-			super(prism, modelChecker);
-			cache = new HashMap<>();
+			super(modelChecker);
+			mcModelChecker = createCachedMcModelChecker();
+		}
+
+		protected abstract CachedMCModelChecker<M, C> createCachedMcModelChecker();
+
+		@Override
+		public CachedMCModelChecker<M, C> getMcModelChecker()
+		{
+			return mcModelChecker;
 		}
 
 		/**
@@ -163,7 +165,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		public JDDNode checkSatisfiability(Reach<M> conditionPath, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			JDDNode conditionFalsifiedStates = computeProb0(conditionPath);
+			JDDNode conditionFalsifiedStates = getMcModelChecker().computeProb0(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -195,12 +197,12 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		{
 			pathProb1.requireSameModel(pathProbs);
 
-			JDDNode states = computeProb1(pathProb1);
+			JDDNode states = getMcModelChecker().computeProb1(pathProb1);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeProbs(pathProbs);
+				probabilities = getMcModelChecker().computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -211,12 +213,12 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		{
 			pathProb0.requireSameModel(pathProbs);
 
-			JDDNode states = computeProb0(pathProb0);
+			JDDNode states = getMcModelChecker().computeProb0(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeProbs(pathProbs);
+				probabilities = getMcModelChecker().computeProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -224,31 +226,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		@Override
 		public void clear()
 		{
-			cache.keySet().forEach(SimplePathEvent::clear);
-			cache.values().forEach(JDD::Deref);
-			cache.clear();
-		}
-
-		@Override
-		public JDDNode computeProbs(Finally<M> eventually)
-				throws PrismException
-		{
-			if (! cache.containsKey(eventually)) {
-				JDDNode probabilities = super.computeProbs(eventually);
-				cache.put(eventually.clone(), probabilities);
-			}
-			return cache.get(eventually).copy();
-		}
-
-		@Override
-		public JDDNode computeProbs(Until<M> until)
-				throws PrismException
-		{
-			if (! cache.containsKey(until)) {
-				JDDNode probabilities = super.computeProbs(until);
-				cache.put(until.clone(), probabilities);
-			}
-			return cache.get(until).copy();
+			mcModelChecker.clear();
 		}
 	}
 
@@ -256,9 +234,15 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 
 	public static abstract class CTMC extends MC<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
+		}
+
+		@Override
+		public CachedMCModelChecker.CTMC createCachedMcModelChecker()
+		{
+			return new CachedMCModelChecker.CTMC(getModelChecker());
 		}
 
 		@Override
@@ -273,9 +257,15 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 
 	public static abstract class DTMC extends MC<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
+		}
+
+		@Override
+		public CachedMCModelChecker.DTMC createCachedMcModelChecker()
+		{
+			return new CachedMCModelChecker.DTMC(getModelChecker());
 		}
 
 		@Override
@@ -288,18 +278,18 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 
 
 
-	public static abstract class MDP extends ConditionalTransformer.MDP implements NormalFormTransformer<NondetModel, NondetModelChecker>
+	public static abstract class MDP extends ConditionalTransformer.Basic<NondetModel, NondetModelChecker> implements ConditionalTransformer.MDP, NormalFormTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(Prism prism, NondetModelChecker modelChecker)
+		public MDP(NondetModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
 		public JDDNode checkSatisfiability(Reach<NondetModel> conditionPath, JDDNode statesOfInterest)
 				throws PrismException
 		{
-			JDDNode conditionFalsifiedStates = computeProb0A(conditionPath);
+			JDDNode conditionFalsifiedStates = getMDPModelChecker().computeProb0A(conditionPath);
 			checkSatisfiability(conditionFalsifiedStates, statesOfInterest);
 			return conditionFalsifiedStates;
 		}
@@ -315,7 +305,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		public JDDNode computeBadStates(Reach<NondetModel> reach, JDDNode unsatisfiedStates)
 				throws PrismException
 		{
-			JDDNode maybeFalsified = computeProb0E(reach);
+			JDDNode maybeFalsified = getMDPModelChecker().computeProb0E(reach);
 			if (maybeFalsified.equals(JDD.ZERO)) {
 				return maybeFalsified;
 			}
@@ -339,7 +329,7 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 //				BitSet rStates = BitSetTools.union(new MappingIterator.From<>((AcceptanceStreett) conditionAcceptance, StreettPair::getR));
 //				bad.and(rStates);
 //			}
-			JDDNode maybeUnsatisfiedStatesProb1E = computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
+			JDDNode maybeUnsatisfiedStatesProb1E = getMDPModelChecker().computeProb1E(productModel, false, ALL_STATES, maybeUnsatisfiedStates);
 			JDD.Deref(maybeUnsatisfiedStates);
 			return JDD.And(maybeUnsatisfiedStatesProb1E, JDD.Not(unsatisfiedStates.copy()));
 		}
@@ -350,12 +340,12 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		{
 			pathProb1.requireSameModel(pathProbs);
 
-			JDDNode states = computeProb1A(pathProb1);
+			JDDNode states = getMDPModelChecker().computeProb1A(pathProb1);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeMaxProbs(pathProbs);
+				probabilities = getMDPModelChecker().computeMaxProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -366,12 +356,12 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		{
 			pathProb0.requireSameModel(pathProbs);
 
-			JDDNode states = computeProb0A(pathProb0);
+			JDDNode states = getMDPModelChecker().computeProb0A(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeMinProbs(pathProbs);
+				probabilities = getMDPModelChecker().computeMinProbs(pathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities);
 		}
@@ -385,12 +375,12 @@ public interface NormalFormTransformer<M extends ProbModel, C extends StateModel
 		{
 			pathProb0.requireSameModel(compPathProbs);
 
-			JDDNode states = computeProb0A(pathProb0);
+			JDDNode states = getMDPModelChecker().computeProb0A(pathProb0);
 			JDDNode probabilities;
 			if (states.equals(JDD.ZERO)) {
 				probabilities = JDD.Constant(0);
 			} else {
-				probabilities = computeMaxProbs(compPathProbs);
+				probabilities = getMDPModelChecker().computeMaxProbs(compPathProbs);
 			}
 			return new ProbabilisticRedistribution(states, probabilities).swap(pathProb0.getModel());
 		}

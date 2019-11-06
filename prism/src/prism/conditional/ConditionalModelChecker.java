@@ -14,7 +14,7 @@ import parser.type.TypeDouble;
 import parser.type.TypeInt;
 import prism.ModelChecker;
 import prism.ModelExpressionTransformation;
-import prism.Prism;
+import prism.PrismComponent;
 import prism.PrismException;
 import prism.ProbModel;
 import prism.StateModelChecker;
@@ -22,13 +22,11 @@ import prism.StateValues;
 import prism.StateValuesMTBDD;
 
 //FIXME ALG: add comment
-abstract public class ConditionalModelChecker<M extends ProbModel, C extends StateModelChecker>
+abstract public class ConditionalModelChecker<M extends ProbModel, C extends StateModelChecker> extends PrismComponent
 {
-	protected Prism prism;
 	protected C modelChecker;
 
-	public ConditionalModelChecker(C modelChecker, Prism prism) {
-		this.prism = prism;
+	public ConditionalModelChecker(C modelChecker) {
 		this.modelChecker = modelChecker;
 	}
 
@@ -53,8 +51,8 @@ abstract public class ConditionalModelChecker<M extends ProbModel, C extends Sta
 		long timer = System.currentTimeMillis();
 		ModelExpressionTransformation<M, ? extends M> transformation = transformer.transform(model, expression, statesOfInterest);
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
-		prism.getLog().println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
+		mainLog.println("\nTime for model transformation: " + timer / 1000.0 + " seconds.");
+		mainLog.println("\nOverall time for model transformation: " + timer / 1000.0 + " seconds.");
 		return transformation;
 	}
 
@@ -63,13 +61,13 @@ abstract public class ConditionalModelChecker<M extends ProbModel, C extends Sta
 		M transformedModel                  = transformation.getTransformedModel();
 		Expression transformedExpression    = transformation.getTransformedExpression();
 		JDDNode transformedStatesOfInterest = transformation.getTransformedStatesOfInterest();
-		prism.getLog().println("\nChecking transformed property in transformed model: " + transformedExpression);
+		mainLog.println("\nChecking transformed property in transformed model: " + transformedExpression);
 
 		long timer = System.currentTimeMillis();
 		ModelChecker mc    = modelChecker.createModelChecker(transformedModel);
 		StateValues result = mc.checkExpression(transformedExpression, transformedStatesOfInterest);
 		timer = System.currentTimeMillis() - timer;
-		prism.getLog().println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
+		mainLog.println("\nTime for model checking in transformed model: " + timer / 1000.0 + " seconds.");
 
 		return result;
 	}

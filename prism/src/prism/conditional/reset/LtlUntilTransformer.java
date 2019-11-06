@@ -13,7 +13,6 @@ import parser.ast.ExpressionTemporal;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
@@ -28,8 +27,6 @@ import prism.conditional.checker.SimplePathEvent.Finally;
 import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.LtlProductTransformer.LabeledDA;
-
-
 
 // FIXME ALG: add comment
 public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
@@ -131,9 +128,9 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 
 	public static class CTMC extends NormalFormTransformer.CTMC implements LtlUntilTransformer<StochModel, StochModelChecker>
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -147,7 +144,7 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 		@Override
 		public FinallyUntilTransformer.CTMC getFinallyUntilTransformer()
 		{
-			return new FinallyUntilTransformer.CTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.CTMC(getModelChecker());
 		}
 	}
 
@@ -155,9 +152,9 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 
 	public static class DTMC extends NormalFormTransformer.DTMC implements LtlUntilTransformer<ProbModel, ProbModelChecker>
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -171,7 +168,7 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 		@Override
 		public FinallyUntilTransformer.DTMC getFinallyUntilTransformer()
 		{
-			return new FinallyUntilTransformer.DTMC(prism, getModelChecker());
+			return new FinallyUntilTransformer.DTMC(getModelChecker());
 		}
 	}
 
@@ -179,9 +176,9 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 
 	public static class MDP extends NormalFormTransformer.MDP implements LtlUntilTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(Prism prism, NondetModelChecker modelChecker)
+		public MDP(NondetModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -262,7 +259,7 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 				instantGoalStates    = JDD.Or(instantGoalStates, acceptStates);
 				JDD.Deref(remain);
 			}
-			JDDNode result = computeProb1E(productModel, false, notFalsifiedStates, instantGoalStates);
+			JDDNode result = getMDPModelChecker().computeProb1E(productModel, false, notFalsifiedStates, instantGoalStates);
 			JDD.Deref(falsifiedStates, notFalsifiedStates, instantGoalStates);
 			return result;
 		}
@@ -270,7 +267,7 @@ public interface LtlUntilTransformer<M extends ProbModel, C extends StateModelCh
 		@Override
 		public FinallyUntilTransformer.MDP getFinallyUntilTransformer()
 		{
-			return new FinallyUntilTransformer.MDP(prism, getModelChecker());
+			return new FinallyUntilTransformer.MDP(getModelChecker());
 		}
 
 		public ProbabilisticRedistribution redistributeProb0Objective(Finally<NondetModel> objectivePath, Reach<NondetModel> conditionPath)

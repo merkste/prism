@@ -677,7 +677,7 @@ public class ProbModelChecker extends NonProbModelChecker
 
 	protected StateValues checkExpressionConditional(ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
-		StateValues result = new ConditionalMCModelChecker.DTMC(prism, this).checkExpression((ProbModel) model, expression, statesOfInterest);
+		StateValues result = new ConditionalMCModelChecker.DTMC(this).checkExpression((ProbModel) model, expression, statesOfInterest);
 		// Adapt result type to engine
 		switch (engine) {
 		case Prism.MTBDD:

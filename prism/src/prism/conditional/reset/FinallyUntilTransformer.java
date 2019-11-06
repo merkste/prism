@@ -13,7 +13,6 @@ import prism.Model;
 import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.Pair;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
@@ -25,8 +24,6 @@ import prism.StochModelChecker;
 import prism.conditional.checker.SimplePathEvent.Globally;
 import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
-
-
 
 // FIXME ALG: add comment
 public interface FinallyUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
@@ -139,9 +136,9 @@ public interface FinallyUntilTransformer<M extends ProbModel, C extends StateMod
 
 	public static class CTMC extends NormalFormTransformer.CTMC implements FinallyUntilTransformer<StochModel, StochModelChecker>
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -166,9 +163,9 @@ public interface FinallyUntilTransformer<M extends ProbModel, C extends StateMod
 
 	public static class DTMC extends NormalFormTransformer.DTMC implements FinallyUntilTransformer<ProbModel, ProbModelChecker>
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -193,9 +190,9 @@ public interface FinallyUntilTransformer<M extends ProbModel, C extends StateMod
 
 	public static class MDP extends NormalFormTransformer.MDP implements FinallyUntilTransformer<NondetModel, NondetModelChecker>
 	{
-		public MDP(Prism prism, NondetModelChecker modelChecker)
+		public MDP(NondetModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 
 		@Override
@@ -215,12 +212,12 @@ public interface FinallyUntilTransformer<M extends ProbModel, C extends StateMod
 			if (!objectivePath.isCoSafe() && !conditionPath.isCoSafe()) {
 				// Compute ECs that never falsify the objective/condition
 				Globally<NondetModel> neverFalsified = new Globally<>(model, notFalsifiedStates.copy());
-				JDDNode neverFalsifiedStates         = computeProb1E(neverFalsified);
+				JDDNode neverFalsifiedStates         = getMDPModelChecker().computeProb1E(neverFalsified);
 				neverFalsified.clear();
 				instantGoalStates = JDD.Or(instantGoalStates.copy(), neverFalsifiedStates);
 			}
 			// enlarge target set
-			JDDNode result = computeProb1E(model, false, notFalsifiedStates, instantGoalStates);
+			JDDNode result = getMDPModelChecker().computeProb1E(model, false, notFalsifiedStates, instantGoalStates);
 			JDD.Deref(notFalsifiedStates, instantGoalStates);
 			return result;
 		}

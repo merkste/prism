@@ -9,11 +9,8 @@ import parser.ast.ExpressionConditional;
 import parser.ast.ExpressionTemporal;
 import parser.ast.ExpressionUnaryOp;
 import prism.Model;
-import prism.ModelChecker;
-import prism.ModelExpressionTransformation;
 import prism.ModelTransformation;
 import prism.ModelTransformationNested;
-import prism.Prism;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.ProbModel;
@@ -22,21 +19,16 @@ import prism.StateValues;
 import prism.StochModel;
 import prism.StochModelChecker;
 import prism.conditional.ConditionalTransformer;
+import prism.conditional.checker.MCModelChecker;
 import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.checker.SimplePathEvent.Until;
-import prism.conditional.transformer.BasicModelExpressionTransformation;
 import jdd.JDD;
 import jdd.JDDNode;
 
-public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
+public interface MCUntilTransformer<M extends ProbModel, C extends ProbModelChecker> extends ScaleTransformer<M, C>
 {
-	public MCUntilTransformer(Prism prism, C modelChecker)
-	{
-		super(prism, modelChecker);
-	}
-
 	@Override
-	public boolean canHandleCondition(final Model model, final ExpressionConditional expression)
+	default boolean canHandleCondition(final Model model, final ExpressionConditional expression)
 	{
 		final Expression condition = ExpressionInspector.normalizeExpression(expression.getCondition());
 		final Expression until     = removeNegation(condition);
@@ -44,25 +36,23 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 	}
 
 	@Override
-	public boolean canHandleObjective(final Model model, final ExpressionConditional expression)
+	default boolean canHandleObjective(final Model model, final ExpressionConditional expression)
 	{
 		// Can handle all ExpressionQuant: P, R, S and L
 		return true;
 	}
 
-	@Override
-	public ModelExpressionTransformation<M, ? extends M> transform(M model, ExpressionConditional expression, JDDNode statesOfInterest)
-			throws PrismException
+	default ModelTransformation<M, ? extends M> transformModel(M model, ExpressionConditional expression, JDDNode statesOfInterest) throws PrismException
 	{
 		Expression condition    = expression.getCondition();
 		Reach<M> conditionReach = (Reach<M>) computeSimplePathProperty(model, condition);
 		Until<M> conditionPath  = conditionReach.asUntil();
 		conditionReach.clear();
 		ModelTransformation<M, ? extends M> transformation = transformModel(model, conditionPath, statesOfInterest, ! requiresSecondMode(expression));
-		return new BasicModelExpressionTransformation<>(transformation, expression, expression.getObjective());
+		return transformation;
 	}
 
-	protected ModelTransformation<M, ? extends M> transformModel(final M model, final Until<M> conditionPath, final JDDNode statesOfInterest,
+	default ModelTransformation<M, ? extends M> transformModel(final M model, final Until<M> conditionPath, final JDDNode statesOfInterest,
 			final boolean deadlock) throws PrismException
 	{
 //>>> Debug: print states of interest
@@ -71,9 +61,10 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 //		new StateValuesMTBDD(statesOfInterest.copy(), model).print(prism.getLog());
 
 		// FIXME ALG: reuse prob0, prob1
-		final JDDNode prob0 = computeProb0(conditionPath);
-		final JDDNode prob1 = computeProb1(conditionPath);
-		final JDDNode probs = computeProbs(conditionPath);
+		MCModelChecker<M, C> mc = getMcModelChecker();
+		final JDDNode prob0 = mc.computeProb0(conditionPath);
+		final JDDNode prob1 = mc.computeProb1(conditionPath);
+		final JDDNode probs = mc.computeProbs(conditionPath);
 
 		if (JDD.IsContainedIn(statesOfInterest, prob0)) {
 			// FIXME ALG: Deref JDDNodes!
@@ -123,7 +114,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 		JDDNode pivotStatesOfInterest = pivotTransformation.getTransformedStatesOfInterest();
 		liftedProbs                   = JDD.Times(liftedProbs, pivotModel.getReach().copy());
 
-		MCScaledTransformation<M> scaledTransformation = new MCScaledTransformation<>(prism, pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
+		MCScaledTransformation<M> scaledTransformation = new MCScaledTransformation<>(getModelChecker(), pivotModel, liftedProbs.copy(), pivotStatesOfInterest.copy());
 
 //>>> Debug: print transformed states of interest
 //		prism.getLog().println("Transformed states of interest:");
@@ -149,7 +140,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 	/**
 	 * <br>[ REFS: <i>none</i>, DEREFS: <i>none</i> ]
 	 */
-	protected JDDNode getPivots(final M model, final Until<M> until)
+	default JDDNode getPivots(final M model, final Until<M> until)
 	{
 		if (! until.isNegated()) {
 			// pivots = goal
@@ -159,7 +150,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 		return JDD.Not(JDD.Or(until.getRemain().copy(), until.getGoal().copy()));
 	}
 
-	protected Expression removeNegation(final Expression expression)
+	default Expression removeNegation(final Expression expression)
 	{
 		if (expression instanceof ExpressionUnaryOp) {
 			// assume negated formula
@@ -169,7 +160,7 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 		return expression;
 	}
 
-	protected boolean requiresSecondMode(final ExpressionConditional expression)
+	default boolean requiresSecondMode(final ExpressionConditional expression)
 	{
 		final Expression objective = expression.getObjective().getExpression();
 		if (!ExpressionInspector.isUnboundedSimpleUntilFormula(objective)) {
@@ -212,37 +203,37 @@ public abstract class MCUntilTransformer<M extends ProbModel, C extends ProbMode
 		return true;
 	}
 
-	protected JDDNode checkExpression(final ProbModel model, final Expression expression) throws PrismException
+	default JDDNode checkExpression(final M model, final Expression expression) throws PrismException
 	{
 		final JDDNode statesOfInterest = model.getReach().copy();
 		return checkExpression(model, expression, statesOfInterest);
 	}
 
-	protected JDDNode checkExpression(final ProbModel model, final Expression expression, final JDDNode statesOfInterest) throws PrismException
+	default JDDNode checkExpression(final M model, final Expression expression, final JDDNode statesOfInterest) throws PrismException
 	{
 		Objects.requireNonNull(statesOfInterest);
-		final ModelChecker mc = modelChecker.createModelChecker(model);
+		C mc = getModelChecker(model);
 		final StateValues stateValues = mc.checkExpression(expression, statesOfInterest);
 		return stateValues.convertToStateValuesMTBDD().getJDDNode();
 	}
 
 
 
-	public static class CTMC extends MCUntilTransformer<StochModel, StochModelChecker> implements ConditionalTransformer.CTMC
+	public static class CTMC extends ConditionalTransformer.Basic<StochModel, StochModelChecker> implements MCUntilTransformer<StochModel, StochModelChecker>, ConditionalTransformer.CTMC
 	{
-		public CTMC(Prism prism, StochModelChecker modelChecker)
+		public CTMC(StochModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 	}
 
 
 
-	public static class DTMC extends MCUntilTransformer<ProbModel, ProbModelChecker> implements ConditionalTransformer.DTMC
+	public static class DTMC extends ConditionalTransformer.Basic<ProbModel, ProbModelChecker> implements MCUntilTransformer<ProbModel, ProbModelChecker>, ConditionalTransformer.DTMC
 	{
-		public DTMC(Prism prism, ProbModelChecker modelChecker)
+		public DTMC(ProbModelChecker modelChecker)
 		{
-			super(prism, modelChecker);
+			super(modelChecker);
 		}
 	}
 }

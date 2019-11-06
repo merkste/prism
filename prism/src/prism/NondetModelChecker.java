@@ -156,7 +156,7 @@ public class NondetModelChecker extends NonProbModelChecker
 			throw new PrismException("Cannot model check model type " + model.getModelType());
 		}
 
-		return new ConditionalMDPModelChecker(this, prism).checkExpression(model, expression, statesOfInterest);
+		return new ConditionalMDPModelChecker(this).checkExpression(model, expression, statesOfInterest);
 	}
 
 	@Override
