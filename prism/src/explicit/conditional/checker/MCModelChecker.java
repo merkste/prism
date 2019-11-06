@@ -17,6 +17,7 @@ import explicit.conditional.checker.SimplePathEvent.Reach;
 import explicit.conditional.checker.SimplePathEvent.Until;
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public interface MCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends SimplePathEventModelChecker<M,C>
 {
 	BitSet computeProb0(M model, boolean negated, BitSet remain, BitSet goal)

@@ -10,8 +10,6 @@ import prism.PrismException;
 import prism.PrismNotSupportedException;
 import prism.StateValues;
 
-
-
 //FIXME ALG: update comment
 /**
  * A NondetModelTransformation that adds reset-actions to a given set of states.

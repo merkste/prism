@@ -8,8 +8,7 @@ import explicit.LTLModelChecker.LTLProduct;
 import explicit.Model;
 import parser.ast.ExpressionTemporal;
 
-
-
+//FIXME ALG: add comment
 public abstract class SimplePathEvent<M extends Model> implements Cloneable
 {
 	protected M       model;

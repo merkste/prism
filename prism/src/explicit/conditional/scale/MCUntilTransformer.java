@@ -23,6 +23,7 @@ import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
 
+//FIXME ALG: add comment
 public interface MCUntilTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ScaleTransformer<M,C>
 {
 	@Override

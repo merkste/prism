@@ -34,6 +34,7 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLangException;
 
+//FIXME ALG: add comment
 public class MDPMinMaxFilterTransformer extends PrismComponent
 {
 	protected MDPModelChecker modelChecker;

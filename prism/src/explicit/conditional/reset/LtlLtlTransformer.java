@@ -27,8 +27,6 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
-
-
 // FIXME ALG: add comment
 public interface LtlLtlTransformer<M extends Model, C extends ProbModelChecker> extends NormalFormTransformer<M, C>
 {

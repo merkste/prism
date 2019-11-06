@@ -21,7 +21,8 @@ import prism.StochModelChecker;
 import prism.conditional.ConditionalTransformer;
 import prism.conditional.transformer.LtlProductTransformer;
 
-// FIXME ALG: support PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE
+//FIXME ALG: support PrismSettings.CONDITIONAL_SCALE_LTL_MINIMIZE
+//FIXME ALG: add comment
 public interface MCLtlTransformer<M extends ProbModel, C extends ProbModelChecker> extends ScaleTransformer<M, C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = AcceptanceType.allTypes();

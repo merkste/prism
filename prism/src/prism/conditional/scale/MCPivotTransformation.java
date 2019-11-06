@@ -9,6 +9,7 @@ import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
 
+//FIXME ALG: add comment
 public class MCPivotTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
 	/** Flag for "produce BDD for the row variables" */

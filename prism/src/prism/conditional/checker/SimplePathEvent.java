@@ -9,8 +9,7 @@ import parser.ast.ExpressionTemporal;
 import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
 
-
-
+//FIXME ALG: add comment
 public abstract class SimplePathEvent<M extends Model> implements Clearable, Cloneable
 {
 	protected M       model;

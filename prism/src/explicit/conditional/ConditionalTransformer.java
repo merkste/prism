@@ -30,6 +30,7 @@ import prism.PrismLog;
 import prism.PrismSettings;
 import prism.PrismComponent;
 
+//FIXME ALG: add comment
 public interface ConditionalTransformer<M extends Model, C extends StateModelChecker>
 {
 	public static final BitSet ALL_STATES = null;

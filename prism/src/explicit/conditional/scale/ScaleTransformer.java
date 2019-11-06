@@ -18,6 +18,7 @@ import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.Restriction;
 
+//FIXME ALG: add comment
 public interface ScaleTransformer<M extends explicit.DTMC, C extends ProbModelChecker> extends ConditionalTransformer.MC<M, C>
 {
 	@Override

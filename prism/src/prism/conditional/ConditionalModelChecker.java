@@ -92,5 +92,4 @@ abstract public class ConditionalModelChecker<M extends ProbModel, C extends Sta
 	protected abstract String getConditionalPatterns();
 
 	protected abstract ConditionalTransformer<M, C> getTransformer(ConditionalTransformerType type);
-
 }

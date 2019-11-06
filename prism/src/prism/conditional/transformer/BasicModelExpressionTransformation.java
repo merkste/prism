@@ -8,6 +8,7 @@ import prism.ModelTransformation;
 import prism.PrismException;
 import prism.StateValues;
 
+//FIXME ALG: add comment
 public class BasicModelExpressionTransformation<OM extends Model, TM extends Model> implements ModelExpressionTransformation<OM, TM>
 {
 	protected final ModelTransformation<? extends OM, ? extends TM> transformation;

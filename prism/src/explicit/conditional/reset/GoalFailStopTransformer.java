@@ -26,8 +26,7 @@ import explicit.modelviews.MDPAdditionalStates;
 import explicit.modelviews.MDPDroppedAllChoices;
 import prism.PrismException;
 
-
-
+//FIXME ALG: add comment
 public interface GoalFailStopTransformer<M extends Model>
 {
 	public static final int GOAL = 0;

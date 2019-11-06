@@ -11,6 +11,7 @@ import parser.ast.ExpressionProb;
 import parser.ast.ExpressionTemporal;
 import prism.PrismLangException;
 
+//FIXME ALG: add comment
 public class MDPConditionalMinMaxFilterTransformer extends MDPMinMaxFilterTransformer
 {
 
@@ -57,5 +58,4 @@ public class MDPConditionalMinMaxFilterTransformer extends MDPMinMaxFilterTransf
 
 		return new ExpressionConditional(nextObjectiv, nextCondition); 
 	}
-
 }

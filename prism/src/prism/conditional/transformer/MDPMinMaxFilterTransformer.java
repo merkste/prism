@@ -20,6 +20,7 @@ import prism.SingleInitialStateTransformation;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
+//FIXME ALG: add comment
 public class MDPMinMaxFilterTransformer
 {
 	protected NondetModelChecker modelChecker;

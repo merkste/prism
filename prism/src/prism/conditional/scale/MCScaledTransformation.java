@@ -11,6 +11,7 @@ import prism.ProbModelTransformation;
 import prism.StateValues;
 import prism.StateValuesMTBDD;
 
+//FIXME ALG: add comment
 public class MCScaledTransformation<M extends ProbModel> extends PrismComponent implements ModelTransformation<M, M>
 {
 	private M originalModel;

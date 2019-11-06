@@ -18,6 +18,7 @@ import explicit.modelviews.MDPAdditionalChoices;
 import prism.PrismComponent;
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public interface ResetTransformer<M extends Model>
 {
 	public static final String RESET = "reset";

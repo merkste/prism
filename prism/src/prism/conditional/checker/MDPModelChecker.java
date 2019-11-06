@@ -16,6 +16,7 @@ import prism.conditional.checker.SimplePathEvent.Next;
 import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.checker.SimplePathEvent.Until;
 
+//FIXME ALG: add comment
 public class MDPModelChecker extends SimplePathEventModelChecker.Basic<NondetModel, NondetModelChecker>
 {
 	public MDPModelChecker(NondetModelChecker modelChecker)

@@ -6,6 +6,7 @@ import explicit.ProbModelChecker;
 import prism.PrismComponent;
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public interface SimplePathEventModelChecker<M extends explicit.Model, C extends ProbModelChecker>
 {
 	public static final BitSet ALL_STATES = null;

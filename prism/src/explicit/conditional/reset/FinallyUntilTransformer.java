@@ -24,8 +24,6 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
-
-
 // FIXME ALG: add comment
 public interface FinallyUntilTransformer<M extends Model, MC extends ProbModelChecker> extends NormalFormTransformer<M, MC>
 {

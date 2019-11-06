@@ -8,6 +8,7 @@ import prism.ProbModel;
 import prism.StateModelChecker;
 import prism.StateValuesMTBDD;
 
+//FIXME ALG: add comment
 public interface SimplePathEventModelChecker<M extends ProbModel, C extends StateModelChecker>
 {
 	public static final JDDNode ALL_STATES = null;

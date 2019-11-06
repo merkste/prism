@@ -25,6 +25,7 @@ import prism.conditional.checker.SimplePathEvent.Until;
 import jdd.JDD;
 import jdd.JDDNode;
 
+//FIXME ALG: add comment
 public interface MCUntilTransformer<M extends ProbModel, C extends ProbModelChecker> extends ScaleTransformer<M, C>
 {
 	@Override

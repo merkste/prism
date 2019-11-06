@@ -14,6 +14,7 @@ import prism.StochModelChecker;
 import prism.conditional.checker.SimplePathEvent.Finally;
 import prism.conditional.checker.SimplePathEvent.Until;
 
+//FIXME ALG: add comment
 public interface CachedMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends MCModelChecker<M,C>, Clearable
 {
 	Map<SimplePathEvent<M>, JDDNode> getCache();

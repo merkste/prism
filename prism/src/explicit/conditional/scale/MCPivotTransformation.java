@@ -20,6 +20,7 @@ import explicit.modelviews.CTMCDisjointUnion;
 import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.DTMCDisjointUnion;
 
+//FIXME ALG: add comment
 public class MCPivotTransformation
 {
 	public static BasicModelTransformation<CTMC, CTMCAlteredDistributions> transform(final CTMC model, final BitSet pivotStates)

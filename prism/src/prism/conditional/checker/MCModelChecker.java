@@ -18,6 +18,7 @@ import prism.conditional.checker.SimplePathEvent.Next;
 import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.checker.SimplePathEvent.Until;
 
+//FIXME ALG: add comment
 public interface MCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends SimplePathEventModelChecker<M, C>
 {
 	default JDDNode computeProb0(M model, boolean negated, JDDNode remain, JDDNode goal)

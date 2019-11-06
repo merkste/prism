@@ -11,6 +11,7 @@ import explicit.conditional.checker.SimplePathEvent.Until;
 import jdd.Clearable;
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends MCModelChecker<M, C>, Clearable
 {
 	Map<SimplePathEvent<M>, double[]> getCache();

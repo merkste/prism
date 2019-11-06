@@ -19,6 +19,7 @@ import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAlteredDistributions;
 import prism.PrismUtils;
 
+//FIXME ALG: add comment
 public class MCScaledTransformation
 {
 	public static BasicModelTransformation<CTMC,CTMCAlteredDistributions> transform(CTMC model, double[] originProbs)

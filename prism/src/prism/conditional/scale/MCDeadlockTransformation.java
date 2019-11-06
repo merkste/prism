@@ -9,6 +9,7 @@ import prism.ProbModel;
 import prism.ProbModelTransformation;
 import prism.StateValues;
 
+//FIXME ALG: add comment
 public class MCDeadlockTransformation<M extends ProbModel> implements ModelTransformation<M, M>
 {
 	private M originalModel;

@@ -20,6 +20,7 @@ import parser.ast.ExpressionTemporal;
 import prism.PrismException;
 import prism.PrismLangException;
 
+//FIXME ALG: add comment
 public interface MCNextTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends ScaleTransformer<M,C>
 {
 	@Override
@@ -128,5 +129,4 @@ public interface MCNextTransformer<M extends explicit.DTMC,C extends ProbModelCh
 			super(modelChecker);
 		}
 	}
-
 }

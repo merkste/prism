@@ -7,6 +7,7 @@ import explicit.modelviews.DTMCAdditionalStates;
 import explicit.modelviews.MDPAdditionalStates;
 import prism.PrismComponent;
 
+//FIXME ALG: add comment
 public interface ResetStateTransformer<M extends Model> extends ResetTransformer<M>
 {
 	public static final String REDIRECT = "redirect";

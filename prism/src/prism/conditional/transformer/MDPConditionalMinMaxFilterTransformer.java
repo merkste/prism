@@ -12,9 +12,9 @@ import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.PrismLangException;
 
+//FIXME ALG: add comment
 public class MDPConditionalMinMaxFilterTransformer extends MDPMinMaxFilterTransformer
 {
-
 	public MDPConditionalMinMaxFilterTransformer(final NondetModelChecker modelChecker)
 	{
 		super(modelChecker);
@@ -66,5 +66,4 @@ public class MDPConditionalMinMaxFilterTransformer extends MDPMinMaxFilterTransf
 
 		return result;
 	}
-
 }

@@ -7,7 +7,7 @@ import java.util.TreeSet;
 
 import prism.PrismException;
 
-// FIXME ALG: Rename to ConditionalTransform(ers/ations)
+//FIXME ALG: Rename to ConditionalTransform(ers/ations)
 public enum ConditionalTransformerType
 {
 	Until,

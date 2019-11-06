@@ -26,6 +26,7 @@ import prism.PrismException;
 import prism.PrismLangException;
 import prism.PrismSettings;
 
+//FIXME ALG: add comment
 public interface MCLtlTransformer<M extends explicit.DTMC,C extends ProbModelChecker> extends ScaleTransformer<M,C>
 {
 	public static final AcceptanceType[] ACCEPTANCE_TYPES = AcceptanceType.allTypes();

@@ -26,7 +26,7 @@ import prism.conditional.reset.LtlUntilTransformer;
 
 //FIXME ALG: add comment
 public class ConditionalMDPModelChecker extends ConditionalModelChecker<NondetModel, NondetModelChecker>
-{	
+{
 	public ConditionalMDPModelChecker(NondetModelChecker modelChecker)
 	{
 		super(modelChecker);

@@ -2,6 +2,7 @@ package explicit.conditional.transformer;
 
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public class UndefinedTransformationException extends PrismException
 {
 	/**

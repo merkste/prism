@@ -11,6 +11,7 @@ import explicit.conditional.checker.SimplePathEvent.Reach;
 import explicit.conditional.checker.SimplePathEvent.Until;
 import prism.PrismException;
 
+//FIXME ALG: add comment
 public class MDPModelChecker extends SimplePathEventModelChecker.Basic<explicit.MDP, explicit.MDPModelChecker>
 {
 	public MDPModelChecker(explicit.MDPModelChecker modelChecker)
