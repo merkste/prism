@@ -13,9 +13,23 @@ import prism.PrismException;
 
 public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbModelChecker> extends MCModelChecker<M, C>, Clearable
 {
-	double[] lookup(SimplePathEvent<M> path);
+	Map<SimplePathEvent<M>, double[]> getCache();
 
-	double[] store(SimplePathEvent<M> path, double[] probs);
+	default double[] lookup(SimplePathEvent<M> path)
+	{
+		return getCache().get(path);
+	}
+
+	default double[] store(SimplePathEvent<M> path, double[] probs)
+	{
+		getCache().put(path, probs);
+		return probs;
+	}
+
+	default void clear()
+	{
+		getCache().clear();
+	}
 
 	@Override
 	default double[] computeProbs(Finally<M> eventually)
@@ -41,38 +55,6 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 
 
 
-	public static class DTMC extends MCModelChecker.DTMC implements CachedMCModelChecker<explicit.DTMC, DTMCModelChecker>
-	{
-		protected Map<SimplePathEvent<explicit.DTMC>, double[]> cache;
-
-		public DTMC(DTMCModelChecker modelChecker)
-		{
-			super(modelChecker);
-			cache = new HashMap<>();
-		}
-
-		@Override
-		public double[] lookup(SimplePathEvent<explicit.DTMC> path)
-		{
-			return cache.get(path);
-		}
-
-		@Override
-		public double[] store(SimplePathEvent<explicit.DTMC> path, double[] probs)
-		{
-			cache.put(path, probs);
-			return probs;
-		}
-
-		@Override
-		public void clear()
-		{
-			cache.clear();
-		}
-	}
-
-
-
 	public static class CTMC extends MCModelChecker.CTMC implements CachedMCModelChecker<explicit.CTMC, CTMCModelChecker>
 	{
 		protected Map<SimplePathEvent<explicit.CTMC>, double[]> cache;
@@ -84,22 +66,28 @@ public interface CachedMCModelChecker<M extends explicit.DTMC, C extends ProbMod
 		}
 
 		@Override
-		public double[] lookup(SimplePathEvent<explicit.CTMC> path)
+		public Map<SimplePathEvent<explicit.CTMC>, double[]> getCache()
 		{
-			return cache.get(path);
+			return cache;
+		}
+	}
+
+
+
+	public static class DTMC extends MCModelChecker.DTMC implements CachedMCModelChecker<explicit.DTMC, DTMCModelChecker>
+	{
+		protected Map<SimplePathEvent<explicit.DTMC>, double[]> cache;
+
+		public DTMC(DTMCModelChecker modelChecker)
+		{
+			super(modelChecker);
+			cache = new HashMap<>();
 		}
 
 		@Override
-		public double[] store(SimplePathEvent<explicit.CTMC> path, double[] probs)
+		public Map<SimplePathEvent<explicit.DTMC>, double[]> getCache()
 		{
-			cache.put(path, probs);
-			return probs;
-		}
-
-		@Override
-		public void clear()
-		{
-			cache.clear();
+			return cache;
 		}
 	}
 }
