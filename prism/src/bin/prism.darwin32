@@ -43,6 +43,29 @@ else
 fi
 PRISM_JAVASTACKSIZE="-Xss4M"
 
+# If there is a -javaparams switch, append it to PRISM_JAVA_DEBUG
+ARGS=( "$@" )
+for ((i=0;i<${#ARGS[@]};i+=1)); do
+	if [ "${ARGS[$i]}" = "-javaparams" ]; then
+		JAVAPARAMS=${ARGS[$i+1]}
+		if [ -z "$PRISM_JAVA_DEBUG" ]; then
+			PRISM_JAVA_DEBUG="${JAVAPARAMS}"
+		else
+			PRISM_JAVA_DEBUG="${PRISM_JAVA_DEBUG} ${JAVAPARAMS}"
+		fi
+	fi
+	# Remove -javaparams ... from argument list
+	SKIP=0
+	for arg do
+		shift
+		if [ "$arg" = "-javaparams" ] || [ "$SKIP" -eq 1 ]  ; then
+			SKIP=$((1-SKIP))
+			continue
+		fi
+		set -- "$@" "$arg"
+	done
+done
+
 # Set up CLASSPATH:
 #  - PRISM jar file (for binary versions) (gets priority)
 #  - classes directory (most PRISM classes)
@@ -79,7 +102,7 @@ PRISM_ICON="-Xdock:icon=$PRISM_DIR/etc/icons/p64.png"
 PRISM_DOCK_NAME="-Xdock:name=PRISM"
 
 # Run PRISM through Java
-"$PRISM_JAVA" -d32 $PRISM_JAVA_DEBUG $PRISM_JAVAMAXMEM $PRISM_JAVASTACKSIZE "$PRISM_ICON" "$PRISM_DOCK_NAME" -Djava.awt.headless=$PRISM_HEADLESS -Djava.library.path="$JAVA_LIBRARY_PATH" -classpath "$PRISM_CLASSPATH" $PRISM_MAINCLASS "$@"
+"$PRISM_JAVA" -d32 $PRISM_JAVAMAXMEM $PRISM_JAVASTACKSIZE $PRISM_JAVA_DEBUG "$PRISM_ICON" "$PRISM_DOCK_NAME" -Djava.awt.headless=$PRISM_HEADLESS -Djava.library.path="$JAVA_LIBRARY_PATH" -classpath "$PRISM_CLASSPATH" $PRISM_MAINCLASS "$@"
 
 PRISM_EXIT_CODE=$?
 
