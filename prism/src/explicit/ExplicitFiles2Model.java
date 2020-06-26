@@ -144,7 +144,7 @@ public class ExplicitFiles2Model extends PrismComponent
 			// in absence of a statesFile, there is a single variable x
 			// in the model, with value corresponding to the state index
 			List<State> states = new ArrayList<State>(model.getNumStates());
-			for (int i = 0; i < model.getNumStates(); i++) {
+			for (int i=0, n = model.getNumStates(); i < n; i++) {
 				State s = new State(1);
 				s.setValue(0, i); // set x = state index
 				states.add(s);
