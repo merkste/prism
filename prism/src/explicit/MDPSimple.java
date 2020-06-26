@@ -283,23 +283,23 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 			}
 			String[] infos = info.split(" ");
 			if (infos.length < 3) {
-				throw new PrismException("First line of .tra file must read #states, #choices, #transitions");
+				throw new PrismException("First line of .tra file must read #states, #choices, #transitions [,action]");
 			}
 			int n = Integer.parseInt(infos[0]);
 			int expectedNumChoices = Integer.parseInt(infos[1]);
 			int expectedNumTransitions = Integer.parseInt(infos[2]);
 
 			int emptyDistributions = 0;
-			
+
 			// Initialise
 			initialise(n);
 			// Go though list of transitions in file
-			String s = in.readLine();
+			String line = in.readLine();
 			lineNum++;
-			while (s != null) {
-				s = s.trim();
-				if (s.length() > 0) {
-					String[] transition = s.split(" ");
+			while (line != null) {
+				line = line.trim();
+				if (line.length() > 0) {
+					String[] transition = line.split(" ");
 					int source = Integer.parseInt(transition[0]);
 					int choice = Integer.parseInt(transition[1]);
 					int target = Integer.parseInt(transition[2]);
@@ -345,7 +345,7 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 						setAction(source, choice, action);
 					}
 				}
-				s = in.readLine();
+				line = in.readLine();
 				lineNum++;
 			}
 			// check integrity
