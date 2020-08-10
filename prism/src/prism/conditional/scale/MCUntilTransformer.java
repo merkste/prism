@@ -19,9 +19,9 @@ import prism.StateValues;
 import prism.StochModel;
 import prism.StochModelChecker;
 import prism.conditional.ConditionalTransformer;
-import prism.conditional.checker.MCModelChecker;
-import prism.conditional.checker.SimplePathEvent.Reach;
-import prism.conditional.checker.SimplePathEvent.Until;
+import prism.statebased.MCModelChecker;
+import prism.statebased.SimplePathEvent.Reach;
+import prism.statebased.SimplePathEvent.Until;
 import jdd.JDD;
 import jdd.JDDNode;
 

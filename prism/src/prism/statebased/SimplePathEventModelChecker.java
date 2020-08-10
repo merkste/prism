@@ -1,4 +1,4 @@
-package prism.conditional.checker;
+package prism.statebased;
 
 import jdd.JDDNode;
 import prism.Model;

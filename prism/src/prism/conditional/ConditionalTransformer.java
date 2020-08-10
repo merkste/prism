@@ -22,17 +22,17 @@ import prism.StateModelChecker;
 import prism.StateValuesMTBDD;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.checker.MCModelChecker;
-import prism.conditional.checker.MDPModelChecker;
-import prism.conditional.checker.SimplePathEvent;
-import prism.conditional.checker.SimplePathEvent.Finally;
-import prism.conditional.checker.SimplePathEvent.Globally;
-import prism.conditional.checker.SimplePathEvent.Next;
-import prism.conditional.checker.SimplePathEvent.Release;
-import prism.conditional.checker.SimplePathEvent.TemporalOperator;
-import prism.conditional.checker.SimplePathEvent.Until;
-import prism.conditional.checker.SimplePathEvent.WeakUntil;
 import prism.conditional.transformer.LtlProductTransformer;
+import prism.statebased.MCModelChecker;
+import prism.statebased.MDPModelChecker;
+import prism.statebased.SimplePathEvent;
+import prism.statebased.SimplePathEvent.Finally;
+import prism.statebased.SimplePathEvent.Globally;
+import prism.statebased.SimplePathEvent.Next;
+import prism.statebased.SimplePathEvent.Release;
+import prism.statebased.SimplePathEvent.TemporalOperator;
+import prism.statebased.SimplePathEvent.Until;
+import prism.statebased.SimplePathEvent.WeakUntil;
 import prism.PrismComponent;
 
 //FIXME ALG: add comment

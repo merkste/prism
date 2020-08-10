@@ -25,11 +25,11 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.conditional.ConditionalTransformer;
-import prism.conditional.checker.CachedMCModelChecker;
-import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.GoalFailStopOperator;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.BasicModelExpressionTransformation;
+import prism.statebased.CachedMCModelChecker;
+import prism.statebased.SimplePathEvent.Reach;
 
 // FIXME ALG: add comment
 public interface NormalFormTransformer<M extends ProbModel, C extends StateModelChecker> extends ConditionalTransformer<M, C>, Clearable

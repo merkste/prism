@@ -1,4 +1,4 @@
-package prism.conditional.checker;
+package prism.statebased;
 
 import java.util.Objects;
 
@@ -10,11 +10,11 @@ import prism.NondetModel;
 import prism.NondetModelChecker;
 import prism.PrismException;
 import prism.StateValues;
-import prism.conditional.checker.SimplePathEvent.Finally;
-import prism.conditional.checker.SimplePathEvent.Globally;
-import prism.conditional.checker.SimplePathEvent.Next;
-import prism.conditional.checker.SimplePathEvent.Reach;
-import prism.conditional.checker.SimplePathEvent.Until;
+import prism.statebased.SimplePathEvent.Finally;
+import prism.statebased.SimplePathEvent.Globally;
+import prism.statebased.SimplePathEvent.Next;
+import prism.statebased.SimplePathEvent.Reach;
+import prism.statebased.SimplePathEvent.Until;
 
 //FIXME ALG: add comment
 public class MDPModelChecker extends SimplePathEventModelChecker.Basic<NondetModel, NondetModelChecker>

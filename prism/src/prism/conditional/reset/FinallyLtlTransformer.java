@@ -23,10 +23,10 @@ import prism.StochModel;
 import prism.StochModelChecker;
 import prism.LTLModelChecker.LTLProduct;
 import prism.Model;
-import prism.conditional.checker.SimplePathEvent.Finally;
-import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
 import prism.conditional.transformer.LtlProductTransformer.LabeledDA;
+import prism.statebased.SimplePathEvent.Finally;
+import prism.statebased.SimplePathEvent.Reach;
 
 // FIXME ALG: add comment
 public interface FinallyLtlTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>

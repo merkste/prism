@@ -1,4 +1,4 @@
-package prism.conditional.checker;
+package prism.statebased;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,8 +11,8 @@ import prism.ProbModel;
 import prism.ProbModelChecker;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.checker.SimplePathEvent.Finally;
-import prism.conditional.checker.SimplePathEvent.Until;
+import prism.statebased.SimplePathEvent.Finally;
+import prism.statebased.SimplePathEvent.Until;
 
 //FIXME ALG: add comment
 public interface CachedMCModelChecker<M extends ProbModel, C extends ProbModelChecker> extends MCModelChecker<M,C>, Clearable

@@ -21,9 +21,9 @@ import prism.ProbModelChecker;
 import prism.StateModelChecker;
 import prism.StochModel;
 import prism.StochModelChecker;
-import prism.conditional.checker.SimplePathEvent.Globally;
-import prism.conditional.checker.SimplePathEvent.Reach;
 import prism.conditional.reset.GoalFailStopTransformation.ProbabilisticRedistribution;
+import prism.statebased.SimplePathEvent.Globally;
+import prism.statebased.SimplePathEvent.Reach;
 
 // FIXME ALG: add comment
 public interface FinallyUntilTransformer<M extends ProbModel, C extends StateModelChecker> extends NormalFormTransformer<M, C>
