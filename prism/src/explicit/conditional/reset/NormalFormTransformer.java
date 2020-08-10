@@ -17,8 +17,6 @@ import explicit.ModelTransformationNested;
 import explicit.ProbModelChecker;
 import explicit.StateModelChecker;
 import explicit.conditional.ConditionalTransformer;
-import explicit.conditional.checker.CachedMCModelChecker;
-import explicit.conditional.checker.SimplePathEvent.Reach;
 import explicit.conditional.reset.GoalFailStopTransformer.GoalFailStopTransformation;
 import explicit.conditional.reset.GoalFailStopTransformer.ProbabilisticRedistribution;
 import explicit.conditional.reset.ResetTransformer.ResetTransformation;
@@ -27,6 +25,8 @@ import explicit.conditional.transformer.UndefinedTransformationException;
 import explicit.modelviews.CTMCRestricted;
 import explicit.modelviews.DTMCRestricted;
 import explicit.modelviews.MDPRestricted;
+import explicit.statebased.CachedMCModelChecker;
+import explicit.statebased.SimplePathEvent.Reach;
 import jdd.Clearable;
 import parser.ast.Expression;
 import parser.ast.ExpressionConditional;
@@ -292,7 +292,7 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 
 	public static abstract class MDP extends ConditionalTransformer.Basic<explicit.MDP,explicit.MDPModelChecker> implements ConditionalTransformer.MDP, NormalFormTransformer<explicit.MDP, MDPModelChecker>
 	{
-		protected explicit.conditional.checker.MDPModelChecker mdpModelChecker;
+		protected explicit.statebased.MDPModelChecker mdpModelChecker;
 
 		public MDP(MDPModelChecker modelChecker)
 		{
@@ -301,7 +301,7 @@ public interface NormalFormTransformer<M extends Model, C extends StateModelChec
 		}
 
 		@Override
-		public explicit.conditional.checker.MDPModelChecker getMDPModelChecker()
+		public explicit.statebased.MDPModelChecker getMDPModelChecker()
 		{
 			return mdpModelChecker;
 		}

@@ -1,14 +1,14 @@
-package explicit.conditional.checker;
+package explicit.statebased;
 
 import java.util.BitSet;
 import java.util.Objects;
 
 import explicit.PredecessorRelation;
-import explicit.conditional.checker.SimplePathEvent.Finally;
-import explicit.conditional.checker.SimplePathEvent.Globally;
-import explicit.conditional.checker.SimplePathEvent.Next;
-import explicit.conditional.checker.SimplePathEvent.Reach;
-import explicit.conditional.checker.SimplePathEvent.Until;
+import explicit.statebased.SimplePathEvent.Finally;
+import explicit.statebased.SimplePathEvent.Globally;
+import explicit.statebased.SimplePathEvent.Next;
+import explicit.statebased.SimplePathEvent.Reach;
+import explicit.statebased.SimplePathEvent.Until;
 import prism.PrismException;
 
 //FIXME ALG: add comment

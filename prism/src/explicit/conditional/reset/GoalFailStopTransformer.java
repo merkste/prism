@@ -16,7 +16,6 @@ import explicit.BasicModelTransformation;
 import explicit.DiracDistribution;
 import explicit.Model;
 import explicit.ModelTransformation;
-import explicit.conditional.checker.SimplePathEventModelChecker;
 import explicit.modelviews.CTMCAdditionalStates;
 import explicit.modelviews.CTMCAlteredDistributions;
 import explicit.modelviews.DTMCAdditionalStates;
@@ -24,6 +23,7 @@ import explicit.modelviews.DTMCAlteredDistributions;
 import explicit.modelviews.MDPAdditionalChoices;
 import explicit.modelviews.MDPAdditionalStates;
 import explicit.modelviews.MDPDroppedAllChoices;
+import explicit.statebased.SimplePathEventModelChecker;
 import prism.PrismException;
 
 //FIXME ALG: add comment

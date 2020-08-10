@@ -1,4 +1,4 @@
-package explicit.conditional.checker;
+package explicit.statebased;
 
 import java.util.BitSet;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package explicit.conditional.checker;
+package explicit.statebased;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,8 +6,8 @@ import java.util.Map;
 import explicit.CTMCModelChecker;
 import explicit.DTMCModelChecker;
 import explicit.ProbModelChecker;
-import explicit.conditional.checker.SimplePathEvent.Finally;
-import explicit.conditional.checker.SimplePathEvent.Until;
+import explicit.statebased.SimplePathEvent.Finally;
+import explicit.statebased.SimplePathEvent.Until;
 import jdd.Clearable;
 import prism.PrismException;
 
