@@ -44,7 +44,7 @@ import prism.*;
 /**
  * Explicit-state model checker for continuous-time Markov chains (CTMCs).
  */
-public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker
+public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker<CTMC>
 {
 	/**
 	 * Create a new CTMCModelChecker, inherit basic state from parent (unless null).
@@ -1111,6 +1111,7 @@ public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	 * @param pre The predecessor relation
 	 * @throws PrismException 
 	 */
+	@Override
 	public BitSet prob0(CTMC ctmc, BitSet remain, BitSet target, PredecessorRelation pre) throws PrismException
 	{
 		// Construct embedded DTMC and do computation on that
@@ -1129,6 +1130,7 @@ public class CTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	 * @param pre The predecessor relation
 	 * @throws PrismException 
 	 */
+	@Override
 	public BitSet prob1(CTMC ctmc, BitSet remain, BitSet target, PredecessorRelation pre) throws PrismException
 	{
 		// Construct embedded DTMC and do computation on that

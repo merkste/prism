@@ -65,7 +65,7 @@ import explicit.rewards.Rewards;
 /**
  * Explicit-state model checker for discrete-time Markov chains (DTMCs).
  */
-public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
+public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker<DTMC>
 {
 	/**
 	 * Create a new DTMCModelChecker, inherit basic state from parent (unless null).
@@ -675,6 +675,7 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	 * @param target Target states
 	 * @param pre The predecessor relation
 	 */
+	@Override
 	public BitSet prob0(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre)
 	{
 
@@ -784,6 +785,7 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	 * @param target Target states
 	 * @param pre The predecessor relation of the DTMC
 	 */
+	@Override
 	public BitSet prob1(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre)
 	{
 		// Implements the constrained reachability algorithm from
@@ -1476,7 +1478,7 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 
 	// L operator
 
-	protected static class ReachBsccComputer<T extends MCModelChecker>
+	protected static class ReachBsccComputer<T extends MCModelChecker<?>>
 	{
 		T mc;
 		DTMC model;

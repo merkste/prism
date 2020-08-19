@@ -1189,6 +1189,7 @@ public class ProbModelChecker extends NonProbModelChecker
 	 * @return the relativized long-run value for each state of interest
 	 * @throws PrismException
 	 */
+	// FIXME ALG: check types
 	public StateValues checkConditionalExpressionLongRun(Model model, ExpressionLongRun expr, Expression condition, BitSet statesOfInterest) throws PrismException
 	{
 		if (model.getModelType() != ModelType.DTMC && model.getModelType() != ModelType.CTMC) {
@@ -1203,10 +1204,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues values = checkExpression(model, expr.getExpression(), states);
 		assert values.getType() != TypeBool.getInstance() : "Non-Boolean values expected.";
 
-		ReachBsccComputer<MCModelChecker> reachComputer = new DTMCModelChecker.ReachBsccComputer<>((MCModelChecker) this, (DTMC) model, condition);
+		ReachBsccComputer<MCModelChecker<?>> reachComputer = new DTMCModelChecker.ReachBsccComputer<>((MCModelChecker<?>) this, (DTMC) model, condition);
 		return computeLongRun((DTMC) model, values, states, reachComputer, statesOfInterest);
 	}
 
+	// FIXME ALG: check types
 	protected StateValues computeLongRun(DTMC dtmc, StateValues values, BitSet states, ReachBsccComputer<?> reachComputer, BitSet statesOfInterest)
 			throws PrismException
 	{
@@ -1227,12 +1229,12 @@ public class ProbModelChecker extends NonProbModelChecker
 				steadyStateProbsBscc = cache.getSteadyStateProbs(dtmc);
 			} else {
 				mainLog.println("\nComputing steady-state probabilities.");
-				steadyStateProbsBscc = SteadyStateProbs.computeCompact((MCModelChecker) this, dtmc);
+				steadyStateProbsBscc = SteadyStateProbs.computeCompact((MCModelChecker<?>) this, dtmc);
 				mainLog.println("\nCaching steady-state probabilities.");
 				cache.storeSteadyStateProbs(dtmc, steadyStateProbsBscc, settings);
 			}
 		} else {
-			steadyStateProbsBscc = SteadyStateProbs.computeSimple((MCModelChecker) this, dtmc);
+			steadyStateProbsBscc = SteadyStateProbs.computeSimple((MCModelChecker<?>) this, dtmc);
 		}
 		BitSet nonBsccStates = steadyStateProbsBscc.getNonBsccStates();
 		StateValues steadyStateProbs = StateValues.createFromDoubleArray(steadyStateProbsBscc.getSteadyStateProbabilities(), dtmc);
