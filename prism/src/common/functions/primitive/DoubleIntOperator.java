@@ -2,7 +2,7 @@
 //	
 //	Copyright (c) 2016-
 //	Authors:
-//	* Steffen Maercker <maercker@tcs.inf.tu-dresden.de> (TU Dresden)
+//	* Steffen Maercker <steffen.maercker@tu-dresden.de> (TU Dresden)
 //	
 //------------------------------------------------------------------------------
 //	
@@ -24,13 +24,16 @@
 //	
 //==============================================================================
 
-package common.iterable;
+package common.functions.primitive;
 
-import java.util.PrimitiveIterator.OfLong;
-
-/** Iterable for a PrimitiveIterator.OfLong */
-public interface IterableLong extends Iterable<Long>
+/**
+ * Functional interface for a binary function (double, int) -> double.
+ */
+@FunctionalInterface
+public interface DoubleIntOperator
 {
-	@Override
-	public OfLong iterator();
+	/**
+	 * Applies this function to the given arguments.
+	 */
+	double applyAsDouble(double l, int i);
 }
