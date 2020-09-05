@@ -27,8 +27,24 @@
 
 package common.iterable;
 
+import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
+
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
 
 /**
  * Abstract base class of efficient Iterators over array slices.
@@ -148,6 +164,51 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 			return elements[nextIndex++];
 		}
 
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			while (nextIndex < toIndex) {
+				action.accept(elements[nextIndex++]);
+			}
+			release();
+		}
+
+		@Override
+		public long collectAndCount(Collection<? super E> collection)
+		{
+			long count = 0;
+			while (nextIndex < toIndex) {
+				count++;
+				collection.add(elements[nextIndex++]);
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public int collectAndCount(E[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
 		@SuppressWarnings("unchecked")
 		@Override
 		public void release()
@@ -196,6 +257,138 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 		{
 			requireNext();
 			return elements[nextIndex++];
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			while (nextIndex < toIndex) {
+				action.accept(elements[nextIndex++]);
+			}
+			release();
+		}
+
+		@Override
+		public long collectAndCount(Collection<? super Double> collection)
+		{
+			long count = 0;
+			while (nextIndex < toIndex) {
+				count++;
+				collection.add(elements[nextIndex++]);
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public int collectAndCount(Double[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public int collectAndCount(double[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public boolean contains(double d)
+		{
+			while (nextIndex < toIndex) {
+				if (d == elements[nextIndex++]) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public OptionalDouble max()
+		{
+			if (! hasNext()) {
+				return OptionalDouble.empty();
+			}
+			double max = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				double next = elements[nextIndex++];
+				max      = next > max ? next : max;
+			}
+			release();
+			return OptionalDouble.of(max);
+		}
+
+		@Override
+		public OptionalDouble min()
+		{
+			if (! hasNext()) {
+				return OptionalDouble.empty();
+			}
+			double min = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				double next = elements[nextIndex++];
+				min      = next < min ? next : min;
+			}
+			release();
+			return OptionalDouble.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super Double, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.applyAsDouble(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double sum()
+		{
+			double sum = 0;
+			while (nextIndex < toIndex) {
+				sum += elements[nextIndex++];
+			}
+			release();
+			return sum;
 		}
 
 		@Override
@@ -248,6 +441,138 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			while (nextIndex < toIndex) {
+				action.accept(elements[nextIndex++]);
+			}
+			release();
+		}
+
+		@Override
+		public long collectAndCount(Collection<? super Integer> collection)
+		{
+			long count = 0;
+			while (nextIndex < toIndex) {
+				count++;
+				collection.add(elements[nextIndex++]);
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public int collectAndCount(Integer[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public int collectAndCount(int[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public boolean contains(int i)
+		{
+			while (nextIndex < toIndex) {
+				if (i == elements[nextIndex++]) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public OptionalInt max()
+		{
+			if (! hasNext()) {
+				return OptionalInt.empty();
+			}
+			int max = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				int next = elements[nextIndex++];
+				max      = next > max ? next : max;
+			}
+			release();
+			return OptionalInt.of(max);
+		}
+
+		@Override
+		public OptionalInt min()
+		{
+			if (! hasNext()) {
+				return OptionalInt.empty();
+			}
+			int min = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				int next = elements[nextIndex++];
+				min      = next < min ? next : min;
+			}
+			release();
+			return OptionalInt.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super Integer, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.applyAsInt(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long sum()
+		{
+			long sum = 0;
+			while (nextIndex < toIndex) {
+				sum += elements[nextIndex++];
+			}
+			release();
+			return sum;
+		}
+
+		@Override
 		public void release()
 		{
 			super.release();
@@ -294,6 +619,138 @@ public abstract class ArrayIterator<E> implements FunctionalIterator<E>
 		{
 			requireNext();
 			return elements[nextIndex++];
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			while (nextIndex < toIndex) {
+				action.accept(elements[nextIndex++]);
+			}
+			release();
+		}
+
+		@Override
+		public long collectAndCount(Collection<? super Long> collection)
+		{
+			long count = 0;
+			while (nextIndex < toIndex) {
+				count++;
+				collection.add(elements[nextIndex++]);
+			}
+			release();
+			return count;
+		}
+
+		@Override
+		public int collectAndCount(Long[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public int collectAndCount(long[] array, int offset)
+		{
+			int count = offset;
+			while (nextIndex < toIndex) {
+				array[count++] = elements[nextIndex++];
+			}
+			release();
+			return count - offset;
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (nextIndex < toIndex) {
+				if (l == elements[nextIndex++]) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public OptionalLong max()
+		{
+			if (! hasNext()) {
+				return OptionalLong.empty();
+			}
+			long max = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				long next = elements[nextIndex++];
+				max      = next > max ? next : max;
+			}
+			release();
+			return OptionalLong.of(max);
+		}
+
+		@Override
+		public OptionalLong min()
+		{
+			if (! hasNext()) {
+				return OptionalLong.empty();
+			}
+			long min = elements[nextIndex++];
+			while (nextIndex < toIndex) {
+				long next = elements[nextIndex++];
+				min      = next < min ? next : min;
+			}
+			release();
+			return OptionalLong.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super Long, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.apply(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (nextIndex < toIndex) {
+				result = accumulator.applyAsLong(result, elements[nextIndex++]);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long sum()
+		{
+			long sum = 0;
+			while (nextIndex < toIndex) {
+				sum += elements[nextIndex++];
+			}
+			release();
+			return sum;
 		}
 
 		@Override
