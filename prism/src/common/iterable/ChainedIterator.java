@@ -34,6 +34,18 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
+
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
 
 /**
  * Abstract base class implementing an Iterator that chains a sequence of Iterators.
@@ -143,6 +155,14 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 	}
 
 	@Override
+	public void forEachRemaining(Consumer<? super E> action)
+	{
+		current.forEachRemaining(action);
+		iterators.forEachRemaining(iter -> iter.forEachRemaining(action));
+		release();
+	}
+
+	@Override
 	public long count()
 	{
 		long count = 0;
@@ -158,6 +178,24 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 		}
 		release();
 		return count;
+	}
+
+	@Override
+	public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
+	{
+		Objects.requireNonNull(accumulator);
+		T result = identity;
+		while (hasNext()) {
+			if (current instanceof FunctionalIterator) {
+				result = ((FunctionalIterator<? extends E>) current).reduce(result, accumulator);
+				continue;
+			}
+			while (current.hasNext()) {
+				E next = current.next();
+				result = accumulator.apply(result, next);
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -330,6 +368,14 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 		}
 
 		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			current.forEachRemaining(action);
+			iterators.forEachRemaining(iter -> iter.forEachRemaining(action));
+			release();
+		}
+
+		@Override
 		public boolean contains(double d)
 		{
 			while (hasNext()) {
@@ -406,6 +452,42 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 				}
 			}
 			return OptionalDouble.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfDouble) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					double next = current.nextDouble();
+					result      = accumulator.apply(result, next);
+				}
+			}
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfDouble) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					double next = current.nextDouble();
+					result      = accumulator.applyAsDouble(result, next);
+				}
+			}
+			return result;
 		}
 
 		@Override
@@ -492,6 +574,14 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 		}
 
 		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			current.forEachRemaining(action);
+			iterators.forEachRemaining(iter -> iter.forEachRemaining(action));
+			release();
+		}
+
+		@Override
 		public boolean contains(int d)
 		{
 			while (hasNext()) {
@@ -568,6 +658,42 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 				}
 			}
 			return OptionalInt.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfInt) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					int next = current.nextInt();
+					result      = accumulator.apply(result, next);
+				}
+			}
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfInt) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					int next = current.nextInt();
+					result   = accumulator.applyAsInt(result, next);
+				}
+			}
+			return result;
 		}
 
 		@Override
@@ -654,6 +780,14 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 		}
 
 		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			current.forEachRemaining(action);
+			iterators.forEachRemaining(iter -> iter.forEachRemaining(action));
+			release();
+		}
+
+		@Override
 		public boolean contains(long d)
 		{
 			while (hasNext()) {
@@ -730,6 +864,42 @@ public abstract class ChainedIterator<E, I extends Iterator<E>> implements Funct
 				}
 			}
 			return OptionalLong.of(min);
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfLong) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					long next = current.nextLong();
+					result      = accumulator.apply(result, next);
+				}
+			}
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (hasNext()) {
+				if (current instanceof FunctionalPrimitiveIterator) {
+					result = ((FunctionalPrimitiveIterator.OfLong) current).reduce(result, accumulator);
+					continue;
+				}
+				while (current.hasNext()) {
+					long next = current.nextLong();
+					result    = accumulator.applyAsLong(result, next);
+				}
+			}
+			return result;
 		}
 
 		@Override
