@@ -54,10 +54,23 @@ import common.iterable.MappingIterator.ObjToLong;
 
 public interface FunctionalIterator<E> extends Iterator<E>
 {
+	/**
+	 * Abstract base class of decorators that extend non-functional Iterators with the methods provided by {@link FunctionalIterator}.
+	 * Implementations should release the underlying Iterator after iteration.
+	 *
+	 * @param <E> type of the {@link Iterator}'s elements
+	 * @param <I> type of the decorated non-functional Iterator
+	 */
 	public abstract class IteratorDecorator<E, I extends Iterator<E>> implements FunctionalIterator<E>
 	{
+		/** the iterator that is decorated */
 		protected I iterator;
 
+		/**
+		 * Generic constructor that wraps an Iterator.
+		 *
+		 * @param iterator the {@link Iterator} to be decorated
+		 */
 		public IteratorDecorator(I iterator)
 		{
 			Objects.requireNonNull(iterator);
@@ -87,10 +100,10 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		}
 
 		/**
-		 * Unwrap a nested iterator if this instance is a decorating wrapper.
+		 * Unwrap a nested iterator if this instance is a decorator wrapping an Iterator.
 		 * Use to avoid repeated indirections, especially in loops.
-		 * 
-		 * @return {@code this} instance or the wrapped iterator.
+		 *
+		 * @return the wrapped iterator.
 		 */
 		@Override
 		public I unwrap()
@@ -100,6 +113,11 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 
 
+		/**
+		 * Generic implementation of an {@link IteratorDecorator}.
+		 *
+		 * @param <E> type of the Iterator's elements
+		 */
 		public static class Of<E> extends IteratorDecorator<E, Iterator<E>>
 		{
 			public Of(Iterator<E> iterator)
@@ -116,8 +134,16 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 
 
+		/**
+		 * Primitive specialisation for {@code double} of an {@link IteratorDecorator}.
+		 */
 		public static class OfDouble extends IteratorDecorator<Double, PrimitiveIterator.OfDouble> implements FunctionalPrimitiveIterator.OfDouble
 		{
+			/**
+			 * Generic constructor that wraps a PrimitiveIterator.OfDouble.
+			 *
+			 * @param iterator the {@link PrimitiveIterator.OfDouble} to be decorated
+			 */
 			public OfDouble(PrimitiveIterator.OfDouble iterator)
 			{
 				super(iterator);
@@ -151,8 +177,16 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 
 
+		/**
+		 * Primitive specialisation for {@code int} of an {@link IteratorDecorator}.
+		 */
 		public static class OfInt extends IteratorDecorator<Integer, PrimitiveIterator.OfInt> implements FunctionalPrimitiveIterator.OfInt
 		{
+			/**
+			 * Generic constructor that wraps a PrimitiveIterator.OfInt.
+			 *
+			 * @param iterator the {@link PrimitiveIterator.OfInt} to be decorated
+			 */
 			public OfInt(PrimitiveIterator.OfInt iterator)
 			{
 				super(iterator);
@@ -186,8 +220,16 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 
 
+		/**
+		 * Primitive specialisation for {@code long} of an {@link IteratorDecorator}.
+		 */
 		public static class OfLong extends IteratorDecorator<Long, PrimitiveIterator.OfLong> implements FunctionalPrimitiveIterator.OfLong
 		{
+			/**
+			 * Generic constructor that wraps a PrimitiveIterator.OfLong.
+			 *
+			 * @param iterator the {@link PrimitiveIterator.OfLong} to be decorated
+			 */
 			public OfLong(PrimitiveIterator.OfLong iterator)
 			{
 				super(iterator);
@@ -222,11 +264,26 @@ public interface FunctionalIterator<E> extends Iterator<E>
 
 
 
+	/**
+	 * Extend the Iterator of an Iterable with the methods provided by FunctionalIterator.
+	 * Return the Iterator if it already implements of FunctionalIterator.
+	 *
+	 * @param iterable the {@link Iterable} providing the {@link Iterator} to extend
+	 * @return a {@link FunctionalIterator} that is either the Iterable's Iterator or a decorator on the Iterator
+	 */
 	public static <E> FunctionalIterator<E> extend(Iterable<E> iterable)
 	{
 		return extend(iterable.iterator());
 	}
 
+	/**
+	 * Extend an Iterator with the methods provided by FunctionalIterator.
+	 * If the Iterator is a PrimitiveIterator, the extension is a FunctionalPrimitiveIterator.
+	 * Answer the Iterator if it already implements of FunctionalIterator.
+	 *
+	 * @param iterator the {@link Iterator} to extend
+	 * @return a {@link FunctionalIterator} that is either the argument or a decorator on the argument
+	 */
 	@SuppressWarnings("unchecked")
 	public static <E> FunctionalIterator<E> extend(Iterator<E> iterator)
 	{
@@ -245,6 +302,13 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new IteratorDecorator.Of<>(iterator);
 	}
 
+	/**
+	 * Extend a PrimitiveIterator.OfDouble with the methods provided by FunctionalPrimitiveIterator.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.
+	 *
+	 * @param iterator the {@link PrimitiveIterator.OfDouble} to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfDouble} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfDouble extend(PrimitiveIterator.OfDouble iterator)
 	{
 		if (iterator instanceof FunctionalPrimitiveIterator.OfDouble) {
@@ -253,6 +317,13 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new IteratorDecorator.OfDouble(iterator);
 	}
 
+	/**
+	 * Extend a PrimitiveIterator.OfInt with the methods provided by FunctionalPrimitiveIterator.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.
+	 *
+	 * @param iterator the {@link PrimitiveIterator.OfInt} to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfInt} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfInt extend(PrimitiveIterator.OfInt iterator)
 	{
 		if (iterator instanceof FunctionalPrimitiveIterator.OfInt) {
@@ -261,6 +332,13 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new IteratorDecorator.OfInt(iterator);
 	}
 
+	/**
+	 * Extend a PrimitiveIterator.OfLong with the methods provided by FunctionalPrimitiveIterator.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.
+	 *
+	 * @param iterator the {@link PrimitiveIterator.OfLong} to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfLong} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfLong extend(PrimitiveIterator.OfLong iterator)
 	{
 		if (iterator instanceof FunctionalPrimitiveIterator.OfLong) {
@@ -269,6 +347,14 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new IteratorDecorator.OfLong(iterator);
 	}
 
+	/**
+	 * Convert an Iterator&lt;Double&gt; to a FunctionalPrimitiveItator.OfDouble by unboxing each element.
+	 * If the Iterator yields {@code null}, a {@link NullPointerException} is thrown when iterating.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.OfDouble.
+	 *
+	 * @param iterator the {@link Iterator}&lt;Double&gt; to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfDouble} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfDouble unboxDouble(Iterator<Double> iterator)
 	{
 		if (iterator instanceof PrimitiveIterator.OfDouble) {
@@ -277,6 +363,14 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new ObjToDouble<>(iterator, Double::doubleValue);
 	}
 
+	/**
+	 * Convert an Iterator&lt;Integer&gt; to a FunctionalPrimitiveItator.OfInt by unboxing each element.
+	 * If the Iterator yields {@code null}, a {@link NullPointerException} is thrown when iterating.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.OfInt.
+	 *
+	 * @param iterator the {@link Iterator}&lt;Integer&gt; to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfInt} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfInt unboxInt(Iterator<Integer> iterator)
 	{
 		if (iterator instanceof PrimitiveIterator.OfInt) {
@@ -285,6 +379,14 @@ public interface FunctionalIterator<E> extends Iterator<E>
 		return new ObjToInt<>(iterator, Integer::intValue);
 	}
 
+	/**
+	 * Convert an Iterator&lt;Long&gt; to a FunctionalPrimitiveItator.OfLong by unboxing each element.
+	 * If the Iterator yields {@code null}, a {@link NullPointerException} is thrown when iterating.
+	 * Answer the Iterator if it already implements of FunctionalPrimitiveIterator.OfLong.
+	 *
+	 * @param iterator the {@link Iterator}&lt;Long&gt; to extend
+	 * @return a {@link FunctionalPrimitiveIterator.OfLong} that is either the argument or a decorator on the argument
+	 */
 	public static FunctionalPrimitiveIterator.OfLong unboxLong(Iterator<Long> iterator)
 	{
 		if (iterator instanceof PrimitiveIterator.OfLong) {
@@ -299,7 +401,7 @@ public interface FunctionalIterator<E> extends Iterator<E>
 	 * Unwrap a nested iterator if this instance is a decorating wrapper.
 	 * Use to avoid repeated indirections, especially in loops.
 	 * 
-	 * @return {@code this} instance or the wrapped iterator.
+	 * @return {@code this} instance
 	 */
 	default Iterator<E> unwrap()
 	{
