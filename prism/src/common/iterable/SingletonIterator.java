@@ -31,6 +31,10 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
 /**
  * Abstract base class for Iterators ranging over a single element.
@@ -50,6 +54,15 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 	{
 		return this;
 	}
+
+	@Override
+	public void forEachRemaining(Consumer<? super E> action)
+	{
+		if (hasNext()) {
+			action.accept(next());
+		}
+	}
+
 
 	@Override
 	public long count()
@@ -165,6 +178,14 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			if (hasNext()) {
+				action.accept(nextDouble());
+			}
+		}
+
+		@Override
 		public SingletonIterator.OfDouble dedupe()
 		{
 			return this;
@@ -264,6 +285,14 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			if (hasNext()) {
+				action.accept(nextInt());
+			}
+		}
+
+		@Override
 		public SingletonIterator.OfInt dedupe()
 		{
 			return this;
@@ -360,6 +389,14 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 			long next = element.getAsLong();
 			release();
 			return next;
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			if (hasNext()) {
+				action.accept(nextLong());
+			}
 		}
 
 		@Override
