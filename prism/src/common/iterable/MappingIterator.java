@@ -33,15 +33,19 @@ import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.function.BiFunction;
+import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.function.IntBinaryOperator;
 import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongBinaryOperator;
 import java.util.function.LongFunction;
 import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
@@ -49,6 +53,12 @@ import java.util.function.LongUnaryOperator;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
+import common.functions.primitive.DoubleIntOperator;
+import common.functions.primitive.LongIntOperator;
 
 /**
  * Abstract base class for Iterators that map elements using a function {@code f: S -> E}.
@@ -149,6 +159,18 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			if (! (iterator instanceof FunctionalIterator)) {
+				return super.reduce(identity, accumulator);
+			}
+			T result = ((FunctionalIterator<S>) iterator).reduce(identity, (r, e) -> accumulator.apply(r, function.apply(e)));
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.Of();
@@ -198,6 +220,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			}
 			release();
 			return false;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.next());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.next());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
 		}
 
 		@Override
@@ -253,6 +301,58 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				int applyAsInt = function.applyAsInt(iterator.next());
+				result = accumulator.apply(result, applyAsInt);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsInt(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.Of();
@@ -302,6 +402,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			}
 			release();
 			return false;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.next());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.next());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
 		}
 
 		@Override
@@ -394,6 +520,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.nextDouble());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				final double next = function.applyAsDouble(iterator.nextDouble());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfDouble();
@@ -444,6 +596,58 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextDouble());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextDouble());
+				result = accumulator.applyAsInt(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfDouble();
@@ -491,6 +695,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			}
 			release();
 			return false;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextDouble());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextDouble());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
 		}
 
 		@Override
@@ -583,6 +813,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.nextInt());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.nextInt());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfInt();
@@ -633,6 +889,58 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextInt());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextInt());
+				result = accumulator.applyAsInt(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfInt();
@@ -680,6 +988,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			}
 			release();
 			return false;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextInt());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextInt());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
 		}
 
 		@Override
@@ -772,6 +1106,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.nextLong());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				double next = function.applyAsDouble(iterator.nextLong());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfLong();
@@ -822,6 +1182,58 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextLong());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			double result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsDouble(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			int result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.nextLong());
+				result = accumulator.applyAsInt(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongIntOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				int next = function.applyAsInt(iterator.next());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfLong();
@@ -869,6 +1281,32 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			}
 			release();
 			return false;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			T result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextLong());
+				result = accumulator.apply(result, next);
+			}
+			release();
+			return result;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			long result = identity;
+			while (iterator.hasNext()) {
+				long next = function.applyAsLong(iterator.nextLong());
+				result = accumulator.applyAsLong(result, next);
+			}
+			release();
+			return result;
 		}
 
 		@Override
