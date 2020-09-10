@@ -50,6 +50,16 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		return this;
 	}
 
+	@Override
+	public long count()
+	{
+		if (hasNext()) {
+			next();
+			return 1;
+		}
+		return 0;
+	}
+
 
 
 	/**
