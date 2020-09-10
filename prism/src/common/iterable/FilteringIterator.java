@@ -30,6 +30,10 @@ package common.iterable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -138,6 +142,31 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public Optional<E> detect(Predicate<? super E> predicate)
+		{
+			if (!hasNext) {
+				return Optional.empty();
+			}
+			// test current element
+			if (predicate.test(next)) {
+				return Optional.of(next);
+			}
+			// test remaining elements
+			if (iterator instanceof FunctionalIterator) {
+				return ((FunctionalIterator<E>) iterator).detect(filter.and(predicate));
+			}
+			while(iterator.hasNext()) {
+				next = iterator.next();
+				if (filter.test(next) && predicate.test(next)) {
+					release();
+					return Optional.of(next);
+				}
+			}
+			release();
+			return Optional.empty();
+		}
+
+		@Override
 		public void release()
 		{
 			super.release();
@@ -192,6 +221,31 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			double current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public OptionalDouble detect(DoublePredicate predicate)
+		{
+			if (!hasNext) {
+				return OptionalDouble.empty();
+			}
+			// test current element
+			if (predicate.test(next)) {
+				return OptionalDouble.of(next);
+			}
+			// test remaining elements
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfDouble) iterator).detect(filter.and(predicate));
+			}
+			while(iterator.hasNext()) {
+				next = iterator.nextDouble();
+				if (filter.test(next) && predicate.test(next)) {
+					release();
+					return OptionalDouble.of(next);
+				}
+			}
+			release();
+			return OptionalDouble.empty();
 		}
 
 		@Override
@@ -252,6 +306,31 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public OptionalInt detect(IntPredicate predicate)
+		{
+			if (!hasNext) {
+				return OptionalInt.empty();
+			}
+			// test current element
+			if (predicate.test(next)) {
+				return OptionalInt.of(next);
+			}
+			// test remaining elements
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfInt) iterator).detect(filter.and(predicate));
+			}
+			while(iterator.hasNext()) {
+				next = iterator.nextInt();
+				if (filter.test(next) && predicate.test(next)) {
+					release();
+					return OptionalInt.of(next);
+				}
+			}
+			release();
+			return OptionalInt.empty();
+		}
+
+		@Override
 		public void release()
 		{
 			super.release();
@@ -305,6 +384,31 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			long current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public OptionalLong detect(LongPredicate predicate)
+		{
+			if (!hasNext) {
+				return OptionalLong.empty();
+			}
+			// test current element
+			if (predicate.test(next)) {
+				return OptionalLong.of(next);
+			}
+			// test remaining elements
+			if (iterator instanceof FunctionalPrimitiveIterator) {
+				return ((FunctionalPrimitiveIterator.OfLong) iterator).detect(filter.and(predicate));
+			}
+			while(iterator.hasNext()) {
+				next = iterator.nextLong();
+				if (filter.test(next) && predicate.test(next)) {
+					release();
+					return OptionalLong.of(next);
+				}
+			}
+			release();
+			return OptionalLong.empty();
 		}
 
 		@Override
