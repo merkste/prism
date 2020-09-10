@@ -36,11 +36,15 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
 import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntPredicate;
 import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
 import java.util.function.Predicate;
 
@@ -149,6 +153,20 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			E current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			if (!hasNext) {
+				return;
+			}
+			// consume current element
+			action.accept(next);
+			// consume remaining elements
+			iterator.forEachRemaining(each -> {if (filter.test(each)) action.accept(each);});
+			release();
 		}
 
 		@Override
@@ -273,6 +291,20 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			double current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			if (!hasNext) {
+				return;
+			}
+			// consume current element
+			action.accept(next);
+			// consume remaining elements
+			iterator.forEachRemaining((double each) -> {if (filter.test(each)) action.accept(each);});
+			release();
 		}
 
 		@Override
@@ -441,6 +473,20 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			int current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			if (!hasNext) {
+				return;
+			}
+			// consume current element
+			action.accept(next);
+			// consume remaining elements
+			iterator.forEachRemaining((int each) -> {if (filter.test(each)) action.accept(each);});
+			release();
 		}
 
 		@Override
@@ -657,6 +703,20 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			long current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			if (!hasNext) {
+				return;
+			}
+			// consume current element
+			action.accept(next);
+			// consume remaining elements
+			iterator.forEachRemaining((long each) -> {if (filter.test(each)) action.accept(each);});
+			release();
 		}
 
 		@Override
