@@ -142,6 +142,24 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public long count()
+		{
+			if (!hasNext) {
+				return 0;
+			}
+			// count current element
+			long count = 1;
+			// count remaining elements
+			while (iterator.hasNext()) {
+				if (filter.test(iterator.next())) {
+					count++;
+				}
+			}
+			release();
+			return count;
+		}
+
+		@Override
 		public Optional<E> detect(Predicate<? super E> predicate)
 		{
 			if (!hasNext) {
@@ -221,6 +239,24 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			double current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public long count()
+		{
+			if (!hasNext) {
+				return 0;
+			}
+			// count current element
+			long count = 1;
+			// count remaining elements
+			while (iterator.hasNext()) {
+				if (filter.test(iterator.nextDouble())) {
+					count++;
+				}
+			}
+			release();
+			return count;
 		}
 
 		@Override
@@ -306,6 +342,24 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public long count()
+		{
+			if (!hasNext) {
+				return 0;
+			}
+			// count current element
+			long count = 1;
+			// count remaining elements
+			while (iterator.hasNext()) {
+				if (filter.test(iterator.nextInt())) {
+					count++;
+				}
+			}
+			release();
+			return count;
+		}
+
+		@Override
 		public OptionalInt detect(IntPredicate predicate)
 		{
 			if (!hasNext) {
@@ -384,6 +438,24 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			long current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public long count()
+		{
+			if (!hasNext) {
+				return 0;
+			}
+			// count current element
+			long count = 1;
+			// count remaining elements
+			while (iterator.hasNext()) {
+				if (filter.test(iterator.nextLong())) {
+					count++;
+				}
+			}
+			release();
+			return count;
 		}
 
 		@Override
