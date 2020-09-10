@@ -242,6 +242,26 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			if (!hasNext) {
+				return false;
+			}
+			// test current element
+			if (next == d) {
+				return true;
+			}
+			// test remaining elements
+			while(iterator.hasNext()) {
+				next = iterator.nextDouble();
+				if (next == d && filter.test(next)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
 		public long count()
 		{
 			if (!hasNext) {
@@ -342,6 +362,26 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			if (!hasNext) {
+				return false;
+			}
+			// test current element
+			if (next == i) {
+				return true;
+			}
+			// test remaining elements
+			while(iterator.hasNext()) {
+				next = iterator.nextInt();
+				if (next == i && filter.test(next)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		@Override
 		public long count()
 		{
 			if (!hasNext) {
@@ -438,6 +478,26 @@ public abstract class FilteringIterator<E, I extends Iterator<E>> implements Fun
 			long current = next;
 			seekNext();
 			return current;
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			if (!hasNext) {
+				return false;
+			}
+			// test current element
+			if (next == l) {
+				return true;
+			}
+			// test remaining elements
+			while(iterator.hasNext()) {
+				next = iterator.nextLong();
+				if (next == l && filter.test(next)) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		@Override
