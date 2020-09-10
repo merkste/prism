@@ -26,6 +26,7 @@
 
 package common.iterable;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -60,6 +61,25 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		return 0;
 	}
 
+	@Override
+	public long collectAndCount(Collection<? super E> collection)
+	{
+		if (hasNext()) {
+			collection.add(next());
+			return 1;
+		}
+		return 0;
+	}
+
+	@Override
+	public int collectAndCount(E[] array, int offset)
+	{
+		if (hasNext()) {
+			array[offset] = next();
+			return 1;
+		}
+		return 0;
+	}
 
 
 	/**
@@ -150,6 +170,26 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public int collectAndCount(Double[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextDouble();
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
+		public int collectAndCount(double[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextDouble();
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
 		public OptionalDouble max()
 		{
 			OptionalDouble max = element;
@@ -223,6 +263,26 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public int collectAndCount(Integer[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextInt();
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
+		public int collectAndCount(int[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextInt();
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
 		public OptionalInt max()
 		{
 			OptionalInt max = element;
@@ -293,6 +353,26 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		public SingletonIterator.OfLong distinct()
 		{
 			return this;
+		}
+
+		@Override
+		public int collectAndCount(Long[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextLong();
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
+		public int collectAndCount(long[] array, int offset)
+		{
+			if (hasNext()) {
+				array[offset] = nextLong();
+				return 1;
+			}
+			return 0;
 		}
 
 		@Override
