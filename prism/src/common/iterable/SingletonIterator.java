@@ -27,6 +27,7 @@
 package common.iterable;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -35,6 +36,14 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.function.BiFunction;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.IntBinaryOperator;
+import java.util.function.LongBinaryOperator;
+
+import common.functions.ObjDoubleFunction;
+import common.functions.ObjIntFunction;
+import common.functions.ObjLongFunction;
 
 /**
  * Abstract base class for Iterators ranging over a single element.
@@ -98,6 +107,13 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 	public boolean contains(Object obj)
 	{
 		return hasNext() && next().equals(obj);
+	}
+
+	@Override
+	public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
+	{
+		Objects.requireNonNull(accumulator);
+		return hasNext() ? accumulator.apply(identity, next()) : identity;
 	}
 
 
@@ -238,6 +254,20 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public <T> T reduce(T identity, ObjDoubleFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.apply(identity, nextDouble()) : identity;
+		}
+
+		@Override
+		public double reduce(double identity, DoubleBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.applyAsDouble(identity, nextDouble()) : identity;
+		}
+
+		@Override
 		public double sum()
 		{
 			return max().orElse(0.0);
@@ -342,6 +372,20 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		public OptionalInt min()
 		{
 			return max();
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjIntFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.apply(identity, nextInt()) : identity;
+		}
+
+		@Override
+		public int reduce(int identity, IntBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.applyAsInt(identity, nextInt()) : identity;
 		}
 
 		@Override
@@ -450,6 +494,20 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		public OptionalLong min()
 		{
 			return element;
+		}
+
+		@Override
+		public <T> T reduce(T identity, ObjLongFunction<T, T> accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.apply(identity, nextLong()) : identity;
+		}
+
+		@Override
+		public long reduce(long identity, LongBinaryOperator accumulator)
+		{
+			Objects.requireNonNull(accumulator);
+			return hasNext() ? accumulator.applyAsLong(identity, nextLong()) : identity;
 		}
 
 		@Override
