@@ -34,18 +34,22 @@ import java.util.PrimitiveIterator.OfDouble;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleToIntFunction;
 import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 import java.util.function.LongToDoubleFunction;
 import java.util.function.LongToIntFunction;
@@ -159,6 +163,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
 		public <T> T reduce(T identity, BiFunction<T, ? super E, T> accumulator)
 		{
 			Objects.requireNonNull(accumulator);
@@ -207,6 +219,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsDouble(iterator.next());
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsDouble(each)));
+			release();
 		}
 
 		@Override
@@ -285,6 +305,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsInt(iterator.next());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsInt(each)));
+			release();
 		}
 
 		@Override
@@ -392,6 +420,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining(each -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
 		public boolean contains(long l)
 		{
 			while (iterator.hasNext()) {
@@ -470,6 +506,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfDouble();
@@ -504,6 +548,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsDouble(iterator.nextDouble());
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsDouble(each)));
+			release();
 		}
 
 		@Override
@@ -580,6 +632,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsInt(iterator.nextDouble());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsInt(each)));
+			release();
 		}
 
 		@Override
@@ -685,6 +745,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((double each) -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
 		public boolean contains(long l)
 		{
 			while (iterator.hasNext()) {
@@ -763,6 +831,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfInt();
@@ -797,6 +873,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsDouble(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsDouble(each)));
+			release();
 		}
 
 		@Override
@@ -873,6 +957,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsInt(iterator.nextInt());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsInt(each)));
+			release();
 		}
 
 		@Override
@@ -978,6 +1070,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((int each) -> action.accept(function.applyAsLong(each)));
+			release();
+		}
+
+		@Override
 		public boolean contains(long l)
 		{
 			while (iterator.hasNext()) {
@@ -1056,6 +1156,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public void forEachRemaining(Consumer<? super E> action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.apply(each)));
+			release();
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfLong();
@@ -1091,7 +1199,15 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 			requireNext();
 			return function.applyAsDouble(iterator.nextLong());
 		}
-
+	
+		@Override
+		public void forEachRemaining(DoubleConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsDouble(each)));
+			release();
+		}
+	
 		@Override
 		public boolean contains(double d)
 		{
@@ -1166,6 +1282,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsInt(iterator.nextLong());
+		}
+
+		@Override
+		public void forEachRemaining(IntConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsInt(each)));
+			release();
 		}
 
 		@Override
@@ -1268,6 +1392,14 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsLong(iterator.nextLong());
+		}
+
+		@Override
+		public void forEachRemaining(LongConsumer action)
+		{
+			Objects.requireNonNull(action);
+			iterator.forEachRemaining((long each) -> action.accept(function.applyAsLong(each)));
+			release();
 		}
 
 		@Override
