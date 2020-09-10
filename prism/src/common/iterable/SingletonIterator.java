@@ -81,6 +81,13 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		return 0;
 	}
 
+	@Override
+	public boolean contains(Object obj)
+	{
+		return hasNext() && next().equals(obj);
+	}
+
+
 
 	/**
 	 * Generic implementation of an singleton Iterator.
@@ -190,6 +197,12 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			return hasNext() && nextDouble() == d;
+		}
+
+		@Override
 		public OptionalDouble max()
 		{
 			OptionalDouble max = element;
@@ -283,6 +296,12 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			return hasNext() && nextInt() == i;
+		}
+
+		@Override
 		public OptionalInt max()
 		{
 			OptionalInt max = element;
@@ -373,6 +392,12 @@ public abstract class SingletonIterator<E> implements FunctionalIterator<E>
 				return 1;
 			}
 			return 0;
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			return hasNext() && nextLong() == l;
 		}
 
 		@Override
