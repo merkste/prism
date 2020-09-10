@@ -188,6 +188,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.Of();
@@ -227,6 +240,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.Of();
@@ -263,6 +289,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsLong(iterator.next());
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
 		}
 
 		@Override
@@ -342,6 +381,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfDouble();
@@ -379,6 +431,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfDouble();
@@ -413,6 +478,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsLong(iterator.nextDouble());
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
 		}
 
 		@Override
@@ -492,6 +570,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfInt();
@@ -529,6 +620,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfInt();
@@ -563,6 +667,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsLong(iterator.nextInt());
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
 		}
 
 		@Override
@@ -642,6 +759,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(double d)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsDouble(iterator.next()) == d) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfLong();
@@ -679,6 +809,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		}
 
 		@Override
+		public boolean contains(int i)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsInt(iterator.next()) == i) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
+		}
+
+		@Override
 		public void release()
 		{
 			iterator = EmptyIterator.OfLong();
@@ -713,6 +856,19 @@ public abstract class MappingIterator<S, E, I extends Iterator<S>> implements Fu
 		{
 			requireNext();
 			return function.applyAsLong(iterator.nextLong());
+		}
+
+		@Override
+		public boolean contains(long l)
+		{
+			while (iterator.hasNext()) {
+				if (function.applyAsLong(iterator.next()) == l) {
+					release();
+					return true;
+				}
+			}
+			release();
+			return false;
 		}
 
 		@Override
