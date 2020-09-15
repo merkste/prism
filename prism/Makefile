@@ -133,6 +133,7 @@ LD = $(CPP)
 JAVAC = javac
 JAVACC = javacc
 JAVAH = javah
+JAVA = java
 
 ##############
 # Flags etc. #
@@ -281,6 +282,15 @@ OBJ_DIR =		obj
 LIB_DIR =		lib
 INCLUDE_DIR =	include
 
+export PRISM_SRC_DIR     = src
+export PRISM_CLASSES_DIR = classes
+export PRISM_OBJ_DIR     = obj
+export PRISM_LIB_DIR     = lib
+export PRISM_INCLUDE_DIR = include
+export PRISM_IMAGES_DIR  = images
+export PRISM_DTDS_DIR    = dtds
+export PRISM_TESTS_DIR   = unit-tests
+
 # Now we locate the JNI header files jni.h and jni_md.h
 # (in fact this is the only reason we need JAVA_DIR)
 JAVA_JNI_H_DIR = $(shell \
@@ -402,19 +412,14 @@ make_dirs:
 	  for lib in `ls *$(LIBSUFFIX)`; do ln -fs $$lib `echo $$lib | sed s/$(LIBSUFFIX)/.jnilib/`; done;); \
 	fi
 
-tests: testslocal
-	@if [ -d ~/prism/prism-tests ]; then \
-	  cd ~/prism/prism-tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
-	else \
-	  echo "Skipping tests"; \
-	fi
 
-testslocal:
-	@if [ -d tests ]; then \
-	  cd tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
-	else \
-	  echo "Skipping local tests"; \
-	fi
+# Compile unit tests
+make_tests:
+	@echo Making $(PRISM_TESTS_DIR) ...; \
+	(cd $(PRISM_TESTS_DIR) && \
+	$(MAKE) \
+	CLASSPATHSEP="$(CLASSPATHSEP)") \
+	|| exit 1;
 
 bin_scripts:
 	@for target in $(BIN_TARGETS); do \
@@ -505,7 +510,7 @@ dist_tidy:
 
 binary:
 	@echo Generating jar file...
-	@jar cmf src/manifest.txt lib/prism.jar -C classes . -C . images dtds
+	@jar cmf src/manifest.txt lib/prism.jar -C classes . -C . $(PRISM_IMAGES_DIR) $(PRISM_DTDS_DIR)
 
 undist:
 	@rm -rf cudd && ln -s ../cudd cudd
@@ -642,5 +647,29 @@ checks:
 	echo "JAVA_DIR_BACKUP: $(JAVA_DIR_BACKUP)"; \
 	echo "JAVAC: "`which $(JAVAC)` \
 	)
+
+###########
+# Testing #
+###########
+
+# Run all unit tests
+unittests: make_tests
+	# Provide Regex to match our test classes. If none is given, only certain test classes are excluded by default.
+	$(JAVA) -jar lib/junit-platform-console-standalone.jar -cp classes --include-classname '^(Test.*|.+[.$$]Test.*|.+Tests?[.$$].+|.*Tests?)$$' -scan-classpath
+
+tests: testslocal
+	@if [ -d ../prism-tests ]; then \
+	  cd ../prism-tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
+	else \
+	  echo "Skipping tests"; \
+	fi
+
+testslocal:
+	@if [ -d tests ]; then \
+	  cd tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
+	else \
+	  echo "Skipping local tests"; \
+	fi
+
 
 #################################################
