@@ -26,6 +26,8 @@
 
 package explicit;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Iterator;
@@ -1249,6 +1251,7 @@ public class MDPModelChecker extends ProbModelChecker
 		long timer;
 		int strat[] = null;
 		FMDStrategyStep<Double> fmdStrat = null;
+		int strats[][] = null;
 
 		// Start bounded probabilistic reachability
 		timer = System.currentTimeMillis();
@@ -1294,12 +1297,25 @@ public class MDPModelChecker extends ProbModelChecker
 		if (remain != null)
 			unknown.and(remain);
 
+		// If required, create/initialise strategy storage
+		// Set choices to -1, denoting unknown
+		// (except for target states, which are -2, denoting arbitrary)
+		if (exportAdv) {
+			strats = new int[k][];
+			for (int j = 0; j < k; j++) {
+				strats[j] = new int[n];
+				for (int i = 0; i < n; i++) {
+					strats[j][i] = target.get(i) ? -2 : -1;
+				}
+			}
+		}
+
 		// Start iterations
 		iters = 0;
 		while (iters < k) {
 			iters++;
 			// Matrix-vector multiply and min/max ops
-			mdp.mvMultMinMax(soln, min, soln2, unknown, false, strat);
+			mdp.mvMultMinMax(soln, min, soln2, unknown, false, exportAdv ? strats[iters - 1] : strat);
 			if (genStrat) {
 				fmdStrat.setStepChoices(k - iters, strat);
 			}
@@ -1314,6 +1330,27 @@ public class MDPModelChecker extends ProbModelChecker
 			soln = soln2;
 			soln2 = tmpsoln;
 		}
+
+		// Export strategy in csv format
+		if (exportAdv) {
+			mainLog.println("Export strategy to " + exportAdvFilename + "...");
+			try (FileWriter out = new FileWriter(exportAdvFilename)) {
+				for (int j = 0; j < k; j++) {
+					for (int i = 0; i < n; i++) {
+						if (i > 0) {
+							out.write(",");
+						}
+						//out.write("" + strat[j][i]);
+						Object action = mdp.getAction(i, strats[j][i]);
+						out.write(action == null ? "" : action.toString());
+					}
+					out.write("\n");
+				}
+			} catch (IOException e) {
+				throw new PrismException("Could not export strategy to " + exportAdvFilename + ": " + e);
+			}
+		}
+		
 		// Finished bounded probabilistic reachability
 		timer = System.currentTimeMillis() - timer;
 		mainLog.print("Bounded probabilistic reachability (" + (min ? "min" : "max") + ")");
