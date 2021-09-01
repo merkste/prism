@@ -29,13 +29,18 @@ package parser.visitor;
 import parser.ast.*;
 import prism.PrismLangException;
 
-// Variant of ASTTraverse.
-// Performs a depth-first traversal of an asbtract syntax tree (AST),
-// replacing each child node with the object returned by the recursive visit call.
-// Like ASTTraverse, many traversal-based tasks can be implemented by extending and either:
-// (a) overriding defaultVisitPre or defaultVisitPost
-// (b) overiding visit for leaf (or other selected) nodes
-
+/**
+ *  Variant of ASTTraverse.
+ *
+ * Performs a depth-first traversal of an abstract syntax tree (AST),
+ * replacing each child node with the object returned by the recursive visit call.
+ * Like ASTTraverse, many traversal-based tasks can be implemented by extending and either:
+ * <ul>
+ * <li>overriding defaultVisitPre or defaultVisitPost</li>
+ * <li>overriding visit for leaf (or other selected) nodes</li>
+ * </ul>
+ * @see ASTTraverse
+ */
 public class ASTTraverseModify implements ASTVisitor
 {
 	public void defaultVisitPre(ASTElement e) throws PrismLangException {}
@@ -563,6 +568,18 @@ public class ASTTraverseModify implements ASTVisitor
 		return e;
 	}
 	public void visitPost(ExpressionReward e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionLongRun e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionLongRun e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getBound() != null) e.setBound((Expression)(e.getBound().accept(this)));
+		if (e.getExpression() != null) e.setExpression((Expression)(e.getExpression().accept(this)));
+		if (e.getStates() != null) e.setStates((Expression)(e.getStates().accept(this)));
+		visitPost(e);
+		return e;
+	}
+	public void visitPost(ExpressionLongRun e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionSS e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionSS e) throws PrismLangException

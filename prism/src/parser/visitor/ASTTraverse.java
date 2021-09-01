@@ -29,12 +29,16 @@ package parser.visitor;
 import parser.ast.*;
 import prism.PrismLangException;
 
-// Performs a depth-first traversal of an asbtract syntax tree (AST).
-// Many traversal-based tasks can be implemented by extending and either:
-// (a) overriding defaultVisitPre or defaultVisitPost
-// (b) overiding visit for leaf (or other selected) nodes
-// See also ASTTraverseModify.
-
+/**
+ *  Performs a depth-first traversal of an abstract syntax tree (AST).
+ *
+ * Many traversal-based tasks can be implemented by extending and either:
+ * <ul>
+ * <li>overriding defaultVisitPre or defaultVisitPost</li>
+ * <li>overriding visit for leaf (or other selected) nodes</li>
+ * </ul>
+ * @see ASTTraverseModify
+ */
 public class ASTTraverse implements ASTVisitor
 {
 	public void defaultVisitPre(ASTElement e) throws PrismLangException {}
@@ -549,6 +553,18 @@ public class ASTTraverse implements ASTVisitor
 		return null;
 	}
 	public void visitPost(ExpressionReward e) throws PrismLangException { defaultVisitPost(e); }
+	// -----------------------------------------------------------------------------------
+	public void visitPre(ExpressionLongRun e) throws PrismLangException { defaultVisitPre(e); }
+	public Object visit(ExpressionLongRun e) throws PrismLangException
+	{
+		visitPre(e);
+		if (e.getBound() != null) e.getBound().accept(this);
+		if (e.getExpression() != null) e.getExpression().accept(this);
+		if (e.getStates() != null) e.getStates().accept(this);
+		visitPost(e);
+		return null;
+	}
+	public void visitPost(ExpressionLongRun e) throws PrismLangException { defaultVisitPost(e); }
 	// -----------------------------------------------------------------------------------
 	public void visitPre(ExpressionSS e) throws PrismLangException { defaultVisitPre(e); }
 	public Object visit(ExpressionSS e) throws PrismLangException
