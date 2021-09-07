@@ -26,31 +26,27 @@
 
 package parser.ast;
 
-import param.BigRational;
-import parser.EvaluateContext;
 import parser.Values;
 import parser.visitor.ASTVisitor;
 import prism.OpRelOpBound;
 import prism.PrismException;
 import prism.PrismLangException;
 
-public class ExpressionSS extends ExpressionQuant
+public class ExpressionSS extends ExpressionQuant<Expression>
 {
 	// Constructors
-	
+
 	public ExpressionSS()
 	{
 	}
-	
+
 	public ExpressionSS(Expression expression, String relOpString, Expression p)
 	{
-		setExpression(expression);
-		setRelOp(relOpString);
-		setBound(p);
+		super(expression, relOpString, p);
 	}
 
 	// Set methods
-	
+
 	/**
 	 * Set the probability bound. Equivalent to {@code setBound(p)}.
 	 */
@@ -60,7 +56,7 @@ public class ExpressionSS extends ExpressionQuant
 	}
 
 	// Get methods
-	
+
 	/**
 	 * Get the probability bound. Equivalent to {@code getBound()}.
 	 */
@@ -74,6 +70,7 @@ public class ExpressionSS extends ExpressionQuant
 	 * Does some checks, e.g., throws an exception if probability is out of range.
 	 * @param constantValues Values for constants in order to evaluate any bound
 	 */
+	@Override
 	public OpRelOpBound getRelopBoundInfo(Values constantValues) throws PrismException
 	{
 		if (getBound() != null) {
@@ -85,32 +82,8 @@ public class ExpressionSS extends ExpressionQuant
 			return new OpRelOpBound("S", getRelOp(), null);
 		}
 	}
-	
+
 	// Methods required for Expression:
-	
-	@Override
-	public boolean isConstant()
-	{
-		return false;
-	}
-
-	@Override
-	public boolean isProposition()
-	{
-		return false;
-	}
-	
-	@Override
-	public Object evaluate(EvaluateContext ec) throws PrismLangException
-	{
-		throw new PrismLangException("Cannot evaluate an S operator without a model");
-	}
-
-	@Override
-	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
-	{
-		throw new PrismLangException("Cannot evaluate an S operator without a model");
-	}
 
 	@Override
 	public String getResultName()
@@ -118,14 +91,8 @@ public class ExpressionSS extends ExpressionQuant
 		return (getBound() == null) ? "Probability" : "Result";
 	}
 
-	@Override
-	public boolean returnsSingleValue()
-	{
-		return false;
-	}
-
 	// Methods required for ASTElement:
-	
+
 	@Override
 	public Object accept(ASTVisitor v) throws PrismLangException
 	{
@@ -139,6 +106,7 @@ public class ExpressionSS extends ExpressionQuant
 		expr.setExpression(getExpression() == null ? null : getExpression().deepCopy());
 		expr.setRelOp(getRelOp());
 		expr.setBound(getBound() == null ? null : getBound().deepCopy());
+
 		expr.setFilter(getFilter() == null ? null : (Filter)getFilter().deepCopy());
 		expr.setType(type);
 		expr.setPosition(this);
@@ -146,19 +114,11 @@ public class ExpressionSS extends ExpressionQuant
 	}
 
 	// Standard methods
-	
+
 	@Override
-	public String toString()
+	protected String operatorToString()
 	{
-		String s = "";
-		
-		s += "S" + getModifierString() + getRelOp();
-		s += (getBound()==null) ? "?" : getBound().toString();
-		s += " [ " + getExpression();
-		if (getFilter() != null) s += " "+getFilter();
-		s += " ]";
-		
-		return s;
+		return "S" + getModifierString();
 	}
 }
 

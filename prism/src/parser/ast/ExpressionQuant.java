@@ -26,15 +26,25 @@
 
 package parser.ast;
 
+import param.BigRational;
+import parser.EvaluateContext;
 import parser.Values;
 import prism.OpRelOpBound;
 import prism.PrismException;
+import prism.PrismLangException;
 
+// FIXME LR: What is minMax for?
 /**
  * Abstract class for representing "quantitative" operators (P,R,S),
- * i.e., a superclass of ExpressionProb, ExpressionReward, ExpressionSS.
+ * i.e., a superclass of:
+ * <ul>
+ *     <li>{@link ExpressionLongRun}</li>
+ *     <li>{@link ExpressionProb}</li>
+ *     <li>{@link ExpressionReward}</li>
+ *     <li>{@link ExpressionSS}</li>
+ * </ul>
  */
-public abstract class ExpressionQuant extends Expression
+public abstract class ExpressionQuant<E extends Expression> extends Expression
 {
 	/** Optional "modifier" to specify variants of the P/R/S operator */
 	protected String modifier = null;
@@ -43,10 +53,28 @@ public abstract class ExpressionQuant extends Expression
 	/** The attached (probability/reward) bound, as an expression (e.g. "p" in "P&lt;p"). Null if absent (e.g. "P=?"). */
 	protected Expression bound = null;
 	/** The main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true]. */
-	protected Expression expression = null;
+	protected E expression = null;
 	/** Optional "old-style" filter. This is just for display purposes since
 	  *  the parser creates an (invisible) new-style filter around this expression. */
 	protected Filter filter = null;
+
+	// Constructors
+
+	protected ExpressionQuant()
+	{
+	}
+
+	protected ExpressionQuant(E expression, String relOpString, Expression bound)
+	{
+		this(expression, RelOp.parseSymbol(relOpString), bound);
+	}
+
+	protected ExpressionQuant(E expression, RelOp relOp, Expression bound)
+	{
+		this.expression = expression;
+		this.relOp = relOp;
+		this.bound = bound;
+	}
 
 	// Set methods
 
@@ -87,7 +115,7 @@ public abstract class ExpressionQuant extends Expression
 	/**
 	 * Set the main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true].
 	 */
-	public void setExpression(Expression expression)
+	public void setExpression(E expression)
 	{
 		this.expression = expression;
 	}
@@ -138,7 +166,7 @@ public abstract class ExpressionQuant extends Expression
 	/**
 	 * Get the main operand of the operator (e.g. "F target=true" in "P&lt;0.1[F target=true].
 	 */
-	public Expression getExpression()
+	public E getExpression()
 	{
 		return expression;
 	}
@@ -161,8 +189,67 @@ public abstract class ExpressionQuant extends Expression
 		return filter;
 	}
 
+	// Test methods
+
+	@Override
+	public boolean isConstant()
+	{
+		return false;
+	}
+
+	@Override
+	public boolean isProposition()
+	{
+		return false;
+	}
+
+	public boolean isQuantitative()
+	{
+		return getBound() == null;
+	}
+
+	@Override
+	public boolean returnsSingleValue()
+	{
+		return false;
+	}
+
+	// Methods required for Expression:
+
+	@Override
+	public Object evaluate(final EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Cannot evaluate a quantitative expression without a model");
+	}
+
+	@Override
+	public BigRational evaluateExact(EvaluateContext ec) throws PrismLangException
+	{
+		throw new PrismLangException("Cannot evaluate a quantitative expression without a model");
+	}
+
 	// Standard methods
-	
+
+	@Override
+	public String toString()
+	{
+		return operatorToString() + boundsToString() + " [ " + bodyToString() + " ]";
+	}
+
+	protected abstract String operatorToString();
+
+	protected String boundsToString()
+	{
+		String bounds = getBound() == null ? "?" : getBound().toString();
+		return getRelOp() + bounds;
+	}
+
+	protected String bodyToString()
+	{
+		String filter = getFilter() == null ? "" : " " + getFilter();
+		return getExpression() + filter;
+	}
+
 	@Override
 	public int hashCode()
 	{
@@ -185,7 +272,7 @@ public abstract class ExpressionQuant extends Expression
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ExpressionQuant other = (ExpressionQuant) obj;
+		ExpressionQuant<?> other = (ExpressionQuant<?>) obj;
 		if (bound == null) {
 			if (other.bound != null)
 				return false;
