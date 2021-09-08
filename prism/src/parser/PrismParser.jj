@@ -453,6 +453,7 @@ TOKEN :
 |	< I:				"I" >
 |	< INT:				"int" >
 |	< LABEL:			"label" >
+|	< L:				"L" >
 |	< MAX:				"max" >
 |	< MDP:				"mdp" >
 |	< MIN:				"min" >
@@ -1428,6 +1429,8 @@ Expression ExpressionBasic(boolean prop, boolean pathprop) :
 		// Remaining options are only applicable for properties
 		ret = ExpressionProb(prop, pathprop)
 	|
+		ret = ExpressionLongRun(prop, pathprop)
+	|
 		ret = ExpressionSS(prop, pathprop)
 	|
 		ret = ExpressionReward(prop, pathprop)
@@ -1623,6 +1626,40 @@ Filter Filter() :
 		| <MAX> { filter.setMaxRequested(true); } )
 	<RBRACE> )*
 	{ filter.setPosition(begin, getToken(0)); return filter; }
+}
+
+Expression ExpressionLongRun(boolean prop, boolean pathprop) :
+{
+	Expression expression;
+	Expression states;
+	Token begin;
+	int r;
+	String relOp;
+	Expression bound;
+	Expression condition = null;
+}
+{
+	// This production is only allowed in expressions if the "prop" parameter is true
+	{ if (!prop) throw generateParseException(); }
+	begin = <L>
+	(
+		( r = LtGt() bound = Expression(false, false) { relOp = ExpressionBinaryOp.opSymbols[r]; } )
+	|
+		( <EQ> <QMARK> { relOp = "="; bound = null;} )
+	)
+	<LBRACKET>
+	(
+		expression = Expression(prop, pathprop)
+	)
+	<COMMA>
+		states = Expression(prop, false)
+	<RBRACKET>
+	{
+		ExpressionLongRun exprLongRun = new ExpressionLongRun(expression, states, relOp, bound);
+		// set position
+		exprLongRun.setPosition(begin, getToken(0));
+		return exprLongRun;
+	}
 }
 
 // (Property) expression: steady-state operator S
