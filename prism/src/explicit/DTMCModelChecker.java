@@ -62,7 +62,7 @@ import prism.PrismUtils;
 /**
  * Explicit-state model checker for discrete-time Markov chains (DTMCs).
  */
-public class DTMCModelChecker extends ProbModelChecker
+public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker<DTMC>
 {
 	/**
 	 * Create a new DTMCModelChecker, inherit basic state from parent (unless null).
@@ -70,6 +70,12 @@ public class DTMCModelChecker extends ProbModelChecker
 	public DTMCModelChecker(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+	}
+
+	@Override
+	public DTMCModelChecker createDTMCModelChecker()
+	{
+		return this;
 	}
 
 	// Model checking functions
@@ -675,15 +681,7 @@ public class DTMCModelChecker extends ProbModelChecker
 	}
 
 
-	/**
-	 * Prob0 precomputation algorithm (using predecessor relation),
-	 * i.e. determine the states of a DTMC which, with probability 0,
-	 * reach a state in {@code target}, while remaining in those in {@code remain}.
-	 * @param dtmc The DTMC
-	 * @param remain Remain in these states (optional: {@code null} means "all states")
-	 * @param target Target states
-	 * @param pre The predecessor relation
-	 */
+	@Override
 	public BitSet prob0(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre)
 	{
 		BitSet canReachTarget, result;
@@ -791,15 +789,7 @@ public class DTMCModelChecker extends ProbModelChecker
 		return u;
 	}
 
-	/**
-	 * Prob1 precomputation algorithm (using predecessor relation),
-	 * i.e. determine the states of a DTMC which, with probability 1,
-	 * reach a state in {@code target}, while remaining in those in {@code remain}.
-	 * @param dtmc The DTMC
-	 * @param remain Remain in these states (optional: null means "all")
-	 * @param target Target states
-	 * @param pre The predecessor relation of the DTMC
-	 */
+	@Override
 	public BitSet prob1(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre) {
 		// Implements the constrained reachability algorithm from
 		// Baier, Katoen: Principles of Model Checking (Corollary 10.31 Qualitative Constrained Reachability)
