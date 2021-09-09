@@ -38,6 +38,7 @@ import java.util.PrimitiveIterator.OfInt;
 
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
+import common.BitSetTools;
 import common.IntSet;
 import common.IterableBitSet;
 import common.StopWatch;
@@ -684,30 +685,28 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	@Override
 	public BitSet prob0(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre)
 	{
-		BitSet canReachTarget, result;
-		long timer;
-
 		// Start precomputation
-		timer = System.currentTimeMillis();
+		long timer = System.currentTimeMillis();
 		if (!silentPrecomputations)
 			mainLog.println("Starting Prob0...");
 
+		int numStates = dtmc.getNumStates();
+
 		// Special case: no target states
 		if (target.isEmpty()) {
-			BitSet soln = new BitSet(dtmc.getNumStates());
-			soln.set(0, dtmc.getNumStates());
+			BitSet soln = new BitSet(numStates);
+			soln.set(0, numStates);
 			return soln;
 		}
 
 		// calculate all states that can reach 'target'
 		// while remaining in 'remain' in the underlying graph,
 		// where all the 'target' states are made absorbing
-		canReachTarget = pre.calculatePreStar(remain, target, target);
+		BitSet canReachTarget = pre.calculatePreStar(remain, target, target);
 
-		// prob0 = complement of 'canReachTarget'
-		result = new BitSet();
-		result.set(0, dtmc.getNumStates(), true);
-		result.andNot(canReachTarget);
+		// in-place complement: prob0 = S\Pre*(target)
+		BitSet result = canReachTarget;
+		result.flip(0, numStates);
 
 		// Finished precomputation
 		timer = System.currentTimeMillis() - timer;
@@ -790,56 +789,56 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 	}
 
 	@Override
-	public BitSet prob1(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre) {
+	public BitSet prob1(DTMC dtmc, BitSet remain, BitSet target, PredecessorRelation pre)
+	{
 		// Implements the constrained reachability algorithm from
 		// Baier, Katoen: Principles of Model Checking (Corollary 10.31 Qualitative Constrained Reachability)
-		long timer;
 
 		// Start precomputation
-		timer = System.currentTimeMillis();
+		long timer = System.currentTimeMillis();
 		if (!silentPrecomputations)
 			mainLog.println("Starting Prob1...");
 
 		// Special case: no 'target' states
 		if (target.isEmpty()) {
 			// empty set
-			return new BitSet();
+			return new BitSet(0);
 		}
 
+		int numStates = dtmc.getNumStates();
+
 		// mark all states in 'target' and all states not in 'remain' as absorbing
-		BitSet absorbing = new BitSet();
+		BitSet absorbing;
 		if (remain != null) {
-			// complement remain
-			absorbing.set(0, dtmc.getNumStates(), true);
-			absorbing.andNot(remain);
+			// union of complement of remain and target
+			BitSetTools.asBitSet((Iterator<Integer>) null);
+			absorbing = BitSetTools.complement(remain, numStates);
+			absorbing.or(target);
 		} else {
 			// for remain == null, remain consists of all states
-			// thus, absorbing = the empty set is already the complementation of remain
+			// thus, absorbing = target
+			absorbing = (BitSet) target.clone();
 		}
-		// union with 'target'
-		absorbing.or(target);
 
 		// M' = DTMC where all 'absorbing' states are considered to be absorbing
 
-		// the set of states that satisfy E [ F target ] in M'
+		// set of states satisfying E [ F target ] in M'
 		// Pre*(target)
 		BitSet canReachTarget = pre.calculatePreStar(null, target, absorbing);
 
-		// complement canReachTarget
-		// S\Pre*(target)
-		BitSet canNotReachTarget = new BitSet();
-		canNotReachTarget.set(0, dtmc.getNumStates(), true);
-		canNotReachTarget.andNot(canReachTarget);
+		// set of states satisfying A [ G !target ] in M'
+		// in-place complement: S\Pre*(target)
+		BitSet canNotReachTarget = canReachTarget;
+		canNotReachTarget.flip(0, numStates);
 
-		// the set of states that can reach a canNotReachTarget state in M'
+		// set of states that can reach canNotReachTarget in M'
 		// Pre*(S\Pre*(target))
 		BitSet probTargetNot1 = pre.calculatePreStar(null, canNotReachTarget, absorbing);
 
-		// complement probTargetNot1
-		// S\Pre*(S\Pre*(target))
-		BitSet result = new BitSet();
-		result.set(0, dtmc.getNumStates(), true);
-		result.andNot(probTargetNot1);
+		// set of states that can never reach canNotReachTarget in M'
+		// in-place complement: S\Pre*(S\Pre*(target))
+		BitSet result = probTargetNot1;
+		result.flip(0, numStates);
 
 		// Finished precomputation
 		timer = System.currentTimeMillis() - timer;
