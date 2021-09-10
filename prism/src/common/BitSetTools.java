@@ -32,9 +32,7 @@ import java.util.Iterator;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
-import common.iterable.ArrayIterator;
-import common.iterable.IterableArray;
-import common.iterable.Reducible;
+import common.iterable.*;
 
 import javax.print.attribute.standard.ReferenceUriSchemesSupported;
 
@@ -66,7 +64,7 @@ public class BitSetTools
 		if (indices instanceof OfInt) {
 			return asBitSet((OfInt) indices);
 		}
-		return asBitSet(Reducible.extend(indices));
+		return asBitSet(Reducible.unboxInt(indices));
 	}
 
 	/**
@@ -93,6 +91,7 @@ public class BitSetTools
 
 	/**
 	 * Shift all indices down (towards zero) by an offset.
+	 * All bits < offset are removed.
 	 *
 	 * @param indices the {@code BitSet} to be shifted
 	 * @param offset the offset to shift
@@ -101,11 +100,19 @@ public class BitSetTools
 	public static BitSet shiftDown(BitSet indices, int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
-		return indices.get(offset, indices.length());
+		int length = indices.length();
+		if (length < 0) {
+			// overflow of length, i.e., Integer.MAX_VALUE is set
+			// requires working around bug in BitSet::get
+			IterableBitSet bits = new IterableBitSet(indices);
+			return bits.filter((int i) -> i >= offset).mapToInt((int i) -> i - offset).collect(new BitSet());
+		}
+		return length < offset ? new BitSet() : indices.get(offset, length);
 	}
 
 	/**
 	 * Shift all indices up (towards infinity) by an offset.
+	 * All bits > Integer.MAX_VALUE - offset are removed.
 	 *
 	 * @param indices the {@code BitSet} to be shifted
 	 * @param offset the offset to shift
@@ -114,7 +121,7 @@ public class BitSetTools
 	public static BitSet shiftUp(BitSet indices, int offset)
 	{
 		assert offset >= 0 : "positive offset expected";
-		return new IterableBitSet(indices).mapToInt((int i) -> i + offset).collect(new BitSet());
+		return new IterableBitSet(indices).mapToInt((int i) -> i + offset).filter((int i) -> i >= 0).collect(new BitSet());
 	}
 
 	/**
@@ -131,7 +138,7 @@ public class BitSetTools
 
 	/**
 	 * Test whether some {@link BitSet}s are disjoint?
-	 * Answer true if none or a single BitSet is given.
+	 * Answer {@code true} if none or a single {@link BitSet} is given.
 	 *
 	 * @param sets the Iterator of {@code BitSet}s to be tested
 	 * @return {@code true} iff all arguments are disjoint
