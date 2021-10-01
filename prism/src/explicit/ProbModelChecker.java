@@ -1205,7 +1205,17 @@ public class ProbModelChecker extends NonProbModelChecker
 		assert values.getType() != TypeBool.getInstance() : "Non-Boolean values expected.";
 
 		ReachBsccComputer<MCModelChecker<?>> reachComputer = new DTMCModelChecker.ReachBsccComputer<>((MCModelChecker<?>) this, (DTMC) model, condition);
-		return computeLongRun((DTMC) model, values, states, reachComputer, statesOfInterest);
+
+		StateValues resultValues = computeLongRun((DTMC) model, values, states, reachComputer, statesOfInterest);
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		// For =? properties, just return values
+		if (opInfo.isNumeric()) {
+			return resultValues;
+		}
+		// Otherwise, compare against bound to get set of satisfying states
+		BitSet resultBooleans = resultValues.getBitSetFromInterval(opInfo.getRelOp(), opInfo.getBound());
+		resultValues.clear();
+		return StateValues.createFromBitSet(resultBooleans, model);
 	}
 
 	// FIXME ALG: check types

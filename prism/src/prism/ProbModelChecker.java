@@ -366,7 +366,20 @@ public class ProbModelChecker extends NonProbModelChecker
 		StateValues values = checkExpression(expr.getExpression(), states.copy());
 
 		ReachBsccComputer reachComputer = new ReachBsccComputer(model, condition);
-		return computeLongRun(values, states, reachComputer, statesOfInterest);
+		StateValues resultValues = computeLongRun(values, states, reachComputer, statesOfInterest);
+		OpRelOpBound opInfo = expr.getRelopBoundInfo(constantValues);
+		// For =? properties, just return values
+		if (opInfo.isNumeric()) {
+			return resultValues;
+		}
+		// Otherwise, compare against bound to get set of satisfying states
+		JDDNode resultBooleans = resultValues.getBDDFromInterval(opInfo.getRelOp(), opInfo.getBound());
+		// remove unreachable states from solution
+		JDD.Ref(reach);
+		resultBooleans = JDD.And(resultBooleans, reach);
+		// free vector
+		resultValues.clear();
+		return new StateValuesMTBDD(resultBooleans, model);
 	}
 
 	/**
