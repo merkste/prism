@@ -535,9 +535,6 @@ public class TypeCheck extends ASTTraverse
 		if (e.getExpression().getType() instanceof TypeBool) {
 			throw new PrismLangException("Type error: Expression of L operator is a Boolean-valued expression", e.getExpression());
 		}
-		if (e.getExpression().returnsSingleValue()) {
-			throw new PrismLangException("Type error: Expression of L operator returns a single value", e.getExpression());
-		}
 		if (e.getExpression() instanceof ExpressionQuant) {
 			ExpressionQuant<?> quant = (ExpressionQuant<?>) e.getExpression();
 			if (!(quant.getRelOp() == RelOp.COMPUTE_VALUES && quant.getBound() == null)) {
