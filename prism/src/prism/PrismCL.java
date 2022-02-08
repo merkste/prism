@@ -1343,6 +1343,7 @@ public class PrismCL implements PrismModelListener
 						errorAndExit("No file/options specified for -" + sw + " switch");
 					}
 				}
+				// process -exportmodelprecision in PrismSettings
 				// export transition matrix to file
 				else if (sw.equals("exporttrans")) {
 					if (i < args.length - 1) {
@@ -2316,6 +2317,7 @@ public class PrismCL implements PrismModelListener
 		mainLog.println("EXPORT OPTIONS:");
 		mainLog.println("-exportresults <file[:options]>  Export the results of model checking to a file");
 		mainLog.println("-exportmodel <files[:options]> . Export the built model to file(s)");
+		mainLog.println("-exportmodelprecision <n>....... Export probabilities/rewards with n significant decimal places");
 		mainLog.println("-exporttrans <file> ............ Export the transition matrix to a file");
 		mainLog.println("-exportstaterewards <file> ..... Export the state rewards vector to a file");
 		mainLog.println("-exporttransrewards <file> ..... Export the transition rewards matrix to a file");

@@ -34,6 +34,7 @@ import java.awt.*;
 
 import javax.swing.*;
 
+import common.iterable.Range;
 import explicit.QuantAbstractRefine;
 import explicit.conditional.ConditionalTransformerType;
 
@@ -67,7 +68,10 @@ public class PrismSettings implements Observer
 	public static final String CHOICE_TYPE = "ch";
 	public static final String FONT_COLOUR_TYPE = "fct";
 	public static final String FILE_TYPE = "fi";
-	
+
+	// Constraint constants
+	public static final Range RANGE_EXPORT_DOUBLE_PRECISION = Range.closed(1, 17);
+
 	//Property Constant Keys
 	//======================
 	
@@ -92,6 +96,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
 	public static final String PRISM_DO_REORDER						= "prism.doReorder";
 	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
+	public static final String PRISM_EXPORT_MODEL_PRECISION         = "prism.exportmodelprecision";
 
 	public static final String PRISM_EXPLODE_BITS					= "prism.explodeBits";
 	public static final String PRISM_GLOBALIZE_VARIABLES			= "prism.globalizeVariables";
@@ -130,7 +135,7 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_STORM_OPTIONS					= "prism.storm.options";
 	public static final	String PRISM_STORM_VERBOSE					= "prism.storm.verbose";
 	public static final	String PRISM_STORM_DEBUG					= "prism.storm.debug";
-	
+
 	public static final	String PRISM_MULTI_MAX_POINTS				= "prism.multiMaxIters";
 	public static final	String PRISM_PARETO_EPSILON					= "prism.paretoEpsilon";
 	public static final	String PRISM_EXPORT_PARETO_FILENAME			= "prism.exportParetoFileName";
@@ -270,7 +275,7 @@ public class PrismSettings implements Observer
 			// NUMERICAL SOLUTION OPTIONS:
 			{ CHOICE_TYPE,		PRISM_LIN_EQ_METHOD,					"Linear equations method",				"2.1",			"Jacobi",																	"Power,Jacobi,Gauss-Seidel,Backwards Gauss-Seidel,Pseudo-Gauss-Seidel,Backwards Pseudo-Gauss-Seidel,JOR,SOR,Backwards SOR,Pseudo-SOR,Backwards Pseudo-SOR",
 																			"Which iterative method to use when solving linear equation systems." },
-			{ DOUBLE_TYPE,		PRISM_LIN_EQ_METHOD_PARAM,				"Over-relaxation parameter",			"2.1",			0.9,															"",																							
+			{ DOUBLE_TYPE,		PRISM_LIN_EQ_METHOD_PARAM,				"Over-relaxation parameter",			"2.1",			0.9,															"",
 																			"Over-relaxation parameter for iterative numerical methods such as JOR/SOR." },
 			{ CHOICE_TYPE,		PRISM_MDP_SOLN_METHOD,					"MDP solution method",				"4.0",			"Value iteration",																"Value iteration,Gauss-Seidel,Policy iteration,Modified policy iteration,Linear programming",
 																			"Which method to use when solving Markov decision processes." },
@@ -278,10 +283,13 @@ public class PrismSettings implements Observer
 																			"Which method to use when solving multi-objective queries on Markov decision processes." },
 			{ CHOICE_TYPE,		PRISM_TERM_CRIT,						"Termination criteria",					"2.1",			"Relative",																	"Absolute,Relative",																		
 																			"Criteria to use for checking termination of iterative numerical methods." },
-			{ DOUBLE_TYPE,		PRISM_TERM_CRIT_PARAM,					"Termination epsilon",					"2.1",			1.0E-6,															"0.0,",																						
+			{ DOUBLE_TYPE,		PRISM_TERM_CRIT_PARAM,					"Termination epsilon",					"2.1",			1.0E-6,															"0.0,",
 																			"Epsilon value to use for checking termination of iterative numerical methods." },
-			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			10000,															"0,",																						
+			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			10000,															"0,",
 																			"Maximum number of iterations to perform if iterative methods do not converge." },
+			{ INTEGER_TYPE,		PRISM_EXPORT_MODEL_PRECISION,			"Precision of model export",			"4.7dev",			17,																		RANGE_EXPORT_DOUBLE_PRECISION.min() + "-" + RANGE_EXPORT_DOUBLE_PRECISION.max(),
+																			"Export probabilities/rewards with n significant decimal places"},
+
 			// STORM OPTIONS:
 			{ STRING_TYPE,		PRISM_STORM_PATH,						"Path to the Storm executable",			"4.3.1",			"",															"",
 																			"Path to the Storm executable." },
@@ -293,31 +301,31 @@ public class PrismSettings implements Observer
 																			"Increase verbosity for Storm invocation debugging." },
 
 			// MODEL CHECKING OPTIONS:
-			{ BOOLEAN_TYPE,		PRISM_PRECOMPUTATION,					"Use precomputation",					"2.1",			true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_PRECOMPUTATION,					"Use precomputation",					"2.1",			true,															"",
 																			"Whether to use model checking precomputation algorithms (Prob0, Prob1, etc.), where optional." },
-			{ BOOLEAN_TYPE,		PRISM_PROB0,							"Use Prob0 precomputation",				"4.0.2",		true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_PROB0,							"Use Prob0 precomputation",				"4.0.2",		true,															"",
 																			"Whether to use model checking precomputation algorithm Prob0 (if precomputation enabled)." },
-			{ BOOLEAN_TYPE,		PRISM_PROB1,							"Use Prob1 precomputation",				"4.0.2",		true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_PROB1,							"Use Prob1 precomputation",				"4.0.2",		true,															"",
 																			"Whether to use model checking precomputation algorithm Prob1 (if precomputation enabled)." },
 			{ BOOLEAN_TYPE,		PRISM_PRE_REL,							"Use predecessor relation",		"4.2.1",		true,											"",
 																			"Whether to use a pre-computed predecessor relation in several algorithms." },
-			{ BOOLEAN_TYPE,		PRISM_FAIRNESS,							"Use fairness",							"2.1",			false,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_FAIRNESS,							"Use fairness",							"2.1",			false,															"",
 																			"Constrain to fair adversaries when model checking MDPs." },
-			{ BOOLEAN_TYPE,		PRISM_FIX_DEADLOCKS,					"Automatically fix deadlocks",			"4.0.3",		true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_FIX_DEADLOCKS,					"Automatically fix deadlocks",			"4.0.3",		true,															"",
 																			"Automatically fix deadlocks, where necessary, when constructing probabilistic models." },
-			{ BOOLEAN_TYPE,		PRISM_DO_PROB_CHECKS,					"Do probability/rate checks",			"2.1",			true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_DO_PROB_CHECKS,					"Do probability/rate checks",			"2.1",			true,															"",
 																			"Perform sanity checks on model probabilities/rates when constructing probabilistic models." },
 			{ DOUBLE_TYPE,		PRISM_SUM_ROUND_OFF,					"Probability sum threshold",					"2.1",			1.0E-5,													"0.0,",
 																			"Round-off threshold for places where doubles are summed and compared to integers (e.g. checking that probabilities sum to 1 in an update)." },							
-			{ BOOLEAN_TYPE,		PRISM_DO_SS_DETECTION,					"Use steady-state detection",			"2.1",			true,															"0,",																						
+			{ BOOLEAN_TYPE,		PRISM_DO_SS_DETECTION,					"Use steady-state detection",			"2.1",			true,															"0,",
 																			"Use steady-state detection during CTMC transient probability computation." },
 			{ CHOICE_TYPE,		PRISM_SCC_METHOD,						"SCC decomposition method",				"3.2",			"Lockstep",																	"Xie-Beerel,Lockstep,SCC-Find",																
 																			"Which algorithm to use for (symbolic) decomposition of a graph into strongly connected components (SCCs)." },
 			{ CHOICE_TYPE,		PRISM_SCC_METHOD_EXPLICIT,				"SCC decomposition method (explicit)",				"4.2.1",			"Tarjan-Stack",		"Tarjan-Recursive,Tarjan-Stack",
 																			"Which algorithm to use for (explicit) decomposition of a graph into strongly connected components (SCCs)." },
-			{ CHOICE_TYPE,		PRISM_EC_METHOD,						"End-component computation method",				"4.2.1",			"Default",																	"Default,On-The-Fly",																
+			{ CHOICE_TYPE,		PRISM_EC_METHOD,						"End-component computation method",				"4.2.1",			"Default",																	"Default,On-The-Fly",
 																			"Which algorithm to use for end-component calculations." },
-			{ STRING_TYPE,		PRISM_SYMM_RED_PARAMS,					"Symmetry reduction parameters",		"3.2",			"",																	"",																
+			{ STRING_TYPE,		PRISM_SYMM_RED_PARAMS,					"Symmetry reduction parameters",		"3.2",			"",																	"",
 																			"Parameters for symmetry reduction (format: \"i j\" where i and j are the number of modules before and after the symmetric ones; empty string means symmetry reduction disabled)." },
 			{ STRING_TYPE,		PRISM_AR_OPTIONS,						"Abstraction refinement options",		"3.3",			"",																	"",																
 																			"Various options passed to the asbtraction-refinement engine (e.g. for PTA model checking)." },
@@ -330,37 +338,37 @@ public class PrismSettings implements Observer
 																			"Explode variable storage into individual bits" },
 			{ BOOLEAN_TYPE,		PRISM_GLOBALIZE_VARIABLES,				"Globalize variables",					"4.3",			false,															"",
 																			"Globalize variables" },
-																			
+
 			// MULTI-OBJECTIVE MODEL CHECKING OPTIONS:
-			{ INTEGER_TYPE,		PRISM_MULTI_MAX_POINTS,					"Max. multi-objective corner points",			"4.0.3",			50,															"0,",																						
+			{ INTEGER_TYPE,		PRISM_MULTI_MAX_POINTS,					"Max. multi-objective corner points",			"4.0.3",			50,															"0,",
 																			"Maximum number of corner points to explore if (value iteration based) multi-objective model checking does not converge." },
-			{ DOUBLE_TYPE,		PRISM_PARETO_EPSILON,					"Pareto approximation threshold",			"4.0.3",			1.0E-2,															"0.0,",																						
+			{ DOUBLE_TYPE,		PRISM_PARETO_EPSILON,					"Pareto approximation threshold",			"4.0.3",			1.0E-2,															"0.0,",
 																			"Determines to what precision the Pareto curve will be approximated." },
 			{ STRING_TYPE,		PRISM_EXPORT_PARETO_FILENAME,			"Pareto curve export filename",			"4.0.3",			"",															"0,",																						
 																			"If non-empty, any Pareto curve generated will be exported to this file." },
 			// OUTPUT OPTIONS:
-			{ BOOLEAN_TYPE,		PRISM_VERBOSE,							"Verbose output",						"2.1",		false,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_VERBOSE,							"Verbose output",						"2.1",		false,															"",
 																			"Display verbose output to log." },
-			{ BOOLEAN_TYPE,		PRISM_EXTRA_DD_INFO,					"Extra MTBDD information",				"3.1.1",		false,															"0,",																						
+			{ BOOLEAN_TYPE,		PRISM_EXTRA_DD_INFO,					"Extra MTBDD information",				"3.1.1",		false,															"0,",
 																			"Display extra information about (MT)BDDs used during and after model construction." },
-			{ BOOLEAN_TYPE,		PRISM_EXTRA_REACH_INFO,					"Extra reachability information",		"3.1.1",		false,															"0,",																						
+			{ BOOLEAN_TYPE,		PRISM_EXTRA_REACH_INFO,					"Extra reachability information",		"3.1.1",		false,															"0,",
 																			"Display extra information about progress of reachability during model construction." },
 			// SPARSE/HYBRID/MTBDD OPTIONS:
-			{ BOOLEAN_TYPE,		PRISM_COMPACT,							"Use compact schemes",					"2.1",			true,															"",																							
+			{ BOOLEAN_TYPE,		PRISM_COMPACT,							"Use compact schemes",					"2.1",			true,															"",
 																			"Use additional optimisations for compressing sparse matrices and vectors with repeated values." },
-			{ INTEGER_TYPE,		PRISM_NUM_SB_LEVELS,					"Hybrid sparse levels",					"2.1",			-1,															"-1,",																						
+			{ INTEGER_TYPE,		PRISM_NUM_SB_LEVELS,					"Hybrid sparse levels",					"2.1",			-1,															"-1,",
 																			"Number of MTBDD levels ascended when adding sparse matrices to hybrid engine data structures (-1 means use default)." },
-			{ INTEGER_TYPE,		PRISM_SB_MAX_MEM,						"Hybrid sparse memory (KB)",			"2.1",			1024,															"0,",																						
+			{ INTEGER_TYPE,		PRISM_SB_MAX_MEM,						"Hybrid sparse memory (KB)",			"2.1",			1024,															"0,",
 																			"Maximum memory usage when adding sparse matrices to hybrid engine data structures (KB)." },
-			{ INTEGER_TYPE,		PRISM_NUM_SOR_LEVELS,					"Hybrid GS levels",						"2.1",			-1,															"-1,",																						
+			{ INTEGER_TYPE,		PRISM_NUM_SOR_LEVELS,					"Hybrid GS levels",						"2.1",			-1,															"-1,",
 																			"Number of MTBDD levels descended for hybrid engine data structures block division with GS/SOR." },
-			{ INTEGER_TYPE,		PRISM_SOR_MAX_MEM,						"Hybrid GS memory (KB)",				"2.1",			1024,															"0,",																						
+			{ INTEGER_TYPE,		PRISM_SOR_MAX_MEM,						"Hybrid GS memory (KB)",				"2.1",			1024,															"0,",
 																			"Maximum memory usage for hybrid engine data structures block division with GS/SOR (KB)." },
 			{ STRING_TYPE,		PRISM_CUDD_MAX_MEM,						"CUDD max. memory",				"4.2.1",			new String("1g"),														"",																						
 																			"Maximum memory available to CUDD (underlying BDD/MTBDD library), e.g. 125k, 50m, 4g. Note: Restart PRISM after changing this." },
-			{ DOUBLE_TYPE,		PRISM_CUDD_EPSILON,						"CUDD epsilon",							"2.1",			1.0E-15,														"0.0,",																						
+			{ DOUBLE_TYPE,		PRISM_CUDD_EPSILON,						"CUDD epsilon",							"2.1",			1.0E-15,														"0.0,",
 																			"Epsilon value used by CUDD (underlying BDD/MTBDD library) for terminal cache comparisons." },
-			{ DOUBLE_TYPE,		PRISM_CUDD_MAX_GROWTH,					"CUDD reordering max growth",							"4.3",			1.2,														"0.0,",																						
+			{ DOUBLE_TYPE,		PRISM_CUDD_MAX_GROWTH,					"CUDD reordering max growth",							"4.3",			1.2,														"0.0,",
 																		"The max growth factor for CUDD reordering (e.g. 1.2 = maximal growth of 20%)." },
 
 			{ INTEGER_TYPE,		PRISM_DD_EXTRA_STATE_VARS,				"Extra DD state var allocation",		"4.3",			20,														"",
@@ -372,7 +380,7 @@ public class PrismSettings implements Observer
 			{ STRING_TYPE,		PRISM_REORDER_OPTIONS,					"Options for MTBDD reordering",	"4.2.1",	"",			"",
 																		"Comma-separated options for reordering (beforereach, noconstraints, optimizetrans, converge)." },
 
-																		
+
 			// ADVERSARIES/COUNTEREXAMPLES:
 			{ CHOICE_TYPE,		PRISM_EXPORT_ADV,						"Adversary export",						"3.3",			"None",																	"None,DTMC,MDP",																
 																			"Type of adversary to generate and export during MDP model checking" },
@@ -419,7 +427,7 @@ public class PrismSettings implements Observer
 																			"For fast adaptive uniformisation (FAU), after this number of iterations without changes to the state space, storage is switched to a faster, fixed-size data structure." },
 			{ INTEGER_TYPE,     PRISM_FAU_INTERVALS,					"FAU time intervals",					"4.1",   	 	1,     														"",
 																			"For fast adaptive uniformisation (FAU), the time period is split into this number of of intervals." },
-			{ DOUBLE_TYPE,      PRISM_FAU_INITIVAL,						"FAU initial time interval",			"4.1",   	 	1.0,     														"",	
+			{ DOUBLE_TYPE,      PRISM_FAU_INITIVAL,						"FAU initial time interval",			"4.1",   	 	1.0,     														"",
 																			"For fast adaptive uniformisation (FAU), the length of initial time interval to analyse." },
 		},
 		{
@@ -694,7 +702,7 @@ public class PrismSettings implements Observer
 			listener.notifySettings(this);
 		}
 	}
-	
+
 	public File getLocationForSettingsFile()
 	{
 		return new File(System.getProperty("user.home")+File.separator+".prism");
@@ -982,7 +990,7 @@ public class PrismSettings implements Observer
 		// Process string (remove - and extract any options) 
 		Pair<String, Map<String, String>> pair = splitSwitch(args[i]);
 		String sw = pair.first;
-		Map<String, String> options = pair.second; 
+		Map<String, String> options = pair.second;
 		
 		// Note: the order of these switches should match the -help output (just to help keep track of things).
 		
@@ -1154,7 +1162,22 @@ public class PrismSettings implements Observer
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
 		}
-		
+
+		// export probabilities/rewards with up to n significant decimal places
+		else if (sw.equals("exportmodelprecision")) {
+			if (i < args.length - 1) {
+				try {
+					int precision = Integer.parseInt(args[++i]);
+					if (!RANGE_EXPORT_DOUBLE_PRECISION.contains(precision))
+						throw new NumberFormatException("");
+					set(PRISM_EXPORT_MODEL_PRECISION, precision);
+				} catch (NumberFormatException e) {
+					throw new PrismException("Invalid value for -" + sw + " switch");
+				}
+			} else {
+				throw new PrismException("No value specified for -" + sw + " switch");
+			}
+		}
 		// MODEL CHECKING OPTIONS:
 		
 		// Precomputation algs off
@@ -1859,7 +1882,7 @@ public class PrismSettings implements Observer
 	 * When present, the options is a comma-separated list of "option" or "option=value" items.
 	 * The switch itself can be prefixed with either 1 or 2 hyphens.
 	 * 
-	 * @return a pair containing the switch name and a mapping from options to values.  
+	 * @return a pair containing the switch name and a mapping from options to values.
 	 */
 	private static Pair<String, Map<String, String>> splitSwitch(String sw) throws PrismException
 	{
