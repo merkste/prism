@@ -55,7 +55,7 @@ public class PrismSettings implements Observer
 	public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 	public static final FontColorPair DEFAULT_FONT_COLOUR = new FontColorPair(new Font("monospaced", Font.PLAIN, 12), Color.black);
 	public static final File DEFAULT_FILE = null;
-	
+
 	//Type Constants
 	public static final String STRING_TYPE = "s";
 	public static final String INTEGER_TYPE = "i";
@@ -71,7 +71,7 @@ public class PrismSettings implements Observer
 
 	// Constraint constants
 	public static final Interval RANGE_EXPORT_DOUBLE_PRECISION = Interval.closed(1, 17);
-
+	public static final int DEFAULT_EXPORT_MODEL_PRECISION = 17;
 	//Property Constant Keys
 	//======================
 	
