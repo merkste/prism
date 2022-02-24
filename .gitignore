@@ -36,3 +36,10 @@ prism/\.project
 # Eclipse project custom settings
 \.settings/
 prism/\.settings/
+
+# Intellij project files and build directory
+.idea/
+*.iml
+
+# out directory
+out/
