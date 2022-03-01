@@ -39,7 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import common.IterableStateSet;
 import common.PathUtil;
+import common.iterable.FunctionalPrimitiveIterator;
 import parser.State;
 import parser.Values;
 import parser.ast.DeclarationIntView;
@@ -449,6 +451,17 @@ public class StateModelChecker extends PrismComponent
 	{
 		StateValues res = null;
 
+		// Propositions
+		if (expr.isProposition()) {
+			// Replace labels with their definition. No change for "init" and "deadlock"
+			LabelList ll = (propertiesFile != null) ? propertiesFile.getCombinedLabelList() : modulesFile.getLabelList();
+			expr = (Expression) expr.deepCopy().expandLabels(ll);
+			// If no labels are left, check proposition
+			if (expr.getAllLabels().isEmpty()) {
+				return checkProposition(model, expr, statesOfInterest);
+			}
+			// Otherwise continue with recursive evaluation (slight performance penalty)
+		}
 		// If-then-else
 		if (expr instanceof ExpressionITE) {
 			res = checkExpressionITE(model, (ExpressionITE) expr, statesOfInterest);
@@ -508,6 +521,51 @@ public class StateModelChecker extends PrismComponent
 		// Anything else - error
 		else {
 			throw new PrismNotSupportedException("Couldn't check " + expr.getClass());
+		}
+
+		return res;
+	}
+
+	/**
+	 * Check an expression that is a proposition, i.e., can be evaluated on a single state,
+	 * and does not contain any labels.
+	 * This approach takes advantage of the caching for {@link Expression#evaluate}.
+	 * 
+	 * @param model
+	 * @param expr
+	 * @param statesOfInterest
+	 * @return
+	 * @throws PrismException
+	 */
+	protected StateValues checkProposition(Model model, Expression expr, BitSet statesOfInterest) throws PrismException
+	{
+		if (!expr.isProposition()) {
+			throw new IllegalArgumentException("Expression expected to be a proposition.");
+		} else if (!expr.getAllLabels().isEmpty()) {
+			throw new IllegalArgumentException("Expression must not contain any labels");
+		}
+
+		Type type = expr.getType();
+		StateValues res = new StateValues(type, model);
+		List<State> statesList = model.getStatesList();
+		FunctionalPrimitiveIterator.OfInt states = new IterableStateSet(statesOfInterest, model.getNumStates()).iterator();
+		if (type instanceof TypeBool) {
+			while(states.hasNext()) {
+				int i = states.next();
+				res.setBooleanValue(i, expr.evaluateBoolean(constantValues, statesList.get(i)));
+			}
+		} else if (type instanceof TypeInt) {
+			while(states.hasNext()) {
+				int i = states.next();
+				res.setIntValue(i, expr.evaluateInt(constantValues, statesList.get(i)));
+			}
+		} else if (type instanceof TypeDouble) {
+			while(states.hasNext()) {
+				int i = states.next();
+				res.setDoubleValue(i, expr.evaluateDouble(constantValues, statesList.get(i)));
+			}
+		} else {
+			throw new PrismNotSupportedException("Couldn't check proposition of type " + type);
 		}
 
 		return res;
