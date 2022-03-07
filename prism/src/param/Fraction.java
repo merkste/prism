@@ -14,6 +14,9 @@ public interface Fraction extends Comparable<Fraction>
 {
 	public static int gcd(int a, int b)
 	{
+		if (a == Integer.MIN_VALUE || b == Integer.MIN_VALUE) {
+			throw new IllegalArgumentException("Both numerator and denominator must not be Integer.MIN_VALUE");
+		}
 		while (0 != b) {
 			int tmp = b;
 			b = a % b;
@@ -24,6 +27,9 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static long gcd(long a, long b)
 	{
+		if (a == Long.MIN_VALUE || b == Long.MIN_VALUE) {
+			throw new IllegalArgumentException("Both numerator and denominator must not be Long.MIN_VALUE");
+		}
 		while (0L != b) {
 			long tmp = b;
 			b = a % b;
@@ -55,6 +61,9 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static Fraction valueOf(int numerator, int denominator, boolean cancel)
 	{
+		if (numerator == Integer.MIN_VALUE || denominator == Integer.MIN_VALUE) {
+			return valueOf((long) numerator, (long) denominator, cancel);
+		}
 		if (cancel) {
 			int gcd = gcd(numerator, denominator);
 			if (gcd > 1) {
@@ -72,6 +81,9 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static Fraction valueOf(long numerator, long denominator, boolean cancel)
 	{
+		if (numerator == Long.MIN_VALUE || denominator == Long.MIN_VALUE) {
+			return valueOf(BigInteger.valueOf(numerator), BigInteger.valueOf(denominator), cancel);
+		}
 		if (cancel) {
 			long gcd = gcd(numerator, denominator);
 			if (gcd > 1) {
@@ -79,21 +91,11 @@ public interface Fraction extends Comparable<Fraction>
 				denominator /= gcd;
 			}
 		}
-		if (isIntValue(numerator) && isIntValue(denominator))
+		if (isInvertibleIntValue(numerator) && isInvertibleIntValue(denominator))
 		{
 			return valueOf((int) numerator, (int) denominator, false);
 		}
 		return new MediumFraction(numerator, denominator);
-	}
-
-	private static boolean isIntValue(BigInteger n)
-	{
-		return INT_MIN_VALUE.compareTo(n) <= 0 && n.compareTo(INT_MAX_VALUE) <= 0;
-	}
-
-	private static boolean isIntValue(long n)
-	{
-		return Integer.MIN_VALUE <= n && n <= Integer.MAX_VALUE;
 	}
 
 	public static Fraction valueOf(BigInteger numerator, BigInteger denominator)
@@ -107,7 +109,7 @@ public interface Fraction extends Comparable<Fraction>
 //		{
 //			return valueOf(numerator.intValue(), denominator.intValue(), cancel);
 //		}
-		if (isLongValue(numerator) && isLongValue(denominator))
+		if (isInvertibleLongValue(numerator) && isInvertibleLongValue(denominator))
 		{
 			return valueOf(numerator.longValue(), denominator.longValue(), cancel);
 		}
@@ -122,7 +124,7 @@ public interface Fraction extends Comparable<Fraction>
 //		{
 //			return valueOf(numerator.intValue(), denominator.intValue(), cancel);
 //		}
-		if (isLongValue(numerator) && isLongValue(denominator))
+		if (isInvertibleLongValue(numerator) && isInvertibleLongValue(denominator))
 		{
 			return valueOf(numerator.longValue(), denominator.longValue(), false);
 		}
@@ -134,14 +136,14 @@ public interface Fraction extends Comparable<Fraction>
 	public static final BigInteger LONG_MIN_VALUE = BigInteger.valueOf(Long.MIN_VALUE);
 	public static final BigInteger LONG_MAX_VALUE = BigInteger.valueOf(Long.MAX_VALUE);
 
-	private static boolean isLongValue(BigInteger n)
-	{
-		return LONG_MIN_VALUE.compareTo(n) <= 0 && n.compareTo(LONG_MAX_VALUE) <= 0;
-	}
-
 	private static boolean isInvertibleLongValue(BigInteger n)
 	{
 		return LONG_MIN_VALUE.compareTo(n) < 0 && n.compareTo(LONG_MAX_VALUE) <= 0;
+	}
+
+	private static boolean isInvertibleIntValue(long n)
+	{
+		return Integer.MIN_VALUE < n && n <= Integer.MAX_VALUE;
 	}
 
 	int compareTo(Fraction other);
@@ -223,8 +225,9 @@ public interface Fraction extends Comparable<Fraction>
 		protected final int numerator;
 		protected final int denominator;
 
-		public SmallFraction(int numerator, int denominator)
+		private SmallFraction(int numerator, int denominator)
 		{
+			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
 			if (denominator == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -321,13 +324,8 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public Fraction negate()
 		{
-			if (numerator != Integer.MIN_VALUE) {
-				return new SmallFraction(-numerator, denominator);
-			}
-			if (denominator != Integer.MIN_VALUE) {
-				return new SmallFraction(numerator, -denominator);
-			}
-			return valueOf(- (long) numerator, (long) denominator, false);
+			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
+			return new SmallFraction(-numerator, denominator);
 		}
 
 		@Override
@@ -501,10 +499,11 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public String toString()
 		{
+			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
 			String sign = (signum() < 0) ? "-" : "";
-			long absNum = Math.abs((long) numerator);
-			long absDen = Math.abs((long) denominator);
-			long gcd = gcd(absNum, absDen);
+			int absNum = Math.abs(numerator);
+			int absDen = Math.abs(denominator);
+			int gcd = gcd(numerator, denominator);
 			if (gcd == absDen) {
 				return sign + absNum / gcd;
 			}
@@ -519,8 +518,9 @@ public interface Fraction extends Comparable<Fraction>
 		protected final long numerator;
 		protected final long denominator;
 
-		public MediumFraction(long numerator, long denominator)
+		private MediumFraction(long numerator, long denominator)
 		{
+			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
 			if (denominator == 0L) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -646,13 +646,8 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public Fraction negate()
 		{
-			if (numerator != Long.MIN_VALUE) {
-				return new MediumFraction(-numerator, denominator);
-			}
-			if (denominator != Long.MIN_VALUE) {
-				return new MediumFraction(numerator, -denominator);
-			}
-			return valueOf(BigInteger.valueOf(numerator).negate(), BigInteger.valueOf(denominator), false);
+			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
+			return new MediumFraction(-numerator, denominator);
 		}
 
 		@Override
@@ -885,12 +880,13 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public String toString()
 		{
+			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
 			String sign = (signum() < 0) ? "-" : "";
-			BigInteger absNum = BigInteger.valueOf(numerator).abs();
-			BigInteger absDen = BigInteger.valueOf(denominator).abs();
-			BigInteger gcd = absNum.gcd(absDen);
-			if (gcd.equals(absDen)) {
-				return sign + absNum.divide(gcd);
+			long absNum = Math.abs(numerator);
+			long absDen = Math.abs(denominator);
+			long gcd = gcd(numerator, denominator);
+			if (gcd == absDen) {
+				return sign + absNum / gcd;
 			}
 			return sign + absNum + "/" + absDen;
 		}
@@ -898,6 +894,9 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static int hashCode(long num, long den, boolean cancel)
 	{
+		if (num == Long.MIN_VALUE || den == Long.MIN_VALUE) {
+			throw new IllegalArgumentException("Both numerator and denominator must not be Long.MIN_VALUE");
+		}
 		if (cancel) {
 			long gcd = gcd(num, den);
 			if (gcd > 1L) {
@@ -905,11 +904,7 @@ public interface Fraction extends Comparable<Fraction>
 				den /= gcd;
 			}
 		}
-		if (num != Long.MIN_VALUE && den != Long.MIN_VALUE) {
-			return Long.hashCode(num) ^ Long.hashCode(den);
-		}
-		// Fall back to BigInteger since -MIN_VALUE == MIN_VALUE causes wrong hash value
-		return BigInteger.valueOf(num).hashCode() ^ BigInteger.valueOf(den).hashCode();
+		return Long.hashCode(num) ^ Long.hashCode(den);
 	}
 
 
@@ -919,7 +914,7 @@ public interface Fraction extends Comparable<Fraction>
 		protected final BigInteger numerator;
 		protected final BigInteger denominator;
 
-		public LargeFraction(BigInteger numerator, BigInteger denominator)
+		private LargeFraction(BigInteger numerator, BigInteger denominator)
 		{
 			if (denominator.signum() == 0) {
 				throw new ArithmeticException("Division by zero");
@@ -1268,7 +1263,7 @@ public interface Fraction extends Comparable<Fraction>
 			String sign = (signum() < 0) ? "-" : "";
 			BigInteger absNum = numerator.abs();
 			BigInteger absDen = denominator.abs();
-			BigInteger gcd = absNum.gcd(absDen);
+			BigInteger gcd = numerator.gcd(denominator);
 			if (gcd.equals(absDen)) {
 				return sign + absNum.divide(gcd);
 			}
@@ -1283,8 +1278,8 @@ public interface Fraction extends Comparable<Fraction>
 //		BigInteger offset = BigInteger.ZERO;
 //		BigInteger offset = INT_MAX_VALUE;
 //		BigInteger offset = INT_MAX_VALUE.add(INT_MAX_VALUE);
-// 		BigInteger offset = LONG_MAX_VALUE;
-		BigInteger offset = LONG_MAX_VALUE.add(LONG_MAX_VALUE);
+ 		BigInteger offset = LONG_MAX_VALUE;
+//		BigInteger offset = LONG_MAX_VALUE.add(LONG_MAX_VALUE);
 		final int n = 30;
 		final int m = 2 * n;
 		Fraction[][] fractions = new Fraction[n][m];
