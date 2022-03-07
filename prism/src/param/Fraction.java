@@ -71,7 +71,7 @@ public interface Fraction extends Comparable<Fraction>
 				denominator /= gcd;
 			}
 		}
-		return new SmallFraction(numerator, denominator);
+		return new SmallFraction(numerator, denominator, cancel);
 	}
 
 	public static Fraction valueOf(long numerator, long denominator)
@@ -93,9 +93,10 @@ public interface Fraction extends Comparable<Fraction>
 		}
 		if (isInvertibleIntValue(numerator) && isInvertibleIntValue(denominator))
 		{
+			// TODO: Sets wrong flag >> accept for now (penalty of canceling twice is significant)
 			return valueOf((int) numerator, (int) denominator, false);
 		}
-		return new MediumFraction(numerator, denominator);
+		return new MediumFraction(numerator, denominator, cancel);
 	}
 
 	public static Fraction valueOf(BigInteger numerator, BigInteger denominator)
@@ -126,9 +127,10 @@ public interface Fraction extends Comparable<Fraction>
 //		}
 		if (isInvertibleLongValue(numerator) && isInvertibleLongValue(denominator))
 		{
+			// TODO: Sets wrong flag >> accept for now (penalty of canceling twice is significant)
 			return valueOf(numerator.longValue(), denominator.longValue(), false);
 		}
-		return new LargeFraction(numerator, denominator);
+		return new LargeFraction(numerator, denominator, cancel);
 	}
 
 	public static final BigInteger INT_MIN_VALUE = BigInteger.valueOf(Integer.MIN_VALUE);
@@ -224,8 +226,9 @@ public interface Fraction extends Comparable<Fraction>
 	{
 		protected final int numerator;
 		protected final int denominator;
+		protected final boolean canceled;
 
-		private SmallFraction(int numerator, int denominator)
+		private SmallFraction(int numerator, int denominator, boolean canceled)
 		{
 			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
 			if (denominator == 0) {
@@ -233,12 +236,17 @@ public interface Fraction extends Comparable<Fraction>
 			}
 			this.numerator = numerator;
 			this.denominator = denominator;
+			this.canceled = canceled;
 		}
 
-		public SmallFraction cancel()
+		public Fraction cancel()
 		{
-			int gcd = gcd(numerator, denominator);
-			return gcd == 1 ? this : new SmallFraction(numerator/gcd, denominator/gcd);
+			return canceled ? this : valueOf(numerator, denominator);
+		}
+
+		public int gcd()
+		{
+			return canceled ? 1 : Fraction.gcd(numerator, denominator);
 		}
 
 		@Override
@@ -318,14 +326,14 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int hashCode()
 		{
-			return Fraction.hashCode(numerator, denominator, true);
+			return Fraction.hashCode(numerator, denominator, canceled);
 		}
 
 		@Override
 		public Fraction negate()
 		{
 			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
-			return new SmallFraction(-numerator, denominator);
+			return new SmallFraction(-numerator, denominator, canceled);
 		}
 
 		@Override
@@ -503,7 +511,7 @@ public interface Fraction extends Comparable<Fraction>
 			String sign = (signum() < 0) ? "-" : "";
 			int absNum = Math.abs(numerator);
 			int absDen = Math.abs(denominator);
-			int gcd = gcd(numerator, denominator);
+			int gcd = gcd();
 			if (gcd == absDen) {
 				return sign + absNum / gcd;
 			}
@@ -517,8 +525,9 @@ public interface Fraction extends Comparable<Fraction>
 	{
 		protected final long numerator;
 		protected final long denominator;
+		protected final boolean canceled;
 
-		private MediumFraction(long numerator, long denominator)
+		private MediumFraction(long numerator, long denominator, boolean canceled)
 		{
 			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
 			if (denominator == 0L) {
@@ -526,13 +535,18 @@ public interface Fraction extends Comparable<Fraction>
 			}
 			this.numerator = numerator;
 			this.denominator = denominator;
+			this.canceled = canceled;
 		}
 
 		@Override
 		public Fraction cancel()
 		{
-			long gcd = gcd(numerator, denominator);
-			return gcd == 1L ? this : valueOf(numerator/gcd, denominator/gcd, false);
+			return canceled ? this : valueOf(numerator, denominator);
+		}
+
+		public long gcd()
+		{
+			return canceled ? 1L : Fraction.gcd(numerator, denominator);
 		}
 
 		@Override
@@ -584,7 +598,7 @@ public interface Fraction extends Comparable<Fraction>
 			long facA = otherDen;
 			long facB = denominator;
 //			long gcd = 1L;
-			long gcd = gcd(denominator, otherDen);
+			long gcd = Fraction.gcd(denominator, otherDen);
 			if (gcd > 1L) {
 				facA /= gcd;
 				facB /= gcd;
@@ -640,14 +654,14 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int hashCode()
 		{
-			return Fraction.hashCode(numerator, denominator, true);
+			return Fraction.hashCode(numerator, denominator, canceled);
 		}
 
 		@Override
 		public Fraction negate()
 		{
 			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
-			return new MediumFraction(-numerator, denominator);
+			return new MediumFraction(-numerator, denominator, canceled);
 		}
 
 		@Override
@@ -709,7 +723,7 @@ public interface Fraction extends Comparable<Fraction>
 			long facA = denA;
 			long facB = denB;
 //			long gcd = 1L;
-			long gcd = gcd(denA, denB);
+			long gcd = Fraction.gcd(denA, denB);
 			if (gcd > 1L) {
 				facA /= gcd;
 				facB /= gcd;
@@ -884,7 +898,7 @@ public interface Fraction extends Comparable<Fraction>
 			String sign = (signum() < 0) ? "-" : "";
 			long absNum = Math.abs(numerator);
 			long absDen = Math.abs(denominator);
-			long gcd = gcd(numerator, denominator);
+			long gcd = gcd();
 			if (gcd == absDen) {
 				return sign + absNum / gcd;
 			}
@@ -913,21 +927,27 @@ public interface Fraction extends Comparable<Fraction>
 	{
 		protected final BigInteger numerator;
 		protected final BigInteger denominator;
+		protected final boolean canceled;
 
-		private LargeFraction(BigInteger numerator, BigInteger denominator)
+		private LargeFraction(BigInteger numerator, BigInteger denominator, boolean canceled)
 		{
 			if (denominator.signum() == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
 			this.numerator = numerator;
 			this.denominator = denominator;
+			this.canceled = canceled;
 		}
 
 		@Override
 		public Fraction cancel()
 		{
-			BigInteger gcd = numerator.gcd(denominator);
-			return gcd.equals(BigInteger.ONE) ? this : valueOf(numerator.divide(gcd), denominator.divide(gcd), false);
+			return canceled ? this : valueOf(numerator, denominator);
+		}
+
+		public BigInteger gcd()
+		{
+			return canceled ? BigInteger.ONE : numerator.gcd(denominator);
 		}
 
 		@Override
@@ -939,7 +959,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public Fraction negate()
 		{
-			return new LargeFraction(numerator.negate(), denominator);
+			return new LargeFraction(numerator.negate(), denominator, canceled);
 		}
 
 		@Override
@@ -1042,7 +1062,7 @@ public interface Fraction extends Comparable<Fraction>
 		{
 			BigInteger num = numerator;
 			BigInteger den = denominator;
-			BigInteger gcd = numerator.gcd(denominator);
+			BigInteger gcd = gcd();
 			if (!gcd.equals(BigInteger.ONE)) {
 				num = numerator.divide(gcd);
 				den = denominator.divide(gcd);
@@ -1263,7 +1283,7 @@ public interface Fraction extends Comparable<Fraction>
 			String sign = (signum() < 0) ? "-" : "";
 			BigInteger absNum = numerator.abs();
 			BigInteger absDen = denominator.abs();
-			BigInteger gcd = numerator.gcd(denominator);
+			BigInteger gcd = gcd();
 			if (gcd.equals(absDen)) {
 				return sign + absNum.divide(gcd);
 			}
@@ -1275,12 +1295,12 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static void main(String[] args)
 	{
-//		BigInteger offset = BigInteger.ZERO;
+		BigInteger offset = BigInteger.ZERO;
 //		BigInteger offset = INT_MAX_VALUE;
 //		BigInteger offset = INT_MAX_VALUE.add(INT_MAX_VALUE);
- 		BigInteger offset = LONG_MAX_VALUE;
+// 		BigInteger offset = LONG_MAX_VALUE;
 //		BigInteger offset = LONG_MAX_VALUE.add(LONG_MAX_VALUE);
-		final int n = 30;
+		final int n = 50;
 		final int m = 2 * n;
 		Fraction[][] fractions = new Fraction[n][m];
 		for (int i = 0; i < n; i++) {
