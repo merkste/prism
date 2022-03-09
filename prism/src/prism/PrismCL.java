@@ -87,6 +87,7 @@ public class PrismCL implements PrismModelListener
 	private int exportType = Prism.EXPORT_PLAIN;
 	private boolean exportordered = true;
 	private boolean exportstrat = false;
+	private boolean noexportheaders = false;
 	private boolean simulate = false;
 	private boolean simpath = false;
 	private boolean param = false;
@@ -738,7 +739,7 @@ public class PrismCL implements PrismModelListener
 		if (exportstaterewards) {
 			try {
 				File f = (exportStateRewardsFilename.equals("stdout")) ? null : new File(exportStateRewardsFilename);
-				prism.exportStateRewardsToFile(exportType, f);
+				prism.exportStateRewardsToFile(exportType, f, noexportheaders);
 			}
 			// in case of error, report it and proceed
 			catch (FileNotFoundException e) {
@@ -1579,6 +1580,10 @@ public class PrismCL implements PrismModelListener
 					} else {
 						errorAndExit("No file specified for -" + sw + " switch");
 					}
+				}
+
+				else if (sw.equals("noexportheaders")) {
+					noexportheaders = true;
 				}
 
 				// NB: Following the ordering of the -help text, more options go here,

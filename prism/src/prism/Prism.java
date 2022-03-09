@@ -26,6 +26,7 @@
 
 package prism;
 
+import explicit.rewards.Rewards;
 import hybrid.PrismHybrid;
 
 import java.io.ByteArrayInputStream;
@@ -90,6 +91,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 
 	/** Build number (e.g. "6667"). Defaults to "" (undefined), read from prism.Revision class if present. */
 	private static String buildNumber = "";
+
 	static {
 		try {
 			buildNumber = Prism.class.getClassLoader().loadClass("prism.Revision").getField("svnRevision").get(null).toString();
@@ -155,7 +157,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public static final int XIEBEEREL = 1;
 	public static final int LOCKSTEP = 2;
 	public static final int SCCFIND = 3;
-	
+
 	// methods for SCC decomposition (explicit)
 	public static final int TARJAN_RECURSIVE = 1;
 	public static final int TARJAN_STACK = 2;
@@ -165,8 +167,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public static final int EC_ON_THE_FLY = 2;
 
 	// Options for type of strategy export
-	public enum StrategyExportType {
+	public enum StrategyExportType
+	{
 		ACTIONS, INDICES, INDUCED_MODEL, DOT_FILE;
+
 		public String description()
 		{
 			switch (this) {
@@ -254,7 +258,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	// State
 	//------------------------------------------------------------------------------
 
-	private enum ModelSource {
+	private enum ModelSource
+	{
 		PRISM_MODEL, MODEL_GENERATOR, EXPLICIT_FILES, BUILT_MODEL
 	}
 
@@ -284,7 +289,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	// Has the CUDD library been initialised yet?
 	private boolean cuddStarted = false;
 
-
 	//------------------------------------------------------------------------------
 	// Constructors + options methods
 	//------------------------------------------------------------------------------
@@ -310,7 +314,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 
 	/**
 	 * Construct a new Prism object.
-	 * @deprecated ({@code techLog} is no longer used, use the {@link #prism.Prism(PrismLog)} constructor instead).
+	 * @deprecated ({ @ code techLog } is no longer used, use the { @ link # prism.Prism ( PrismLog)} constructor instead).
 	 */
 	public Prism(PrismLog mainLog, PrismLog techLog)
 	{
@@ -548,18 +552,16 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		exportPrismConstFile = f;
 	}
-	
 
 	public void setExportPrismReordered(boolean b) throws PrismException
 	{
 		exportPrismReordered = true;
 	}
-	
+
 	public void setExportPrismReorderedFile(File f) throws PrismException
 	{
 		exportPrismReorderedFile = f;
 	}
-
 
 	public void setExportDigital(boolean b) throws PrismException
 	{
@@ -632,7 +634,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		doReach = b;
 	}
-
 
 	public void setBSCCComp(boolean b) throws PrismException
 	{
@@ -968,7 +969,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		return getSettings().getBoolean(PrismSettings.PRISM_DO_REORDER);
 	}
-
 
 	public boolean getBSCCComp()
 	{
@@ -1755,7 +1755,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		// TODO: print more info 
 		//mainLog.println();
 	}
-	
+
 	/**
 	 * Set (some or all) undefined constants for the currently loaded PRISM model
 	 * (assuming they have changed since the last time this was called).
@@ -1973,7 +1973,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		long l; // timer
 		boolean storedDoReachFlag = false;
-		
+
 		// Clear any existing built model(s)
 		clearBuiltModel();
 
@@ -2176,7 +2176,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				root = currentModel.getVarOrderConstraints().convertToMtrNode();
 				MtrNode.setCuddTree(root);
 			}
-			
+
 			if (settings.getReorderOptions().contains("optimizetrans")) {
 				currentModel.simplifyForReordering();
 			}
@@ -2208,7 +2208,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				reorderCount++;
 
 				if (reorderConverge) {
-					mainLog.print("Reordering until convergence, iteration "+reorderCount+"...");
+					mainLog.print("Reordering until convergence, iteration " + reorderCount + "...");
 					mainLog.flush();
 				}
 
@@ -2217,46 +2217,40 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				long currentReorderStop = System.currentTimeMillis();
 
 				if (reorderConverge) {
-					mainLog.println("done (took "+ ((currentReorderStop-currentReorderStart)/1000.0) +" seconds)");
+					mainLog.println("done (took " + ((currentReorderStop - currentReorderStart) / 1000.0) + " seconds)");
 				} else {
-					mainLog.println("done (took "+ ((currentReorderStop-reorderStart)/1000.0) +" seconds)");
+					mainLog.println("done (took " + ((currentReorderStop - reorderStart) / 1000.0) + " seconds)");
 				}
 
 				int transSizeAfter = JDD.GetNumNodes(currentModel.getTrans());
 				int nodeCountAfter = JDD.GetNumNodes();
-				double transReduction = (transSizeBefore - transSizeAfter)*1.0 / transSizeBefore;
-				double nodeReduction = (nodeCountBefore - nodeCountAfter)*1.0 / nodeCountBefore;
+				double transReduction = (transSizeBefore - transSizeAfter) * 1.0 / transSizeBefore;
+				double nodeReduction = (nodeCountBefore - nodeCountAfter) * 1.0 / nodeCountBefore;
 
 				int current = JDD.GetNumNodes();
 				if (reorderConverge && current < last) {
 					last = current;
-					
+
 					// print short stats
-					mainLog.println("  Iteration "+reorderCount+": transition matrix "
-					               + PrismUtils.formatPercent1dp(transReduction)
-					               + ", overall "
-					               + PrismUtils.formatPercent1dp(nodeReduction));
+					mainLog.println("  Iteration " + reorderCount + ": transition matrix " + PrismUtils.formatPercent1dp(transReduction) + ", overall "
+							+ PrismUtils.formatPercent1dp(nodeReduction));
 					continue;
 				}
 
 				// finished, print detailed stats
 				if (reorderConverge) {
 					mainLog.print("\nReordering... ");
-					mainLog.println("done (took "+ ((currentReorderStop-reorderStart)/1000.0) +" seconds)");
+					mainLog.println("done (took " + ((currentReorderStop - reorderStart) / 1000.0) + " seconds)");
 				}
-				mainLog.println("MTBDD nodes of transition matrix: "
-				                +transSizeAfter
-				                +" ("+transSizeBefore+" before reordering, "
-				                +PrismUtils.formatPercent1dp(transReduction)
-				                +" reduction)");
-				mainLog.println("Number of overall MTBDD nodes: "
-				                +nodeCountAfter
-				                +" ("+nodeCountBefore+" before reordering, "
-				                +PrismUtils.formatPercent1dp(nodeReduction)
-				                +" reduction)");
+				mainLog.println(
+						"MTBDD nodes of transition matrix: " + transSizeAfter + " (" + transSizeBefore + " before reordering, " + PrismUtils.formatPercent1dp(
+								transReduction) + " reduction)");
+				mainLog.println(
+						"Number of overall MTBDD nodes: " + nodeCountAfter + " (" + nodeCountBefore + " before reordering, " + PrismUtils.formatPercent1dp(
+								nodeReduction) + " reduction)");
 				break;
 			}
-			
+
 			if (getExtraDDInfo()) {
 				JDD.statisticsForDD(new PrismFileLog("reorder.trans.post.csv"), currentModel.getTrans(), currentModel.getDDVarNames());
 				mainLog.println("\nVariable order:");
@@ -2264,15 +2258,14 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 				mainLog.println();
 			}
 
-			if (currentModelSource == ModelSource.PRISM_MODEL &&
-					!settings.getReorderOptions().contains("noconstraints")) {
+			if (currentModelSource == ModelSource.PRISM_MODEL && !settings.getReorderOptions().contains("noconstraints")) {
 				Reorder visitReorder = new Reorder(currentModel);
 				currentModulesFile.accept(visitReorder);
 
 				currentModulesFile.tidyUp();
 
 				if (getExportPrismReordered()) {
-					mainLog.print("\nExporting reordered PRISM source to "+getExportPrismReorderedFile().getPath()+" ...");
+					mainLog.print("\nExporting reordered PRISM source to " + getExportPrismReorderedFile().getPath() + " ...");
 					mainLog.flush();
 					PrismFileLog reordered = new PrismFileLog(getExportPrismReorderedFile().getPath());
 					reordered.println(currentModulesFile.toString());
@@ -2289,7 +2282,6 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			JDD.resetVarOrder();
 		}
 	}
-
 
 	/**
 	 * Build a model from a PRISM modelling language description, storing it symbolically,
@@ -2414,7 +2406,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		// Check again (in case engine was switched)
 		if (getExplicit())
 			throw new PrismNotSupportedException("Export to Dot file not yet supported by explicit engine");
-		
+
 		// Export to dot file
 		mainLog.println("\nExporting to dot file \"" + file + "\"...");
 		JDD.ExportDDToDotFileLabelled(currentModel.getTrans(), file.getPath(), currentModel.getDDVarNames());
@@ -2424,7 +2416,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Export the currently loaded model's transition matrix to a file (or to the log)
 	 * @param ordered Ensure that (source) states are in ascending order?
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_DOT}
 	 * <li> {@link #EXPORT_MRMC}
@@ -2490,42 +2482,66 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Export the currently loaded model's state rewards to a file
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_MRMC}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	public void exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException
+	public void exportStateRewardsToFile(int exportType, File file, boolean noexportheaders) throws FileNotFoundException, PrismException
 	{
-		String s;
 
-		if (getExplicit())
-			throw new PrismNotSupportedException("Export of state rewards not yet supported by explicit engine");
 
-		// rows format does not apply to vectors
-		if (exportType == EXPORT_ROWS)
-			exportType = EXPORT_PLAIN;
+		if (getExplicit()) {
+			explicit.StateModelChecker mcExpl = createModelCheckerExplicit(null);
+			int numRewardStructs = currentModulesFile.getNumRewardStructs();
+			//((explicit.ProbModelChecker) mcExpl).exportStateRewardsToFileExpl(currentModelExpl,currentModulesFile.getRewardStruct(1),file,exportType);
+			if (numRewardStructs == 0)
+				throw new PrismException("There are no state rewards to export");
+			if (numRewardStructs > 1) mainLog.println("\nStaterewards were exported to multiple Files:");
 
-		// Build model, if necessary
-		buildModelIfRequired();
+			String filename, allFilenames = "";
+			for (int i = 0; i < numRewardStructs; i++) {
+				filename = (file != null) ? file.getPath() : null;
+				if (filename != null && numRewardStructs > 1) {
+					filename = PrismUtils.addCounterSuffixToFilename(filename, i + 1);
+					allFilenames += ((i > 0) ? ", " : "") + filename;
+				}
+				try {
+					((explicit.ProbModelChecker) mcExpl).exportStateRewardsToFileExpl(currentModelExpl,currentModulesFile.getRewardStruct(i),filename,exportType,noexportheaders);
+				} catch (PrismException e) {
+					mainLog.println("Export of RewardStructure " + i + " failed!" );
+				}
+			}
+			if (allFilenames != null)
+				mainLog.println("Rewards exported to files: " + allFilenames);
 
-		// print message
-		mainLog.print("\nExporting state rewards vector ");
-		mainLog.print(getStringForExportType(exportType) + " ");
-		mainLog.println(getDestinationStringForFile(file));
+		} else {
+			String s;
+			// rows format does not apply to vectors
+			if (exportType == EXPORT_ROWS)
+				exportType = EXPORT_PLAIN;
 
-		// do export
-		s = currentModel.exportStateRewardsToFile(exportType, file);
-		if (s != null)
-			mainLog.println("Rewards exported to files: " + s);
+			// Build model, if necessary
+			buildModelIfRequired();
+
+			// print message
+			mainLog.print("\nExporting state rewards vector ");
+			mainLog.print(getStringForExportType(exportType) + " ");
+			mainLog.println(getDestinationStringForFile(file));
+
+			// do export
+			s = currentModel.exportStateRewardsToFile(exportType, file);
+			if (s != null)
+				mainLog.println("Rewards exported to files: " + s);
+		}
 	}
 
 	/**
 	 * Export the currently loaded model's transition rewards to a file
 	 * @param ordered Ensure that (source) states are in ascending order?
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_MRMC}
 	 * <li> {@link #EXPORT_ROWS}
@@ -2575,7 +2591,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Export the currently loaded model's bottom strongly connected components (BSCCs) to a file
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -2652,7 +2668,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(sccComputer.getBSCCs().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(sccComputer.getBSCCs().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(sccConsumerExpl.getBSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
+				explicit.StateValues.createFromBitSet(sccConsumerExpl.getBSCCs().get(i), currentModelExpl)
+						.print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
 			}
 			if (exportType == EXPORT_MATLAB)
 				tmpLog.println("];");
@@ -2670,7 +2687,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Export the (states of the) currently loaded model's maximal end components (MECs) to a file
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -2700,7 +2717,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			ecComputer = getECComputer((NondetModel) currentModel);
 			ecComputer.computeMECStates();
 		} else {
-			ecConsumerStore = new explicit.ECConsumerStore(this, (explicit.NondetModel)currentModelExpl);
+			ecConsumerStore = new explicit.ECConsumerStore(this, (explicit.NondetModel) currentModelExpl);
 			explicit.ECComputer ecComputerExpl = getExplicitECComputer((explicit.NondetModel) currentModelExpl, ecConsumerStore);
 			ecComputerExpl.computeMECStates();
 		}
@@ -2746,8 +2763,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(ecComputer.getMECStates().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(ecComputer.getMECStates().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(ecConsumerStore.getMECStates().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB,
-						true, true);
+				explicit.StateValues.createFromBitSet(ecConsumerStore.getMECStates().get(i), currentModelExpl)
+						.print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
 			}
 			if (exportType == EXPORT_MATLAB)
 				tmpLog.println("];");
@@ -2761,7 +2778,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Export the (states of the) currently loaded model's strongly connected components (SCCs) to a file
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -2836,7 +2853,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 					new StateListMTBDD(sccComputer.getSCCs().get(i), currentModel).printMatlab(tmpLog);
 				JDD.Deref(sccComputer.getSCCs().get(i));
 			} else {
-				explicit.StateValues.createFromBitSet(sccConsumerExpl.getSCCs().get(i), currentModelExpl).print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
+				explicit.StateValues.createFromBitSet(sccConsumerExpl.getSCCs().get(i), currentModelExpl)
+						.print(tmpLog, true, exportType == EXPORT_MATLAB, true, true);
 			}
 			if (exportType == EXPORT_MATLAB)
 				tmpLog.println("];");
@@ -2856,7 +2874,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * The PropertiesFile should correspond to the currently loaded model. 
 	 * @param propertiesFile The properties file (for further labels)
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -2906,7 +2924,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	/**
 	 * Export the currently loaded model's states to a file
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -2988,10 +3006,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			Expression expr = prop.getExpression().deepCopy();
 
 			if (currentDefinedMFConstants != null && currentDefinedMFConstants.getNumValues() > 0) {
-				expr = (Expression)expr.evaluatePartially(currentDefinedMFConstants, null);
+				expr = (Expression) expr.evaluatePartially(currentDefinedMFConstants, null);
 			}
 			if (definedPFConstants != null && definedPFConstants.getNumValues() > 0) {
-				expr = (Expression)expr.evaluatePartially(definedPFConstants, null);
+				expr = (Expression) expr.evaluatePartially(definedPFConstants, null);
 			}
 
 			StormWrapper storm = new StormWrapper(this);
@@ -3412,7 +3430,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		PrismLog tmpLog;
 
 		// Do some checks
-		if (!(currentModelType == ModelType.CTMC || currentModelType == ModelType.DTMC || (currentModelType == ModelType.MDP && ((NondetModel) currentModel).getMaxNumChoices() <= 1)))
+		if (!(currentModelType == ModelType.CTMC || currentModelType == ModelType.DTMC || (currentModelType == ModelType.MDP
+				&& ((NondetModel) currentModel).getMaxNumChoices() <= 1)))
 			throw new PrismNotSupportedException("Steady-state probabilities only computed for DTMCs/CTMCs and single-choice MDPs");
 		if (exportType == EXPORT_MRMC)
 			exportType = EXPORT_PLAIN; // no specific states format for MRMC
@@ -3471,11 +3490,11 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		StateValues probs;
 		switch (model.getModelType()) {
 		case CTMC:
-			mc    = new StochModelChecker(this, model, null);
+			mc = new StochModelChecker(this, model, null);
 			probs = mc.doSteadyState(fileIn);
 			break;
 		case DTMC:
-			mc    = new ProbModelChecker(this, model, null);
+			mc = new ProbModelChecker(this, model, null);
 			probs = mc.doSteadyState(fileIn);
 			break;
 		case MDP:
@@ -3484,9 +3503,9 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			}
 			mainLog.println("\nMDP has at most one choice each state, computing steady-state probabilities in implicit DTMC");
 			StopWatch watch = new StopWatch(mainLog).start("Converting MDP to DTMCSparse");
-			ProbModel dtmc  = ((NondetModel) model).toDTMC(mainLog);
+			ProbModel dtmc = ((NondetModel) model).toDTMC(mainLog);
 			watch.stop();
-			mc    = new ProbModelChecker(this, dtmc, null);
+			mc = new ProbModelChecker(this, dtmc, null);
 			probs = mc.doSteadyState(fileIn);
 			probs.switchModel(model);
 			dtmc.clear();
@@ -3515,7 +3534,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		case CTMC: {
 			CTMCModelChecker mcCTMC = new CTMCModelChecker(this);
 			probs = mcCTMC.doSteadyState((CTMC) model, fileIn);
-//			probs = mcDTMC.doSteadyState((DTMC) model, (File) null);
+			//			probs = mcDTMC.doSteadyState((DTMC) model, (File) null);
 			break;
 		}
 		default:
@@ -4001,7 +4020,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param model The model
 	 * @param ordered Ensure that (source) states are in ascending order?
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_DOT}
 	 * <li> {@link #EXPORT_MRMC}
@@ -4021,7 +4040,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param model The model
 	 * @param ordered Ensure that (source) states are in ascending order?
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_DOT}
 	 * <li> {@link #EXPORT_MRMC}
@@ -4078,7 +4097,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Load a (built) model and export its state rewards to a file
 	 * @param model The model
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_MRMC}
 	 * </ul>
@@ -4087,7 +4106,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void exportStateRewardsToFile(Model model, int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		loadBuiltModel(model);
-		exportStateRewardsToFile(exportType, file);
+		exportStateRewardsToFile(exportType, file, false);
 	}
 
 	/**
@@ -4096,7 +4115,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param model The model
 	 * @param ordered Ensure that (source) states are in ascending order?
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * <li> {@link #EXPORT_MRMC}
 	 * <li> {@link #EXPORT_ROWS}
@@ -4114,7 +4133,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Load a (built) model and export its bottom strongly connected components (BSCCs) to a file
 	 * @param model The model
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -4133,7 +4152,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * @param modulesFile The corresponding (parsed) PRISM model (for the labels)
 	 * @param propertiesFile The properties file (for further labels)
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -4150,7 +4169,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Load a (built) model and export its states to a file
 	 * @param model The model
 	 * @param exportType Type of export; one of: <ul>
-	 * <li> {@link #EXPORT_PLAIN} 
+	 * <li> {@link #EXPORT_PLAIN}
 	 * <li> {@link #EXPORT_MATLAB}
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
@@ -4158,7 +4177,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void exportStatesToFile(Model model, int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		loadBuiltModel(model);
-		exportStateRewardsToFile(exportType, file);
+		exportStateRewardsToFile(exportType, file,false);
 	}
 
 	/**
@@ -4211,8 +4230,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * Old API:
 	 */
 	public void modelCheckSimulatorExperiment(ModulesFile modulesFile, PropertiesFile propertiesFile, UndefinedConstants undefinedConstants,
-			ResultsCollection results, Expression propertyToCheck, State initialState, long maxPathLength, SimulationMethod simMethod) throws PrismException,
-			InterruptedException
+			ResultsCollection results, Expression propertyToCheck, State initialState, long maxPathLength, SimulationMethod simMethod)
+			throws PrismException, InterruptedException
 	{
 		loadPRISMModel(modulesFile);
 		modelCheckSimulatorExperiment(propertiesFile, undefinedConstants, results, propertyToCheck, initialState, maxPathLength, simMethod);
@@ -4272,8 +4291,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			// ok
 			break;
 		default:
-			throw new PrismNotSupportedException("Exploding bits is not supported for "+mf.getModelType());
-			
+			throw new PrismNotSupportedException("Exploding bits is not supported for " + mf.getModelType());
+
 		}
 		ModulesFile exploded = (ModulesFile) mf.deepCopy();
 		exploded.explodeBits();
@@ -4287,7 +4306,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		PrismFileLog out = new PrismFileLog(explodeBitsFile);
 		out.println(exploded);
 		out.close();
-		mainLog.println("Exported exploded-bits model to \""+explodeBitsFile+"\"");
+		mainLog.println("Exported exploded-bits model to \"" + explodeBitsFile + "\"");
 	}
 
 }

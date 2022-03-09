@@ -49,16 +49,7 @@ import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
 import parser.type.TypePathDouble;
-import prism.IntegerBound;
-import prism.ModelType;
-import prism.OpRelOpBound;
-import prism.PrismComponent;
-import prism.PrismException;
-import prism.PrismLangException;
-import prism.PrismNotSupportedException;
-import prism.PrismSettings;
-import prism.SteadyStateCache;
-import prism.SteadyStateProbs;
+import prism.*;
 import prism.SteadyStateProbs.SteadyStateProbsExplicit;
 import explicit.DTMCModelChecker.ReachBsccComputer;
 import explicit.rewards.ConstructRewards;
@@ -930,6 +921,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 	}
 
+
 	/**
 	 * Construct rewards from a reward structure and a model.
 	 * <br>
@@ -955,6 +947,98 @@ public class ProbModelChecker extends NonProbModelChecker
 			throw new PrismNotSupportedException("Cannot build rewards for " + model.getModelType() + "s");
 		}
 		return rewards;
+	}
+
+	public void exportStateRewardsToFileExpl(Model model, RewardStruct rewardStruct,String filename,int exportType, boolean noexportheaders) throws PrismException{
+
+		int numStates = model.getNumStates();
+		int nonZeroRews = 0;
+		Rewards modelRewards;
+
+		PrismLog out;
+		if (filename != null) {
+			out = PrismFileLog.create(filename, false);
+		} else {
+			out = mainLog;
+		}
+
+
+		if (exportType != Prism.EXPORT_PLAIN) {
+			throw new PrismNotSupportedException("Exporting state rewards in the requested format is currently not supported by the explicit engine");
+		}
+
+		try{
+			modelRewards = constructRewards(model, rewardStruct, true);
+		} catch (PrismException e) {
+			if(e.getMessage()=="Explicit engine does not yet handle transition rewards for D/CTMCs"){
+				//
+				if(!noexportheaders){
+					out.println("# State rewards");
+					out.println(numStates + " 0");
+				}
+				return;
+			} else {
+				throw e;
+			}
+		}
+
+
+		switch (model.getModelType()) {
+		case DTMC:
+		case CTMC:
+			MCRewards mcRewards = (MCRewards) modelRewards;
+			for (int s = 0; s < numStates; s++) {
+				double d = mcRewards.getStateReward(s);
+				if (d != 0) {
+					nonZeroRews++;
+				}
+			}
+			if(!noexportheaders){
+				String rewardStructName = rewardStruct.getName();
+				if(rewardStructName!=null){
+					out.println("# Reward Structure: \"" + rewardStructName + "\"");
+				}
+				out.println("# State rewards");
+			}
+
+			out.println(numStates + " " + nonZeroRews);
+			for (int s = 0; s < numStates; s++) {
+				double d = mcRewards.getStateReward(s);
+				if (d != 0) {
+					out.println(s + " " + PrismUtils.formatDouble(16, d));
+				}
+			}
+			break;
+		case MDP:
+		case STPG:
+			MDPRewards mdpRewards = (MDPRewards) modelRewards;
+			for (int s = 0; s < numStates; s++) {
+				double d = mdpRewards.getStateReward(s);
+				if (d != 0) {
+					nonZeroRews++;
+				}
+			}
+			if(!noexportheaders){
+				String rewardStructName = rewardStruct.getName();
+				if(rewardStructName!=null){
+					out.println("# Reward Structure: \"" + rewardStructName + "\"");
+				}
+				out.println("# State rewards");
+			}
+
+			out.println(numStates + " " + nonZeroRews);
+			for (int s = 0; s < numStates; s++) {
+				double d = mdpRewards.getStateReward(s);
+				if (d != 0) {
+					out.println(s + " " + PrismUtils.formatDouble(16, d));
+				}
+			}
+			break;
+		default:
+			throw new PrismNotSupportedException("Explicit engine does not yet export state rewards for " + model.getModelType() + "s");
+		}
+
+
 	}
 	
 	/**
