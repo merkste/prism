@@ -5,42 +5,34 @@ import prism.PrismPrintStreamLog;
 
 import java.math.BigInteger;
 
+import static param.ExactInteger.*;
+
 // TODO: BigRational has bugs if fraction is not canceled, e.g., #isZero, #isOne, #compareTo, #equals, #hash
 // TODO: Write generator for all rational numbers
-// TODO: Check how to speed up #equals and #hash
-// TODO: toDouble -> use round to denominator
+// TODO: toDouble -> use round to denominator (expand to power of two)
 
 public interface Fraction extends Comparable<Fraction>
 {
-	public static int gcd(int a, int b)
+	public static int hashCode(ExactInteger num, ExactInteger den, boolean cancel)
 	{
-		if (a == Integer.MIN_VALUE || b == Integer.MIN_VALUE) {
-			throw new IllegalArgumentException("Both numerator and denominator must not be Integer.MIN_VALUE");
+		assert cancel || num.gcd(den).equals(1);
+		if (cancel) {
+			ExactInteger gcd = num.gcd(den);
+			if (!gcd.equals(1)) {
+				num = num.divide(gcd);
+				den = den.divide(gcd);
+			}
 		}
-		while (0 != b) {
-			int tmp = b;
-			b = a % b;
-			a = tmp;
-		}
-		return Math.abs(a);
+		return 37 * num.hashCode() ^ den.hashCode();
 	}
 
-	public static long gcd(long a, long b)
+	default int compareFast(Fraction other)
 	{
-		if (a == Long.MIN_VALUE || b == Long.MIN_VALUE) {
-			throw new IllegalArgumentException("Both numerator and denominator must not be Long.MIN_VALUE");
+		if (this == (Fraction) other) {
+			return 0;
 		}
-		while (0L != b) {
-			long tmp = b;
-			b = a % b;
-			a = tmp;
-		}
-		return Math.abs(a);
-	}
-
-	default int compareSignum(int sigB)
-	{
 		int sigA = signum();
+		int sigB = other.signum();
 		if (sigA < sigB) {// A < B
 			return -1;
 		}
@@ -62,10 +54,10 @@ public interface Fraction extends Comparable<Fraction>
 	public static Fraction valueOf(int numerator, int denominator, boolean cancel)
 	{
 		if (numerator == Integer.MIN_VALUE || denominator == Integer.MIN_VALUE) {
-			return valueOf((long) numerator, (long) denominator, cancel);
+			return valueOf((long)numerator, (long)denominator, cancel);
 		}
 		if (cancel) {
-			int gcd = gcd(numerator, denominator);
+			int gcd = gcdExact(numerator, denominator);
 			if (gcd > 1) {
 				numerator /= gcd;
 				denominator /= gcd;
@@ -85,7 +77,7 @@ public interface Fraction extends Comparable<Fraction>
 			return valueOf(BigInteger.valueOf(numerator), BigInteger.valueOf(denominator), cancel);
 		}
 		if (cancel) {
-			long gcd = gcd(numerator, denominator);
+			long gcd = gcdExact(numerator, denominator);
 			if (gcd > 1) {
 				numerator /= gcd;
 				denominator /= gcd;
@@ -94,7 +86,7 @@ public interface Fraction extends Comparable<Fraction>
 		if (isInvertibleIntValue(numerator) && isInvertibleIntValue(denominator))
 		{
 			// TODO: Sets wrong flag >> accept for now (penalty of canceling twice is significant)
-			return valueOf((int) numerator, (int) denominator, false);
+			return valueOf((int)numerator, (int)denominator, false);
 		}
 		return new MediumFraction(numerator, denominator, cancel);
 	}
@@ -106,10 +98,6 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static Fraction valueOf(BigInteger numerator, BigInteger denominator, boolean cancel)
 	{
-//		if (isIntValue(numerator) && isIntValue(denominator))
-//		{
-//			return valueOf(numerator.intValue(), denominator.intValue(), cancel);
-//		}
 		if (isInvertibleLongValue(numerator) && isInvertibleLongValue(denominator))
 		{
 			return valueOf(numerator.longValue(), denominator.longValue(), cancel);
@@ -121,10 +109,6 @@ public interface Fraction extends Comparable<Fraction>
 				denominator = denominator.divide(gcd);
 			}
 		}
-//		if (isIntValue(numerator) && isIntValue(denominator))
-//		{
-//			return valueOf(numerator.intValue(), denominator.intValue(), cancel);
-//		}
 		if (isInvertibleLongValue(numerator) && isInvertibleLongValue(denominator))
 		{
 			// TODO: Sets wrong flag >> accept for now (penalty of canceling twice is significant)
@@ -132,6 +116,76 @@ public interface Fraction extends Comparable<Fraction>
 		}
 		return new LargeFraction(numerator, denominator, cancel);
 	}
+
+//	public static Fraction valueOf(BigInteger numerator, long denominator)
+//	{
+//		return valueOf(numerator, denominator, true);
+//	}
+//
+//	public static Fraction valueOf(BigInteger numerator, long denominator, boolean cancel)
+//	{
+//		return valueOf(numerator, BigInteger.valueOf(denominator), cancel);
+//	}
+//
+//	public static Fraction valueOf(long numerator, BigInteger denominator)
+//	{
+//		return valueOf(numerator, denominator, true);
+//	}
+//
+//	public static Fraction valueOf(long numerator, BigInteger denominator, boolean cancel)
+//	{
+//		return valueOf(BigInteger.valueOf(numerator), denominator, true);
+//	}
+
+	// TODO: Exploit types
+	public static Fraction valueOf(IntOrLong numerator, IntOrLong denominator)
+	{
+		return valueOf(numerator, denominator, true);
+	}
+
+	public static Fraction valueOf(IntOrLong numerator, IntOrLong denominator, boolean cancel)
+	{
+		ExactInteger num = numerator;
+		ExactInteger den = numerator;
+		if (cancel) {
+			ExactInteger gcd = numerator.gcd(denominator);
+			if (!gcd.equals(1)) {
+				num = numerator.divide(gcd);
+				den = denominator.divide(gcd);
+			}
+		}
+		if (numerator.fitsInt() && denominator.fitsInt() && !denominator.equals(Integer.MIN_VALUE) && !numerator.equals(Integer.MIN_VALUE))
+		{
+			return valueOf(numerator.intValueExact(), denominator.intValueExact(), false);
+		}
+		return valueOf(numerator.longValueExact(), denominator.longValueExact(), false);
+	}
+
+	public static Fraction valueOf(ExactInteger numerator, ExactInteger denominator)
+	{
+		return valueOf(numerator, denominator, true);
+	}
+
+	public static Fraction valueOf(ExactInteger numerator, ExactInteger denominator, boolean cancel)
+	{
+		if (cancel) {
+			ExactInteger gcd = numerator.gcd(denominator);
+			if (!gcd.equals(1)) {
+				numerator = numerator.divide(gcd);
+				denominator = denominator.divide(gcd);
+			}
+		}
+		if (numerator.fitsInt() && denominator.fitsInt() && !denominator.equals(Integer.MIN_VALUE) && !numerator.equals(Integer.MIN_VALUE))
+		{
+			return valueOf(numerator.intValueExact(), denominator.intValueExact(), false);
+		}
+		if (numerator.fitsLong() && denominator.fitsLong() && !numerator.equals(Long.MIN_VALUE) && !denominator.equals(Long.MIN_VALUE))
+		{
+			return valueOf(numerator.longValueExact(), denominator.longValueExact(), false);
+		}
+		return new LargeFraction(numerator.bigIntegerValue(), denominator.bigIntegerValue(), cancel);
+	}
+
 
 	public static final BigInteger INT_MIN_VALUE = BigInteger.valueOf(Integer.MIN_VALUE);
 	public static final BigInteger INT_MAX_VALUE = BigInteger.valueOf(Integer.MAX_VALUE);
@@ -145,8 +199,19 @@ public interface Fraction extends Comparable<Fraction>
 
 	private static boolean isInvertibleIntValue(long n)
 	{
+		// TODO: extract long constant
 		return Integer.MIN_VALUE < n && n <= Integer.MAX_VALUE;
 	}
+
+	ExactInteger getNumerator();
+
+	ExactInteger getDenominator();
+
+	Fraction cancel();
+
+	ExactInteger gcd();
+
+	int signum();
 
 	int compareTo(Fraction other);
 
@@ -163,10 +228,6 @@ public interface Fraction extends Comparable<Fraction>
 	boolean equals(MediumFraction other);
 
 	boolean equals(LargeFraction other);
-
-	Fraction cancel();
-
-	int signum();
 
 	Fraction negate();
 
@@ -220,7 +281,17 @@ public interface Fraction extends Comparable<Fraction>
 
 	Fraction divideDividend(LargeFraction dividend);
 
-
+	default String printString()
+	{
+		String sign = (signum() < 0) ? "-" : "";
+		ExactInteger absNum = getNumerator().abs();
+		ExactInteger absDen = getDenominator().abs();
+		ExactInteger gcd = gcd();
+		if (absDen.equals(gcd)) {
+			return sign + absNum.divide(gcd);
+		}
+		return sign + absNum + "/" + absDen;
+	}
 
 	public static class SmallFraction implements Fraction
 	{
@@ -231,6 +302,7 @@ public interface Fraction extends Comparable<Fraction>
 		private SmallFraction(int numerator, int denominator, boolean canceled)
 		{
 			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
+			assert canceled && ExactInteger.gcd(numerator, denominator).equals(1);
 			if (denominator == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -239,14 +311,28 @@ public interface Fraction extends Comparable<Fraction>
 			this.canceled = canceled;
 		}
 
+		@Override
+		public ExactInt getNumerator()
+		{
+			return new ExactInt(numerator);
+		}
+
+		@Override
+		public ExactInt getDenominator()
+		{
+			return new ExactInt(denominator);
+		}
+
+		@Override
 		public Fraction cancel()
 		{
 			return canceled ? this : valueOf(numerator, denominator);
 		}
 
-		public int gcd()
+		@Override
+		public ExactInteger gcd()
 		{
-			return canceled ? 1 : Fraction.gcd(numerator, denominator);
+			return canceled ? ExactInteger.ONE : ExactInteger.gcd(numerator, denominator);
 		}
 
 		@Override
@@ -264,10 +350,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int compareTo(SmallFraction other)
 		{
-			if (this == other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			if (cmp > -2) {
 				return cmp;
 			}
@@ -275,7 +358,7 @@ public interface Fraction extends Comparable<Fraction>
 			long numA = numerator * other.denominator;
 			long numB = other.numerator * denominator;
 			// Either both numbers are negated or none
-			return Long.signum(numA) == signum() ? Long.compare(numA, numB) : Long.compare(numB, numA);
+			return signum() == Long.signum(numA) ? Long.compare(numA, numB) : Long.compare(numB, numA);
 		}
 
 		@Override
@@ -293,10 +376,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public boolean equals(Object other)
 		{
-			if (other instanceof Fraction) {
-				return equals((Fraction) other);
-			}
-			return false;
+			return (other instanceof Fraction) && equals((Fraction) other);
 		}
 
 		@Override
@@ -326,7 +406,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int hashCode()
 		{
-			return Fraction.hashCode(numerator, denominator, canceled);
+			return Fraction.hashCode(new ExactInt(numerator), new ExactInt(denominator), !canceled);
 		}
 
 		@Override
@@ -356,12 +436,13 @@ public interface Fraction extends Comparable<Fraction>
 
 		private Fraction add(int numA, int denA, int numB, int denB, boolean subtract)
 		{
-			// Don't cancel beforehand, since none of the operations will overflow
-			long sumA = (long) numA * denB;
-			long sumB = (long) numB * denA;
-			long den = (long) denA * denB;
-			long sum = subtract ? sumA - sumB : sumA + sumB;
-			return valueOf(sum, den);
+			// Don't cancel beforehand, since multiplication will not overflow
+			long sumA = (long)numA * (long)denB;
+			long sumB = (long)numB * (long)denA;
+			long den = (long)denA * (long)denB;
+			// TODO: Check performance
+			LongOrBigInteger sum = subtract ? ExactInteger.subtract(sumA, sumB) : ExactInteger.add(sumA, sumB);
+			return valueOf(sum, new ExactLong(den));
 		}
 
 		@Override
@@ -415,13 +496,13 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public Fraction subtractFrom(MediumFraction minuend)
 		{
-			return minuend.subtractFrom(this);
+			return minuend.subtract(this);
 		}
 
 		@Override
 		public Fraction subtractFrom(LargeFraction minuend)
 		{
-			return minuend.subtractFrom(this);
+			return minuend.subtract(this);
 		}
 
 		@Override
@@ -438,9 +519,9 @@ public interface Fraction extends Comparable<Fraction>
 
 		private Fraction multiply(int numA, int denA, int numB, int denB)
 		{
-			// Don't cancel beforehand, since none of the operations will overflow
-			long num = (long) numA * numB;
-			long den = (long) denA * denB;
+			// Don't cancel beforehand, since multiplication will not overflow
+			long num = (long)numA * (long)numB;
+			long den = (long)denA * (long)denB;
 			return valueOf(num, den);
 		}
 
@@ -507,15 +588,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public String toString()
 		{
-			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
-			String sign = (signum() < 0) ? "-" : "";
-			int absNum = Math.abs(numerator);
-			int absDen = Math.abs(denominator);
-			int gcd = gcd();
-			if (gcd == absDen) {
-				return sign + absNum / gcd;
-			}
-			return sign + absNum + "/" + absDen;
+			return printString();
 		}
 	}
 
@@ -530,6 +603,7 @@ public interface Fraction extends Comparable<Fraction>
 		private MediumFraction(long numerator, long denominator, boolean canceled)
 		{
 			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
+			assert canceled && ExactInteger.gcd(numerator, denominator).equals(1);
 			if (denominator == 0L) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -539,14 +613,27 @@ public interface Fraction extends Comparable<Fraction>
 		}
 
 		@Override
+		public ExactLong getNumerator()
+		{
+			return new ExactLong(numerator);
+		}
+
+		@Override
+		public ExactLong getDenominator()
+		{
+			return new ExactLong(denominator);
+		}
+
+		@Override
 		public Fraction cancel()
 		{
 			return canceled ? this : valueOf(numerator, denominator);
 		}
 
-		public long gcd()
+		@Override
+		public ExactInteger gcd()
 		{
-			return canceled ? 1L : Fraction.gcd(numerator, denominator);
+			return canceled ? ExactInteger.ONE : ExactInteger.gcd(numerator, denominator);
 		}
 
 		@Override
@@ -564,20 +651,14 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int compareTo(SmallFraction other)
 		{
-			if (this == (Fraction) other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			return cmp > -2 ? cmp : compareTo(other.numerator, other.denominator);
 		}
 
 		@Override
 		public int compareTo(MediumFraction other)
 		{
-			if (this == other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			return cmp > -2 ? cmp : compareTo(other.numerator, other.denominator);
 		}
 
@@ -587,44 +668,31 @@ public interface Fraction extends Comparable<Fraction>
 			return -other.compareTo(this);
 		}
 
-		private int compareTo(long otherNum, long otherDen)
+		private int compareTo(long numB, long denB)
 		{
-			int sigA = signum();
-			if (sigA != Long.signum(otherNum) * Long.signum(otherDen)) {
-				throw new IllegalArgumentException("Signum of argument must match signum of receiver");
-			}
-			// Expand both fractions before comparing
+			long numA = numerator;
+			long denA = denominator;
+			// Cancel denumerators to increase chance to use long arithmetic
 			// TODO: check penalty of gcd
-			long facA = otherDen;
-			long facB = denominator;
 //			long gcd = 1L;
-			long gcd = Fraction.gcd(denominator, otherDen);
+			assert denA > Long.MIN_VALUE && denB > Long.MIN_VALUE;
+			long gcd = gcdExact(denominator, denB);
 			if (gcd > 1L) {
-				facA /= gcd;
-				facB /= gcd;
+				denA /= gcd;
+				denB /= gcd;
 			}
-			if (!(overflowMultiply(numerator, facA) || overflowMultiply(otherNum, facB))) {
-				// Use long arithmetics
-				long numA = numerator * facA;
-				long numB = otherNum * facB;
-				// Either both numbers are negated or none
-				return Long.signum(numA) == sigA ? Long.compare(numA, numB) : Long.compare(numB, numA);
-			}
-			// Fall back to BigInteger arithmetic
-			BigInteger numA = BigInteger.valueOf(numerator).multiply(BigInteger.valueOf(facA));
-			BigInteger numB = BigInteger.valueOf(otherNum).multiply(BigInteger.valueOf(facB));
+			// Expand both fractions first
+			LongOrBigInteger sumA = ExactInteger.multiply(numA, denB);
+			LongOrBigInteger sumB = ExactInteger.multiply(numB, denA);
 			// Either both numbers are negated or none
-			return numA.signum() == sigA ? numA.compareTo(numB) : numB.compareTo(numA);
+			assert signum() == Long.signum(numB) * Long.signum(denB);
+			return signum() == sumA.signum()? sumA.compareTo(sumB) : sumB.compareTo(sumA);
 		}
-
 
 		@Override
 		public boolean equals(Object other)
 		{
-			if (other instanceof Fraction) {
-				return equals((Fraction) other);
-			}
-			return false;
+			return (other instanceof Fraction) && equals((Fraction) other);
 		}
 
 		@Override
@@ -654,7 +722,7 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int hashCode()
 		{
-			return Fraction.hashCode(numerator, denominator, canceled);
+			return Fraction.hashCode(new ExactLong(numerator), new ExactLong(denominator), !canceled);
 		}
 
 		@Override
@@ -694,67 +762,23 @@ public interface Fraction extends Comparable<Fraction>
 			return summand.add(this);
 		}
 
-		// https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
-		static final boolean overflowAdd(long left, long right)
-		{
-			return right > 0 ? left > Long.MAX_VALUE - right
-			                 : left < Long.MIN_VALUE - right;
-		}
-
-		static final boolean overflowSubtract(long left, long right) {
-			return right > 0 ? left < Long.MIN_VALUE + right
-			                 : left > Long.MAX_VALUE + right;
-		}
-
-		static final boolean overflowMultiply(long left, long right)
-		{
-			return right > 0 ? left > Long.MAX_VALUE / right ||
-			                   left < Long.MIN_VALUE / right
-			                 : (right < -1 ? left > Long.MIN_VALUE / right ||
-			                                 left < Long.MAX_VALUE / right
-			                               : right == -1 &&
-			                                 left == Long.MIN_VALUE);
-		}
-
 		private Fraction add(long numA, long denA, long numB, long denB, boolean subtract)
 		{
-			// Expand both fractions first
+			// Cancel denumerators to increase chance to use long arithmetic
 			// TODO: check penalty of gcd
-			long facA = denA;
-			long facB = denB;
-//			long gcd = 1L;
-			long gcd = Fraction.gcd(denA, denB);
-			if (gcd > 1L) {
-				facA /= gcd;
-				facB /= gcd;
-			}
-			if (!(overflowMultiply(denA, facB) || overflowMultiply(numA, facB) || overflowMultiply(numB, facA))) {
-				long sumA = numA * facB;
-				long sumB = numB * facA;
-				if (subtract) {
-					if (!overflowSubtract(sumA, sumB)) {
-						// Use long arithmetics
-						long sum = sumA - sumB;
-						long den = denA * facB;
-						return valueOf(sum, den);
-					}
-				} else {
-					if (!(overflowAdd(sumA, sumB))) {
-						// Use long arithmetics
-						long sum = sumA + sumB;
-						long den = denA * facB;
-						return valueOf(sum, den);
-					}
-				}
-			}
-			// Fall back to BigInteger arithmetic
-			BigInteger bigFacA = BigInteger.valueOf(facA);
-			BigInteger bigFacB = BigInteger.valueOf(facB);
-			BigInteger sumA = BigInteger.valueOf(numA).multiply(bigFacA);
-			BigInteger sumB = BigInteger.valueOf(numB).multiply(bigFacB);
-			BigInteger sum = subtract ? sumA.subtract(sumB) : sumA.add(sumB);
-			BigInteger den = BigInteger.valueOf(denA).multiply(bigFacB);
-			return valueOf(sum, den);
+			long gcd = 1L;
+			assert denA > Long.MIN_VALUE && denB > Long.MIN_VALUE;
+//			long gcd = gcdExact(denA, denB);
+//			if (gcd > 1L) {
+//				denA /= gcd;
+//				denB /= gcd;
+//			}
+			// Expand both fractions first
+			LongOrBigInteger sumA = ExactInteger.multiply(numA, denB);
+			LongOrBigInteger sumB = ExactInteger.multiply(numB, denA);
+			LongOrBigInteger den = ExactInteger.multiply(denA, denB);
+			ExactInteger num = subtract ? sumA.subtract(sumB) : sumA.add(sumB);
+			return Fraction.valueOf(num, den);
 		}
 
 		@Override
@@ -831,15 +855,8 @@ public interface Fraction extends Comparable<Fraction>
 
 		private Fraction multiply(long numA, long denA, long numB, long denB)
 		{
-			if (!(overflowMultiply(numA, numB) || overflowMultiply(denA, denB))) {
-				// Use long arithmetics
-				long num = numA * numB;
-				long den = denA * denB;
-				return valueOf(num, den);
-			}
-			// Fall back to BigInteger arithmetic
-			BigInteger num = BigInteger.valueOf(numA).multiply(BigInteger.valueOf(numB));
-			BigInteger den = BigInteger.valueOf(denA).multiply(BigInteger.valueOf(denB));
+			LongOrBigInteger num = ExactInteger.multiply(numA, numB);
+			LongOrBigInteger den = ExactInteger.multiply(denA, denB);
 			return valueOf(num, den);
 		}
 
@@ -894,31 +911,8 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public String toString()
 		{
-			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
-			String sign = (signum() < 0) ? "-" : "";
-			long absNum = Math.abs(numerator);
-			long absDen = Math.abs(denominator);
-			long gcd = gcd();
-			if (gcd == absDen) {
-				return sign + absNum / gcd;
-			}
-			return sign + absNum + "/" + absDen;
+			return printString();
 		}
-	}
-
-	public static int hashCode(long num, long den, boolean cancel)
-	{
-		if (num == Long.MIN_VALUE || den == Long.MIN_VALUE) {
-			throw new IllegalArgumentException("Both numerator and denominator must not be Long.MIN_VALUE");
-		}
-		if (cancel) {
-			long gcd = gcd(num, den);
-			if (gcd > 1L) {
-				num /= gcd;
-				den /= gcd;
-			}
-		}
-		return Long.hashCode(num) ^ Long.hashCode(den);
 	}
 
 
@@ -931,6 +925,7 @@ public interface Fraction extends Comparable<Fraction>
 
 		private LargeFraction(BigInteger numerator, BigInteger denominator, boolean canceled)
 		{
+			assert canceled && numerator.gcd(denominator).equals(BigInteger.ONE);
 			if (denominator.signum() == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -940,14 +935,27 @@ public interface Fraction extends Comparable<Fraction>
 		}
 
 		@Override
+		public ExactBigInteger getNumerator()
+		{
+			return new ExactBigInteger(numerator);
+		}
+
+		@Override
+		public ExactBigInteger getDenominator()
+		{
+			return new ExactBigInteger(denominator);
+		}
+
+		@Override
 		public Fraction cancel()
 		{
 			return canceled ? this : valueOf(numerator, denominator);
 		}
 
-		public BigInteger gcd()
+		@Override
+		public ExactInteger gcd()
 		{
-			return canceled ? BigInteger.ONE : numerator.gcd(denominator);
+			return canceled ? ExactInteger.ONE : new ExactBigInteger(numerator.gcd(denominator));
 		}
 
 		@Override
@@ -977,30 +985,21 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public int compareTo(SmallFraction other)
 		{
-			if (this == (Fraction) other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			return cmp > -2 ? cmp : compareTo(other.numerator, other.denominator);
 		}
 
 		@Override
 		public int compareTo(MediumFraction other)
 		{
-			if (this == (Fraction) other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			return cmp > -2 ? cmp : compareTo(other.numerator, other.denominator);
 		}
 
 		@Override
 		public int compareTo(LargeFraction other)
 		{
-			if (this == (Fraction) other) {
-				return 0;
-			}
-			int cmp = compareSignum(other.signum());
+			int cmp = compareFast(other);
 			return cmp > -2 ? cmp : compareTo(other.numerator, other.denominator);
 		}
 
@@ -1011,25 +1010,18 @@ public interface Fraction extends Comparable<Fraction>
 
 		private int compareTo(BigInteger otherNum, BigInteger otherDen)
 		{
-			int sigA = signum();
-			if (sigA != otherNum.signum() * otherDen.signum()) {
-				throw new IllegalArgumentException("Signum of argument must match signum of receiver");
-			}
 			// Expand both fractions before comparing
-			BigInteger numA = numerator.multiply(otherDen);
-			BigInteger numB = otherNum.multiply(denominator);
+			BigInteger sumA = numerator.multiply(otherDen);
+			BigInteger sumB = otherNum.multiply(denominator);
 			// Either both numbers are negated or none
-			return numA.signum() == sigA ? numA.compareTo(numB) : numB.compareTo(numA);
+			assert signum() == otherNum.signum() * otherDen.signum();
+			return signum() == sumA.signum()? sumA.compareTo(sumB) : sumB.compareTo(sumA);
 		}
-
 
 		@Override
 		public boolean equals(Object other)
 		{
-			if (other instanceof Fraction) {
-				return equals((Fraction) other);
-			}
-			return false;
+			return (other instanceof Fraction) && equals((Fraction) other);
 		}
 
 		@Override
@@ -1037,7 +1029,6 @@ public interface Fraction extends Comparable<Fraction>
 		{
 			return other != null && other.equals(this);
 		}
-
 
 		@Override
 		public boolean equals(SmallFraction other)
@@ -1062,19 +1053,14 @@ public interface Fraction extends Comparable<Fraction>
 		{
 			BigInteger num = numerator;
 			BigInteger den = denominator;
-			BigInteger gcd = gcd();
-			if (!gcd.equals(BigInteger.ONE)) {
-				num = numerator.divide(gcd);
-				den = denominator.divide(gcd);
+			if (!canceled) {
+				BigInteger gcd = numerator.gcd(denominator);
+				if (!gcd.equals(BigInteger.ONE)) {
+					num = num.divide(gcd) ;
+					den = den.divide(gcd);
+				}
 			}
-			if (Fraction.isInvertibleLongValue(num) && Fraction.isInvertibleLongValue(den)) {
-				// Use same hash function as for long values
-				long longNum = num.longValue();
-				long longDen = den.longValue();
-				return Fraction.hashCode(longNum, longDen, false);
-			}
-			// Fall back to BigInteger since -MIN_VALUE == MIN_VALUE causes wrong hash value
-			return num.hashCode() ^ den.hashCode();
+			return 37 * num.hashCode() ^ den.hashCode();
 		}
 
 		@Override
@@ -1280,14 +1266,378 @@ public interface Fraction extends Comparable<Fraction>
 		@Override
 		public String toString()
 		{
-			String sign = (signum() < 0) ? "-" : "";
-			BigInteger absNum = numerator.abs();
-			BigInteger absDen = denominator.abs();
-			BigInteger gcd = gcd();
-			if (gcd.equals(absDen)) {
-				return sign + absNum.divide(gcd);
+			return printString();
+		}
+	}
+
+
+
+	public class FlexFraction implements Fraction
+	{
+		protected final ExactInteger numerator;
+		protected final ExactInteger denominator;
+		protected boolean canceled;
+
+		public FlexFraction(ExactInteger numerator, ExactInteger denominator)
+		{
+			this(numerator, denominator, true);
+		}
+
+		public FlexFraction(ExactInteger numerator, ExactInteger denominator, boolean cancel)
+		{
+			if (denominator.equals(0)) {
+				throw new ArithmeticException("Division by zero");
 			}
-			return sign + absNum + "/" + absDen;
+			this.canceled = cancel;
+			if (cancel) {
+				ExactInteger gcd = numerator.gcd(denominator);
+				if (!gcd.equals(1)) {
+					this.numerator = numerator.divide(gcd);
+					this.denominator = denominator.divide(gcd);
+					return;
+				}
+			}
+			this.numerator = numerator;
+			this.denominator = denominator;
+		}
+
+		@Override
+		public ExactInteger getNumerator()
+		{
+			return numerator;
+		}
+
+		@Override
+		public ExactInteger getDenominator()
+		{
+			return denominator;
+		}
+
+		@Override
+		public FlexFraction cancel()
+		{
+			return canceled ? this : new FlexFraction(numerator, denominator, true);
+		}
+
+		@Override
+		public ExactInteger gcd()
+		{
+			return numerator.gcd(denominator);
+		}
+
+		@Override
+		public int signum()
+		{
+			return numerator.signum() * denominator.signum();
+		}
+
+		@Override
+		public int compareTo(Fraction other)
+		{
+			return 0;
+		}
+
+		@Override
+		public int compareTo(SmallFraction other)
+		{
+			return 0;
+		}
+
+		@Override
+		public int compareTo(MediumFraction other)
+		{
+			return 0;
+		}
+
+		@Override
+		public int compareTo(LargeFraction other)
+		{
+			return 0;
+		}
+
+//		@Override
+		public int compareTo(FlexFraction other)
+		{
+			int cmp = compareFast(other);
+			return cmp > -2 ? cmp : compareTo(numerator, denominator, other.numerator, other.denominator);
+		}
+
+		//		@Override
+		public int compareTo(ExactInteger numA, ExactInteger denA, ExactInteger numB, ExactInteger denB)
+		{
+			// Cancel denumerators to increase chance to use int/long arithmetic
+			// TODO: check penalty of gcd
+//			ExactInteger gcd = denominator.gcd(other.denominator);
+//			if (!gcd.equals(1)) {
+//				denA = denA.divide(gcd);
+//				denB = denB.divide(gcd);
+//			}
+			// Expand both fractions first
+			ExactInteger sumA = numA.multiply(denB);
+			ExactInteger sumB = numB.multiply(denA);
+			// Either both numbers are negated or none
+			assert signum() == numB.signum() * denB.signum();
+			return signum() == sumA.signum()? sumA.compareTo(sumB) : sumB.compareTo(sumA);
+		}
+
+		@Override
+		public boolean equals(Fraction other)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean equals(SmallFraction other)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean equals(MediumFraction other)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean equals(LargeFraction other)
+		{
+			return false;
+		}
+
+//		@Override
+		public boolean equals(FlexFraction other)
+		{
+			return other != null && compareTo(other) == 0;
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return Fraction.hashCode(numerator, denominator, !canceled);
+		}
+
+		@Override
+		public FlexFraction negate()
+		{
+			// TODO: Sets wrong flag for canceled. Should inherit this.canceled
+			return new FlexFraction(numerator.negate(), denominator, false);
+		}
+
+		@Override
+		public FlexFraction reciprocal()
+		{
+			// TODO: Sets wrong flag for canceled. Should inherit this.canceled
+			return numerator.equals(denominator) ? this : new FlexFraction(denominator, numerator, false);
+		}
+
+		@Override
+		public Fraction add(Fraction summand)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction add(SmallFraction summand)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction add(MediumFraction summand)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction add(LargeFraction summand)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction add(FlexFraction summand)
+		{
+			return add(numerator, denominator, summand.numerator, summand.denominator, false);
+		}
+
+		private FlexFraction add(ExactInteger numA, ExactInteger denA, ExactInteger numB, ExactInteger denB, boolean subtract)
+		{
+			// Cancel denumerators to increase chance to use int/long arithmetic
+			// TODO: check penalty of gcd
+			ExactInteger gcd = denA.gcd(denB);
+			if (!gcd.equals(1)) {
+				denA = denA.divide(gcd);
+				denB = denB.divide(gcd);
+			}
+			// Expand both fractions first
+			ExactInteger sumA = numA.multiply(denB);
+			ExactInteger sumB = numB.multiply(denA);
+			ExactInteger den = denA.multiply(denB);
+			ExactInteger num = subtract ? sumA.subtract(sumB) : sumA.add(sumB);
+			return new FlexFraction(num, den);
+		}
+
+		@Override
+		public FlexFraction subtract(Fraction subtrahend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtract(SmallFraction subtrahend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtract(MediumFraction subtrahend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtract(LargeFraction subtrahend)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction subtract(FlexFraction subtrahend)
+		{
+			return add(numerator, denominator, subtrahend.numerator, subtrahend.denominator, true);
+		}
+
+		@Override
+		public Fraction subtractFrom(Fraction minuend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtractFrom(SmallFraction minuend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtractFrom(MediumFraction minuend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction subtractFrom(LargeFraction minuend)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction subtractFrom(FlexFraction minuend)
+		{
+			return add(minuend.numerator, minuend.denominator, numerator, denominator, true);
+		}
+
+		@Override
+		public Fraction multiply(Fraction factor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction multiply(SmallFraction factor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction multiply(MediumFraction factor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction multiply(LargeFraction factor)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction multiply(FlexFraction factor)
+		{
+			return multiply(numerator, denominator, factor.numerator, factor.denominator);
+		}
+
+		private FlexFraction multiply(ExactInteger numA, ExactInteger denA, ExactInteger numB, ExactInteger denB)
+		{
+			ExactInteger num = numA.multiply(numB);
+			ExactInteger den = denA.multiply(denB);
+			return new FlexFraction(num, den);
+		}
+
+		@Override
+		public Fraction divide(Fraction divisor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divide(SmallFraction divisor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divide(MediumFraction divisor)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divide(LargeFraction divisor)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction divide(FlexFraction divisor)
+		{
+			return multiply(numerator, denominator, divisor.denominator, divisor.numerator);
+		}
+
+		@Override
+		public Fraction divideDividend(Fraction dividend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divideDividend(SmallFraction dividend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divideDividend(MediumFraction dividend)
+		{
+			return null;
+		}
+
+		@Override
+		public Fraction divideDividend(LargeFraction dividend)
+		{
+			return null;
+		}
+
+//		@Override
+		public FlexFraction divideDividend(FlexFraction dividend)
+		{
+			return multiply(dividend.numerator, dividend.denominator, denominator, numerator);
+		}
+
+		@Override
+		public String toString()
+		{
+			return printString();
 		}
 	}
 
@@ -1295,34 +1645,41 @@ public interface Fraction extends Comparable<Fraction>
 
 	public static void main(String[] args)
 	{
-		BigInteger offset = BigInteger.ZERO;
-//		BigInteger offset = INT_MAX_VALUE;
-//		BigInteger offset = INT_MAX_VALUE.add(INT_MAX_VALUE);
-// 		BigInteger offset = LONG_MAX_VALUE;
-//		BigInteger offset = LONG_MAX_VALUE.add(LONG_MAX_VALUE);
-		final int n = 50;
+//		ExactInteger offset = ExactInteger.ZERO;
+		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).subtract(10);
+//		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).add(INT_MAX_VALUE);
+// 		ExactInteger offset = ExactInteger.valueOf(LONG_MAX_VALUE).subtract(10);
+//		ExactInteger offset = ExactInteger.valueOf(LONG_MAX_VALUE).add(LONG_MAX_VALUE);
+		final int n = 75;
 		final int m = 2 * n;
 		Fraction[][] fractions = new Fraction[n][m];
 		for (int i = 0; i < n; i++) {
-			BigInteger den = offset.add(BigInteger.valueOf(i).add(BigInteger.ONE));
+			ExactInteger den = offset.add(i).add(1);
 			for (int j = 0; j < n; j++) {
-				BigInteger num = offset.add(BigInteger.valueOf(j));
-//				Fraction frac = new SmallFraction(num, den);
-//				Fraction frac = new MediumFraction(num, den);
-//				Fraction frac = new LargeFraction(BigInteger.valueOf(num), BigInteger.valueOf(den));
+				ExactInteger num = offset.add(j);
 				Fraction frac = Fraction.valueOf(num, den);
 				fractions[i][j] = frac;
 				fractions[i][n + j] = frac.negate();
 			}
 		}
 
+		FlexFraction[][] flexFracs = new FlexFraction[n][m];
+		for (int i = 0; i < n; i++) {
+			ExactInteger den = offset.add(i).add(1);
+			for (int j = 0; j < n; j++) {
+				ExactInteger num = offset.add(j);
+				FlexFraction frac = new FlexFraction(num, den);
+				flexFracs[i][j] = frac;
+				flexFracs[i][n + j] = frac.negate();
+			}
+		}
+
 		BigRational[][] rationals = new BigRational[n][m];
 		for (int i = 0; i < n; i++) {
-			BigInteger den = offset.add(BigInteger.valueOf(i).add(BigInteger.ONE));
+			ExactInteger den = offset.add(i).add(1);
 			for (int j = 0; j < n; j++) {
-				BigInteger num = offset.add(BigInteger.valueOf(j));
-//				BigRational frac = new BigRational(num, den, false);
-				BigRational frac = new BigRational(num, den);
+				ExactInteger num = offset.add(j);
+				BigRational frac = new BigRational(num.bigIntegerValue(), den.bigIntegerValue());
 				rationals[i][j] = frac;
 				rationals[i][n + j] = frac.negate();
 			}
@@ -1336,13 +1693,12 @@ public interface Fraction extends Comparable<Fraction>
 			for (int j1 = 0; j1 < m; j1++) {
 				for (int i2 = 0; i2 < n; i2++) {
 					for (int j2 = 0; j2 < m; j2++) {
-						BigRational f1 = rationals[i1][j1];
-						BigRational f2 = rationals[i2][j2];
-//						f1.add(f2);
-						f1.multiply(f2);
-//						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
-//							errorsBigRational++;
-//						};
+						BigRational r1 = rationals[i1][j1];
+						BigRational r2 = rationals[i2][j2];
+						BigRational r = r1.add(r2);
+						if (r1.cancel().equals(r2.cancel()) && !(r1.equals(r2) && r1.hashCode() == r2.hashCode())) {
+							errorsBigRational++;
+						};
 					}
 				}
 			}
@@ -1357,8 +1713,11 @@ public interface Fraction extends Comparable<Fraction>
 					for (int j2 = 0; j2 < m; j2++) {
 						Fraction f1 = fractions[i1][j1];
 						Fraction f2 = fractions[i2][j2];
-//						f1.add(f2);
-						f1.multiply(f2);
+						Fraction f = f1.add(f2);
+//						BigRational r1 = rationals[i1][j1];
+//						BigRational r2 = rationals[i2][j2];
+//						BigRational r = r1.add(r2);
+//						assert r.toString().equals(f.toString());
 //						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
 //							errorsFraction++;
 //						};
@@ -1367,5 +1726,28 @@ public interface Fraction extends Comparable<Fraction>
 			}
 		}
 		watch.stop("errors: " + errorsFraction);
+
+		long errorsFlexFracs = 0L;
+		watch.start("Flexible arithmetic");
+		for (int i1 = 0; i1 < n; i1++) {
+			for (int j1 = 0; j1 < m; j1++) {
+				for (int i2 = 0; i2 < n; i2++) {
+					for (int j2 = 0; j2 < m; j2++) {
+						FlexFraction f1 = flexFracs[i1][j1];
+						FlexFraction f2 = flexFracs[i2][j2];
+						FlexFraction f = f1.add(f2);
+//						BigRational r1 = rationals[i1][j1];
+//						BigRational r2 = rationals[i2][j2];
+//						BigRational r = r1.multiply(r2);
+//						assert r.toString().add(f.toString());
+//						Fraction f = f1.multiply(f2);
+//						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
+//							errorsFlexFracs++;
+//						};
+					}
+				}
+			}
+		}
+		watch.stop("errors: " + errorsFlexFracs);
 	}
 }
