@@ -4,14 +4,13 @@ import common.StopWatch;
 import prism.PrismPrintStreamLog;
 
 import java.math.BigInteger;
-import java.util.NoSuchElementException;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
 // TODO: benchmark pre- vs. postcondition testing
+// TODO: extract constants
+// TODO: Why is pow(long, int) so much slower than powOptional(long, int) for same values?
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
  */
@@ -23,9 +22,12 @@ public interface ExactInteger
 	static final BigInteger INT_MAX_VALUE = BigInteger.valueOf(LONG_INT_MAX_VALUE);
 	static final BigInteger LONG_MIN_VALUE = BigInteger.valueOf(Long.MIN_VALUE);
 	static final BigInteger LONG_MAX_VALUE = BigInteger.valueOf(Long.MAX_VALUE);
+	static final BigInteger BIG_NEGATIVE_ONE = BigInteger.ONE.negate();
 
 	static final ExactInt ZERO = new ExactInt(0);
 	static final ExactInt ONE = new ExactInt(1);
+	static final ExactInt NEGATIVE_ONE = new ExactInt(-1);
+
 
 	static boolean fitsInt(long x)
 	{
@@ -223,6 +225,7 @@ public interface ExactInteger
 
 	ExactInteger gcd(ExactInteger factor);
 
+	ExactInteger pow(int exponent);
 
 	/**
 	 * Marker interface
@@ -487,6 +490,12 @@ public interface ExactInteger
 		public ExactInteger gcd(ExactInteger y)
 		{
 			return y.gcd(x);
+		}
+
+		@Override
+		public ExactInteger pow(int exponent)
+		{
+			return exponent == 1 ? this : ExactInteger.pow(x, exponent);
 		}
 
 		@Override
@@ -757,6 +766,12 @@ public interface ExactInteger
 		}
 
 		@Override
+		public ExactInteger pow(int exponent)
+		{
+			return exponent == 1 ? this : ExactInteger.pow(x, exponent);
+		}
+
+		@Override
 		public String toString()
 		{
 			return String.valueOf(x);
@@ -1011,6 +1026,12 @@ public interface ExactInteger
 		}
 
 		@Override
+		public ExactInteger pow(int exponent)
+		{
+			return exponent == 1 ? this : valueOf(x.pow(exponent));
+		}
+
+		@Override
 		public String toString()
 		{
 			return String.valueOf(x);
@@ -1104,81 +1125,6 @@ public interface ExactInteger
 		return abs(gcdUnsafe(x, y));
 	}
 
-	static OptionalInt addOptional(int x, int y)
-	{
-		// TODO: compare to #isInt(long);
-		int r = x + y;
-		return isOverflowPostAdd(x, y, r) ? OptionalInt.empty() : OptionalInt.of(r);
-	}
-
-	static OptionalLong addOptional(long x, long y)
-	{
-		long r = x + y;
-		return isOverflowPostAdd(x, y, r) ? OptionalLong.empty() : OptionalLong.of(r);
-	}
-
-	static OptionalInt subtractOptional(int x, int y)
-	{
-		// TODO: compare to #isInt(long);
-		int r = x - y;
-		return isOverflowPostSubtract(x, y, r) ? OptionalInt.empty() : OptionalInt.of(r);
-	}
-
-	static OptionalLong subtractOptional(long x, long y)
-	{
-		long r = x - y;
-		return isOverflowPostSubtract(x, y, r) ? OptionalLong.empty() : OptionalLong.of(r);
-	}
-
-	static OptionalInt multiplyOptional(int x, int y)
-	{
-		// Inline #isOverflowPostMultiply to avoid additional multiplication
-		long l = (long)x * (long)y;
-		int r = (int)l;
-		return l != r ? OptionalInt.empty() : OptionalInt.of(r);
-	}
-
-	static OptionalLong multiplyOptional(long x, long y)
-	{
-		long r = x * y;
-		return isOverflowPostMultiply(x, y, r) ? OptionalLong.empty() : OptionalLong.of(r);
-	}
-
-	static OptionalInt divideOptional(int x, int y)
-	{
-		return isOverflowDivide(x, y) ? OptionalInt.empty() : OptionalInt.of(x / y);
-	}
-
-	static OptionalLong divideOptional(long x, long y)
-	{
-		return isOverflowDivide(x, y) ? OptionalLong.empty() : OptionalLong.of(x / y);
-	}
-
-	static OptionalInt negateOptional(int x)
-	{
-		return isOverflowNegate(x) ? OptionalInt.empty() : OptionalInt.of(-x);
-	}
-
-	static OptionalLong negateOptional(long x)
-	{
-		return isOverflowNegate(x) ? OptionalLong.empty() : OptionalLong.of(-x);
-	}
-
-	static OptionalInt absOptional(int x)
-	{
-		return (x < 0) ? negateOptional(x) : OptionalInt.of(x);
-	}
-
-	static OptionalLong absOptional(long x)
-	{
-		return (x < 0) ? negateOptional(x) : OptionalLong.of(x);
-	}
-
-	public static OptionalInt gcdOptional(int x, int y)
-	{
-		return absOptional(gcdUnsafe(x, y));
-	}
-
 	private static int gcdUnsafe(int x, int y)
 	{
 		while (0 != y) {
@@ -1189,11 +1135,6 @@ public interface ExactInteger
 		return x;
 	}
 
-	public static OptionalLong gcdOptional(long x, long y)
-	{
-		return absOptional(gcdUnsafe(x, y));
-	}
-
 	private static long gcdUnsafe(long x, long y)
 	{
 		while (0L != y) {
@@ -1202,6 +1143,109 @@ public interface ExactInteger
 			x = tmp;
 		}
 		return x;
+	}
+
+	public static ExactInteger pow(long base, int exponent)
+	{
+		if (exponent < 0) {
+			throw new ArithmeticException("negative exponent");
+		}
+		if (base == -1L) {
+			return (exponent & 1) != exponent ? NEGATIVE_ONE : ONE;
+		}
+		if (base == 0L) {
+			return ZERO;
+		}
+		if (base == 1L || exponent == 0) {
+			return ONE;
+		}
+		if (exponent == 1) {
+			return ExactInteger.valueOf(base);
+		}
+		if ((base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L) { // TODO: test module 2 again
+			return powOfTwo(base, exponent);
+		}
+		return powIterative(base, exponent);
+	}
+
+	private static ExactInteger powOfTwo(long base, int exponent)
+	{
+		assert (base & (base - 1)) == 0 || (-base & (-base - 1)) == 0 : "base must be a power of two";
+		// power of two: (2^n)^e = 2^(n*e)
+		long exp = (long)Long.numberOfTrailingZeros(base) * (long) exponent;
+		if (exp > Integer.MAX_VALUE) {
+			return ExactInteger.valueOf(BigInteger.TWO.pow(exponent));
+		}
+		if (base < 0L && (exponent & 1) == 1) {
+			// negative result
+			if (exp <= 63) {
+				return ExactInteger.valueOf(-1L << exp);
+			}
+			return new ExactBigInteger(BIG_NEGATIVE_ONE.shiftLeft((int)exp));
+		} else if (exp <= 62) {
+			// positive result
+			return ExactInteger.valueOf(1L << exp);
+		}
+		return new ExactBigInteger(BigInteger.ONE.shiftLeft((int)exp));
+	}
+
+	private static ExactInteger powIterative(long base, int exponent)
+	{
+		assert Math.abs(base) > 1L && exponent > 0;
+		long result = (exponent & 1) == 1 ? base : 1L;
+		exponent >>= 1;
+		while (exponent > 0) {
+			long maybe = base * base;
+			if (isOverflowPostMultiply(base, base, maybe)) {
+				BigInteger bigResult = BigInteger.valueOf(result);
+				BigInteger bigPower = BigInteger.valueOf(base);
+				return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent <<1)));
+			} else {
+				base = maybe;
+			}
+			if ((exponent & 1) == 1) {
+				maybe = result * base;
+				if (isOverflowPostMultiply(result, base, maybe)) {
+					BigInteger bigPower = BigInteger.valueOf(base);
+					BigInteger bigResult = BigInteger.valueOf(result).multiply(bigPower);
+					return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent >>1)));
+				} else {
+					result = maybe;
+				}
+			}
+			exponent >>= 1;
+		}
+		return ExactInteger.valueOf(result);
+	}
+
+	static ExactInteger shiftLeft(long x, int n)
+	{
+		if (x == 0 | n < -64) {
+			return ExactInteger.ZERO;
+		}
+		if (n < 0) {
+			return ExactInteger.valueOf(x >> -n);
+		}
+		if (n <= 63) { // cover x=-1
+			// TODO: is number of leading zeros slow? Alternative:
+			//    unsigned n = 0;
+			//    if (x == 0) return sizeof(x) * 8;
+			//    while (1) {
+			//        if (x < 0) break;
+			//        n ++;
+			//        x <<= 1;
+			//    }
+			//    return n;
+			int maxShift = Long.numberOfLeadingZeros((x > 0) ? x : x ^ -1L) - 1;
+			int diff = maxShift - n;
+			if (32 <= diff) {
+				return new ExactInt((int)x << n);
+			}
+			if (0 <= diff) {
+				return new ExactLong(x << n);
+			}
+		}
+		return new ExactBigInteger(BigInteger.valueOf(x).shiftLeft(n));
 	}
 
 	/**
@@ -1312,6 +1356,148 @@ public interface ExactInteger
 		return absExact(gcdUnsafe(x, y));
 	}
 
+	public static int powExact(int base, int exponent)
+	{
+		if (exponent < 0) {
+			throw new ArithmeticException("negative exponent");
+		}
+		if (base == -1) {
+			return (exponent & 1) != exponent ? -1 : 1;
+		}
+		if (base == 0) {
+			return 0;
+		}
+		if (base == 1 || exponent == 0) {
+			return 1;
+		}
+		if ((base & (base - 1)) == 0 || (-base & (-base - 1)) == 0) {
+			return powOfTwoExact(base, exponent);
+		}
+		return powIterativeExact(base, exponent);
+	}
+
+	private static int powOfTwoExact(int base, int exponent)
+	{
+		assert (base & (base - 1)) == 0 || (-base & (-base - 1)) == 0 : "base must be a power of two";
+		// power of two: (2^n)^e = 2^(n*e)
+		long exp = (long)Integer.numberOfTrailingZeros(base) * (long) exponent;
+		if (base < 0 && (exponent & 1) == 1) {
+			// negative result
+			if (exp <= 31) {
+				return -1 << (int)exp;
+			}
+		} else if (exp <= 30) {
+			// positive result
+			return 1 << (int)exp;
+		}
+		throw new ArithmeticException("integer overflow");
+	}
+
+	private static int powIterativeExact(int base, int exponent)
+	{
+		assert Math.abs(base) > 1 && exponent > 0;
+		long result = (exponent & 1) == 1 ? base : 1L;
+		exponent >>= 1;
+		while (exponent > 0) {
+			base *= base;
+			if ((int)base != base) {
+				throw new ArithmeticException("integer overflow");
+			}
+			if ((exponent & 1) == 1) {
+				result *= base;
+				if ((int)result != result) {
+					throw new ArithmeticException("integer overflow");
+				}
+			}
+			exponent >>= 1;
+		}
+		return (int)result;
+	}
+
+	public static long powExact(long base, int exponent)
+	{
+		if (exponent < 0) {
+			throw new ArithmeticException("negative exponent");
+		}
+		if (base == -1L) {
+			return (exponent & 1) != exponent ? -1 : 1;
+		}
+		if (base == 0L) {
+			return 0L;
+		}
+		if (base == 1L || exponent == 0) {
+			return 1L;
+		}
+		if ((base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L) {
+			return powOfTwoExact(base, exponent);
+		}
+		return powIterativeExact(base, exponent);
+	}
+
+	private static long powOfTwoExact(long base, int exponent)
+	{
+		assert (base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L : "base must be a power of two";
+		// power of two: (2^n)^e = 2^(n*e)
+		long exp = (long)Long.numberOfTrailingZeros(base) * (long) exponent;
+		if (base < 0L && (exp & 1) == 1) {
+			// negative result
+			if (exp <= 63) {
+				return -1L << exp;
+			}
+		} else if (exp <= 62) {
+			// positive result
+			return 1L << exp;
+		}
+		throw new ArithmeticException("long overflow");
+	}
+
+	private static long powIterativeExact(long base, int exponent)
+	{
+		assert Math.abs(base) > 1L && exponent > 0;
+		long result = (exponent & 1) == 1 ? base : 1L;
+		exponent >>= 1;
+		while (exponent > 0) {
+			base = multiplyExact(base, base);
+			if ((exponent & 1) == 1) {
+				result = multiplyExact(result, base);
+			}
+			exponent >>= 1;
+		}
+		return result;
+	}
+
+	public static int shiftLeftExact(int x, int n)
+	{
+		if (x == 0 | n < -32) {
+			return 0;
+		}
+		if (n < 0) {
+			return x >> -n;
+		}
+		if (n <= 30) { // cover x=-1
+			long l = (long)x << n;
+			int r = (int)l;
+			if (l == r) {
+				return r;
+			}
+		}
+		throw new ArithmeticException("integer overflow");
+	}
+
+	public static long shiftLeftExact(long x, int n)
+	{
+		if (x == 0 | n < -64) {
+			return 0L;
+		}
+		if (n <= 63) { // cover x=-1
+			int maxShift = Long.numberOfLeadingZeros((x > 0) ? x : x ^ -1L) - 1;
+			if (n <= maxShift) {
+				return x << n;
+			}
+		}
+		throw new ArithmeticException("long overflow");
+	}
+
 	// Preconditions
 
 	static boolean isOverflowAdd(int x, int y)
@@ -1396,7 +1582,7 @@ public interface ExactInteger
 	// Postconditions
 
 	/**
-	 * @see Math#addExact(int, int) 
+	 * @see Math#addExact(int, int)
 	 */
 	static boolean isOverflowPostAdd(int x, int y, int r)
 	{
@@ -1463,7 +1649,19 @@ public interface ExactInteger
 
 	public static void main(String[] arg)
 	{
-		benchmarkIsOverflow();
+		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
+		watch.start("\"Is it worth the trouble?\"");
+		long result = 1;
+		for (long i = 0; i<10L*Integer.MAX_VALUE; i++) {
+//			result += pow(-4L, 2).longValueExact();
+//			result += pow(-4L, 3).longValueExact();
+//			result += pow(-4L, 30).longValueExact();
+			result += powExact(-4L, 2);
+			result += powExact(-4L, 3);
+			result += powExact(-4L, 30);
+		}
+		watch.stop("result = " + result);
+//		benchmarkIsOverflow();
 //		benchmarkIsIntLong();
 //		benchmarkIsIntBigInteger();
 //		benchmarkIsLongBigInteger();
@@ -1578,9 +1776,7 @@ public interface ExactInteger
 				for (int s=-1; s<= 1; s+=2) {
 					BigInteger bigN = s<0 ? BigInteger.valueOf(-(start + j))
 							: BigInteger.valueOf(start + j);
-//					result = INT_MIN_VALUE.compareTo(bigN) <= 0 && bigN.compareTo(INT_MAX_VALUE) <= 0;
-					result = INT_MIN_VALUE.compareTo(bigN) <= 0 && INT_MAX_VALUE.compareTo(bigN) >= 0;
-//					result = bigN.compareTo(INT_MIN_VALUE) >= 0 && bigN.compareTo(INT_MAX_VALUE) <= 0;
+					result = INT_MIN_VALUE.compareTo(bigN) <= 0 && bigN.compareTo(INT_MAX_VALUE) <= 0;
 				}
 			}
 		}
@@ -1628,7 +1824,7 @@ public interface ExactInteger
 		final long range = Integer.MAX_VALUE;
 		final long start = Integer.MAX_VALUE - range;
 		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
+			for (long j=range; j >= 0L; j--) {
 				for (int s=-1; s<= 1; s+=2) {
 					BigInteger bigN = s < 0 ? BigInteger.valueOf(-start).add(BigInteger.valueOf(-j))
 							: BigInteger.valueOf(start).add(BigInteger.valueOf(j));

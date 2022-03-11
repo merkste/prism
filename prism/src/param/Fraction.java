@@ -302,7 +302,7 @@ public interface Fraction extends Comparable<Fraction>
 		private SmallFraction(int numerator, int denominator, boolean canceled)
 		{
 			assert numerator > Integer.MIN_VALUE && denominator > Integer.MIN_VALUE;
-			assert canceled && ExactInteger.gcd(numerator, denominator).equals(1);
+			assert !canceled || ExactInteger.gcd(numerator, denominator).equals(1);
 			if (denominator == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -603,7 +603,7 @@ public interface Fraction extends Comparable<Fraction>
 		private MediumFraction(long numerator, long denominator, boolean canceled)
 		{
 			assert numerator > Long.MIN_VALUE && denominator > Long.MIN_VALUE;
-			assert canceled && ExactInteger.gcd(numerator, denominator).equals(1);
+			assert !canceled || ExactInteger.gcd(numerator, denominator).equals(1);
 			if (denominator == 0L) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -925,7 +925,7 @@ public interface Fraction extends Comparable<Fraction>
 
 		private LargeFraction(BigInteger numerator, BigInteger denominator, boolean canceled)
 		{
-			assert canceled && numerator.gcd(denominator).equals(BigInteger.ONE);
+			assert !canceled || numerator.gcd(denominator).equals(BigInteger.ONE);
 			if (denominator.signum() == 0) {
 				throw new ArithmeticException("Division by zero");
 			}
@@ -1634,6 +1634,16 @@ public interface Fraction extends Comparable<Fraction>
 			return multiply(dividend.numerator, dividend.denominator, denominator, numerator);
 		}
 
+//		@Override
+		public FlexFraction pow(int exponent)
+		{
+			if(exponent < 0) {
+				exponent *= -1;
+				return new FlexFraction(denominator.pow(exponent), numerator.pow(exponent), false);
+			}
+			return new FlexFraction(numerator.pow(exponent), denominator.pow(exponent), false);
+		}
+
 		@Override
 		public String toString()
 		{
@@ -1646,11 +1656,11 @@ public interface Fraction extends Comparable<Fraction>
 	public static void main(String[] args)
 	{
 //		ExactInteger offset = ExactInteger.ZERO;
-		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).subtract(10);
-//		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).add(INT_MAX_VALUE);
+//		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).subtract(10);
+		ExactInteger offset = ExactInteger.valueOf(INT_MAX_VALUE).add(INT_MAX_VALUE);
 // 		ExactInteger offset = ExactInteger.valueOf(LONG_MAX_VALUE).subtract(10);
 //		ExactInteger offset = ExactInteger.valueOf(LONG_MAX_VALUE).add(LONG_MAX_VALUE);
-		final int n = 75;
+		final int n = 40;
 		final int m = 2 * n;
 		Fraction[][] fractions = new Fraction[n][m];
 		for (int i = 0; i < n; i++) {
@@ -1688,59 +1698,63 @@ public interface Fraction extends Comparable<Fraction>
 		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
 
 		long errorsBigRational = 0L;
+		BigRational r = BigRational.ZERO;
 		watch.start("Rational arithmetic");
 		for (int i1 = 0; i1 < n; i1++) {
 			for (int j1 = 0; j1 < m; j1++) {
 				for (int i2 = 0; i2 < n; i2++) {
 					for (int j2 = 0; j2 < m; j2++) {
 						BigRational r1 = rationals[i1][j1];
-						BigRational r2 = rationals[i2][j2];
-						BigRational r = r1.add(r2);
-						if (r1.cancel().equals(r2.cancel()) && !(r1.equals(r2) && r1.hashCode() == r2.hashCode())) {
-							errorsBigRational++;
-						};
-					}
-				}
-			}
-		}
-		watch.stop("errors: " + errorsBigRational);
-
-		long errorsFraction = 0L;
-		watch.start("Fraction arithmetic");
-		for (int i1 = 0; i1 < n; i1++) {
-			for (int j1 = 0; j1 < m; j1++) {
-				for (int i2 = 0; i2 < n; i2++) {
-					for (int j2 = 0; j2 < m; j2++) {
-						Fraction f1 = fractions[i1][j1];
-						Fraction f2 = fractions[i2][j2];
-						Fraction f = f1.add(f2);
-//						BigRational r1 = rationals[i1][j1];
 //						BigRational r2 = rationals[i2][j2];
 //						BigRational r = r1.add(r2);
-//						assert r.toString().equals(f.toString());
-//						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
-//							errorsFraction++;
+						r = r1.pow(1).pow(2).pow(3).pow(4);
+//						if (r1.cancel().equals(r2.cancel()) && !(r1.equals(r2) && r1.hashCode() == r2.hashCode())) {
+//							errorsBigRational++;
 //						};
 					}
 				}
 			}
 		}
-		watch.stop("errors: " + errorsFraction);
+		watch.stop("errors: " + r);
+
+//		long errorsFraction = 0L;
+//		watch.start("Fraction arithmetic");
+//		for (int i1 = 0; i1 < n; i1++) {
+//			for (int j1 = 0; j1 < m; j1++) {
+//				for (int i2 = 0; i2 < n; i2++) {
+//					for (int j2 = 0; j2 < m; j2++) {
+//						Fraction f1 = fractions[i1][j1];
+//						Fraction f2 = fractions[i2][j2];
+//						Fraction f = f1.add(f2);
+////						BigRational r1 = rationals[i1][j1];
+////						BigRational r2 = rationals[i2][j2];
+////						BigRational r = r1.add(r2);
+////						assert r.toString().equals(f.toString());
+////						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
+////							errorsFraction++;
+////						};
+//					}
+//				}
+//			}
+//		}
+//		watch.stop("errors: " + errorsFraction);
 
 		long errorsFlexFracs = 0L;
+		FlexFraction f = new FlexFraction(ZERO, ONE);
 		watch.start("Flexible arithmetic");
 		for (int i1 = 0; i1 < n; i1++) {
 			for (int j1 = 0; j1 < m; j1++) {
 				for (int i2 = 0; i2 < n; i2++) {
 					for (int j2 = 0; j2 < m; j2++) {
 						FlexFraction f1 = flexFracs[i1][j1];
-						FlexFraction f2 = flexFracs[i2][j2];
-						FlexFraction f = f1.add(f2);
+//						FlexFraction f2 = flexFracs[i2][j2];
+						f = f1.pow(1).pow(2).pow(3).pow(4);
+//						FlexFraction f = f1.add(f2);
 //						BigRational r1 = rationals[i1][j1];
 //						BigRational r2 = rationals[i2][j2];
-//						BigRational r = r1.multiply(r2);
-//						assert r.toString().add(f.toString());
-//						Fraction f = f1.multiply(f2);
+//						BigRational r = r1.add(r2);
+//						BigRational r = r1.pow(1).pow(2).pow(3).pow(4);
+//						assert r.toString().equals(f.toString());
 //						if (f1.cancel().equals(f2.cancel()) && !(f1.equals(f2) && f1.hashCode() == f2.hashCode())) {
 //							errorsFlexFracs++;
 //						};
@@ -1748,6 +1762,6 @@ public interface Fraction extends Comparable<Fraction>
 				}
 			}
 		}
-		watch.stop("errors: " + errorsFlexFracs);
+		watch.stop("errors: " + f);
 	}
 }
