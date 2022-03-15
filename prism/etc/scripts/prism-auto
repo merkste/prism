@@ -385,9 +385,9 @@ def runPrism(args, dir=""):
     if options.logDir:
         logFile = os.path.join(options.logDir, createLogFileName(args, dir))
         #f = open(logFile, 'w')
-        prismArgs = prismArgs + ['-mainlog', logFile]
-        exitCode = subprocess.Popen(prismArgs).wait()
-        #exitCode = subprocess.Popen(prismArgs, cwd=dir, stdout=f).wait()
+        prismArgsExec = prismArgs + ['-mainlog', logFile]
+        exitCode = subprocess.Popen(prismArgsExec).wait()
+        #exitCode = subprocess.Popen(prismArgsExec, cwd=dir, stdout=f).wait()
     elif options.test or options.ddWarnings:
         # create logfile
         if isWindows():
@@ -403,8 +403,8 @@ def runPrism(args, dir=""):
             f.close()
         # we want cleanup when we are done, as this is a real temporary file
         cleanupLogFile = True
-        prismArgs = prismArgs + ['-mainlog', logFile]
-        exitCode = subprocess.Popen(prismArgs).wait()
+        prismArgsExec = prismArgs + ['-mainlog', logFile]
+        exitCode = subprocess.Popen(prismArgsExec).wait()
     else:
         exitCode = subprocess.Popen(prismArgs).wait()
     # Extract DD reference count warnings
@@ -436,6 +436,10 @@ def runPrism(args, dir=""):
                 printTestResult(line)
         print("To see log file, run:")
         print("edit " + logFile)
+        prismArgsPrint = prismArgs.copy()
+        prismArgsPrint[0] = options.prismExec
+        print("To re-run failing test:")
+        print(' '.join(prismArgsPrint))
         if not options.testAll:
             closeDown(1)
     if cleanupLogFile:
