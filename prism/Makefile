@@ -659,17 +659,16 @@ unittests: make_tests
 
 tests: testslocal
 	@if [ -d ../prism-tests ]; then \
-	  cd ../prism-tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
+	  etc/scripts/prism-auto -t -m ../prism-tests -p bin/prism --nailgun --ngprism bin/ngprism $(TESTS_ARGS); \
 	else \
 	  echo "Skipping tests"; \
 	fi
 
 testslocal:
 	@if [ -d tests ]; then \
-	  cd tests && $(PWD)/etc/scripts/prism-auto -t -m . -p $(PWD)/bin/prism --nailgun --ngprism $(PWD)/bin/ngprism; \
+	  etc/scripts/prism-auto -t -m tests -p bin/prism --nailgun --ngprism bin/ngprism $(TESTS_ARGS); \
 	else \
 	  echo "Skipping local tests"; \
 	fi
-
 
 #################################################
