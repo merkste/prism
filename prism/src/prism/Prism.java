@@ -2493,6 +2493,9 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 
 
 		if (getExplicit()) {
+			// Build model, if necessary
+			buildModelIfRequired();
+
 			explicit.StateModelChecker mcExpl = createModelCheckerExplicit(null);
 			int numRewardStructs = currentModulesFile.getNumRewardStructs();
 			//((explicit.ProbModelChecker) mcExpl).exportStateRewardsToFileExpl(currentModelExpl,currentModulesFile.getRewardStruct(1),file,exportType);
