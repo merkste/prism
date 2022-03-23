@@ -44,13 +44,23 @@ public class Interval implements IterableInt
 		protected final int upperBound;
 		protected final int step;
 		protected int next;
+		protected final boolean closed;
 
+		public IntervalIterator(int first, int upperBound, int step, boolean closed)
+		{
+			assert step > 0 : "positive step width expected";
+			this.upperBound = upperBound;
+			this.step       = step;
+			this.next       = first;
+			this.closed 	= closed;
+		}
 		public IntervalIterator(int first, int upperBound, int step)
 		{
 			assert step > 0 : "positive step width expected";
 			this.upperBound = upperBound;
 			this.step       = step;
 			this.next       = first;
+			this.closed 	= false;
 		}
 
 		@Override
@@ -132,7 +142,13 @@ public class Interval implements IterableInt
 		@Override
 		public OptionalInt max()
 		{
-			OptionalInt result = (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(upperBound);
+			OptionalInt result;
+			if(closed){
+				int upperBound_closed = Math.addExact(upperBound, (step > 0) ? -1 : +1);
+				result = (next >= upperBound_closed) ? OptionalInt.empty() : OptionalInt.of(upperBound_closed);
+			} else {
+				result = (next >= upperBound) ? OptionalInt.empty() : OptionalInt.of(upperBound);
+			}
 			next = upperBound;
 			return result;
 		}
@@ -199,6 +215,17 @@ public class Interval implements IterableInt
 	protected final int lowerBound;
 	protected final int upperBound;
 	protected final int step;
+	protected final boolean closed;
+
+	public static Interval closed(final int lowerBound, int upperBound, final int step)
+	{
+		upperBound = Math.addExact(upperBound, (step > 0) ? +1 : -1);
+		return new Interval(lowerBound,upperBound,step,true);
+	}
+
+	public static Interval closed(final int lowerBound, final int upperBound){
+		return Interval.closed(lowerBound,upperBound,1);
+	}
 
 	public Interval(int upperBound)
 	{
@@ -207,21 +234,27 @@ public class Interval implements IterableInt
 
 	public Interval(final int lowerBound, final int upperBound)
 	{
-		this(lowerBound, upperBound, 1);
+		this(lowerBound, upperBound, 1, false);
 	}
 
 	public Interval(final int lowerBound, final int upperBound, final int step)
+	{
+		this(lowerBound, upperBound, step, false);
+	}
+
+	public Interval(final int lowerBound, final int upperBound, final int step, final boolean closed)
 	{
 		assert step > 0 : "positive step width expected";
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
 		this.step = step;
+		this.closed = closed;
 	}
 
 	@Override
 	public IntervalIterator iterator()
 	{
-		return new IntervalIterator(lowerBound, upperBound, step);
+		return new IntervalIterator(lowerBound, upperBound, step,closed);
 	}
 
 
@@ -252,6 +285,6 @@ public class Interval implements IterableInt
 		IteratorTools.printIterator("Interval(-3, -3)", interval.iterator());
 		System.out.println("count = "+interval.count());
 		System.out.println("sum   = "+interval.sum());
-
+		System.out.println("max   = "+interval.max());
 	}
 }
