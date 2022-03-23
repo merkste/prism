@@ -34,7 +34,7 @@ import java.awt.*;
 
 import javax.swing.*;
 
-import common.iterable.Range;
+import common.iterable.Interval;
 import explicit.QuantAbstractRefine;
 import explicit.conditional.ConditionalTransformerType;
 
@@ -70,7 +70,7 @@ public class PrismSettings implements Observer
 	public static final String FILE_TYPE = "fi";
 
 	// Constraint constants
-	public static final Range RANGE_EXPORT_DOUBLE_PRECISION = Range.closed(1, 17);
+	public static final Interval RANGE_EXPORT_DOUBLE_PRECISION = Interval.closed(1, 17);
 
 	//Property Constant Keys
 	//======================
