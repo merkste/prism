@@ -151,7 +151,8 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 				daVar = "_" + daVar;
 			}
 			newVarList.addVar(0, new Declaration(daVar, new DeclarationIntUnbounded()), 1, null);
-			product.getProductModel().exportStates(Prism.EXPORT_PLAIN, newVarList, out);
+			int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
+			product.getProductModel().exportStates(Prism.EXPORT_PLAIN, newVarList, out,precision);
 			out.close();
 		}
 		
@@ -215,7 +216,8 @@ public class DTMCModelChecker extends ProbModelChecker implements MCModelChecker
 				daVar = "_" + daVar;
 			}
 			newVarList.addVar(0, new Declaration(daVar, new DeclarationIntUnbounded()), 1, null);
-			product.getProductModel().exportStates(Prism.EXPORT_PLAIN, newVarList, out);
+			int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
+			product.getProductModel().exportStates(Prism.EXPORT_PLAIN, newVarList, out, precision);
 			out.close();
 		}
 		

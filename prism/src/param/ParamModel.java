@@ -178,31 +178,31 @@ final class ParamModel extends ModelExplicit
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(PrismLog log)
+	public void exportToPrismExplicitTra(PrismLog log, int precision)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void exportToDotFile(String filename) throws PrismException
+	public void exportToDotFile(String filename, int precision) throws PrismException
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void exportToDotFile(String filename, BitSet mark) throws PrismException
+	public void exportToDotFile(String filename, BitSet mark, int precision) throws PrismException
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void exportToDotFile(PrismLog out)
+	public void exportToDotFile(PrismLog out, int precision)
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void exportToDotFile(PrismLog out, BitSet mark)
+	public void exportToDotFile(PrismLog out, BitSet mark, int precision)
 	{
 		throw new UnsupportedOperationException();
 	}

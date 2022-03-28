@@ -204,33 +204,33 @@ public interface Model
 	/**
 	 * Export transition matrix to explicit format readable by PRISM (i.e. a .tra file).
 	 */
-	public void exportToPrismExplicitTra(PrismLog log);
+	public void exportToPrismExplicitTra(PrismLog log, int precision);
 	
 	/**
 	 * Export to a dot file.
 	 * @param filename Name of file to export to
 	 */
-	public void exportToDotFile(String filename) throws PrismException;
+	public void exportToDotFile(String filename, int precision) throws PrismException;
 
 	/**
 	 * Export to a dot file, highlighting states in 'mark'.
 	 * @param filename Name of file to export to
 	 * @param mark States to highlight (ignored if null)
 	 */
-	public void exportToDotFile(String filename, BitSet mark) throws PrismException;
+	public void exportToDotFile(String filename, BitSet mark, int precision) throws PrismException;
 
 	/**
 	 * Export to a dot file.
 	 * @param out PrismLog to export to
 	 */
-	public void exportToDotFile(PrismLog out);
+	public void exportToDotFile(PrismLog out, int precision);
 
 	/**
 	 * Export to a dot file, highlighting states in 'mark'.
 	 * @param out PrismLog to export to
 	 * @param mark States to highlight (ignored if null)
 	 */
-	public void exportToDotFile(PrismLog out, BitSet mark);
+	public void exportToDotFile(PrismLog out, BitSet mark, int precision);
 
 	/**
 	 * Export to a dot file, highlighting states in 'mark'.
@@ -238,7 +238,7 @@ public interface Model
 	 * @param mark States to highlight (ignored if null)
 	 * @param showStates Show state info on nodes?
 	 */
-	public void exportToDotFile(PrismLog out, BitSet mark, boolean showStates);
+	public void exportToDotFile(PrismLog out, BitSet mark, boolean showStates, int precision);
 
 	/**
 	 * Export to a equivalent PRISM language model description.
@@ -248,7 +248,7 @@ public interface Model
 	/**
 	 * Export states list.
 	 */
-	public void exportStates(int exportType, VarList varList, PrismLog log) throws PrismException;
+	public void exportStates(int exportType, VarList varList, PrismLog log, int precision) throws PrismException;
 	
 	/**
 	 * Report info/stats about the model as a string.

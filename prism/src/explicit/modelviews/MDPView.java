@@ -92,7 +92,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(final PrismLog out)
+	public void exportToPrismExplicitTra(final PrismLog out, int precision)
 	{
 		final int numStates = getNumStates();
 		// Output transitions to .tra file
@@ -108,7 +108,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 				// Print out (sorted) transitions
 				for (Entry<Integer, Double> e : sorted.entrySet()) {
 					// Note use of PrismUtils.formatDouble to match PRISM-exported files
-					out.print(state + " " + choice + " " + e.getKey() + " " + PrismUtils.formatDouble(e.getValue()));
+					out.print(state + " " + choice + " " + e.getKey() + " " + PrismUtils.formatDouble(precision,e.getValue()));
 					final Object action = getAction(state, choice);
 					out.print(action == null ? "\n" : (" " + action + "\n"));
 				}
@@ -295,7 +295,7 @@ public abstract class MDPView extends ModelView implements MDP, Cloneable
 	}
 
 	@Override
-	public void exportToDotFileWithStrat(final PrismLog out, final BitSet mark, final int[] strat)
+	public void exportToDotFileWithStrat(final PrismLog out, final BitSet mark, final int[] strat, int precision)
 	{
 		out.print("digraph " + getModelType() + " {\nsize=\"8,5\"\nnode [shape=box];\n");
 		for (int state = 0, numStates = getNumStates(); state < numStates; state++) {

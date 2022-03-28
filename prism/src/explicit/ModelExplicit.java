@@ -45,6 +45,8 @@ import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismLog;
 
+import static prism.PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION;
+
 /**
  * Base class for explicit-state model representations.
  */
@@ -342,7 +344,7 @@ public abstract class ModelExplicit implements Model
 	public void exportToPrismExplicitTra(String filename) throws PrismException
 	{
 		try (PrismFileLog log = PrismFileLog.create(filename)) {
-			exportToPrismExplicitTra(log);
+			exportToPrismExplicitTra(log, DEFAULT_EXPORT_MODEL_PRECISION);
 		}
 	}
 
@@ -353,36 +355,36 @@ public abstract class ModelExplicit implements Model
 	}
 
 	@Override
-	public abstract void exportToPrismExplicitTra(PrismLog out);
+	public abstract void exportToPrismExplicitTra(PrismLog out, int precision);
 
 	@Override
-	public void exportToDotFile(String filename) throws PrismException
+	public void exportToDotFile(String filename, int precision) throws PrismException
 	{
-		exportToDotFile(filename, null);
+		exportToDotFile(filename, null,precision);
 	}
 
 	@Override
-	public void exportToDotFile(String filename, BitSet mark) throws PrismException
+	public void exportToDotFile(String filename, BitSet mark, int precision) throws PrismException
 	{
 		try (PrismFileLog log = PrismFileLog.create(filename)) {
-			exportToDotFile(log, mark);
+			exportToDotFile(log, mark, precision);
 		}
 	}
 
 	@Override
-	public void exportToDotFile(PrismLog out)
+	public void exportToDotFile(PrismLog out, int precision)
 	{
-		exportToDotFile(out, null, false);
+		exportToDotFile(out, null, false, precision);
 	}
 
 	@Override
-	public void exportToDotFile(PrismLog out, BitSet mark)
+	public void exportToDotFile(PrismLog out, BitSet mark, int precision)
 	{
-		exportToDotFile(out, mark, false);
+		exportToDotFile(out, mark, false, precision);
 	}
 
 	@Override
-	public void exportToDotFile(PrismLog out, BitSet mark, boolean showStates)
+	public void exportToDotFile(PrismLog out, BitSet mark, boolean showStates, int precision)
 	{
 		int i;
 		// Header
@@ -418,7 +420,7 @@ public abstract class ModelExplicit implements Model
 	public abstract void exportToPrismLanguage(String filename) throws PrismException;
 
 	@Override
-	public void exportStates(int exportType, VarList varList, PrismLog log) throws PrismException
+	public void exportStates(int exportType, VarList varList, PrismLog log, int precision) throws PrismException
 	{
 		if (statesList == null)
 			return;

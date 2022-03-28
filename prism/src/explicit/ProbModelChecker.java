@@ -949,7 +949,7 @@ public class ProbModelChecker extends NonProbModelChecker
 		return rewards;
 	}
 
-	public void exportStateRewardsToFileExpl(Model model, RewardStruct rewardStruct,String filename,int exportType, boolean noexportheaders) throws PrismException{
+	public void exportStateRewardsToFileExpl(Model model, RewardStruct rewardStruct,String filename,int exportType, boolean noexportheaders, int precision) throws PrismException{
 
 		int numStates = model.getNumStates();
 		int nonZeroRews = 0;
@@ -1005,7 +1005,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			for (int s = 0; s < numStates; s++) {
 				double d = mcRewards.getStateReward(s);
 				if (d != 0) {
-					out.println(s + " " + PrismUtils.formatDouble(16, d));
+					out.println(s + " " + PrismUtils.formatDouble(precision, d));
 				}
 			}
 			break;
@@ -1030,7 +1030,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			for (int s = 0; s < numStates; s++) {
 				double d = mdpRewards.getStateReward(s);
 				if (d != 0) {
-					out.println(s + " " + PrismUtils.formatDouble(16, d));
+					out.println(s + " " + PrismUtils.formatDouble(precision, d));
 				}
 			}
 			break;

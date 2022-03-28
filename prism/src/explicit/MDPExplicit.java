@@ -83,7 +83,7 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(PrismLog out)
+	public void exportToPrismExplicitTra(PrismLog out, int precision)
 	{
 		int i, j, numChoices;
 		Object action;
@@ -103,7 +103,7 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 				// Print out (sorted) transitions
 				for (Map.Entry<Integer, Double> e : sorted.entrySet()) {
 					// Note use of PrismUtils.formatDouble to match PRISM-exported files
-					out.print(i + " " + j + " " + e.getKey() + " " + PrismUtils.formatDouble(e.getValue()));
+					out.print(i + " " + j + " " + e.getKey() + " " + PrismUtils.formatDouble(precision,e.getValue()));
 					action = getAction(i, j);
 					out.print(action == null ? "\n" : (" " + action + "\n"));
 				}
@@ -136,7 +136,7 @@ public abstract class MDPExplicit extends ModelExplicit implements MDP
 	}
 
 	@Override
-	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[])
+	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[], int precision)
 	{
 		int i, j, numChoices;
 		String nij;

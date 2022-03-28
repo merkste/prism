@@ -19,6 +19,7 @@ import explicit.Distribution;
 import explicit.MDP;
 import explicit.MDPSimple;
 import prism.PrismException;
+import prism.PrismSettings;
 
 public class ChoicesToStates
 {
@@ -158,7 +159,7 @@ public class ChoicesToStates
 		System.out.println("Deadlocks:   " + BitSetTools.asBitSet(choiceModel.getDeadlockStates()));
 		System.out.println(choiceModel);
 
-		original.exportToDotFile("original.dot");
-		choiceModel.exportToDotFile("choiceModel.dot");
+		original.exportToDotFile("original.dot", PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION);
+		choiceModel.exportToDotFile("choiceModel.dot",PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 }

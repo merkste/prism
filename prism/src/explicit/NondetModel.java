@@ -102,5 +102,5 @@ public interface NondetModel extends Model
 	/**
 	 * Export to a dot file, highlighting states in 'mark' and choices for a (memoryless) strategy.
 	 */
-	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[]);
+	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[],int precision);
 }

@@ -87,7 +87,7 @@ public abstract class MCView extends ModelView implements DTMC, Cloneable
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(final PrismLog log)
+	public void exportToPrismExplicitTra(final PrismLog log, int precision)
 	{
 		// Output transitions to .tra file
 		log.print(getNumStates() + " " + getNumTransitions() + "\n");
@@ -101,7 +101,7 @@ public abstract class MCView extends ModelView implements DTMC, Cloneable
 			// Print out (sorted) transitions
 			for (Entry<Integer, Double> transition : sorted.entrySet()) {
 				// Note use of PrismUtils.formatDouble to match PRISM-exported files
-				log.print(state + " " + transition.getKey() + " " + PrismUtils.formatDouble(transition.getValue()) + "\n");
+				log.print(state + " " + transition.getKey() + " " + PrismUtils.formatDouble(precision,transition.getValue()) + "\n");
 			}
 			sorted.clear();
 		}

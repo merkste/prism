@@ -59,7 +59,7 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(PrismLog out)
+	public void exportToPrismExplicitTra(PrismLog out, int precision)
 	{
 		int i;
 		TreeMap<Integer, Pair<Double, Object>> sorted;
@@ -76,7 +76,7 @@ public abstract class DTMCExplicit extends ModelExplicit implements DTMC
 			// Print out (sorted) transitions
 			for (Map.Entry<Integer, Pair<Double, Object>> e : sorted.entrySet()) {
 				// Note use of PrismUtils.formatDouble to match PRISM-exported files
-				out.print(i + " " + e.getKey() + " " + PrismUtils.formatDouble(e.getValue().first));
+				out.print(i + " " + e.getKey() + " " + PrismUtils.formatDouble(precision,e.getValue().first));
 				Object action = e.getValue().second; 
 				if (action != null && !"".equals(action))
 					out.print(" " + action);

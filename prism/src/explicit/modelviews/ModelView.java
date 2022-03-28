@@ -26,6 +26,7 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismFileLog;
 import prism.PrismLog;
+import prism.PrismSettings;
 
 public abstract class ModelView implements Model
 {
@@ -155,7 +156,7 @@ public abstract class ModelView implements Model
 	public void exportToPrismExplicitTra(final String filename) throws PrismException
 	{
 		try (PrismFileLog log = PrismFileLog.create(filename)) {
-			exportToPrismExplicitTra(log);
+			exportToPrismExplicitTra(log, PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION);
 		}
 	}
 
@@ -166,33 +167,33 @@ public abstract class ModelView implements Model
 	}
 
 	@Override
-	public void exportToDotFile(final String filename) throws PrismException
+	public void exportToDotFile(final String filename, int precision) throws PrismException
 	{
-		exportToDotFile(filename, null);
+		exportToDotFile(filename, null, precision);
 	}
 
 	@Override
-	public void exportToDotFile(final String filename, final BitSet mark) throws PrismException
+	public void exportToDotFile(final String filename, final BitSet mark, int precision) throws PrismException
 	{
 		try (PrismFileLog log = PrismFileLog.create(filename)) {
-			exportToDotFile(log, mark);
+			exportToDotFile(log, mark,precision);
 		}
 	}
 
 	@Override
-	public void exportToDotFile(final PrismLog out)
+	public void exportToDotFile(final PrismLog out, int precision)
 	{
-		exportToDotFile(out, null, false);
+		exportToDotFile(out, null, false, precision);
 	}
 
 	@Override
-	public void exportToDotFile(final PrismLog out, final BitSet mark)
+	public void exportToDotFile(final PrismLog out, final BitSet mark, int precision)
 	{
-		exportToDotFile(out, mark, false);
+		exportToDotFile(out, mark, false, precision);
 	}
 
 	@Override
-	public void exportToDotFile(final PrismLog out, final BitSet mark, final boolean showStates)
+	public void exportToDotFile(final PrismLog out, final BitSet mark, final boolean showStates, int precision)
 	{
 		// Header
 		out.print("digraph " + getModelType() + " {\nsize=\"8,5\"\nnode [shape=box];\n");
@@ -221,7 +222,7 @@ public abstract class ModelView implements Model
 	}
 
 	@Override
-	public void exportStates(final int exportType, final VarList varList, final PrismLog log) throws PrismException
+	public void exportStates(final int exportType, final VarList varList, final PrismLog log, int precision) throws PrismException
 	{
 		final List<State> statesList = getStatesList();
 		if (statesList == null)

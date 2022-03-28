@@ -35,11 +35,7 @@ import common.IterableStateSet;
 import java.io.*;
 
 import explicit.rewards.STPGRewards;
-import prism.ModelType;
-import prism.PrismException;
-import prism.PrismNotSupportedException;
-import prism.PrismLog;
-import prism.PrismUtils;
+import prism.*;
 import strat.MDStrategy;
 
 /**
@@ -368,7 +364,7 @@ public class STPGAbstrSimple extends ModelExplicit implements STPG, NondetModelS
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(PrismLog out)
+	public void exportToPrismExplicitTra(PrismLog out, int precision)
 	{
 		int i, j, k;
 		TreeMap<Integer, Double> sorted;
@@ -389,7 +385,7 @@ public class STPGAbstrSimple extends ModelExplicit implements STPG, NondetModelS
 					// Print out (sorted) transitions
 					for (Map.Entry<Integer, Double> e : distr) {
 						// Note use of PrismUtils.formatDouble to match PRISM-exported files
-						out.print(i + " " + j + " " + k + " " + e.getKey() + " " + PrismUtils.formatDouble(e.getValue()) + "\n");
+						out.print(i + " " + j + " " + k + " " + e.getKey() + " " + PrismUtils.formatDouble(precision, e.getValue()) + "\n");
 					}
 					sorted.clear();
 				}
@@ -422,7 +418,7 @@ public class STPGAbstrSimple extends ModelExplicit implements STPG, NondetModelS
 	}
 
 	@Override
-	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[])
+	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int strat[], int precision)
 	{
 		throw new RuntimeException("Not yet supported");
 	}
@@ -1123,7 +1119,7 @@ public class STPGAbstrSimple extends ModelExplicit implements STPG, NondetModelS
 			//mc.setVerbosity(2);
 			target = new BitSet();
 			target.set(3);
-			stpg.exportToDotFile("stpg.dot", target);
+			stpg.exportToDotFile("stpg.dot", target, PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION);
 			System.out.println("min min: " + mc.computeReachProbs(stpg, target, true, true).soln[0]);
 			System.out.println("max min: " + mc.computeReachProbs(stpg, target, false, true).soln[0]);
 			System.out.println("min max: " + mc.computeReachProbs(stpg, target, true, false).soln[0]);

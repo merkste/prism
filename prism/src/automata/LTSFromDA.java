@@ -139,7 +139,7 @@ public class LTSFromDA extends ModelExplicit implements LTS
 	}
 
 	@Override
-	public void exportToPrismExplicitTra(PrismLog out)
+	public void exportToPrismExplicitTra(PrismLog out,int precision)
 	{
 		throw new RuntimeException("Not implemented yet");
 	}
@@ -226,7 +226,7 @@ public class LTSFromDA extends ModelExplicit implements LTS
 	}
 
 	@Override
-	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int[] strat)
+	public void exportToDotFileWithStrat(PrismLog out, BitSet mark, int[] strat, int precision)
 	{
 		throw new RuntimeException("Not implemented yet");
 	}

@@ -199,7 +199,7 @@ public class TestModelGenerator extends DefaultModelGenerator
 				TestModelGenerator modelGen = new TestModelGenerator(10);
 				ConstructModel constructModel = new ConstructModel(prism);
 				explicit.Model model = constructModel.constructModel(modelGen);
-				model.exportToDotFile(new PrismFileLog("test.dot"), null, true);
+				model.exportToDotFile(new PrismFileLog("test.dot"), null, true,PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION);
 				DTMCModelChecker mc = new DTMCModelChecker(prism);
 				PropertiesFile pf = prism.parsePropertiesString(modelGen, "P=? [F \"goal\"]");
 				Expression expr = pf.getProperty(0);

@@ -107,7 +107,7 @@ public class PrismExplicit extends PrismComponent
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	public void exportTransToFile(Model model, boolean ordered, int exportType, File file) throws FileNotFoundException, PrismException
+	public void exportTransToFile(Model model, boolean ordered, int exportType, File file, int precision) throws FileNotFoundException, PrismException
 	{
 		// can only do ordered version of export for explicit engine
 		if (!ordered) {
@@ -128,9 +128,10 @@ public class PrismExplicit extends PrismComponent
 		PrismLog tmpLog = getPrismLogForFile(file);
 		
 		// do export
+
 		switch (exportType) {
 		case Prism.EXPORT_PLAIN:
-			model.exportToPrismExplicitTra(tmpLog);
+			model.exportToPrismExplicitTra(tmpLog,precision);
 			break;
 		case Prism.EXPORT_MATLAB:
 		case Prism.EXPORT_DOT:
