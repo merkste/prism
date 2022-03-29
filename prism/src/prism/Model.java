@@ -33,6 +33,8 @@ import jdd.*;
 import odd.*;
 import parser.*;
 
+import static prism.PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION;
+
 public interface Model
 {
 	ModelType getModelType();
@@ -191,9 +193,29 @@ public interface Model
 	void printTrans01();
 	public void printTransInfo(PrismLog log);
 	public void printTransInfo(PrismLog log, boolean extra);
-	void exportToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException;
-	String exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException;
-	String exportTransRewardsToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException;
+
+	default void exportToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException
+	{
+		exportToFile(exportType, explicit, file, DEFAULT_EXPORT_MODEL_PRECISION);
+	}
+
+	void exportToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException;
+
+	default void exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException
+	{
+		exportStateRewardsToFile(exportType, file, DEFAULT_EXPORT_MODEL_PRECISION);
+	}
+
+
+	String exportStateRewardsToFile(int exportType, File file, int precision) throws FileNotFoundException, PrismException;
+
+	default void exportTransRewardsToFile(int exportType, boolean ordered, File file) throws FileNotFoundException, PrismException
+	{
+		exportTransRewardsToFile(exportType, ordered, file, DEFAULT_EXPORT_MODEL_PRECISION);
+	}
+
+	String exportTransRewardsToFile(int exportType, boolean explicit, File file, int  precision) throws FileNotFoundException, PrismException;
+
 	void exportStates(int exportType, PrismLog log);
 
 	void clear();

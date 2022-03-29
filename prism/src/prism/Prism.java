@@ -2453,7 +2453,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
 
 		if (!getExplicit()) {
-			exportTransToFile(currentModel, ordered, exportType, file);
+			exportTransToFile(currentModel, ordered, exportType, file, precision);
 		} else {
 			// print message
 			mainLog.print("\nExporting transition matrix ");
@@ -2537,7 +2537,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			mainLog.println(getDestinationStringForFile(file));
 
 			// do export
-			s = currentModel.exportStateRewardsToFile(exportType, file);
+			s = currentModel.exportStateRewardsToFile(exportType, file,precision);
 			if (s != null)
 				mainLog.println("Rewards exported to files: " + s);
 		}
@@ -2557,6 +2557,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void exportTransRewardsToFile(boolean ordered, int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		String s;
+		int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
 
 		if (getExplicit())
 			throw new PrismException("Export of transition rewards not yet supported by explicit engine");
@@ -2589,7 +2590,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		mainLog.println(getDestinationStringForFile(file));
 
 		// do export
-		s = currentModel.exportTransRewardsToFile(exportType, ordered, file);
+		s = currentModel.exportTransRewardsToFile(exportType, ordered, file,precision);
 		if (s != null)
 			mainLog.println("Rewards exported to files: " + s);
 	}
@@ -4040,7 +4041,8 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 */
 	public void exportToFile(Model model, boolean ordered, int exportType, File file) throws FileNotFoundException, PrismException
 	{
-		exportTransToFile(model, ordered, exportType, file);
+		int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
+		exportTransToFile(model, ordered, exportType, file,precision);
 	}
 
 	/**
@@ -4058,7 +4060,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	public void exportTransToFile(Model model, boolean ordered, int exportType, File file) throws FileNotFoundException, PrismException
+	public void exportTransToFile(Model model, boolean ordered, int exportType, File file, int precision) throws FileNotFoundException, PrismException
 	{
 		// can only do ordered version of export for MDPs
 		if (model.getModelType() == ModelType.MDP) {
@@ -4085,7 +4087,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		mainLog.println(getDestinationStringForFile(file));
 
 		// do export
-		model.exportToFile(exportType, ordered, file);
+		model.exportToFile(exportType, ordered, file, precision);
 
 		// for export to dot with states, need to do a bit more
 		if (exportType == EXPORT_DOT_STATES) {

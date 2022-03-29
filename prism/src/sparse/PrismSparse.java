@@ -33,10 +33,7 @@ import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import odd.ODDNode;
-import prism.NativeIntArray;
-import prism.OpsAndBoundsList;
-import prism.PrismException;
-import prism.PrismLog;
+import prism.*;
 import dv.DoubleVector;
 import dv.IntegerVector;
 
@@ -466,8 +463,9 @@ public class PrismSparse
 
 	// export matrix
 	private static native int PS_ExportMatrix(long matrix, String name, long rv, int nrv, long cv, int ncv, long odd, int exportType, String filename);
-	public static void ExportMatrix(JDDNode matrix, String name, JDDVars rows, JDDVars cols, ODDNode odd, int exportType, String filename) throws FileNotFoundException, PrismException
+	public static void ExportMatrix(JDDNode matrix, String name, JDDVars rows, JDDVars cols, ODDNode odd, int exportType, String filename, int precision) throws FileNotFoundException, PrismException
 	{
+		PrismNative.setExportModelPrecision(precision);
 		int res = PS_ExportMatrix(matrix.ptr(), name, rows.array(), rows.n(), cols.array(), cols.n(), odd.ptr(), exportType, filename);
 		if (res == -1) {
 			throw new FileNotFoundException();
@@ -479,8 +477,9 @@ public class PrismSparse
 	
 	// export mdp
 	private static native int PS_ExportMDP(long mdp, long trans_actions, List<String> synchs, String name, long rv, int nrv, long cv, int ncv, long ndv, int nndv, long odd, int exportType, String filename);
-	public static void ExportMDP(JDDNode mdp, JDDNode transActions, List<String> synchs, String name, JDDVars rows, JDDVars cols, JDDVars nondet, ODDNode odd, int exportType, String filename) throws FileNotFoundException, PrismException
+	public static void ExportMDP(JDDNode mdp, JDDNode transActions, List<String> synchs, String name, JDDVars rows, JDDVars cols, JDDVars nondet, ODDNode odd, int exportType, String filename, int precision) throws FileNotFoundException, PrismException
 	{
+		PrismNative.setExportModelPrecision(precision);
 		int res = PS_ExportMDP(mdp.ptr(), (transActions == null) ? 0 : transActions.ptr(), synchs, name, rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(), odd.ptr(), exportType, filename);
 		if (res == -1) {
 			throw new FileNotFoundException();
@@ -492,8 +491,9 @@ public class PrismSparse
 	
 	// export sub-mdp, i.e. mdp transition rewards
 	private static native int PS_ExportSubMDP(long mdp, long submdp, String name, long rv, int nrv, long cv, int ncv, long ndv, int nndv, long odd, int exportType, String filename);
-	public static void ExportSubMDP(JDDNode mdp, JDDNode submdp, String name, JDDVars rows, JDDVars cols, JDDVars nondet, ODDNode odd, int exportType, String filename) throws FileNotFoundException, PrismException
+	public static void ExportSubMDP(JDDNode mdp, JDDNode submdp, String name, JDDVars rows, JDDVars cols, JDDVars nondet, ODDNode odd, int exportType, String filename, int precision) throws FileNotFoundException, PrismException
 	{
+		PrismNative.setExportModelPrecision(precision);
 		int res = PS_ExportSubMDP(mdp.ptr(), submdp.ptr(), name, rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(), odd.ptr(), exportType, filename);
 		if (res == -1) {
 			throw new FileNotFoundException();

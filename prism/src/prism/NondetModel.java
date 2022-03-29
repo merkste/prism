@@ -447,14 +447,14 @@ public class NondetModel extends ProbModel
 	}
 
 	// export transition matrix to a file
-
-	public void exportToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException
+	@Override
+	public void exportToFile(int exportType, boolean explicit, File file,int precision) throws FileNotFoundException, PrismException
 	{
 		if (!explicit) {
 			// can only do explicit (sparse matrix based) export for mdps
 		} else {
 			PrismSparse.ExportMDP(trans, transActions, getSynchs(), getTransSymbol(), allDDRowVars, allDDColVars, allDDNondetVars, odd, exportType,
-					(file != null) ? file.getPath() : null);
+					(file != null) ? file.getPath() : null, precision);
 		}
 	}
 
@@ -462,7 +462,7 @@ public class NondetModel extends ProbModel
 
 	// returns string containing files used if there were more than 1, null otherwise
 
-	public String exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException
+	public String exportStateRewardsToFile(int exportType, File file, int precision) throws FileNotFoundException, PrismException
 	{
 		if (numRewardStructs == 0)
 			throw new PrismException("There are no state rewards to export");
@@ -474,7 +474,7 @@ public class NondetModel extends ProbModel
 				filename = PrismUtils.addCounterSuffixToFilename(filename, i + 1);
 				allFilenames += ((i > 0) ? ", " : "") + filename;
 			}
-			PrismMTBDD.ExportVector(stateRewards[i], "c" + (i + 1), allDDRowVars, odd, exportType, filename);
+			PrismMTBDD.ExportVector(stateRewards[i], "c" + (i + 1), allDDRowVars, odd, exportType, filename,precision);
 		}
 		return (allFilenames.length() > 0) ? allFilenames : null;
 	}
@@ -483,7 +483,7 @@ public class NondetModel extends ProbModel
 
 	// returns string containing files used if there were more than 1, null otherwise
 
-	public String exportTransRewardsToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException
+	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
 	{
 		if (numRewardStructs == 0)
 			throw new PrismException("There are no transition rewards to export");
@@ -498,7 +498,7 @@ public class NondetModel extends ProbModel
 			if (!explicit) {
 				// can only do explicit (sparse matrix based) export for mdps
 			} else {
-				PrismSparse.ExportSubMDP(trans, transRewards[i], "C" + (i + 1), allDDRowVars, allDDColVars, allDDNondetVars, odd, exportType, filename);
+				PrismSparse.ExportSubMDP(trans, transRewards[i], "C" + (i + 1), allDDRowVars, allDDColVars, allDDNondetVars, odd, exportType, filename,precision);
 			}
 		}
 		return (allFilenames.length() > 0) ? allFilenames : null;
