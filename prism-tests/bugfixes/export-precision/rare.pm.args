@@ -1,4 +1,4 @@
--explicit
+-explicit -gs
 -mtbdd
 -sparse
 -hybrid
