@@ -1038,7 +1038,7 @@ public class ProbModelChecker extends NonProbModelChecker
 			throw new PrismNotSupportedException("Explicit engine does not yet export state rewards for " + model.getModelType() + "s");
 		}
 
-
+		out.close();
 	}
 	
 	/**
