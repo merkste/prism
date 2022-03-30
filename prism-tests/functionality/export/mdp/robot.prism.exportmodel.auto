@@ -25,7 +25,8 @@
 # -exportmodel robot.prism.tra -ex # order different
 -exportmodel robot.prism.sta -ex
 -exportmodel robot.prism.lab -ex
--exportmodelprecision 16 -exportmodel robot.prism.srew -ex  -noexportheaders
+-exportmodelprecision 16 -exportmodel robot.prism.srew -ex -noexportheaders
+-exportmodelprecision 16 -exportmodel robot.prism.header.srew -ex
 #-exportmodel robot.prism.trew -ex
 #-exportmodel robot.prism.mrmc.tra:mrmc -ex
 #-exportmodel robot.prism.mrmc.sta:mrmc -ex
