@@ -1,6 +1,7 @@
 package param;
 
 import common.StopWatch;
+import prism.PrismLog;
 import prism.PrismPrintStreamLog;
 
 import java.math.BigInteger;
@@ -8,20 +9,19 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
-// TODO: benchmark pre- vs. postcondition testing
 // TODO: extract constants
-// TODO: Why is pow(long, int) so much slower than powOptional(long, int) for same values?
+// TODO: make constructors private/protected
+// TODO: consider cache similar to integer cache and using #== in equals
+
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
  */
 public interface ExactInteger
 {
-	static final long LONG_INT_MIN_VALUE = Integer.MIN_VALUE;
-	static final long LONG_INT_MAX_VALUE = Integer.MAX_VALUE;
-	static final BigInteger INT_MIN_VALUE = BigInteger.valueOf(LONG_INT_MIN_VALUE);
-	static final BigInteger INT_MAX_VALUE = BigInteger.valueOf(LONG_INT_MAX_VALUE);
-	static final BigInteger LONG_MIN_VALUE = BigInteger.valueOf(Long.MIN_VALUE);
-	static final BigInteger LONG_MAX_VALUE = BigInteger.valueOf(Long.MAX_VALUE);
+	static final BigInteger BIG_INT_MIN_VALUE = BigInteger.valueOf(Integer.MIN_VALUE);
+	static final BigInteger BIG_INT_MAX_VALUE = BigInteger.valueOf(Integer.MAX_VALUE);
+	static final BigInteger BIG_LONG_MIN_VALUE = BigInteger.valueOf(Long.MIN_VALUE);
+	static final BigInteger BIG_LONG_MAX_VALUE = BigInteger.valueOf(Long.MAX_VALUE);
 	static final BigInteger BIG_NEGATIVE_ONE = BigInteger.ONE.negate();
 
 	static final ExactInt ZERO = new ExactInt(0);
@@ -37,24 +37,24 @@ public interface ExactInteger
 
 	static boolean fitsInt(BigInteger x)
 	{
-		// faster to x.equals(x.intValue());
-		return INT_MIN_VALUE.compareTo(x) <= 0 && x.compareTo(INT_MAX_VALUE) <= 0;
+		// faster than x.equals(x.intValue());
+		return BIG_INT_MIN_VALUE.compareTo(x) <= 0 && x.compareTo(BIG_INT_MAX_VALUE) <= 0;
 	}
 
-	private static boolean fitsLong(BigInteger x)
+	static boolean fitsLong(BigInteger x)
 	{
-		// faster to x.equals(x.intValue());
-		return LONG_MIN_VALUE.compareTo(x) <= 0 && x.compareTo(LONG_MAX_VALUE) <= 0;
+		// faster than x.equals(x.intValue());
+		return BIG_LONG_MIN_VALUE.compareTo(x) <= 0 && x.compareTo(BIG_LONG_MAX_VALUE) <= 0;
 	}
 
-	public static ExactInteger valueOf(int x)
+	public static ExactInt valueOf(int x)
 	{
 		return new ExactInt(x);
 	}
 
-	public static ExactInteger valueOf(long x)
+	public static IntOrLong valueOf(long x)
 	{
-		int intX = (int)x;
+		int intX = (int)x; // inline #fitsInt to avoid repeating narrowing conversion
 		return x == intX ? new ExactInt(intX) : new ExactLong(x);
 	}
 
@@ -73,33 +73,19 @@ public interface ExactInteger
 		return false;
 	}
 
-	default boolean fitsBigInteger()
-	{
-		return true;
-	}
-
-	ExactInteger compact();
+	int intValue();
 
 	int intValueExact();
+
+	long longValue();
 
 	long longValueExact();
 
 	BigInteger bigIntegerValue();
 
-	default ExactInteger ifInt(IntConsumer intAction)
-	{
-		return this;
-	}
+	float floatValue();
 
-	default ExactInteger ifLong(LongConsumer longAction)
-	{
-		return this;
-	}
-
-	default ExactInteger ifBigInteger(Consumer<BigInteger> bigIntegerAction)
-	{
-		return this;
-	}
+	double doubleValue();
 
 	// Comparison
 
@@ -139,7 +125,7 @@ public interface ExactInteger
 	public static int hashCode(BigInteger x)
 	{
 		// For long values, except for MIN_VALUE, use hash function of Long
-		return fitsLong(x) && !x.equals(LONG_MIN_VALUE) ? Long.hashCode(x.longValue()) : x.hashCode();
+		return fitsLong(x) && !x.equals(BIG_LONG_MIN_VALUE) ? Long.hashCode(x.longValue()) : x.hashCode();
 	}
 
 	int signum();
@@ -241,7 +227,7 @@ public interface ExactInteger
 	{
 	}
 
-	public class ExactInt implements IntOrLong
+	public class ExactInt extends Number implements IntOrLong
 	{
 		public final int x;
 
@@ -263,13 +249,20 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactInteger compact()
+
+		public int intValue()
 		{
-			return this;
+			return x;
 		}
 
 		@Override
 		public int intValueExact()
+		{
+			return x;
+		}
+
+		@Override
+		public long longValue()
 		{
 			return x;
 		}
@@ -287,10 +280,15 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactInt ifInt(IntConsumer intAction)
+		public float floatValue()
 		{
-			intAction.accept(x);
-			return this;
+			return x;
+		}
+
+		@Override
+		public double doubleValue()
+		{
+			return x;
 		}
 
 		@Override
@@ -354,9 +352,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger add(long summand)
+		public ExactInteger add(long summand)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.add(x, summand);
 		}
 
@@ -373,9 +370,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger subtract(long subtrahend)
+		public ExactInteger subtract(long subtrahend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(x, subtrahend);
 		}
 
@@ -392,9 +388,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger subtractFrom(long minuend)
+		public ExactInteger subtractFrom(long minuend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(minuend, x);
 		}
 
@@ -411,9 +406,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger multiply(long factor)
+		public ExactInteger multiply(long factor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.multiply(x, factor);
 		}
 
@@ -430,9 +424,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger divide(long divisor)
+		public ExactInteger divide(long divisor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(x, divisor);
 		}
 
@@ -449,9 +442,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger divideDividend(long dividend)
+		public ExactInteger divideDividend(long dividend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(dividend, x);
 		}
 
@@ -480,9 +472,8 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger gcd(long y)
+		public ExactInteger gcd(long y)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.gcd(x, y);
 		}
 
@@ -507,7 +498,7 @@ public interface ExactInteger
 
 
 
-	public class ExactLong implements IntOrLong, LongOrBigInteger
+	public class ExactLong extends Number implements IntOrLong, LongOrBigInteger
 	{
 		public final long x;
 
@@ -529,15 +520,21 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactInteger compact()
+		public int intValue()
 		{
-			return fitsInt() ? valueOf((int)x) : this;
+			return (int)x;
 		}
 
 		@Override
 		public int intValueExact()
 		{
 			return Math.toIntExact(x);
+		}
+
+		@Override
+		public long longValue()
+		{
+			return x;
 		}
 
 		@Override
@@ -553,10 +550,15 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactLong ifLong(LongConsumer longAction)
+		public float floatValue()
 		{
-			longAction.accept(x);
-			return this;
+			return x;
+		}
+
+		@Override
+		public double doubleValue()
+		{
+			return x;
 		}
 
 		@Override
@@ -614,16 +616,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger add(int summand)
+		public ExactInteger add(int summand)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.add(x, summand);
 		}
 
 		@Override
-		public LongOrBigInteger add(long summand)
+		public ExactInteger add(long summand)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.add(x, summand);
 		}
 
@@ -634,16 +634,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger subtract(int subtrahend)
+		public ExactInteger subtract(int subtrahend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(x, subtrahend);
 		}
 
 		@Override
-		public LongOrBigInteger subtract(long subtrahend)
+		public ExactInteger subtract(long subtrahend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(x, subtrahend);
 		}
 
@@ -654,16 +652,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger subtractFrom(int minuend)
+		public ExactInteger subtractFrom(int minuend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(minuend, x);
 		}
 
 		@Override
-		public LongOrBigInteger subtractFrom(long minuend)
+		public ExactInteger subtractFrom(long minuend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.subtract(minuend, x);
 		}
 
@@ -674,16 +670,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger multiply(int factor)
+		public ExactInteger multiply(int factor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.multiply(x, factor);
 		}
 
 		@Override
-		public LongOrBigInteger multiply(long factor)
+		public ExactInteger multiply(long factor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.multiply(x, factor);
 		}
 
@@ -694,16 +688,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger divide(int divisor)
+		public ExactInteger divide(int divisor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(x, divisor);
 		}
 
 		@Override
-		public LongOrBigInteger divide(long divisor)
+		public ExactInteger divide(long divisor)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(x, divisor);
 		}
 
@@ -714,16 +706,14 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger divideDividend(int dividend)
+		public ExactInteger divideDividend(int dividend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(dividend, x);
 		}
 
 		@Override
-		public LongOrBigInteger divideDividend(long dividend)
+		public ExactInteger divideDividend(long dividend)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.divide(dividend, x);
 		}
 
@@ -734,28 +724,26 @@ public interface ExactInteger
 		}
 
 		@Override
-		public LongOrBigInteger negate()
+		public ExactInteger negate()
 		{
 			return ExactInteger.negate(x);
 		}
 
 		@Override
-		public LongOrBigInteger abs()
+		public ExactInteger abs()
 		{
 			return ExactInteger.abs(x);
 		}
 
 		@Override
-		public LongOrBigInteger gcd(int y)
+		public ExactInteger gcd(int y)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.gcd(x, y);
 		}
 
 		@Override
-		public LongOrBigInteger gcd(long y)
+		public ExactInteger gcd(long y)
 		{
-			// TODO: Fit smaller class?
 			return ExactInteger.gcd(x, y);
 		}
 
@@ -780,7 +768,7 @@ public interface ExactInteger
 
 
 
-	public class ExactBigInteger implements LongOrBigInteger
+	public class ExactBigInteger extends Number implements LongOrBigInteger
 	{
 		public final BigInteger x;
 
@@ -802,15 +790,21 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactInteger compact()
+		public int intValue()
 		{
-			return fitsLong() ? valueOf(x.longValue()) : this;
+			return x.intValue();
 		}
 
 		@Override
 		public int intValueExact()
 		{
 			return x.intValueExact();
+		}
+
+		@Override
+		public long longValue()
+		{
+			return x.longValue();
 		}
 
 		@Override
@@ -826,10 +820,15 @@ public interface ExactInteger
 		}
 
 		@Override
-		public ExactBigInteger ifBigInteger(Consumer<BigInteger> bigIntegerAction)
+		public float floatValue()
 		{
-			bigIntegerAction.accept(x);
-			return this;
+			return x.floatValue();
+		}
+
+		@Override
+		public double doubleValue()
+		{
+			return x.doubleValue();
 		}
 
 		@Override
@@ -1044,65 +1043,69 @@ public interface ExactInteger
 
 	static IntOrLong add(int x, int y)
 	{
+		// TODO: check performance of pre- vs. postcondition
 		long r = (long)x + (long)y;
-		return ExactInteger.fitsInt(r) ? new ExactInt((int)r) : new ExactLong(r);
+		return valueOf(r);
 	}
 
-	static LongOrBigInteger add(long x, long y)
+	static ExactInteger add(long x, long y)
 	{
+		// TODO: check performance of pre- vs. postcondition
 		long r = x + y;
 		return isOverflowPostAdd(x, y, r) ? new ExactBigInteger(BigInteger.valueOf(x).add(BigInteger.valueOf(y)))
-		                                  : new ExactLong(r);
+		                                  : valueOf(r);
 	}
 
 	static IntOrLong subtract(int x, int y)
 	{
+		// TODO: check performance of pre- vs. postcondition
 		long r = (long)x - (long)y;
-		return ExactInteger.fitsInt(r) ? new ExactInt((int)r) : new ExactLong(r);
+		return valueOf(r);
 	}
 
-	static LongOrBigInteger subtract(long x, long y)
+	static ExactInteger subtract(long x, long y)
 	{
+		// TODO: check performance of pre- vs. postcondition
 		long r = x - y;
 		return isOverflowPostSubtract(x, y, r) ? new ExactBigInteger(BigInteger.valueOf(x).subtract(BigInteger.valueOf(y)))
-		                                       : new ExactLong(r);
+		                                       : valueOf(r);
 	}
 
 	static IntOrLong multiply(int x, int y)
 	{
 		long r = (long)x * (long)y;
-		return ExactInteger.fitsInt(r) ? new ExactInt((int)r) : new ExactLong(r);
+		return valueOf(r);
 	}
 
-	static LongOrBigInteger multiply(long x, long y)
+	static ExactInteger multiply(long x, long y)
 	{
 		long r = x * y;
 		return isOverflowPostMultiply(x, y, r) ? new ExactBigInteger(BigInteger.valueOf(x).multiply(BigInteger.valueOf(y)))
-		                                       : new ExactLong(r);
+		                                       : valueOf(r);
 	}
 
 	static IntOrLong divide(int x, int y)
 	{
 		return isOverflowDivide(x, y) ? new ExactLong((long)x / (long)y)
-		                              : new ExactInt(x / y);
+		                              : valueOf(x / y);
 	}
 
-	static LongOrBigInteger divide(long x, long y)
+	static ExactInteger divide(long x, long y)
 	{
 		return isOverflowDivide(x, y) ? new ExactBigInteger(BigInteger.valueOf(x).divide(BigInteger.valueOf(y)))
-		                              : new ExactLong(x / y);
+		                              : valueOf(x / y);
 	}
 
 	static IntOrLong negate(int x)
 	{
 		return isOverflowNegate(x) ? new ExactLong(-(long)x)
-		                           : new ExactInt(-x);
+		                           : valueOf(-x);
 	}
 
-	static LongOrBigInteger negate(long x)
+	static ExactInteger negate(long x)
 	{
 		return isOverflowNegate(x) ? new ExactBigInteger(BigInteger.valueOf(x).negate())
-		                           : new ExactLong(-x);
+		                           : valueOf(-x);
 	}
 
 	static IntOrLong abs(int x)
@@ -1110,9 +1113,9 @@ public interface ExactInteger
 		return (x < 0) ? negate(x) : new ExactInt(x);
 	}
 
-	static LongOrBigInteger abs(long x)
+	static ExactInteger abs(long x)
 	{
-		return (x < 0) ? negate(x) : new ExactLong(x);
+		return (x < 0) ? negate(x) : valueOf(x);
 	}
 
 	public static IntOrLong gcd(int x, int y)
@@ -1120,7 +1123,7 @@ public interface ExactInteger
 		return abs(gcdUnsafe(x, y));
 	}
 
-	public static LongOrBigInteger gcd(long x, long y)
+	public static ExactInteger gcd(long x, long y)
 	{
 		return abs(gcdUnsafe(x, y));
 	}
@@ -1162,7 +1165,7 @@ public interface ExactInteger
 		if (exponent == 1) {
 			return ExactInteger.valueOf(base);
 		}
-		if ((base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L) { // TODO: test module 2 again
+		if ((base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L) {
 			return powOfTwo(base, exponent);
 		}
 		return powIterative(base, exponent);
@@ -1170,7 +1173,7 @@ public interface ExactInteger
 
 	private static ExactInteger powOfTwo(long base, int exponent)
 	{
-		assert (base & (base - 1)) == 0 || (-base & (-base - 1)) == 0 : "base must be a power of two";
+		assert (base & (base - 1)) == 0L || (-base & (-base - 1L)) == 0L : "base must be a power of two";
 		// power of two: (2^n)^e = 2^(n*e)
 		long exp = (long)Long.numberOfTrailingZeros(base) * (long) exponent;
 		if (exp > Integer.MAX_VALUE) {
@@ -1253,7 +1256,7 @@ public interface ExactInteger
 	 */
 	static int addExact(int x, int y)
 	{
-		// TODO: compare to #isInt(long);
+		// TODO: compare to performance of #isInt(long);
 		return Math.addExact(x, y);
 	}
 
@@ -1524,6 +1527,11 @@ public interface ExactInteger
 		              : x > Long.MAX_VALUE + y;
 	}
 
+	/**
+	 * Slower than {@link ExactInteger#isOverflowPostMultiply(int, int, int)}.
+	 *
+	 * @see Math#multiplyExact(int, int)
+	 */
 	static boolean isOverflowMultiply(int x, int y)
 	{
 		return y > 0 ? x > Integer.MAX_VALUE / y ||
@@ -1604,6 +1612,8 @@ public interface ExactInteger
 	 */
 	static boolean isOverflowPostSubtract(int x, int y, int r)
 	{
+		// HD 2-12 Overflow iff the arguments have different signs and
+		// the sign of the result is different from the sign of x
 		return ((x ^ y) & (x ^ r)) < 0;
 	}
 
@@ -1612,10 +1622,14 @@ public interface ExactInteger
 	 */
 	static boolean isOverflowPostSubtract(long x, long y, long r)
 	{
+		// HD 2-12 Overflow iff the arguments have different signs and
+		// the sign of the result is different from the sign of x
 		return ((x ^ y) & (x ^ r)) < 0L;
 	}
 
 	/**
+	 * Faster than {@link ExactInteger#isOverflowMultiply(int, int)}.
+	 *
 	 * @see Math#multiplyExact(int, int)
 	 */
 	static boolean isOverflowPostMultiply(int x, int y, int r)
@@ -1643,196 +1657,5 @@ public interface ExactInteger
 			}
 		}
 		return false;
-	}
-
-
-
-	public static void main(String[] arg)
-	{
-		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
-		watch.start("\"Is it worth the trouble?\"");
-		long result = 1;
-		for (long i = 0; i<10L*Integer.MAX_VALUE; i++) {
-//			result += pow(-4L, 2).longValueExact();
-//			result += pow(-4L, 3).longValueExact();
-//			result += pow(-4L, 30).longValueExact();
-			result += powExact(-4L, 2);
-			result += powExact(-4L, 3);
-			result += powExact(-4L, 30);
-		}
-		watch.stop("result = " + result);
-//		benchmarkIsOverflow();
-//		benchmarkIsIntLong();
-//		benchmarkIsIntBigInteger();
-//		benchmarkIsLongBigInteger();
-	}
-
-	public static void benchmarkIsOverflow()
-	{
-		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
-		long b = 40000;
-		long n = b*b*1;
-
-		long xSmallLong = 1;
-//		long ySmallLong = 2;
-		long xLargeLong = Long.MAX_VALUE - n/2;
-//		long yLargeLong = Long.MIN_VALUE + n/2;
-
-		for (int i=0; i<4; i++) {
-			watch.run(() -> runIsOverflowMultiply(xSmallLong, n), "precondition multiply(long)", "small");
-			watch.run(() -> runIsOverflowMultiply(xLargeLong, n), "precondition multiply(long)", "large");
-			watch.run(() -> runIsOverflowPostMultiply(xSmallLong, n), "postcondition multiply(long)", "small");
-			watch.run(() -> runIsOverflowPostMultiply(xLargeLong, n), "postcondition multiply(long)", "large");
-		}
-	}
-
-	public static void benchmarkIsIntLong()
-	{
-		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
-		int n = 8;
-		Boolean bC = watch.run(() -> runIsIntLongCompare(n), "isInt(long)", "(compare)");
-		Boolean bE = watch.run(() -> runIsIntLongEquals(n), "isInt(long)", "(equals)");
-	}
-
-	public static void benchmarkIsIntBigInteger()
-	{
-		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
-		int n = 1;
-		Boolean bC = watch.run(() -> runIsIntBigIntegerCompare(n), "isInt(BigInteger)", "(compare)");
-		Boolean bE = watch.run(() -> runIsIntBigIntegerEquals(n), "isInt(BigInteger)", "(equals)");
-	}
-
-	public static void benchmarkIsLongBigInteger()
-	{
-		StopWatch watch = new StopWatch(new PrismPrintStreamLog(System.out));
-		int n = 1;
-		Boolean bA = watch.run(() -> runIsLongBigIntegerCompare(n), "isLong(BigInteger)", "(compare)");
-		Boolean bE = watch.run(() -> runIsLongBigIntegerEquals(n), "isLong(BigInteger)", "(equals)");
-	}
-
-	private static long runIsOverflowMultiply(long x, long n)
-	{
-		long r = 0L;
-		for (long i = 0; i< n; i++) {
-			long y=x+i;
-			isOverflowMultiply(x, y);
-			r = x * y;
-		}
-		return r;
-	}
-
-	private static long runIsOverflowPostMultiply(long x, long n)
-	{
-		long r = 0L;
-		for (long i=0; i<n; i++) {
-			long y=x+i;
-			r = x * y;
-			isOverflowPostMultiply(x, y, r);
-		}
-		return r;
-	}
-
-	private static boolean runIsIntLongCompare(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
-				for (int s=-1; s<= 1; s+=2){
-					long longN = s<0 ? -(start + j) : (start + j);
-					result = LONG_INT_MIN_VALUE <= longN && longN <= LONG_INT_MAX_VALUE;
-				}
-			}
-		}
-		return result;
-	}
-
-
-	private static boolean runIsIntLongEquals(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
-				for (int s=-1; s<= 1; s+=2){
-					long longN = s<0 ? -(start + j) : (start + j);
-					int intN = (int)longN;
-					result = intN == longN;
-				}
-			}
-		}
-		return result;
-	}
-
-	private static boolean runIsIntBigIntegerCompare(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
-				for (int s=-1; s<= 1; s+=2) {
-					BigInteger bigN = s<0 ? BigInteger.valueOf(-(start + j))
-							: BigInteger.valueOf(start + j);
-					result = INT_MIN_VALUE.compareTo(bigN) <= 0 && bigN.compareTo(INT_MAX_VALUE) <= 0;
-				}
-			}
-		}
-		return result;
-	}
-
-	private static boolean runIsIntBigIntegerEquals(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
-				for (int s=-1; s<= 1; s+=2) {
-					BigInteger bigN = s<0 ? BigInteger.valueOf(-(start + j))
-							: BigInteger.valueOf(start + j);
-					int intN = bigN.intValue();
-					result = bigN.equals(BigInteger.valueOf(intN));
-				}
-			}
-		}
-		return result;
-	}
-
-	private static boolean runIsLongBigIntegerCompare(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >=0L; j--) {
-				for (int s=-1; s<= 1; s+=2) {
-					BigInteger bigN = s < 0 ? BigInteger.valueOf(-start).add(BigInteger.valueOf(-j))
-							: BigInteger.valueOf(start).add(BigInteger.valueOf(j));
-					result = LONG_MIN_VALUE.compareTo(bigN) <= 0 && bigN.compareTo(LONG_MAX_VALUE) <= 0;
-				}
-			}
-		}
-		return result;
-	}
-
-	private static boolean runIsLongBigIntegerEquals(int r)
-	{
-		boolean result = false;
-		final long range = Integer.MAX_VALUE;
-		final long start = Integer.MAX_VALUE - range;
-		for (; r>0; r--) {
-			for (long j=range; j >= 0L; j--) {
-				for (int s=-1; s<= 1; s+=2) {
-					BigInteger bigN = s < 0 ? BigInteger.valueOf(-start).add(BigInteger.valueOf(-j))
-							: BigInteger.valueOf(start).add(BigInteger.valueOf(j));
-					long longX = bigN.longValue();
-					result = bigN.equals(BigInteger.valueOf(longX));
-				}
-			}
-		}
-		return result;
 	}
 }

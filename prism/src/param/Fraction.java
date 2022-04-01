@@ -441,7 +441,7 @@ public interface Fraction extends Comparable<Fraction>
 			long sumB = (long)numB * (long)denA;
 			long den = (long)denA * (long)denB;
 			// TODO: Check performance
-			LongOrBigInteger sum = subtract ? ExactInteger.subtract(sumA, sumB) : ExactInteger.add(sumA, sumB);
+			ExactInteger sum = subtract ? ExactInteger.subtract(sumA, sumB) : ExactInteger.add(sumA, sumB);
 			return valueOf(sum, new ExactLong(den));
 		}
 
@@ -682,8 +682,8 @@ public interface Fraction extends Comparable<Fraction>
 				denB /= gcd;
 			}
 			// Expand both fractions first
-			LongOrBigInteger sumA = ExactInteger.multiply(numA, denB);
-			LongOrBigInteger sumB = ExactInteger.multiply(numB, denA);
+			ExactInteger sumA = ExactInteger.multiply(numA, denB);
+			ExactInteger sumB = ExactInteger.multiply(numB, denA);
 			// Either both numbers are negated or none
 			assert signum() == Long.signum(numB) * Long.signum(denB);
 			return signum() == sumA.signum()? sumA.compareTo(sumB) : sumB.compareTo(sumA);
@@ -774,9 +774,9 @@ public interface Fraction extends Comparable<Fraction>
 //				denB /= gcd;
 //			}
 			// Expand both fractions first
-			LongOrBigInteger sumA = ExactInteger.multiply(numA, denB);
-			LongOrBigInteger sumB = ExactInteger.multiply(numB, denA);
-			LongOrBigInteger den = ExactInteger.multiply(denA, denB);
+			ExactInteger sumA = ExactInteger.multiply(numA, denB);
+			ExactInteger sumB = ExactInteger.multiply(numB, denA);
+			ExactInteger den = ExactInteger.multiply(denA, denB);
 			ExactInteger num = subtract ? sumA.subtract(sumB) : sumA.add(sumB);
 			return Fraction.valueOf(num, den);
 		}
@@ -855,8 +855,8 @@ public interface Fraction extends Comparable<Fraction>
 
 		private Fraction multiply(long numA, long denA, long numB, long denB)
 		{
-			LongOrBigInteger num = ExactInteger.multiply(numA, numB);
-			LongOrBigInteger den = ExactInteger.multiply(denA, denB);
+			ExactInteger num = ExactInteger.multiply(numA, numB);
+			ExactInteger den = ExactInteger.multiply(denA, denB);
 			return valueOf(num, den);
 		}
 
