@@ -50,6 +50,7 @@ import prism.PrismException;
 import prism.PrismLangException;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 // Abstract class for PRISM language expressions
 
@@ -579,7 +580,7 @@ public abstract class Expression extends ASTElement
 	 * Variable values are supplied as a State object, i.e. array of variable values.
 	 * Note: assumes that type checking has been done.
 	 */
-	public boolean evaluateBoolean(Values constantValues, Map<String, Boolean> labelValues, State state) throws PrismLangException
+	public boolean evaluateBoolean(Values constantValues, Predicate<String> labelValues, State state) throws PrismLangException
 	{
 		return evaluateBoolean(new EvaluateContextState(constantValues, labelValues, state));
 	}
@@ -675,7 +676,7 @@ public abstract class Expression extends ASTElement
 	 * Labels are supplied as a Map from label names to booleans.
 	 * Note: assumes that type checking has been done.
 	 */
-	public BigRational evaluateExact(Values constantValues, Map<String, Boolean> labelValues, State state) throws PrismLangException
+	public BigRational evaluateExact(Values constantValues, Predicate<String> labelValues, State state) throws PrismLangException
 	{
 		return evaluateExact(new EvaluateContextState(constantValues, labelValues, state));
 	}

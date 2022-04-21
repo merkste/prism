@@ -2,7 +2,7 @@ package simulator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Predicate;
 
 import param.Function;
 import param.FunctionFactory;
@@ -66,6 +66,9 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 	boolean symbolic = false;
 	protected ModelBuilder modelBuilder;
 	protected FunctionFactory functionFactory;
+
+	// label value cache
+	protected LabelEvaluator labelsCache;
 	
 	/**
 	 * Build a ModulesFileModelGenerator for a particular PRISM model, represented by a ModuleFile instance.
@@ -122,7 +125,10 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 		varList = modulesFile.createVarList();
 		labelList = modulesFile.getLabelList();
 		labelNames = labelList.getLabelNames();
-		
+
+		// create label-cache
+		labelsCache = new LabelEvaluator(labelList);
+
 		// Create data structures for exploring model
 		//updater = new Updater(modulesFile, varList, parent);
 		//transitionList = new TransitionList();
@@ -443,9 +449,9 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 	}
 
 	@Override
-	public Map<String, Boolean> getLabelValues(State state) throws PrismLangException
+	public Predicate<String> getLabelValues(State state) throws PrismLangException
 	{
-		return labelList.getLabelValues(state);
+		return labelsCache.getLabelValues(state);
 	}
 
 	// Methods for RewardGenerator interface

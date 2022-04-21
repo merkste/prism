@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
+import java.util.function.Predicate;
 
 import parser.State;
 import parser.ast.Command;
@@ -141,7 +141,7 @@ public class SymbolicEngine
 		}
 	}
 	
-	public TransitionList calculateTransitions(State state, Map<String, Boolean> labelValues, boolean noWarnings) throws PrismException
+	public TransitionList calculateTransitions(State state, Predicate<String> labelValues, boolean noWarnings) throws PrismException
 	{
 		List<ChoiceListFlexi> chs;
 		int i, j, k, l, n, count;
@@ -249,7 +249,7 @@ public class SymbolicEngine
 	 * @param m The module index
 	 * @param state State from which to explore
 	 */
-	protected void calculateUpdatesForModule(int m, State state, Map<String, Boolean> labelValues) throws PrismLangException
+	protected void calculateUpdatesForModule(int m, State state, Predicate<String> labelValues) throws PrismLangException
 	{
 		Module module;
 		Command command;

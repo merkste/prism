@@ -1,9 +1,5 @@
 package simulator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import parser.State;
 import parser.Values;
 import parser.VarList;
@@ -20,6 +16,11 @@ import prism.PrismComponent;
 import prism.PrismException;
 import prism.PrismLangException;
 import prism.RewardGenerator;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerator
 {
@@ -49,6 +50,8 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	protected boolean transitionListBuilt;
 	// Global clock invariant (conjunction of per-module invariants)
 	protected Expression invariant;
+	// label value cache
+	protected LabelEvaluator labelsCache;
 	
 	/**
 	 * Build a ModulesFileModelGenerator for a particular PRISM model, represented by a ModuleFile instance.
@@ -73,7 +76,7 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 		if (modulesFile.getSystemDefn() != null) {
 			throw new PrismException("The system...endsystem construct is not currently supported");
 		}
-		
+
 		// Store basic model info
 		this.modulesFile = modulesFile;
 		this.originalModulesFile = modulesFile;
@@ -101,6 +104,9 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 		labelList = modulesFile.getLabelList();
 		labelNames = labelList.getLabelNames();
 		
+		// create label-cache
+		labelsCache = new LabelEvaluator(labelList);
+
 		// Create data structures for exploring model
 		updater = new Updater(modulesFile, varList, parent);
 		transitionList = new TransitionList();
@@ -416,11 +422,17 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	}
 
 	@Override
-	public Map<String, Boolean> getLabelValues(State state) throws PrismLangException
+	public Predicate<String> getLabelValues(State state) throws PrismLangException
 	{
-		return labelList.getLabelValues(state);
+		return labelsCache.getLabelValues(state);
 	}
-	
+
+	@Override
+	public BitSet getLabel(String name, List<State> statesList) throws PrismException
+	{
+		return labelsCache.getLabel(name, statesList);
+	}
+
 	@Override
 	public Expression getClockInvariant() throws PrismException
 	{
