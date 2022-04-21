@@ -60,4 +60,11 @@ public class EvaluateContextSubstate extends EvaluateContext
 			return null;
 		return varValues[newIndex];
 	}
+
+	@Override
+	public Boolean getLabelValue(String name)
+	{
+		// No label info available
+		return null;
+	}
 }

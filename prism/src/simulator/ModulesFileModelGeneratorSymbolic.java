@@ -441,13 +441,6 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 		return getTransitionList().getChoice(index).computeTarget(offset, exploreState);
 	}
 
-	@Override
-	public boolean isLabelTrue(int i) throws PrismException
-	{
-		Expression expr = labelList.getLabel(i);
-		return expr.evaluateExact(exploreState).toBoolean();
-	}
-	
 	// Methods for RewardGenerator interface
 
 	@Override

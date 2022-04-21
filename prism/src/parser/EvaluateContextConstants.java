@@ -43,4 +43,11 @@ public class EvaluateContextConstants extends EvaluateContext
 		// No variable info available
 		return null;
 	}
+
+	@Override
+	public Boolean getLabelValue(String name)
+	{
+		// No label info available
+		return null;
+	}
 }

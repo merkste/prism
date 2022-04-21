@@ -100,4 +100,12 @@ public abstract class EvaluateContext
 		// No observables defined by default
 		return null;
 	}
+
+	/**
+	 * Return the value for a label (by name); null if unknown.
+	 */
+	public Boolean getLabelValue(String name) {
+		// no labels defined by default
+		return null;
+	}
 }

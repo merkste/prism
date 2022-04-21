@@ -51,4 +51,11 @@ public class EvaluateContextValues extends EvaluateContext
 			return null;
 		return varValues.getValue(i);
 	}
+
+	@Override
+	public Boolean getLabelValue(String name)
+	{
+		// No label info available
+		return null;
+	}
 }

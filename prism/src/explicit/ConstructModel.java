@@ -32,6 +32,7 @@ import java.io.FileNotFoundException;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import parser.State;
 import parser.Values;
@@ -408,9 +409,10 @@ public class ConstructModel extends PrismComponent
 		// Discard permutation
 		permut = null;
 
-		if (!justReach && attachLabels)
+		if (!justReach && attachLabels) {
 			attachLabels(modelGen, model);
-		
+		}
+
 		return model;
 	}
 
@@ -437,29 +439,32 @@ public class ConstructModel extends PrismComponent
 	
 	private void attachLabels(ModelGenerator modelGen, ModelExplicit model) throws PrismException
 	{
-		// Get state info
-		List <State> statesList = model.getStatesList();
-		int numStates = statesList.size();
+		int i,j;
 		// Create storage for labels
 		int numLabels = modelGen.getNumLabels();
 		// No need to continue unless this ModelGenerator uses labels
 		if (numLabels == 0) return;
-		BitSet bitsets[] = new BitSet[numLabels];
-		for (int j = 0; j < numLabels; j++) {
+		BitSet[] bitsets = new BitSet[numLabels];
+		for (j = 0; j < numLabels; j++) {
 			bitsets[j] = new BitSet();
 		}
+
+		// Get state info
+		List <State> statesList = model.getStatesList();
+		int numStates = statesList.size();
+
 		// Construct bitsets for labels
-		for (int i = 0; i < numStates; i++) {
+		for (i = 0; i < numStates; i++) {
 			State state = statesList.get(i);
-			modelGen.exploreState(state);
-			for (int j = 0; j < numLabels; j++) {
-				if (modelGen.isLabelTrue(j)) {
+			Map<String, Boolean> labelValues = modelGen.getLabelValues(state);
+			for (j = 0; j < numLabels; j++) {
+				if (labelValues.get(modelGen.getLabelName(j))) {
 					bitsets[j].set(i);
 				}
 			}
 		}
 		// Attach labels/bitsets
-		for (int j = 0; j < numLabels; j++) {
+		for (j = 0; j < numLabels; j++) {
 			model.addLabel(modelGen.getLabelName(j), bitsets[j]);
 		}
 	}

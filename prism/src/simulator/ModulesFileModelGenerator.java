@@ -2,6 +2,7 @@ package simulator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import parser.State;
 import parser.Values;
@@ -415,10 +416,9 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	}
 
 	@Override
-	public boolean isLabelTrue(int i) throws PrismException
+	public Map<String, Boolean> getLabelValues(State state) throws PrismLangException
 	{
-		Expression expr = labelList.getLabel(i);
-		return expr.evaluateBoolean(exploreState);
+		return labelList.getLabelValues(state);
 	}
 	
 	@Override
@@ -549,7 +549,7 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	{
 		// Compute the current transition list, if required
 		if (!transitionListBuilt) {
-			updater.calculateTransitions(exploreState, transitionList);
+			updater.calculateTransitions(exploreState, getLabelValues(exploreState) ,transitionList);
 			transitionListBuilt = true;
 		}
 		return transitionList;
