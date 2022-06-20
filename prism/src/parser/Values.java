@@ -42,10 +42,10 @@ import prism.PrismUtils;
  * Class to store a list of typed constant/variable values.
  * (Basically, just a mapping from String to Object)
  */
-public class Values implements Cloneable //implements Comparable
+public class Values<T> implements Cloneable //implements Comparable
 {
 	protected ArrayList<String> names;
-	protected ArrayList<Object> values;
+	protected ArrayList<T> values;
 	
 	// Constructors
 	
@@ -55,7 +55,7 @@ public class Values implements Cloneable //implements Comparable
 	public Values()
 	{
 		names = new ArrayList<String>();
-		values = new ArrayList<Object>();
+		values = new ArrayList<>();
 	}
 	
 	/**
@@ -63,14 +63,14 @@ public class Values implements Cloneable //implements Comparable
 	 * If the existing one is null, it is treated as empty. 
 	 */
 	@SuppressWarnings("unchecked")
-	public Values(Values v)
+	public Values(Values<T> v)
 	{
 		if (v == null) {
 			names = new ArrayList<String>();
-			values = new ArrayList<Object>();
+			values = new ArrayList<>();
 		} else {
 			names = (ArrayList<String>) v.names.clone();
-			values = (ArrayList<Object>) v.values.clone();
+			values = (ArrayList<T>) v.values.clone();
 		}
 	}
 	
@@ -79,7 +79,7 @@ public class Values implements Cloneable //implements Comparable
 	 * There is no checking for duplicates.
 	 * Either can be null and, if so, is treated as empty. 
 	 */
-	public Values(Values v1, Values v2)
+	public Values(Values<T> v1, Values<T> v2)
 	{
 		this(v1);
 		addValues(v2);
@@ -98,7 +98,7 @@ public class Values implements Cloneable //implements Comparable
 		if (s == null) return;
 		int n = s.varValues.length;
 		for (int i = 0; i < n; i++) {
-			addValue(modelInfo.getVarName(i), s.varValues[i]);
+			addValue(modelInfo.getVarName(i), (T) s.varValues[i]);
 		}
 	}
 	
@@ -108,7 +108,7 @@ public class Values implements Cloneable //implements Comparable
 	 * @param name Constant/variable name
 	 * @param value Value
 	 */
-	public void addValue(String name, Object value)
+	public void addValue(String name, T value)
 	{
 		names.add(name);
 		values.add(value);
@@ -119,7 +119,7 @@ public class Values implements Cloneable //implements Comparable
 	 * If {@code v} is null, it is treated as empty. 
 	 * (Note: there is no checking for duplication/inconsistencies/etc.)
 	 */
-	public void addValues(Values v)
+	public void addValues(Values<T> v)
 	{
 		int i, n;
 		
@@ -136,7 +136,7 @@ public class Values implements Cloneable //implements Comparable
 	 * @param name Constant/variable name
 	 * @param value Value
 	 */
-	public int setValue(String name, Object value)
+	public int setValue(String name, T value)
 	{
 		int i = getIndexOf(name);
 		if (i == -1) {
@@ -153,7 +153,7 @@ public class Values implements Cloneable //implements Comparable
 	 * Set multiple values (overwrite if already present)
 	 * Returns number of values overwritten.
 	 */
-	public int setValues(Values v)
+	public int setValues(Values<T> v)
 	{
 		int i, n, c = 0;
 		
@@ -240,7 +240,7 @@ public class Values implements Cloneable //implements Comparable
 	/**
 	 * Get the {@code i}th value.
 	 */
-	public Object getValue(int i)
+	public T getValue(int i)
 	{
 		return values.get(i);
 	}
@@ -249,7 +249,7 @@ public class Values implements Cloneable //implements Comparable
 	 * Get the value for variable/constant {@code name}.
 	 * @throws PrismLangException if no value is present.
 	 */
-	public Object getValueOf(String name) throws PrismLangException
+	public T getValueOf(String name) throws PrismLangException
 	{
 		int i;
 		
@@ -262,13 +262,13 @@ public class Values implements Cloneable //implements Comparable
 	public boolean equals(Object o)
 	{
 		int i, j, n;
-		Values v;
+		Values<T> v;
 		String s;
 		
 		// trivial case: null arg
 		if (o == null) return false;
 		// another trivial case: wrong type
-		try { v = (Values)o; } catch (ClassCastException e) { return false; }
+		try { v = (Values<T>)o; } catch (ClassCastException e) { return false; }
 		// check sizes are equal
 		n = getNumValues();
 		if (v.getNumValues() != n) return false;
@@ -320,16 +320,16 @@ public class Values implements Cloneable //implements Comparable
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Values clone()
+	public Values<T> clone()
 	{
-		Values clone;
+		Values<T> clone;
 		try {
-			clone = (Values) super.clone();
+			clone = (Values<T>) super.clone();
 		} catch (CloneNotSupportedException e) {
 			throw new InternalError("Object#clone is expected to work for Cloneable objects.", e);
 		}
 		clone.names = (ArrayList<String>) names.clone();
-		clone.values = (ArrayList<Object>) values.clone();
+		clone.values = (ArrayList<T>) values.clone();
 		return clone;
 	}
 
