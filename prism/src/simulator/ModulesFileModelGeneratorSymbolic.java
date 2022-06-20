@@ -2,6 +2,7 @@ package simulator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import param.Function;
 import param.FunctionFactory;
@@ -441,6 +442,12 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 		return getTransitionList().getChoice(index).computeTarget(offset, exploreState);
 	}
 
+	@Override
+	public Map<String, Boolean> getLabelValues(State state) throws PrismLangException
+	{
+		return labelList.getLabelValues(state);
+	}
+
 	// Methods for RewardGenerator interface
 
 	@Override
@@ -527,7 +534,7 @@ public class ModulesFileModelGeneratorSymbolic implements ModelGeneratorSymbolic
 		// Compute the current transition list, if required
 		if (!transitionListBuilt) {
 			//updater.calculateTransitions(exploreState, transitionList);
-			transitionList = engine.calculateTransitions(exploreState, true);
+			transitionList = engine.calculateTransitions(exploreState, getLabelValues(exploreState), true);
 			transitionListBuilt = true;
 		}
 		return transitionList;

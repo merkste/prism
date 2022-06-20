@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import parser.State;
@@ -140,7 +141,7 @@ public class SymbolicEngine
 		}
 	}
 	
-	public TransitionList calculateTransitions(State state, boolean noWarnings) throws PrismException
+	public TransitionList calculateTransitions(State state, Map<String, Boolean> labelValues, boolean noWarnings) throws PrismException
 	{
 		List<ChoiceListFlexi> chs;
 		int i, j, k, l, n, count;
@@ -163,7 +164,7 @@ public class SymbolicEngine
 		// Calculate the available updates for each module/action
 		// (update information in updateLists, enabledSynchs and enabledModules)
 		for (i = 0; i < numModules; i++) {
-			calculateUpdatesForModule(i, state);
+			calculateUpdatesForModule(i, state, labelValues);
 		}
 		//System.out.println("updateLists: " + updateLists);
 
@@ -248,7 +249,7 @@ public class SymbolicEngine
 	 * @param m The module index
 	 * @param state State from which to explore
 	 */
-	protected void calculateUpdatesForModule(int m, State state) throws PrismLangException
+	protected void calculateUpdatesForModule(int m, State state, Map<String, Boolean> labelValues) throws PrismLangException
 	{
 		Module module;
 		Command command;
@@ -258,7 +259,7 @@ public class SymbolicEngine
 		n = module.getNumCommands();
 		for (i = 0; i < n; i++) {
 			command = module.getCommand(i);
-			if (command.getGuard().evaluateExact(state).toBoolean()) {
+			if (command.getGuard().evaluateExact(null, labelValues, state).toBoolean()) {
 				j = command.getSynchIndex();
 				updateLists.get(m).get(j).add(command.getUpdates());
 				enabledSynchs.set(j);
