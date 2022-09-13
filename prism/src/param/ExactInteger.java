@@ -1,23 +1,22 @@
 package param;
 
-import common.StopWatch;
-import prism.PrismLog;
-import prism.PrismPrintStreamLog;
-
 import java.math.BigInteger;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
 
 // TODO: extract constants
 // TODO: make constructors private/protected
 // TODO: consider cache similar to integer cache and using #== in equals
+// TODO: comment that valueOf should be used to create instances, consider private constructors and remove exception, simplify xxxValueExact
 
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
  */
 public interface ExactInteger
 {
+	static final int FLOAT_RANGE = 1 << 24; // 23 Bits + 1 hidden Bit
+	static final long DOUBLE_RANGE = 1L << 53; // 52 Bits + 1 hidden Bit
+
+	static final BigInteger BIG_FLOAT_RANGE = BigInteger.valueOf(FLOAT_RANGE);
+	static final BigInteger BIG_DOUBLE_RANGE = BigInteger.valueOf(DOUBLE_RANGE);
 	static final BigInteger BIG_INT_MIN_VALUE = BigInteger.valueOf(Integer.MIN_VALUE);
 	static final BigInteger BIG_INT_MAX_VALUE = BigInteger.valueOf(Integer.MAX_VALUE);
 	static final BigInteger BIG_LONG_MIN_VALUE = BigInteger.valueOf(Long.MIN_VALUE);
@@ -47,6 +46,66 @@ public interface ExactInteger
 		return BIG_LONG_MIN_VALUE.compareTo(x) <= 0 && x.compareTo(BIG_LONG_MAX_VALUE) <= 0;
 	}
 
+	static boolean fitsFloat(int x)
+	{
+		// Do not consider Integer.MIN_VALUE separately, since
+		// abs(Integer.MIN_VALUE) = Integer.MIN_VALUE -> 32 Bits
+		x = Math.abs(x);
+		x >>= Integer.numberOfTrailingZeros(x);
+		return (x < FLOAT_RANGE);
+	}
+
+	static boolean fitsFloat(long x)
+	{
+		// Do not consider Long.MIN_VALUE separately, since
+		// abs(Long.MIN_VALUE) = Long.MIN_VALUE -> 32 Bits
+		x = Math.abs(x);
+		x >>= Long.numberOfTrailingZeros(x);
+		return (x < FLOAT_RANGE);
+	}
+
+	static boolean fitsFloat(BigInteger x)
+	{
+		int idx = x.getLowestSetBit();
+		if (idx == -1) { // zero
+			return true;
+		}
+		if (idx > 127) { // exp too large
+			return false;
+		}
+		x = x.shiftRight(idx);
+		return x.abs().compareTo(BIG_FLOAT_RANGE) < 0;
+	}
+
+	static boolean fitsDouble(int x)
+	{
+		// true as a 32 Bit int always fits into the 53 Bit mantissa
+		return true;
+	}
+
+	static boolean fitsDouble(long x)
+	{
+		// Do not consider Long.MIN_VALUE separately, since
+		// abs(Long.MIN_VALUE) = Long.MIN_VALUE -> 32 Bits
+		x = Math.abs(x);
+		int z = Long.numberOfTrailingZeros(x);
+		x >>= Long.numberOfTrailingZeros(x);
+		return (x < DOUBLE_RANGE);
+	}
+
+	static boolean fitsDouble(BigInteger x)
+	{
+		int idx = x.getLowestSetBit();
+		if (idx == -1) { // zero
+			return true;
+		}
+		if (idx > 1023) { // exp too large
+			return false;
+		}
+		x = x.shiftRight(idx);
+		return x.abs().compareTo(BIG_DOUBLE_RANGE) < 0;
+	}
+
 	public static ExactInt valueOf(int x)
 	{
 		return new ExactInt(x);
@@ -63,6 +122,21 @@ public interface ExactInteger
 		return ExactInteger.fitsLong(x) ? valueOf(x.longValue()): new ExactBigInteger(x);
 	}
 
+	public static ExactInteger valueOf(double x)
+	{
+		if (!(Double.isFinite(x) && (x % 1) == 0)) {
+			throw new IllegalArgumentException("integer expected, but got " + x);
+		}
+		// Determine smallest exponent such that value = long_value * 2^exp
+		int exp = 0;
+		// Terminate as soon as value is a long
+		while ((long) x != x) {
+			x /= 2;
+			exp += 1;
+		}
+		return valueOf(BigInteger.valueOf((long) x).shiftLeft(exp));
+	}
+
 	default boolean fitsInt()
 	{
 		return false;
@@ -73,19 +147,36 @@ public interface ExactInteger
 		return false;
 	}
 
+	boolean fitsFloat();
+
+	boolean fitsDouble();
+
 	int intValue();
 
-	int intValueExact();
+	default int intValueExact()
+	{
+		throw new ArithmeticException("int overflow");
+	}
 
 	long longValue();
 
-	long longValueExact();
+	default long longValueExact()
+	{
+		return longValue();
+	}
 
 	BigInteger bigIntegerValue();
 
 	float floatValue();
 
+	float floatValueExact();
+
 	double doubleValue();
+
+	default double doubleValueExact()
+	{
+		throw new Error("not implemented yet");
+	}
 
 	// Comparison
 
@@ -229,9 +320,9 @@ public interface ExactInteger
 
 	public class ExactInt extends Number implements IntOrLong
 	{
-		public final int x;
+		protected final int x;
 
-		public ExactInt(int x)
+		protected ExactInt(int x)
 		{
 			this.x = x;
 		}
@@ -249,7 +340,18 @@ public interface ExactInteger
 		}
 
 		@Override
+		public boolean fitsFloat()
+		{
+			return ExactInteger.fitsFloat(x);
+		}
 
+		@Override
+		public boolean fitsDouble()
+		{
+			return ExactInteger.fitsDouble(x);
+		}
+
+		@Override
 		public int intValue()
 		{
 			return x;
@@ -258,17 +360,11 @@ public interface ExactInteger
 		@Override
 		public int intValueExact()
 		{
-			return x;
+			return intValue();
 		}
 
 		@Override
 		public long longValue()
-		{
-			return x;
-		}
-
-		@Override
-		public long longValueExact()
 		{
 			return x;
 		}
@@ -286,9 +382,25 @@ public interface ExactInteger
 		}
 
 		@Override
+		public float floatValueExact()
+		{
+			if (!fitsFloat()) {
+				throw new ArithmeticException("Value cannot be precisely represented as float");
+			};
+			return (float)x;
+		}
+
+		@Override
 		public double doubleValue()
 		{
 			return x;
+		}
+
+		@Override
+		public double doubleValueExact()
+		{
+			// IEEE 754 double precision: 52 Bit mantissa
+			return (double)x;
 		}
 
 		@Override
@@ -500,17 +612,14 @@ public interface ExactInteger
 
 	public class ExactLong extends Number implements IntOrLong, LongOrBigInteger
 	{
-		public final long x;
+		protected final long x;
 
-		public ExactLong(long x)
+		protected ExactLong(long x)
 		{
+			if (ExactInteger.fitsInt(x)) {
+				throw new IllegalArgumentException("Argument too small, use ExactInt instead.");
+			}
 			this.x = x;
-		}
-
-		@Override
-		public boolean fitsInt()
-		{
-			return ExactInteger.fitsInt(x);
 		}
 
 		@Override
@@ -520,25 +629,25 @@ public interface ExactInteger
 		}
 
 		@Override
+		public boolean fitsFloat()
+		{
+			return ExactInteger.fitsFloat(x);
+		}
+
+		@Override
+		public boolean fitsDouble()
+		{
+			return ExactInteger.fitsDouble(x);
+		}
+
+		@Override
 		public int intValue()
 		{
 			return (int)x;
 		}
 
 		@Override
-		public int intValueExact()
-		{
-			return Math.toIntExact(x);
-		}
-
-		@Override
 		public long longValue()
-		{
-			return x;
-		}
-
-		@Override
-		public long longValueExact()
 		{
 			return x;
 		}
@@ -556,9 +665,27 @@ public interface ExactInteger
 		}
 
 		@Override
+		public float floatValueExact()
+		{
+			if (!fitsFloat()) {
+				throw new ArithmeticException("Value cannot be precisely represented as float");
+			};
+			return (float)x;
+		}
+
+		@Override
 		public double doubleValue()
 		{
 			return x;
+		}
+
+		@Override
+		public double doubleValueExact()
+		{
+			if (!fitsDouble()) {
+				throw new ArithmeticException("Value cannot be precisely represented as double");
+			};
+			return (double)x;
 		}
 
 		@Override
@@ -770,10 +897,13 @@ public interface ExactInteger
 
 	public class ExactBigInteger extends Number implements LongOrBigInteger
 	{
-		public final BigInteger x;
+		protected final BigInteger x;
 
-		public ExactBigInteger(BigInteger x)
+		protected ExactBigInteger(BigInteger x)
 		{
+			if (ExactInteger.fitsLong(x)) {
+				throw new IllegalArgumentException("Argument too small, use ExactLong or ExactInt instead.");
+			}
 			this.x = x;
 		}
 
@@ -784,21 +914,21 @@ public interface ExactInteger
 		}
 
 		@Override
-		public boolean fitsLong()
+		public boolean fitsFloat()
 		{
-			return ExactInteger.fitsLong(x);
+			return ExactInteger.fitsFloat(x);
+		}
+
+		@Override
+		public boolean fitsDouble()
+		{
+			return ExactInteger.fitsDouble(x);
 		}
 
 		@Override
 		public int intValue()
 		{
 			return x.intValue();
-		}
-
-		@Override
-		public int intValueExact()
-		{
-			return x.intValueExact();
 		}
 
 		@Override
@@ -810,7 +940,7 @@ public interface ExactInteger
 		@Override
 		public long longValueExact()
 		{
-			return x.longValueExact();
+			throw new ArithmeticException("long overflow");
 		}
 
 		@Override
@@ -826,9 +956,27 @@ public interface ExactInteger
 		}
 
 		@Override
+		public float floatValueExact()
+		{
+			if (!fitsFloat()) {
+				throw new ArithmeticException("Value cannot be precisely represented as float");
+			};
+			return floatValue();
+		}
+
+		@Override
 		public double doubleValue()
 		{
 			return x.doubleValue();
+		}
+
+		@Override
+		public double doubleValueExact()
+		{
+			if (!fitsDouble()) {
+				throw new ArithmeticException("Value cannot be precisely represented as double");
+			};
+			return doubleValue();
 		}
 
 		@Override
