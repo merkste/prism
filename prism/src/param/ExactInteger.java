@@ -6,7 +6,6 @@ import java.math.BigInteger;
 // TODO: make constructors private/protected
 // TODO: consider cache similar to integer cache and using #== in equals
 // TODO: comment that valueOf should be used to create instances, consider private constructors and remove exception, simplify xxxValueExact
-// TODO: implement mod
 // TODO: implement devide and remainder
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
@@ -1371,7 +1370,7 @@ public interface ExactInteger
 			if (isOverflowPostMultiply(base, base, maybe)) {
 				BigInteger bigResult = BigInteger.valueOf(result);
 				BigInteger bigPower = BigInteger.valueOf(base);
-				return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent <<1)));
+				return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent << 1)));
 			} else {
 				base = maybe;
 			}
@@ -1380,7 +1379,7 @@ public interface ExactInteger
 				if (isOverflowPostMultiply(result, base, maybe)) {
 					BigInteger bigPower = BigInteger.valueOf(base);
 					BigInteger bigResult = BigInteger.valueOf(result).multiply(bigPower);
-					return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent >>1)));
+					return new ExactBigInteger(bigResult.multiply(bigPower.pow(exponent >> 1)));
 				} else {
 					result = maybe;
 				}
@@ -1390,16 +1389,17 @@ public interface ExactInteger
 		return ExactInteger.valueOf(result);
 	}
 
+	// (Computes floor(this * 2^n).)
 	static ExactInteger shiftLeft(long x, int n)
 	{
-		// TODO: check negative x
-		if (x == 0 | n < -64) {
+		if (x == 0) {
 			return ExactInteger.ZERO;
 		}
-		if (n < 0) {
-			return ExactInteger.valueOf(x >> -n);
+		if (n < 0) { // right shift
+			n = -Math.max(-63, n); // operator >> uses only lower 6 Bits, take care of possible overflow in (-n)
+			return ExactInteger.valueOf(x >> n);
 		}
-		if (n <= 63) { // cover x=-1
+		if (n <= 63) { // try to avoid BigInteger
 			// TODO: is number of leading zeros slow? Alternative:
 			//    unsigned n = 0;
 			//    if (x == 0) return sizeof(x) * 8;
@@ -1419,6 +1419,22 @@ public interface ExactInteger
 			}
 		}
 		return new ExactBigInteger(BigInteger.valueOf(x).shiftLeft(n));
+	}
+
+	// (Computes floor(this / 2^n).)
+	static ExactInteger shiftRight(long x, int n)
+	{
+		if (x == 0) {
+			return ExactInteger.ZERO;
+		}
+		if (n < 0) { // left shift
+			if (n <= -63) { // take care of possible overflow in (-n)
+				return ExactInteger.valueOf(BigInteger.valueOf(x).shiftRight(n));
+			}
+			return shiftLeft(x, -n);
+		}
+		n = Math.min(63, n); // operator >> uses only lower 6 Bits
+		return valueOf(x >> n);
 	}
 
 	/**
@@ -1552,6 +1568,7 @@ public interface ExactInteger
 	private static int powOfTwoExact(int base, int exponent)
 	{
 		assert (base & (base - 1)) == 0 || (-base & (-base - 1)) == 0 : "base must be a power of two";
+		assert exponent >= 0;
 		// power of two: (2^n)^e = 2^(n*e)
 		long exp = (long)Integer.numberOfTrailingZeros(base) * (long) exponent;
 		if (base < 0 && (exponent & 1) == 1) {
@@ -1610,6 +1627,7 @@ public interface ExactInteger
 	private static long powOfTwoExact(long base, int exponent)
 	{
 		assert (base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L : "base must be a power of two";
+		assert exponent >= 0;
 		// power of two: (2^n)^e = 2^(n*e)
 		long exp = (long)Long.numberOfTrailingZeros(base) * (long) exponent;
 		if (base < 0L && (exp & 1) == 1) {
@@ -1641,13 +1659,14 @@ public interface ExactInteger
 
 	public static int shiftLeftExact(int x, int n)
 	{
-		if (x == 0 | n < -32) {
+		if (x == 0) {
 			return 0;
 		}
-		if (n < 0) {
-			return x >> -n;
+		if (n < 0) { // right shift
+			n = -Math.max(-63, n); // operator >> uses only lower 5 Bits, take care of possible overflow in (-n)
+			return x >> n;
 		}
-		if (n <= 30) { // cover x=-1
+		if (n <= 31) {
 			long l = (long)x << n;
 			int r = (int)l;
 			if (l == r) {
@@ -1659,16 +1678,50 @@ public interface ExactInteger
 
 	public static long shiftLeftExact(long x, int n)
 	{
-		if (x == 0 | n < -64) {
+		if (x == 0L) {
 			return 0L;
 		}
-		if (n <= 63) { // cover x=-1
+		if (n < 0) { // right shift
+			n = -Math.max(-63, n); // operator >> uses only lower 6 Bits, take care of possible overflow in (-n)
+			return x >> n;
+		}
+		if (n <= 63) {
 			int maxShift = Long.numberOfLeadingZeros((x > 0) ? x : x ^ -1L) - 1;
 			if (n <= maxShift) {
 				return x << n;
 			}
 		}
 		throw new ArithmeticException("long overflow");
+	}
+
+	static int shiftRightExact(int x, int n)
+	{
+		if (x == 0) {
+			return 0;
+		}
+		if (n < 0) { // left shift
+			if (n <= -61) {
+				throw new ArithmeticException("int overflow");
+			}
+			return shiftLeftExact(x, -n);
+		}
+		n = Math.min(31, n); // operator >> uses only lower 5 Bits
+		return x >> n;
+	}
+
+	static long shiftRightExact(long x, int n)
+	{
+		if (x == 0) {
+			return 0L;
+		}
+		if (n < 0) { // left shift
+			if (n <= -63) {
+				throw new ArithmeticException("long overflow");
+			}
+			return shiftLeftExact(x, -n);
+		}
+		n = Math.min(63, n); // operator >> uses only lower 6 Bits
+		return x >> n;
 	}
 
 	// Preconditions

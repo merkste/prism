@@ -221,4 +221,24 @@ public class ExactIntegerStaticTest
 		// !fitsInt & fitsLong -> ExactLong
 		assertTrue((n instanceof ExactInteger.ExactLong) || !(n.fitsLong() && !n.fitsInt()));
 	}
+
+	@ParameterizedTest
+	@ValueSource(longs = {Long.MIN_VALUE, -1, 0, 1, Long.MAX_VALUE})
+	public void testShiftLeft(long x)
+	{
+		BigInteger X = BigInteger.valueOf(x);
+		for (int i=-65; i<=65; i++) {
+			assertEquals(ExactInteger.valueOf(X.shiftLeft(i)), ExactInteger.shiftLeft(x, i));
+		}
+	}
+
+	@ParameterizedTest
+	@ValueSource(longs = {Long.MIN_VALUE, -1, 0, 1, Long.MAX_VALUE})
+	public void testShiftRight(long x)
+	{
+		BigInteger X = BigInteger.valueOf(x);
+		for (int i=-65; i<=65; i++) {
+			assertEquals(ExactInteger.valueOf(X.shiftRight(i)), ExactInteger.shiftRight(x, i));
+		}
+	}
 }

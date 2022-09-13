@@ -175,7 +175,7 @@ public interface ExactIntegerTest
 		@Test
 		public void testDoubleValueExact()
 		{
-			long x = Long.MAX_VALUE - 1;
+			long x = Long.MAX_VALUE;
 			assertThrows(ArithmeticException.class, () -> new ExactInteger.ExactLong(x).doubleValueExact());
 		}
 	}
@@ -255,7 +255,7 @@ public interface ExactIntegerTest
 		@Test
 		public void testFloatValueExact()
 		{
-			BigInteger x = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+			BigInteger x = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TWO);
 			assertThrows(ArithmeticException.class, () -> new ExactInteger.ExactBigInteger(x).floatValueExact());
 		}
 
@@ -269,7 +269,7 @@ public interface ExactIntegerTest
 		@Test
 		public void testDoubleValueExact()
 		{
-			BigInteger x = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+			BigInteger x = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TWO);
 			assertThrows(ArithmeticException.class, () -> new ExactInteger.ExactBigInteger(x).doubleValueExact());
 		}
 	}
