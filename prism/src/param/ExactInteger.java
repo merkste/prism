@@ -6,7 +6,8 @@ import java.math.BigInteger;
 // TODO: make constructors private/protected
 // TODO: consider cache similar to integer cache and using #== in equals
 // TODO: comment that valueOf should be used to create instances, consider private constructors and remove exception, simplify xxxValueExact
-
+// TODO: implement mod
+// TODO: implement devide and remainder
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
  */
