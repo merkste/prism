@@ -134,7 +134,7 @@ public interface ExactInteger
 			x /= 2;
 			exp += 1;
 		}
-		return valueOf(BigInteger.valueOf((long) x).shiftLeft(exp));
+		return valueOf((long) x).shiftLeft(exp);
 	}
 
 	default boolean fitsInt()
@@ -303,6 +303,8 @@ public interface ExactInteger
 	ExactInteger gcd(ExactInteger factor);
 
 	ExactInteger pow(int exponent);
+
+	ExactInteger shiftLeft(int n);
 
 	/**
 	 * Marker interface
@@ -602,6 +604,12 @@ public interface ExactInteger
 		}
 
 		@Override
+		public ExactInteger shiftLeft(int n)
+		{
+			return ExactInteger.shiftLeft(x, n);
+		}
+
+		@Override
 		public String toString()
 		{
 			return String.valueOf(x);
@@ -884,6 +892,12 @@ public interface ExactInteger
 		public ExactInteger pow(int exponent)
 		{
 			return exponent == 1 ? this : ExactInteger.pow(x, exponent);
+		}
+
+		@Override
+		public ExactInteger shiftLeft(int n)
+		{
+			return ExactInteger.shiftLeft(x, n);
 		}
 
 		@Override
@@ -1179,6 +1193,12 @@ public interface ExactInteger
 		}
 
 		@Override
+		public ExactInteger shiftLeft(int n)
+		{
+			return valueOf(x.shiftLeft(n));
+		}
+
+		@Override
 		public String toString()
 		{
 			return String.valueOf(x);
@@ -1371,6 +1391,7 @@ public interface ExactInteger
 
 	static ExactInteger shiftLeft(long x, int n)
 	{
+		// TODO: check negative x
 		if (x == 0 | n < -64) {
 			return ExactInteger.ZERO;
 		}
