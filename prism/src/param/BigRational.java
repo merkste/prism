@@ -26,9 +26,9 @@
 
 package param;
 
-import java.math.BigInteger;
-
 import prism.PrismLangException;
+
+import java.math.BigInteger;
 
 /**
  * Provides a class to store big rational numbers.
@@ -46,34 +46,34 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	/** Serial version for serialisation */
 	private static final long serialVersionUID = 8273185089413305187L;
 
-	/** the BigInteger "-1" */
-	private final static BigInteger BMONE = BigInteger.ONE.negate();
-	/** the BigInteger "2" */
-	private final static BigInteger BITWO = BigInteger.TWO;
-	/** the BigInteger "10" */
-	private final static BigInteger BITEN = BigInteger.TEN;
+	/** the ExactInteger "-1" */
+	private final static ExactInteger BMONE = ExactInteger.ONE.negate();
+	/** the ExactInteger "2" */
+	private final static ExactInteger BITWO = ExactInteger.valueOf(2);
+	/** the ExactInteger "10" */
+	private final static ExactInteger BITEN = ExactInteger.valueOf(10);
 
 	/** the BigRational "1" */
-	public final static BigRational ONE = new BigRational(BigInteger.ONE);
+	public final static BigRational ONE = new BigRational(ExactInteger.ONE);
 	/** the BigRational "2" */
-	public final static BigRational TWO = new BigRational(BigInteger.valueOf(2));
+	public final static BigRational TWO = new BigRational(ExactInteger.valueOf(2));
 	/** the BigRational "-1" */
-	public final static BigRational MONE = new BigRational(BigInteger.ONE).negate();
+	public final static BigRational MONE = new BigRational(ExactInteger.ONE).negate();
 	/** the BigRational "0" */
-	public final static BigRational ZERO = new BigRational(BigInteger.ZERO);
+	public final static BigRational ZERO = new BigRational(ExactInteger.ZERO);
 	/** the BigRational "1/2" */
 	public final static BigRational HALF = ONE.divide(TWO);
 	/** the BigRational "infinity" */
-	public final static BigRational INF = new BigRational(BigInteger.ONE, BigInteger.ZERO);
+	public final static BigRational INF = new BigRational(ExactInteger.ONE, ExactInteger.ZERO);
 	/** the BigRational "-infinity" */
-	public final static BigRational MINF = new BigRational(BMONE, BigInteger.ZERO);
+	public final static BigRational MINF = new BigRational(BMONE, ExactInteger.ZERO);
 	/** the BigRational "not a number" */
-	public final static BigRational NAN = new BigRational(BigInteger.ZERO, BigInteger.ZERO);
+	public final static BigRational NAN = new BigRational(ExactInteger.ZERO, ExactInteger.ZERO);
 
 	/** numerator */
-	private BigInteger num;
+	private ExactInteger num;
 	/** denominator */
-	private BigInteger den;
+	private ExactInteger den;
 
 	// constructors
 
@@ -82,8 +82,20 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public BigRational()
 	{
-		this.num = BigInteger.ZERO;
-		this.den = BigInteger.ONE;
+		this.num = ExactInteger.ZERO;
+		this.den = ExactInteger.ONE;
+	}
+
+
+	/**
+	 * Creates a new BigRational with value {@code num}.
+	 *
+	 * @param num value of new rational as an integer value
+	 */
+	@Deprecated
+	public BigRational(BigInteger num)
+	{
+		this(ExactInteger.valueOf(num));
 	}
 
 	/**
@@ -91,10 +103,10 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 *
 	 * @param num value of new rational as an integer value
 	 */
-	public BigRational(BigInteger num)
+	public BigRational(ExactInteger num)
 	{
 		this.num = num;
-		this.den = BigInteger.ONE;
+		this.den = ExactInteger.ONE;
 	}
 
 	/**
@@ -104,7 +116,20 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 * @param num numerator of this BigRational
 	 * @param den denominator of this BigRational
 	 */
+	@Deprecated
 	public BigRational(BigInteger num, BigInteger den)
+	{
+		this(ExactInteger.valueOf(num), ExactInteger.valueOf(den), true);
+	}
+
+	/**
+	 * Creates a new BigRational with value {@code num} / {@code den}.
+	 * Cancellation of {@code num} and {@code den} is applied.
+	 *
+	 * @param num numerator of this BigRational
+	 * @param den denominator of this BigRational
+	 */
+	public BigRational(ExactInteger num, ExactInteger den)
 	{
 		this(num, den, true);
 	}
@@ -118,16 +143,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 * @param den denominator of this BigRational
 	 * @param cancel true to ensure resulting BigRational is coprime
 	 */
-	public BigRational(BigInteger num, BigInteger den, boolean cancel)
+	public BigRational(ExactInteger num, ExactInteger den, boolean cancel)
 	{
-		if (den.equals(BigInteger.ZERO)) {
-			int cmp = num.compareTo(BigInteger.ZERO);
+		if (den.equals(ExactInteger.ZERO)) {
+			int cmp = num.compareTo(ExactInteger.ZERO);
 			switch (cmp) {
 			case -1:
 				num = BMONE;
 				break;
 			case 1:
-				num = BigInteger.ONE;
+				num = ExactInteger.ONE;
 				break;
 			}
 		}
@@ -139,17 +164,17 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		}
 	}
 
-	protected void canceled(BigInteger num, BigInteger den)
+	protected void canceled(ExactInteger num, ExactInteger den)
 	{
-		if (num.equals(BigInteger.ZERO)) {
-			if (!den.equals(BigInteger.ZERO)) {
+		if (num.equals(ExactInteger.ZERO)) {
+			if (!den.equals(ExactInteger.ZERO)) {
 				// not NaN (= 0/0), so this is a real zero:
 				// normalise by setting denominator to 1
-				num = BigInteger.ZERO;
-				den = BigInteger.ONE;
+				num = ExactInteger.ZERO;
+				den = ExactInteger.ONE;
 			}
 		} else {
-			BigInteger gcd = num.gcd(den);
+			ExactInteger gcd = num.gcd(den);
 			num = num.divide(gcd);
 			den = den.divide(gcd);
 			if (den.signum() == -1) {
@@ -170,7 +195,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public BigRational(long num, long den)
 	{
-		this(BigInteger.valueOf(num), BigInteger.valueOf(den));
+		this(ExactInteger.valueOf(num), ExactInteger.valueOf(den));
 	}
 
 	/**
@@ -192,16 +217,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	public  BigRational(double value)
 	{
 		if (java.lang.Double.isNaN(value)) {
-			this.num = BigInteger.ZERO;
-			this.den = BigInteger.ZERO;
+			this.num = ExactInteger.ZERO;
+			this.den = ExactInteger.ZERO;
 		}
 		if (value == java.lang.Double.POSITIVE_INFINITY) {
-			this.num = BigInteger.ONE;
-			this.den = BigInteger.ZERO;
+			this.num = ExactInteger.ONE;
+			this.den = ExactInteger.ZERO;
 		}
 		if (value == java.lang.Double.NEGATIVE_INFINITY) {
 			this.num = BMONE;
-			this.den = BigInteger.ZERO;
+			this.den = ExactInteger.ZERO;
 		}
 		// Test whether value must be an integer
 		if (value <= -0x1.0P52 || value >= 0x1.0P52) {
@@ -213,8 +238,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 				exp += 1;
 			}
 			// No need to cancel as denumerator is one
-			this.num = BigInteger.valueOf((long) value).shiftLeft(exp);
-			this.den = BigInteger.ONE;
+			this.num = ExactInteger.valueOf((long) value).shiftLeft(exp);
+			this.den = ExactInteger.ONE;
 		} else {
 			// Determine smallest exponent such that value = long_value / 2^exp
 			int exp = 0;
@@ -224,8 +249,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 				exp += 1;
 			}
 			// No need to cancel as exp is the smallest exponent
-			this.num = BigInteger.valueOf((long) value);
-			this.den = BigInteger.ONE.shiftLeft(exp);
+			this.num = ExactInteger.valueOf((long) value);
+			this.den = ExactInteger.ONE.shiftLeft(exp);
 		}
 	}
 
@@ -239,16 +264,16 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	public BigRational(String string)
 	{
 		if (string.equals("Infinity") || string.equals("+Infinity") || string.equals("Inf") || string.equals("+Inf")) {
-			this.num = BigInteger.ONE;
-			this.den = BigInteger.ZERO;
+			this.num = ExactInteger.ONE;
+			this.den = ExactInteger.ZERO;
 			return;
 		} else if (string.equals("-Infinity") || string.equals("-Inf")) {
-			this.num = BigInteger.ONE.negate();
-			this.den = BigInteger.ZERO;
+			this.num = ExactInteger.ONE.negate();
+			this.den = ExactInteger.ZERO;
 			return;
 		} else if (string.equals("NaN")) {
-			this.num = BigInteger.ZERO;
-			this.den = BigInteger.ZERO;
+			this.num = ExactInteger.ZERO;
+			this.den = ExactInteger.ZERO;
 			return;
 		}
 		string = string.trim();
@@ -281,13 +306,13 @@ public final class BigRational extends Number implements Comparable<BigRational>
 				int eInt = Integer.parseInt(eStr);
 				expo += eInt;
 			}
-			BigInteger num = new BigInteger((negate ? "-" : "") + noDotCoeff);
-			BigInteger den;
-			BigInteger ten = BITEN;
+			ExactInteger num = ExactInteger.valueOf(new BigInteger((negate ? "-" : "") + noDotCoeff));
+			ExactInteger den;
+			ExactInteger ten = BITEN;
 			if (expo == 0) {
-				den = BigInteger.ONE;
+				den = ExactInteger.ONE;
 			} else if (expo > 0) {
-				den = BigInteger.ONE;
+				den = ExactInteger.ONE;
 				num = num.multiply(ten.pow(expo));
 			} else { // expo < 0
 				den = ten.pow(-expo);
@@ -377,8 +402,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		if (this.isMInf() || other.isMInf()) {
 			return MINF;
 		}
-		BigInteger num = this.num.multiply(other.den).add(other.num.multiply(this.den));
-		BigInteger den = this.den.multiply(other.den);
+		ExactInteger num = this.num.multiply(other.den).add(other.num.multiply(this.den));
+		ExactInteger den = this.den.multiply(other.den);
 		return new BigRational(num, den, cancel);
 	}
 
@@ -407,8 +432,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		if (other.isMInf()) {
 			return MINF;
 		}
-		BigInteger num = this.num.multiply(other.den).subtract(other.num.multiply(this.den));
-		BigInteger den = this.den.multiply(other.den);
+		ExactInteger num = this.num.multiply(other.den).subtract(other.num.multiply(this.den));
+		ExactInteger den = this.den.multiply(other.den);
 		return new BigRational(num, den);
 	}
 
@@ -429,8 +454,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		if (this.isInf() || other.isInf()) {
 			return this.signum() * other.signum() == 1 ? INF : MINF;
 		}
-		BigInteger num = this.num.multiply(other.num);
-		BigInteger den = this.den.multiply(other.den);
+		ExactInteger num = this.num.multiply(other.num);
+		ExactInteger den = this.den.multiply(other.den);
 		return new BigRational(num, den, cancel);
 	}
 
@@ -536,8 +561,8 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public BigRational pow(int exponent)
 	{
-		BigInteger num;
-		BigInteger den;
+		ExactInteger num;
+		ExactInteger den;
 		if (exponent == 0) {
 			return ONE;
 		} else if (exponent > 0) {
@@ -612,14 +637,14 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		} else if (isZero()) {
 			return 0.0;
 		}
-		BigInteger shiftedNum;
+		ExactInteger shiftedNum;
 		int signum = num.signum() * den.signum();
-		BigInteger posNum = num.abs();
-		BigInteger posDen = den.abs();
+		ExactInteger posNum = num.abs();
+		ExactInteger posDen = den.abs();
 		shiftedNum = posNum.shiftLeft(55);
-		BigInteger div = shiftedNum.divide(posDen);
+		ExactInteger div = shiftedNum.divide(posDen);
 		if (shiftedNum.remainder(posDen).multiply(BITWO).compareTo(posDen) == 1) {
-			div = div.add(BigInteger.ONE);
+			div = div.add(ExactInteger.ONE);
 		}
 		return signum * div.doubleValue() / Math.pow(2.0, 55);
 	}
@@ -650,15 +675,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 
 		// TODO JK: In case of fraction / overflow, this method should not throw an
 		// exception but return some imprecise result. We are conservative here.
-		// In the future, it may make sense to have an intValueExact (similar to BigInteger)
+		// In the future, it may make sense to have an intValueExact (similar to ExactInteger)
 		if (!isInteger()) {
 			throw new ArithmeticException("Can not convert fractional number to int");
 		}
-		int value = getNum().intValue();
-		if (!getNum().equals(BigInteger.valueOf(value))) {
-			throw new ArithmeticException("Can not convert BigInteger to int, value " + this + " out of range");
-		}
-		return value;
+		return num.intValueExact();
 	}
 
 	/**
@@ -687,15 +708,11 @@ public final class BigRational extends Number implements Comparable<BigRational>
 
 		// TODO JK: In case of fraction / overflow, this method should not throw an
 		// exception but return some imprecise result. We are conservative here. In the future,
-		// it may make sense to have a longValueExact (similar to BigInteger)
+		// it may make sense to have a longValueExact (similar to ExactInteger)
 		if (!isInteger()) {
 			throw new ArithmeticException("Can not convert fractional number to long");
 		}
-		long value = getNum().longValue();
-		if (!getNum().equals(BigInteger.valueOf(value))) {
-			throw new ArithmeticException("Can not convert BigInteger to long, value " + this + " out of range");
-		}
-		return value;
+		return num.longValueExact();
 	}
 
 	@Override
@@ -706,19 +723,19 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	}
 
 	/**
-	 * Returns the value of the specified number as a {code BigInteger},
+	 * Returns the value of the specified number as a {code ExactInteger},
 	 * which may involve rounding or truncation.
 	 * <br>
 	 * Note: In contrast to the standard Number.intValue() behaviour,
 	 * this implementation throws an Arithmetic exception if the underlying
 	 * rational number is not an integer.
 	 * <br>
-	 * Since {code BigInteger} cannot represent infinity,
+	 * Since {code ExactInteger} cannot represent infinity,
 	 * Positive and negative infinity are mapped to Long.MAX_VALUE and Long.MIN_VALUE,
 	 * respectively, NaN is mapped to 0 (per the Java Language Specification).
 	 *
 	 * @return  the numeric value represented by this object after conversion
-	 *          to type {code BigInteger}.
+	 *          to type {code ExactInteger}.
 	 */
 	public BigInteger bigIntegerValue()
 	{
@@ -748,7 +765,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			return "Inf";
 		} else if (isMInf()) {
 			return "-Inf";
-		} else if (den.equals(BigInteger.ONE)) {
+		} else if (den.equals(ExactInteger.ONE)) {
 			return num.toString();
 		} else {
 			return num + "/" + den;
@@ -815,23 +832,25 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	}
 
 	/**
-	 * Return numerator of this BigRational as a BigInteger.
+	 * Return numerator of this BigRational as a ExactInteger.
 	 *
-	 * @return numerator of this BigRational as a BigInteger
+	 * @return numerator of this BigRational as a ExactInteger
 	 */
+	@Deprecated
 	public BigInteger getNum()
 	{
-		return num;
+		return num.bigIntegerValue();
 	}
 
 	/**
-	 * Return denominator of this BigRational as a BigInteger.
+	 * Return denominator of this BigRational as a ExactInteger.
 	 *
-	 * @return denominator of this BigRational as a BigInteger
+	 * @return denominator of this BigRational as a ExactInteger
 	 */
+	@Deprecated
 	public BigInteger getDen()
 	{
-		return den;
+		return den.bigIntegerValue();
 	}
 
 	/**
@@ -858,14 +877,14 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			throw new PrismLangException("Can not compute ceil of " + this);
 		}
 
-		BigInteger[] divideAndRemainder = getNum().divideAndRemainder(getDen());
+		ExactInteger[] divideAndRemainder = num.divideAndRemainder(den);
 
-		switch (divideAndRemainder[1].compareTo(BigInteger.ZERO)) {
+		switch (divideAndRemainder[1].compareTo(ExactInteger.ZERO)) {
 		case 0:   // no remainder
 		case -1:  // negative remainder: value was negative, so we ignore the remainder
 			return new BigRational(divideAndRemainder[0]);
 		case 1:   // positive remainder: return next-largest integer
-			return new BigRational(divideAndRemainder[0].add(BigInteger.ONE));
+			return new BigRational(divideAndRemainder[0].add(ExactInteger.ONE));
 		default:
 			throw new IllegalStateException("Should not be reached");
 		}
@@ -881,13 +900,13 @@ public final class BigRational extends Number implements Comparable<BigRational>
 			throw new PrismLangException("Can not compute floor of " + this);
 		}
 
-		BigInteger[] divideAndRemainder = getNum().divideAndRemainder(getDen());
-		switch (divideAndRemainder[1].compareTo(BigInteger.ZERO)) {
+		ExactInteger[] divideAndRemainder = num.divideAndRemainder(den);
+		switch (divideAndRemainder[1].compareTo(ExactInteger.ZERO)) {
 		case 0:   // no remainder
 		case 1:   // positive remainder: value was positive, so we ignore the remainder
 			return new BigRational(divideAndRemainder[0]);
 		case -1:  // negative remainder: value was negative, return next-smallest integer
-			return new BigRational(divideAndRemainder[0].subtract(BigInteger.ONE));
+			return new BigRational(divideAndRemainder[0].subtract(ExactInteger.ONE));
 		default:
 			throw new IllegalStateException("Should not be reached");
 		}
@@ -944,7 +963,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isZero()
 	{
-		return num.equals(BigInteger.ZERO) && den.equals(BigInteger.ONE);
+		return num.equals(ExactInteger.ZERO) && den.equals(ExactInteger.ONE);
 	}
 
 	/**
@@ -954,7 +973,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isOne()
 	{
-		return num.equals(BigInteger.ONE) && den.equals(BigInteger.ONE);
+		return num.equals(ExactInteger.ONE) && den.equals(ExactInteger.ONE);
 	}
 
 	/**
@@ -964,7 +983,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isNaN()
 	{
-		return num.equals(BigInteger.ZERO) && den.equals(BigInteger.ZERO);
+		return num.equals(ExactInteger.ZERO) && den.equals(ExactInteger.ZERO);
 	}
 
 	/**
@@ -974,7 +993,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isInf()
 	{
-		return num.equals(BigInteger.ONE) && den.equals(BigInteger.ZERO);
+		return num.equals(ExactInteger.ONE) && den.equals(ExactInteger.ZERO);
 	}
 
 	/**
@@ -984,7 +1003,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isMInf()
 	{
-		return num.equals(BMONE) && den.equals(BigInteger.ZERO);
+		return num.equals(BMONE) && den.equals(ExactInteger.ZERO);
 	}
 
 	/**
@@ -1008,7 +1027,7 @@ public final class BigRational extends Number implements Comparable<BigRational>
 	 */
 	public boolean isInteger()
 	{
-		return isRational() && getDen().equals(BigInteger.ONE);
+		return isRational() && den.equals(ExactInteger.ONE);
 	}
 
 	/**
@@ -1063,10 +1082,6 @@ public final class BigRational extends Number implements Comparable<BigRational>
 		if (!isInteger()) {
 			throw new PrismLangException("Can not convert fractional number to int");
 		}
-		int value = getNum().intValue();
-		if (!getNum().equals(BigInteger.valueOf(value))) {
-			throw new PrismLangException("Can not convert BigInteger to int, value out of range");
-		}
-		return value;
+		return num.intValueExact();
 	}
 }

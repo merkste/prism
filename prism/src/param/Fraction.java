@@ -1689,7 +1689,7 @@ public interface Fraction extends Comparable<Fraction>
 			ExactInteger den = offset.add(i).add(1);
 			for (int j = 0; j < n; j++) {
 				ExactInteger num = offset.add(j);
-				BigRational frac = new BigRational(num.bigIntegerValue(), den.bigIntegerValue());
+				BigRational frac = new BigRational(num, den);
 				rationals[i][j] = frac;
 				rationals[i][n + j] = frac.negate();
 			}
