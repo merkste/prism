@@ -6,7 +6,7 @@ import java.math.BigInteger;
 // TODO: make constructors private/protected
 // TODO: consider cache similar to integer cache and using #== in equals
 // TODO: comment that valueOf should be used to create instances, consider private constructors and remove exception, simplify xxxValueExact
-// TODO: implement devide and remainder
+// TODO: implement mod, devide and remainder
 /**
  * https://wiki.sei.cmu.edu/confluence/display/java/NUM00-J.+Detect+or+prevent+integer+overflow
  */
@@ -287,6 +287,52 @@ public interface ExactInteger
 
 	ExactInteger divideDividend(ExactInteger dividend);
 
+	ExactInteger remainder(int divisor);
+
+	ExactInteger remainder(long divisor);
+
+	default ExactInteger remainder(BigInteger divisor)
+	{
+		return valueOf(bigIntegerValue().remainder(divisor));
+	}
+
+	ExactInteger remainder(ExactInteger divisor);
+
+	ExactInteger remainderDividend(int dividend);
+
+	ExactInteger remainderDividend(long dividend);
+
+	default ExactInteger remainderDividend(BigInteger dividend)
+	{
+		return valueOf(dividend.remainder(bigIntegerValue()));
+	}
+
+	ExactInteger remainderDividend(ExactInteger dividend);
+
+	ExactInteger[] divideAndRemainder(int divisor);
+
+	ExactInteger[] divideAndRemainder(long divisor);
+
+	default ExactInteger[] divideAndRemainder(BigInteger divisor)
+	{
+		BigInteger[] result = bigIntegerValue().divideAndRemainder(divisor);
+		return new ExactInteger[] {valueOf(result[0]), valueOf(result[1])};
+	}
+
+	ExactInteger[] divideAndRemainder(ExactInteger divisor);
+
+	ExactInteger[] divideAndRemainderDividend(int dividend);
+
+	ExactInteger[] divideAndRemainderDividend(long dividend);
+
+	default ExactInteger[] divideAndRemainderDividend(BigInteger dividend)
+	{
+		BigInteger[] result = dividend.divideAndRemainder(bigIntegerValue());
+		return new ExactInteger[] {valueOf(result[0]), valueOf(result[1])};
+	}
+
+	ExactInteger[] divideAndRemainderDividend(ExactInteger dividend);
+
 	ExactInteger negate();
 
 	ExactInteger abs();
@@ -565,6 +611,78 @@ public interface ExactInteger
 		public ExactInteger divideDividend(ExactInteger dividend)
 		{
 			return dividend.divide(x);
+		}
+
+		@Override
+		public ExactInteger remainder(int divisor)
+		{
+			return ExactInteger.remainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger remainder(long divisor)
+		{
+			return ExactInteger.remainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger remainder(ExactInteger divisor)
+		{
+			return divisor.remainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(int dividend)
+		{
+			return ExactInteger.remainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(long dividend)
+		{
+			return ExactInteger.remainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(ExactInteger dividend)
+		{
+			return dividend.remainder(x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(int divisor)
+		{
+			return ExactInteger.divideAndRemainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(long divisor)
+		{
+			return ExactInteger.divideAndRemainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(ExactInteger divisor)
+		{
+			return divisor.divideAndRemainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(int dividend)
+		{
+			return ExactInteger.divideAndRemainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(long dividend)
+		{
+			return ExactInteger.divideAndRemainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(ExactInteger dividend)
+		{
+			return dividend.divideAndRemainder(x);
 		}
 
 		@Override
@@ -856,6 +974,78 @@ public interface ExactInteger
 		public ExactInteger divideDividend(ExactInteger dividend)
 		{
 			return dividend.divide(x);
+		}
+
+		@Override
+		public ExactInteger remainder(int divisor)
+		{
+			return ExactInteger.remainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger remainder(long divisor)
+		{
+			return ExactInteger.remainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger remainder(ExactInteger divisor)
+		{
+			return divisor.remainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(int dividend)
+		{
+			return ExactInteger.remainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(long dividend)
+		{
+			return ExactInteger.remainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(ExactInteger dividend)
+		{
+			return dividend.remainder(x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(int divisor)
+		{
+			return ExactInteger.divideAndRemainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(long divisor)
+		{
+			return ExactInteger.divideAndRemainder(x, divisor);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(ExactInteger divisor)
+		{
+			return divisor.divideAndRemainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(int dividend)
+		{
+			return ExactInteger.divideAndRemainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(long dividend)
+		{
+			return ExactInteger.divideAndRemainder(dividend, x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(ExactInteger dividend)
+		{
+			return dividend.divideAndRemainder(x);
 		}
 
 		@Override
@@ -1157,6 +1347,78 @@ public interface ExactInteger
 		}
 
 		@Override
+		public ExactInteger remainder(int divisor)
+		{
+			return remainder(BigInteger.valueOf(divisor));
+		}
+
+		@Override
+		public ExactInteger remainder(long divisor)
+		{
+			return remainder(BigInteger.valueOf(divisor));
+		}
+
+		@Override
+		public ExactInteger remainder(ExactInteger divisor)
+		{
+			return divisor.remainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger remainderDividend(int dividend)
+		{
+			return remainderDividend(BigInteger.valueOf(dividend));
+		}
+
+		@Override
+		public ExactInteger remainderDividend(long dividend)
+		{
+			return remainderDividend(BigInteger.valueOf(dividend));
+		}
+
+		@Override
+		public ExactInteger remainderDividend(ExactInteger dividend)
+		{
+			return dividend.remainder(x);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(int divisor)
+		{
+			return divideAndRemainder(BigInteger.valueOf(divisor));
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(long divisor)
+		{
+			return divideAndRemainder(BigInteger.valueOf(divisor));
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainder(ExactInteger divisor)
+		{
+			return divisor.divideAndRemainderDividend(this);
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(int dividend)
+		{
+			return divideAndRemainderDividend(BigInteger.valueOf(dividend));
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(long dividend)
+		{
+			return divideAndRemainderDividend(BigInteger.valueOf(dividend));
+		}
+
+		@Override
+		public ExactInteger[] divideAndRemainderDividend(ExactInteger dividend)
+		{
+			return dividend.divideAndRemainder(x);
+		}
+
+		@Override
 		public ExactInteger negate()
 		{
 			return new ExactBigInteger(x.negate());
@@ -1264,6 +1526,45 @@ public interface ExactInteger
 		                              : valueOf(x / y);
 	}
 
+	public static ExactInt remainder(int x, int y)
+	{
+		return new ExactInt(x % y);
+	}
+
+	public static IntOrLong remainder(long x, long y)
+	{
+		return valueOf(x % y);
+	}
+
+	public static ExactInteger[] divideAndRemainder(int x, int y)
+	{
+		// trunc(x/y) = q and x = y*q + r
+		IntOrLong div = divide(x, y);
+		ExactInt rem = remainder(x, y);
+		return new ExactInteger[] {div, rem};
+	}
+
+	public static ExactInteger[] divideAndRemainder(long x, long y)
+	{
+		// trunc(x/y) = q and x = y*q + r
+		ExactInteger div = divide(x, y);
+		IntOrLong rem = remainder(x, y);
+		return new ExactInteger[] {div, rem};
+	}
+
+	public static void main(String[] args)
+	{
+		int x = 5;
+		int y = 3;
+		BigInteger X = BigInteger.valueOf(x);
+		BigInteger Y = BigInteger.valueOf(y);
+
+		System.out.println(x + " % " + y + " = " + x % y + " vs. " + X.mod(Y) + " | " + Math.floorMod(x, y));
+		System.out.println(-x + " % " + y + " = " + -x % y + " vs. " + X.negate().mod(Y) + " | " + Math.floorMod(-x, y));
+		System.out.println(x + " % " + -y + " = " + x % -y + " vs. " + X.remainder(Y.negate()) + " | " + Math.floorMod(x, -y));
+		System.out.println(-x + " % " + -y + " = " + -x % -y + " vs. " + X.negate().remainder(Y.negate()) + " | " + Math.floorMod(-x, -y));
+	}
+
 	static IntOrLong negate(int x)
 	{
 		return isOverflowNegate(x) ? new ExactLong(-(long)x)
@@ -1331,7 +1632,7 @@ public interface ExactInteger
 			return ONE;
 		}
 		if (exponent == 1) {
-			return ExactInteger.valueOf(base);
+			return valueOf(base);
 		}
 		if ((base & (base - 1L)) == 0L || (-base & (-base - 1L)) == 0L) {
 			return powOfTwo(base, exponent);
@@ -1345,17 +1646,17 @@ public interface ExactInteger
 		// power of two: (2^n)^e = 2^(n*e)
 		long exp = (long)Long.numberOfTrailingZeros(base) * (long) exponent;
 		if (exp > Integer.MAX_VALUE) {
-			return ExactInteger.valueOf(BigInteger.TWO.pow(exponent));
+			return valueOf(BigInteger.TWO.pow(exponent));
 		}
 		if (base < 0L && (exponent & 1) == 1) {
 			// negative result
 			if (exp <= 63) {
-				return ExactInteger.valueOf(-1L << exp);
+				return valueOf(-1L << exp);
 			}
 			return new ExactBigInteger(BIG_NEGATIVE_ONE.shiftLeft((int)exp));
 		} else if (exp <= 62) {
 			// positive result
-			return ExactInteger.valueOf(1L << exp);
+			return valueOf(1L << exp);
 		}
 		return new ExactBigInteger(BigInteger.ONE.shiftLeft((int)exp));
 	}
@@ -1386,7 +1687,7 @@ public interface ExactInteger
 			}
 			exponent >>= 1;
 		}
-		return ExactInteger.valueOf(result);
+		return valueOf(result);
 	}
 
 	// (Computes floor(this * 2^n).)
@@ -1397,7 +1698,7 @@ public interface ExactInteger
 		}
 		if (n < 0) { // right shift
 			n = -Math.max(-63, n); // operator >> uses only lower 6 Bits, take care of possible overflow in (-n)
-			return ExactInteger.valueOf(x >> n);
+			return valueOf(x >> n);
 		}
 		if (n <= 63) { // try to avoid BigInteger
 			// TODO: is number of leading zeros slow? Alternative:
@@ -1429,7 +1730,7 @@ public interface ExactInteger
 		}
 		if (n < 0) { // left shift
 			if (n <= -63) { // take care of possible overflow in (-n)
-				return ExactInteger.valueOf(BigInteger.valueOf(x).shiftRight(n));
+				return valueOf(BigInteger.valueOf(x).shiftRight(n));
 			}
 			return shiftLeft(x, -n);
 		}
