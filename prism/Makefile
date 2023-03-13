@@ -310,7 +310,7 @@ MAKE_DIRS = dd jdd odd dv prism mtbdd sparse hybrid parser settings userinterfac
 
 EXT_PACKAGES = lpsolve55 lp_solve_5.5_java
 
-.PHONY: clean javadoc tests
+.PHONY: clean javadoc tests unittests
 
 default: all
 
@@ -420,6 +420,9 @@ make_tests:
 	$(MAKE) \
 	CLASSPATHSEP="$(CLASSPATHSEP)") \
 	|| exit 1;
+
+unittests:
+
 
 bin_scripts:
 	@for target in $(BIN_TARGETS); do \
