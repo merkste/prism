@@ -104,7 +104,7 @@ public class Distribution<Value> implements FunctionalIterable<Entry<Integer, Va
 	 */
 	public static Distribution<Double> ofDouble()
 	{
-		return new Distribution<>(Evaluator.createForDoubles());
+		return new Distribution<>(Evaluator.forDouble());
 	}
 
 	/**
@@ -113,7 +113,7 @@ public class Distribution<Value> implements FunctionalIterable<Entry<Integer, Va
 	 */
 	public static Distribution<Double> ofDouble(Iterator<Entry<Integer, Double>> transitions)
 	{
-		return new Distribution<Double>(transitions, Evaluator.createForDoubles());
+		return new Distribution<Double>(transitions, Evaluator.forDouble());
 	}
 
 	/**

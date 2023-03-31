@@ -30,7 +30,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.IntPredicate;
 
-import common.IteratorTools;
 import common.iterable.FunctionalPrimitiveIterable;
 import common.iterable.FunctionalPrimitiveIterator;
 import explicit.graphviz.Decorator;
@@ -673,6 +671,6 @@ public interface Model<Value>
 	@SuppressWarnings("unchecked")
 	public default Evaluator<Value> getEvaluator()
 	{
-		return (Evaluator<Value>) Evaluator.createForDoubles();
+		return (Evaluator<Value>) Evaluator.forDouble();
 	}
 }
