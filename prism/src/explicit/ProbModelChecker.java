@@ -995,10 +995,11 @@ public class ProbModelChecker extends NonProbModelChecker
 			}
 			if(!noexportheaders){
 				String rewardStructName = rewardStruct.getName();
-				if(rewardStructName!=null){
-					out.println("# Reward Structure: \"" + rewardStructName + "\"");
+				out.print("# Reward structure");
+				if (!"".equals(rewardStructName)) {
+					out.print(" \"" + rewardStructName + "\"");
 				}
-				out.println("# State rewards");
+				out.println("\n# State rewards");
 			}
 
 			out.println(numStates + " " + nonZeroRews);
@@ -1020,10 +1021,11 @@ public class ProbModelChecker extends NonProbModelChecker
 			}
 			if(!noexportheaders){
 				String rewardStructName = rewardStruct.getName();
-				if(rewardStructName!=null){
-					out.println("# Reward Structure: \"" + rewardStructName + "\"");
+				out.print("# Reward structure");
+				if (!"".equals(rewardStructName)) {
+					out.print(" \"" + rewardStructName + "\"");
 				}
-				out.println("# State rewards");
+				out.println("\n# State rewards");
 			}
 
 			out.println(numStates + " " + nonZeroRews);

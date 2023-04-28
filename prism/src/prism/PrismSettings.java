@@ -96,7 +96,8 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
 	public static final String PRISM_DO_REORDER						= "prism.doReorder";
 	public static final String PRISM_REORDER_OPTIONS				= "prism.reorderOptions";
-	public static final String PRISM_EXPORT_MODEL_PRECISION         = "prism.exportmodelprecision";
+	public static final String PRISM_EXPORT_MODEL_PRECISION         = "prism.exportModelPrecision";
+	public static final String PRISM_EXPORT_MODEL_HEADERS 			= "prism.exportModelHeaders";
 
 	public static final String PRISM_EXPLODE_BITS					= "prism.explodeBits";
 	public static final String PRISM_GLOBALIZE_VARIABLES			= "prism.globalizeVariables";
@@ -287,9 +288,11 @@ public class PrismSettings implements Observer
 																			"Epsilon value to use for checking termination of iterative numerical methods." },
 			{ INTEGER_TYPE,		PRISM_MAX_ITERS,						"Termination max. iterations",			"2.1",			10000,															"0,",
 																			"Maximum number of iterations to perform if iterative methods do not converge." },
-			{ INTEGER_TYPE,		PRISM_EXPORT_MODEL_PRECISION,			"Precision of model export",			"4.7dev",			17,																		RANGE_EXPORT_DOUBLE_PRECISION.min() + "-" + RANGE_EXPORT_DOUBLE_PRECISION.max(),
-																			"Export probabilities/rewards with n significant decimal places"},
+			{ INTEGER_TYPE,		PRISM_EXPORT_MODEL_PRECISION,			"Precision of model export",			"4.7",			17,																		RANGE_EXPORT_DOUBLE_PRECISION.min() + "-" + RANGE_EXPORT_DOUBLE_PRECISION.max(),
+																			"Export model probabilities/rewards to n significant decimal places."},
 
+			{ BOOLEAN_TYPE,		PRISM_EXPORT_MODEL_HEADERS,				"Include headers in model exports",		"4.7",			true,															"",
+																			"Whether to include #-commented header lines when exporting model data to explicit files."},
 			// STORM OPTIONS:
 			{ STRING_TYPE,		PRISM_STORM_PATH,						"Path to the Storm executable",			"4.3.1",			"",															"",
 																			"Path to the Storm executable." },
@@ -1177,6 +1180,11 @@ public class PrismSettings implements Observer
 			} else {
 				throw new PrismException("No value specified for -" + sw + " switch");
 			}
+		}
+
+		// export headers off
+		else if (sw.equals("noexportheaders")) {
+			set(PRISM_EXPORT_MODEL_HEADERS, false);
 		}
 		// MODEL CHECKING OPTIONS:
 		

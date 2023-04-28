@@ -2491,9 +2491,10 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	 * </ul>
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	public void exportStateRewardsToFile(int exportType, File file, boolean noexportheaders) throws FileNotFoundException, PrismException
+	public void exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
+		boolean noexportheaders = !settings.getBoolean(PrismSettings.PRISM_EXPORT_MODEL_HEADERS);
 
 		if (getExplicit()) {
 			// Build model, if necessary
@@ -2537,7 +2538,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 			mainLog.println(getDestinationStringForFile(file));
 
 			// do export
-			s = currentModel.exportStateRewardsToFile(exportType, file,precision);
+			s = currentModel.exportStateRewardsToFile(exportType, file,precision, noexportheaders);
 			if (s != null)
 				mainLog.println("Rewards exported to files: " + s);
 		}
@@ -2558,6 +2559,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	{
 		String s;
 		int precision = settings.getInteger(PrismSettings.PRISM_EXPORT_MODEL_PRECISION);
+		boolean noexportheaders = !settings.getBoolean(PrismSettings.PRISM_EXPORT_MODEL_HEADERS);
 
 		if (getExplicit())
 			throw new PrismException("Export of transition rewards not yet supported by explicit engine");
@@ -2590,7 +2592,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		mainLog.println(getDestinationStringForFile(file));
 
 		// do export
-		s = currentModel.exportTransRewardsToFile(exportType, ordered, file,precision);
+		s = currentModel.exportTransRewardsToFile(exportType, ordered, file,precision, noexportheaders);
 		if (s != null)
 			mainLog.println("Rewards exported to files: " + s);
 	}
@@ -4117,7 +4119,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void exportStateRewardsToFile(Model model, int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		loadBuiltModel(model);
-		exportStateRewardsToFile(exportType, file, false);
+		exportStateRewardsToFile(exportType, file);
 	}
 
 	/**
@@ -4188,7 +4190,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public void exportStatesToFile(Model model, int exportType, File file) throws FileNotFoundException, PrismException
 	{
 		loadBuiltModel(model);
-		exportStateRewardsToFile(exportType, file,false);
+		exportStateRewardsToFile(exportType, file);
 	}
 
 	/**

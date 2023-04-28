@@ -40,6 +40,7 @@ import parser.*;
 import parser.ast.Declaration;
 import parser.ast.DeclarationInt;
 import parser.ast.Expression;
+import parser.ast.RewardStruct;
 import sparse.*;
 
 /*
@@ -462,7 +463,7 @@ public class NondetModel extends ProbModel
 
 	// returns string containing files used if there were more than 1, null otherwise
 
-	public String exportStateRewardsToFile(int exportType, File file, int precision) throws FileNotFoundException, PrismException
+	public String exportStateRewardsToFile(int exportType, File file, int precision, boolean noexportheaders) throws FileNotFoundException, PrismException
 	{
 		if (numRewardStructs == 0)
 			throw new PrismException("There are no state rewards to export");
@@ -474,7 +475,8 @@ public class NondetModel extends ProbModel
 				filename = PrismUtils.addCounterSuffixToFilename(filename, i + 1);
 				allFilenames += ((i > 0) ? ", " : "") + filename;
 			}
-			PrismMTBDD.ExportVector(stateRewards[i], "c" + (i + 1), allDDRowVars, odd, exportType, filename,precision);
+			PrismMTBDD.ExportVector(stateRewards[i], "c" + (i + 1), allDDRowVars, odd, exportType,
+					filename,precision, rewardStructNames[i], noexportheaders);
 		}
 		return (allFilenames.length() > 0) ? allFilenames : null;
 	}
@@ -483,7 +485,7 @@ public class NondetModel extends ProbModel
 
 	// returns string containing files used if there were more than 1, null otherwise
 
-	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
+	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision, boolean noexportheaders) throws FileNotFoundException, PrismException
 	{
 		if (numRewardStructs == 0)
 			throw new PrismException("There are no transition rewards to export");
@@ -498,7 +500,7 @@ public class NondetModel extends ProbModel
 			if (!explicit) {
 				// can only do explicit (sparse matrix based) export for mdps
 			} else {
-				PrismSparse.ExportSubMDP(trans, transRewards[i], "C" + (i + 1), allDDRowVars, allDDColVars, allDDNondetVars, odd, exportType, filename,precision);
+				PrismSparse.ExportSubMDP(trans, transRewards[i], "C" + (i + 1), allDDRowVars, allDDColVars, allDDNondetVars, odd, exportType, filename,precision, rewardStructNames[i], noexportheaders);
 			}
 		}
 		return (allFilenames.length() > 0) ? allFilenames : null;

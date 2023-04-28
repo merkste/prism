@@ -218,10 +218,10 @@ JNIEXPORT jlong JNICALL Java_sparse_PrismSparse_PS_1StochTransient
 /*
  * Class:     sparse_PrismSparse
  * Method:    PS_ExportMatrix
- * Signature: (JLjava/lang/String;JIJIJILjava/lang/String;)I
+ * Signature: (JLjava/lang/String;JIJIJILjava/lang/String;Ljava/lang/String;Z)I
  */
 JNIEXPORT jint JNICALL Java_sparse_PrismSparse_PS_1ExportMatrix
-  (JNIEnv *, jclass, jlong, jstring, jlong, jint, jlong, jint, jlong, jint, jstring);
+  (JNIEnv *, jclass, jlong, jstring, jlong, jint, jlong, jint, jlong, jint, jstring, jstring, jboolean);
 
 /*
  * Class:     sparse_PrismSparse
@@ -234,10 +234,11 @@ JNIEXPORT jint JNICALL Java_sparse_PrismSparse_PS_1ExportMDP
 /*
  * Class:     sparse_PrismSparse
  * Method:    PS_ExportSubMDP
- * Signature: (JJLjava/lang/String;JIJIJIJILjava/lang/String;)I
+ * Signature: (JJLjava/lang/String;JIJIJIJILjava/lang/String;Ljava/lang/String;Z)I
  */
 JNIEXPORT jint JNICALL Java_sparse_PrismSparse_PS_1ExportSubMDP
-  (JNIEnv *, jclass, jlong, jlong, jstring, jlong, jint, jlong, jint, jlong, jint, jlong, jint, jstring);
+  (JNIEnv *, jclass, jlong, jlong, jstring, jlong, jint, jlong, jint, jlong, jint, jlong, jint, jstring,
+   jstring, jboolean);
 
 /*
  * Class:     sparse_PrismSparse

@@ -91,7 +91,7 @@ public class ExportBuiltModelThread extends GUIComputationThread
 					prism.exportTransToFile(true, exportType, exportFile);
 					break;
 				case GUIMultiModelHandler.STATE_REWARDS_EXPORT:
-					prism.exportStateRewardsToFile(exportType, exportFile, false);
+					prism.exportStateRewardsToFile(exportType, exportFile);
 					break;
 				case GUIMultiModelHandler.TRANS_REWARDS_EXPORT:
 					prism.exportTransRewardsToFile(true, exportType, exportFile);
